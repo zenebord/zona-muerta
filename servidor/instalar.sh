@@ -92,5 +92,5 @@ EOF
     quitar servidor; quitar tunel; quitar tunel-provisorio
     echo "Servicios quitados. El túnel con nombre sigue creado en Cloudflare (cloudflared tunnel delete zona-muerta para borrarlo)."
     ;;
-  *) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac
