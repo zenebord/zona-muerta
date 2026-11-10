@@ -24,8 +24,189 @@ function RRc(x, y, w, h, r) {   // rectángulo con esquinas redondeadas, como po
 }
 const Cc = (cx, cy, r, n = 18) => Array.from({ length: n }, (_, k) => [cx + Math.cos(k / n * Math.PI * 2) * r, cy + Math.sin(k / n * Math.PI * 2) * r]);
 
+/* ---------- Acabado de material (sólo cuando el arma se ve grande) ----------
+ * En la ficha y en cualquier vista ampliada cada pieza recibe la terminación de su material: veta de madera
+ * que sigue la pieza con poros y barniz, grano y desgaste de los filos en el acero, texturado en el polímero,
+ * reflejo cilíndrico en los caños y un bisel (luz en el canto de arriba, sombra en el de abajo).
+ * Por debajo de DETALLE_PX_CM píxeles por centímetro no se nota y se omite: el arma en mano se dibuja como antes
+ * y el cuadro no se encarece.
+ */
+const DETALLE_PX_CM = 3;
+const pxPorCm = ctx => { const m = ctx.getTransform(); return Math.hypot(m.a, m.b); };
+// Material de una pieza según su color: madera (marrón rojizo), metal (gris), claro (inoxidable, níquel),
+// hueco (casi negro: ventanas, bocas), color (vidrios, pintura) o polímero si es mate
+const cacheMateriales = new Map();
+function materialDe(color, mate) {
+  const clave = color + (mate ? 'm' : '');
+  if (cacheMateriales.has(clave)) return cacheMateriales.get(clave);
+  let tipo = 'color';
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    const n = parseInt(color.slice(1), 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, s = mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1));
+    let h = 0; if (mx !== mn) h = mx === r ? ((g - b) / (mx - mn) + 6) % 6 * 60 : mx === g ? ((b - r) / (mx - mn) + 2) * 60 : ((r - g) / (mx - mn) + 4) * 60;
+    if (VETAS.has(color) || (h >= 8 && h <= 32 && s >= 0.3 && l >= 0.08 && l <= 0.45)) tipo = 'madera';
+    else if (l < 0.065) tipo = 'hueco';
+    else if (mate) tipo = 'polimero';
+    else if (s < 0.25 && l < 0.45) tipo = 'metal';
+    else if (s < 0.2) tipo = 'claro';
+  }
+  cacheMateriales.set(clave, tipo);
+  return tipo;
+}
+// Azar con semilla: la veta y el desgaste salen iguales en cada dibujo de la misma pieza
+function azarDe(pts) { let s = pts.length * 7919; for (let i = 0; i < pts.length; i += 3) s = (s * 31 + Math.round(pts[i][0] * 97) * 17 + Math.round(pts[i][1] * 89)) >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+// Ruido de un píxel por punto, como patrón (uno por lienzo)
+const patronesRuido = new WeakMap();
+function patronRuido(ctx, fuerza) {
+  let p = patronesRuido.get(ctx);
+  if (!p) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const o = c.getContext('2d'), img = o.createImageData(128, 128); let s = 12345;
+    const r = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+    for (let i = 0; i < img.data.length; i += 4) { const v = r() < 0.5 ? 0 : 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = Math.round(r() * 255); }
+    o.putImageData(img, 0, 0); p = ctx.createPattern(c, 'repeat'); patronesRuido.set(ctx, p);
+  }
+  p.setTransform(new DOMMatrix().scaleSelf(1 / pxPorCm(ctx), 1 / pxPorCm(ctx)));   // un grano por píxel de pantalla
+  ctx.globalAlpha = fuerza; ctx.fillStyle = p;
+  return p;
+}
+function trazadoPieza(pts, huecos) {
+  const p = new Path2D();
+  for (const forma of [pts, ...(huecos || [])]) { forma.forEach(([x, y], i) => i ? p.lineTo(x, y) : p.moveTo(x, y)); p.closePath(); }
+  return p;
+}
+// Canto redondeado: el contorno corrido hacia abajo deja luz en los filos de arriba, corrido hacia arriba deja sombra abajo
+function bisel(ctx, trazado, d, luz, sombra) {
+  ctx.lineJoin = 'round';
+  ctx.save(); ctx.translate(0, d * 0.9); ctx.lineWidth = d * 2; ctx.strokeStyle = `rgba(255,255,255,${luz})`; ctx.stroke(trazado); ctx.restore();
+  ctx.save(); ctx.translate(0, -d * 0.9); ctx.lineWidth = d * 2.4; ctx.strokeStyle = `rgba(0,0,0,${sombra})`; ctx.stroke(trazado); ctx.restore();
+}
+// Desgaste: rayitas claras y cortadas sobre los filos que miran hacia arriba
+function desgasteFilos(ctx, pts, r, alfa, color = '190,196,205') {
+  let area = 0; for (let i = 0; i < pts.length; i++) { const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length]; area += ax * by - bx * ay; }
+  const sentido = Math.sign(area) || 1;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < pts.length; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length], largo = Math.hypot(bx - ax, by - ay);
+    if (largo < 0.3) continue;
+    const ny = -(bx - ax) / largo * sentido;   // componente vertical de la normal hacia afuera (y crece hacia abajo)
+    if (ny > -0.75) continue;                  // sólo los filos de arriba
+    const n = Math.max(1, largo / 0.6);
+    for (let k = 0; k < n; k++) {
+      if (r() < 0.5) continue;
+      const t0 = k / n, t1 = Math.min(1, t0 + (0.3 + r() * 0.7) / n);
+      ctx.strokeStyle = `rgba(${color},${alfa * (0.35 + r() * 0.65)})`; ctx.lineWidth = 0.06 + r() * 0.1;
+      ctx.beginPath(); ctx.moveTo(ax + (bx - ax) * t0, ay + (by - ay) * t0 + 0.07); ctx.lineTo(ax + (bx - ax) * t1, ay + (by - ay) * t1 + 0.07); ctx.stroke();
+    }
+  }
+}
+// Veta de madera a lo largo del eje largo de la pieza: manchas, líneas onduladas, poros y barniz
+// Eje largo de la pieza (componente principal de sus puntos): ángulo, centro, largo y ancho medidos sobre ese eje
+function ejeLargo(pts) {
+  let mx = 0, my = 0; for (const [x, y] of pts) { mx += x; my += y; } mx /= pts.length; my /= pts.length;
+  let sxx = 0, syy = 0, sxy = 0; for (const [x, y] of pts) { sxx += (x - mx) ** 2; syy += (y - my) ** 2; sxy += (x - mx) * (y - my); }
+  const ang = 0.5 * Math.atan2(2 * sxy, sxx - syy), c = Math.cos(ang), s = Math.sin(ang);
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+  for (const [x, y] of pts) { const u = (x - mx) * c + (y - my) * s, v = -(x - mx) * s + (y - my) * c; u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+  return { ang, cx: mx, cy: my, u0, u1, v0, v1, largo: u1 - u0, ancho: v1 - v0 };
+}
+function vetaMadera(ctx, pts, caja, r, lustre = false) {
+  const { ang } = ejeLargo(pts);
+  const { x0, x1, y0, y1 } = caja, diag = Math.hypot(x1 - x0, y1 - y0);
+  ctx.save(); ctx.translate((x0 + x1) / 2, (y0 + y1) / 2); ctx.rotate(ang);
+  for (let k = 0; k < 7; k++) {   // tono irregular: bandas largas un poco más claras u oscuras
+    const y = (r() - 0.5) * diag, h = 0.6 + r() * diag * 0.12;
+    ctx.fillStyle = r() < 0.5 ? 'rgba(255,190,120,0.07)' : 'rgba(30,8,0,0.11)'; ctx.fillRect(-diag, y - h / 2, diag * 2, h);
+  }
+  for (let y = -diag / 2; y < diag / 2; y += 0.2 + r() * 0.38) {   // veta
+    const a = (0.08 + r() * 0.24) * (lustre ? 1.6 : 1), onda = 0.12 + r() * 0.45, fase = r() * 6;   // la madera lustrada muestra más la veta
+    ctx.strokeStyle = `rgba(25,7,1,${a})`; ctx.lineWidth = 0.05 + r() * 0.15; ctx.beginPath();
+    for (let x = -diag / 2; x <= diag / 2 + 1; x += 1) { const yy = y + Math.sin(x * 0.14 + fase) * onda + Math.sin(x * 0.43 + fase * 2) * onda * 0.3; x === -diag / 2 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(20,5,0,0.32)'; ctx.lineWidth = 0.05; ctx.beginPath();   // poros
+  for (let k = 0, n = Math.min(350, diag * diag * 0.3); k < n; k++) { const x = (r() - 0.5) * diag, y = (r() - 0.5) * diag; ctx.moveTo(x, y); ctx.lineTo(x + 0.2 + r() * 0.35, y); }
+  ctx.stroke(); ctx.restore();
+  const g = ctx.createLinearGradient(0, y0, 0, y1);   // barniz: brillo difuso arriba, se apaga abajo
+  g.addColorStop(0, 'rgba(255,225,190,0)'); g.addColorStop(0.07, 'rgba(255,225,190,0.24)'); g.addColorStop(0.22, 'rgba(255,225,190,0.03)'); g.addColorStop(1, 'rgba(0,0,0,0.2)');
+  ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+  if (lustre) {   // barniz de alto brillo: reflejos largos y nítidos que siguen la pieza, como la madera lustrada
+    const e = ejeLargo(pts);
+    ctx.save(); ctx.translate(e.cx, e.cy); ctx.rotate(e.ang);
+    const h = ctx.createLinearGradient(0, e.v0, 0, e.v1);
+    h.addColorStop(0, 'rgba(255,236,214,0)'); h.addColorStop(0.15, 'rgba(255,236,214,0)'); h.addColorStop(0.19, 'rgba(255,236,214,0.5)'); h.addColorStop(0.23, 'rgba(255,236,214,0.03)');
+    h.addColorStop(0.62, 'rgba(255,236,214,0)'); h.addColorStop(0.7, 'rgba(255,236,214,0.14)'); h.addColorStop(0.8, 'rgba(255,236,214,0)'); h.addColorStop(1, 'rgba(0,0,0,0.18)');
+    ctx.fillStyle = h; ctx.fillRect(e.u0, e.v0, e.u1 - e.u0, e.v1 - e.v0);
+    ctx.restore();
+  }
+}
+// Filo nítido: una línea fina de luz justo adentro de los bordes que miran hacia arriba (el canto que agarra la luz)
+function filoBrillante(ctx, pts, alfa, color = '205,218,238') {
+  let area = 0; for (let i = 0; i < pts.length; i++) { const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length]; area += ax * by - bx * ay; }
+  const sentido = Math.sign(area) || 1;
+  ctx.lineCap = 'round'; ctx.lineWidth = 0.07; ctx.strokeStyle = `rgba(${color},${alfa})`; ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length], largo = Math.hypot(bx - ax, by - ay);
+    if (largo < 0.05 || -(bx - ax) / largo * sentido > -0.5) continue;
+    ctx.moveTo(ax, ay + 0.09); ctx.lineTo(bx, by + 0.09);
+  }
+  ctx.stroke();
+}
+// Acero pulido (hojas): sin grano ni cepillado; reflejos largos a lo largo de la hoja, como un espejo que copia el cuarto
+function pulidoEspejo(ctx, eje) {
+  const { ang, cx, cy, u0, u1, v0, v1 } = eje;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+  const g = ctx.createLinearGradient(0, v0, 0, v1);
+  g.addColorStop(0, 'rgba(255,255,255,0.05)'); g.addColorStop(0.2, 'rgba(255,255,255,0.45)'); g.addColorStop(0.3, 'rgba(255,255,255,0.08)');
+  g.addColorStop(0.55, 'rgba(20,28,40,0.22)'); g.addColorStop(0.78, 'rgba(255,255,255,0.18)'); g.addColorStop(1, 'rgba(10,14,20,0.25)');
+  ctx.fillStyle = g; ctx.fillRect(u0, v0, u1 - u0, v1 - v0);
+  const h = ctx.createLinearGradient(u0, 0, u1, 0);   // a lo largo: la luz se corre por la hoja
+  h.addColorStop(0, 'rgba(0,0,0,0.12)'); h.addColorStop(0.35, 'rgba(255,255,255,0.1)'); h.addColorStop(0.6, 'rgba(0,0,0,0)'); h.addColorStop(0.85, 'rgba(255,255,255,0.12)'); h.addColorStop(1, 'rgba(0,0,0,0.1)');
+  ctx.fillStyle = h; ctx.fillRect(u0, v0, u1 - u0, v1 - v0);
+  ctx.restore();
+}
+// Acero cepillado (inoxidable, niquelado): rayitas finas a lo largo de la pieza
+function cepillado(ctx, eje, r) {
+  const { ang, cx, cy, u0, u1, v0, v1 } = eje;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang); ctx.lineWidth = 0.03;
+  for (let v = v0; v < v1; v += 0.06 + r() * 0.08) { ctx.strokeStyle = r() < 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'; ctx.beginPath(); ctx.moveTo(u0, v); ctx.lineTo(u1, v + (r() - 0.5) * 0.04); ctx.stroke(); }
+  ctx.restore();
+}
+// Reflejo de estudio en el acero oscuro: una franja azulada difusa en el tercio de arriba (la luz de la ventana)
+function reflejoOscuro(ctx, caja, fuerza) {
+  const { x0, x1, y0, y1 } = caja;
+  const g = ctx.createLinearGradient(0, y0, 0, y1);
+  g.addColorStop(0, `rgba(170,188,215,${fuerza * 0.2})`); g.addColorStop(0.16, `rgba(170,188,215,${fuerza})`); g.addColorStop(0.38, 'rgba(170,188,215,0)');
+  g.addColorStop(0.75, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${fuerza * 1.2})`);
+  ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+}
+function acabado(ctx, pts, color, op, tipo, trazado, caja, cilindro) {
+  if (tipo === 'hueco') return;
+  const r = azarDe(pts), { x0, x1, y0, y1 } = caja, grueso = Math.min(x1 - x0, y1 - y0);
+  const eje = tipo === 'claro' ? ejeLargo(pts) : null;
+  const hoja = eje && eje.largo >= eje.ancho * 7;   // acero claro muy alargado: una hoja, va pulida
+  ctx.save(); ctx.clip(trazado, 'evenodd');
+  if (tipo === 'madera') vetaMadera(ctx, pts, caja, r, op.lustre);
+  if (tipo === 'metal' || tipo === 'polimero' || (tipo === 'claro' && !hoja)) { patronRuido(ctx, tipo === 'polimero' ? 0.06 : tipo === 'claro' ? 0.04 : 0.045); ctx.fillRect(x0, y0, x1 - x0, y1 - y0); ctx.globalAlpha = 1; }
+  if (hoja) pulidoEspejo(ctx, eje);
+  else if (tipo === 'claro') cepillado(ctx, eje, r);
+  if (!cilindro && grueso > 0.5) {
+    if (tipo === 'metal') reflejoOscuro(ctx, caja, 0.26);
+    if (tipo === 'polimero') reflejoOscuro(ctx, caja, 0.07);
+    // Sombra interior en todo el borde: la pieza se ve con volumen y no recortada en cartón
+    ctx.lineJoin = 'round'; ctx.lineWidth = Math.min(1.4, grueso * 0.35); ctx.strokeStyle = `rgba(0,0,0,${hoja ? 0.12 : 0.22})`; ctx.stroke(trazado);
+    const d = Math.min(tipo === 'madera' ? 0.42 : 0.3, grueso * 0.2);
+    bisel(ctx, trazado, d, tipo === 'polimero' ? 0.16 : tipo === 'claro' ? 0.45 : 0.38, tipo === 'claro' ? 0.3 : 0.6);
+  }
+  if (tipo === 'metal' && !op.mate) { desgasteFilos(ctx, pts, r, 0.5); filoBrillante(ctx, pts, 0.55); }
+  if (tipo === 'polimero') filoBrillante(ctx, pts, 0.18);
+  if (tipo === 'claro' && !hoja) filoBrillante(ctx, pts, 0.6, '255,255,255');
+  if (tipo === 'madera') desgasteFilos(ctx, pts, r, 0.1, '255,215,170');
+  ctx.restore();
+}
+
 /* Pinta una pieza: degradado vertical (luz de arriba), brillo especular, veta si es madera, contorno.
- * opciones: huecos (polígonos que se recortan), mate (sin brillo), brillo (0..1) */
+ * opciones: huecos (polígonos que se recortan), mate (sin brillo), brillo (0..1), lustre (madera de alto brillo) */
 function pintar(ctx, pts, color, op = {}) {
   ctx.beginPath();
   pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
@@ -34,16 +215,34 @@ function pintar(ctx, pts, color, op = {}) {
   let y0 = Infinity, y1 = -Infinity, x0 = Infinity, x1 = -Infinity;
   for (const [x, y] of pts) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); x0 = Math.min(x0, x); x1 = Math.max(x1, x); }
   const mate = op.mate ?? MATES.has(color);
+  const detalle = pxPorCm(ctx) >= DETALLE_PX_CM, tipo = detalle ? materialDe(color, mate) : null;
+  // Caño (cañón, tubo de gases, varilla): pieza recta, fina y larga de metal; se pinta como un cilindro
+  let cilindro = false;
+  if (detalle && (tipo === 'metal' || tipo === 'claro') && !op.huecos && y1 - y0 <= 1.8 && (x1 - x0) >= (y1 - y0) * 5) {
+    let area = 0; for (let i = 0; i < pts.length; i++) { const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length]; area += ax * by - bx * ay; }
+    cilindro = Math.abs(area / 2) >= (x1 - x0) * (y1 - y0) * 0.9;
+  }
   const g = ctx.createLinearGradient(0, y0, 0, y1);
-  g.addColorStop(0, ajustarColor(color, mate ? 0.2 : 0.42)); g.addColorStop(0.22, ajustarColor(color, mate ? 0.06 : 0.12));
-  g.addColorStop(0.6, color); g.addColorStop(1, ajustarColor(color, -0.5));
+  if (cilindro) {
+    g.addColorStop(0, ajustarColor(color, -0.2)); g.addColorStop(0.18, ajustarColor(color, 0.55)); g.addColorStop(0.3, ajustarColor(color, 0.12));
+    g.addColorStop(0.65, color); g.addColorStop(0.85, ajustarColor(color, -0.55)); g.addColorStop(1, ajustarColor(color, -0.35));
+  } else if (tipo === 'madera') {   // de cerca la madera tiene su propio barniz: el degradado base no la lava
+    g.addColorStop(0, ajustarColor(color, 0.15)); g.addColorStop(0.22, ajustarColor(color, 0.05));
+    g.addColorStop(0.6, color); g.addColorStop(1, ajustarColor(color, -0.45));
+  } else {
+    g.addColorStop(0, ajustarColor(color, mate ? 0.2 : 0.42)); g.addColorStop(0.22, ajustarColor(color, mate ? 0.06 : 0.12));
+    g.addColorStop(0.6, color); g.addColorStop(1, ajustarColor(color, -0.5));
+  }
   ctx.fillStyle = g; ctx.fill('evenodd');
-  ctx.save(); ctx.clip('evenodd');
-  if (VETAS.has(color)) {
+  let trazado = null;
+  if (detalle) { trazado = trazadoPieza(pts, op.huecos); acabado(ctx, pts, color, op, tipo, trazado, { x0, x1, y0, y1 }, cilindro); }
+  ctx.save(); trazado ? ctx.clip(trazado, 'evenodd') : ctx.clip('evenodd');
+  if (VETAS.has(color) && !detalle) {   // de lejos, la veta de siempre (de cerca la reemplaza vetaMadera)
     ctx.strokeStyle = 'rgba(28, 12, 4, 0.32)'; ctx.lineWidth = 0.28;
     for (let yy = y0 + 0.7; yy < y1; yy += 0.95) { ctx.beginPath(); ctx.moveTo(x0, yy); ctx.bezierCurveTo(x0 + (x1 - x0) * 0.33, yy - 0.5, x0 + (x1 - x0) * 0.66, yy + 0.6, x1, yy + 0.1); ctx.stroke(); }
   }
-  const brillo = op.brillo ?? (mate ? 0.1 : 0.3);
+  // De cerca el brillo plano se baja: el bisel y el barniz ya dan la luz de arriba
+  const brillo = (op.brillo ?? (mate ? 0.1 : 0.3)) * (detalle ? (cilindro ? 0 : tipo === 'madera' ? 0.2 : 0.45) : 1);
   if (brillo) { ctx.fillStyle = `rgba(255, 255, 255, ${brillo})`; ctx.fillRect(x0, y0 + 0.12, x1 - x0, Math.min(0.55, (y1 - y0) * 0.16)); }
   ctx.restore();
   // El contorno va sobre el borde de la pieza: se rehace el trazado, porque la veta lo reemplazó

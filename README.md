@@ -198,6 +198,18 @@ estriados y varillas extractoras en los revólveres, cajones fresados, rieles, g
 apagallamas, miras telescópicas con torretas y lentes, tornillos y juntas. La P90 y el M1 Garand se midieron
 además sobre fotos de perfil.
 
+El AK-47 y la MP5 están calcados de fotos de perfil: la foto se endereza, se escala a su largo real con una grilla
+en centímetros, el modelo se dibuja encima y se superpone para comprobar que coincida; los colores se toman de la
+foto. El Remington 700 toma de una foto la forma de la culata y el nogal lustrado.
+
+**Acabado de material** (`pintar` en `js/armas-modelos.js`): cuando el arma se ve grande (desde 3 px por cm, o sea en
+la ficha) cada pieza recibe la terminación de su material, que sale del color: la madera, veta que sigue la pieza,
+poros, barniz (y `lustre` para la de alto brillo); el acero oscuro, grano, reflejo azulado, bisel, filo brillante y
+desgaste en los cantos de arriba; el inoxidable, cepillado a lo largo; las hojas (acero claro muy alargado), pulido
+espejo; el polímero, texturado; los caños finos, reflejo cilíndrico. Más chico no se nota y se omite, así que el arma
+en mano se dibuja igual y no cuesta más. La ficha mide el arma en chico y la dibuja directo al tamaño final.
+`remache`, `rebaje` y `sombraContacto` (en `js/armas-modelos-3.js`) agregan detalles que el acabado no puede inventar.
+
 ### Recargas
 
 Cada arma se recarga con su mecanismo real. Durante la recarga el arma se acerca al cuerpo y se
