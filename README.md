@@ -124,6 +124,22 @@ alrededor de un minuto).
   y subirlo junto al resto (es el plan B del asistente para leer el código; no se versiona).
 - Para retirar todo: ver el comentario de arriba de `js/asistente.js` y `js/rama.js`.
 
+## Servidor de construcción (para que cualquiera pueda cambiar el juego)
+
+`servidor/servidor.mjs` (Node 24 + SDK oficial de Anthropic; `cd servidor && npm install` la primera vez):
+
+- **Sirve el juego desde la rama `main` de git**, no desde la carpeta de trabajo: lo que se está editando sin
+  commitear no le llega a nadie.
+- **Cada cambio de un jugador es un commit** en la rama `rama/<código del jugador>`, en `ramas/<código>/`
+  (`rama.json` con todo, y cada parche como `.js`). Lo escribe con un índice temporal de git: no toca la carpeta de
+  trabajo ni la rama abierta. El jugador ve su código de rama en «Mi rama» y puede seguir en otro dispositivo.
+- **Asistente**: la clave de la API va en `servidor/.env` (copia de `servidor/.env.ejemplo`; no se versiona). Modelo
+  Claude Sonnet 5.5 con esfuerzo medio, respaldo automático si el modelo declina, caché del pedido fijo. Topes: 30
+  pedidos por persona y por día, 300 llamadas por persona y 2000 en total por día (se cambian en `.env`).
+- Arranque: `node servidor/servidor.mjs` (puerto 8790, sólo en la Mac) y un túnel de Cloudflare hacia ese puerto
+  para tener la dirección pública.
+- Para ver las ramas: `git branch --list 'rama/*'`; para leer una: `git log main..rama/<código>`.
+
 ## Controles
 
 En celulares y tablets aparecen botones en pantalla: flechas a la izquierda, fuego (se puede mantener), salto y
