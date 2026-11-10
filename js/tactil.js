@@ -88,5 +88,6 @@
   setInterval(() => {
     const j = window.ZonaMuerta && ZonaMuerta.juego();
     cuerpo.classList.toggle('en-pruebas', !!(j && (j.pruebas || j.entrenamiento)));
+    cuerpo.classList.toggle('en-torreta', !!(j && j.torreta));   // fijo en la M2: no se cambia de arma ni se baja
   }, 500);
 })();

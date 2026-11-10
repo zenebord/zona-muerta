@@ -281,6 +281,7 @@ kbd {
 .boton-tactil.apretado { background: rgba(201,169,110,.6); color: var(--noche); transform: scale(.94); }
 .boton-tactil.fuego.apretado { background: rgba(229,57,53,.75); color: var(--texto); }
 .tactil:not(.en-pruebas) .solo-pruebas { display: none; }
+.tactil.en-torreta .armas-tactiles, .tactil.en-torreta .boton-tactil[data-tecla="ArrowDown"], .tactil.en-torreta .boton-tactil.saltar { display: none; }   /* defensa zombie: fijo en la M2, sin cambiar de arma, bajarse ni saltar */
 .tactil #lienzo { touch-action: none; }
 .tactil .capa { touch-action: pan-y; }   /* las ventanas (pausa, menú de armas) se desplazan con el dedo */
 
