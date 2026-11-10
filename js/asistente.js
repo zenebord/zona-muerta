@@ -495,6 +495,6 @@ const Asistente = (() => {
     },
     abierto: () => abierto,
     // Para probar sin claude.ai (consola): Asistente._cambiar('arma.ak47.dano', 9)
-    _cambiar: cambiar, _restaurar: restaurar, _reglas: reglas, _herramientas: HERRAMIENTAS, _leerCodigo: leerCodigo, _mapa: mapa,
+    _cambiar: cambiar, _restaurar: restaurar, _reglas: reglas, _herramientas: HERRAMIENTAS, _leerCodigo: leerCodigo, _mapa: mapa, _preguntarServidor: preguntarServidor,
   };
 })();
