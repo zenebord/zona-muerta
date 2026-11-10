@@ -153,6 +153,7 @@ Object.assign(Juego.prototype, {
   prepararUltra() {
     const j = this.jugador;
     j.carril = 1; j.direccion = 1; this.yTirador = ULTRA.carriles[1]; j.y = this.yTirador;
+    j.aTierra = true;   // en el ataque aéreo se tira cuerpo a tierra (no hay parapeto detrás del cual agacharse)
     // Una pistola con un cargador de repuesto, y el cuchillo
     j.inventario = ['cuchillo', ARMA_INICIAL];
     j.municion = { cuchillo: 1, [ARMA_INICIAL]: ARMAS[ARMA_INICIAL].cargador };
@@ -166,7 +167,7 @@ Object.assign(Juego.prototype, {
   // El tirador queda fijo en su columna: ↑ y ↓ cambian de carril; nada de caminar, saltar ni agacharse
   actualizarJugadorUltra(dt, e) {
     const j = this.jugador;
-    if (!j.muerto) {
+    if (!j.muerto && !j.protegido) {   // cuerpo a tierra no se cambia de carril
       if (e.saltarPulsado) this.cambiarCarril(-1);
       if (e.abajoPulsado) this.cambiarCarril(1);
     }
@@ -306,11 +307,69 @@ Object.assign(Juego.prototype, {
       const y = (c[k] + c[k + 1]) / 2 + 3;
       for (let x = x0 - desfase; x < ANCHO; x += 48) if (x + 26 > x0) ctx.fillRect(Math.max(x0, x), y, 26, 2);
     }
-    // El sector: zona sombreada detrás de la línea, y la línea con franjas de peligro
-    ctx.fillStyle = 'rgba(160, 30, 20, 0.12)'; ctx.fillRect(0, c[0] - 18, x0, c[c.length - 1] - c[0] + 30);
+    // El sector: campamento militar detrás de la línea, y la línea pintada en el piso con franjas de peligro
+    this.dibujarCampamentoUltra(ctx);
     for (let y = c[0] - 18; y < c[c.length - 1] + 12; y += 8) {
       ctx.fillStyle = Math.floor(y / 8) % 2 ? '#e2bf2f' : '#1a1a1a';
       ctx.fillRect(x0 - 3, y, 6, 8);
+    }
+  },
+  // Campamento: piso de tierra, carpa, mástil con bandera, antena de radio, cajas de munición bajo una red de
+  // camuflaje, tambores de combustible y una trinchera de bolsas de arena. En coordenadas de pantalla: la cámara
+  // de este modo no se mueve.
+  dibujarCampamentoUltra(ctx) {
+    const c = ULTRA.carriles, x0 = ULTRA.lineaX, t = this.tiempoJugado, abajo = c[c.length - 1] + 12;
+    // Piso de tierra apisonada con piedritas
+    const piso = ctx.createLinearGradient(0, c[0] - 20, 0, abajo + 20);
+    piso.addColorStop(0, 'rgba(126, 104, 72, 0.55)'); piso.addColorStop(1, 'rgba(84, 66, 44, 0.6)');
+    ctx.fillStyle = piso; ctx.fillRect(0, c[0] - 20, x0, abajo - c[0] + 40);
+    for (let k = 0; k < 40; k++) { ctx.fillStyle = k % 3 ? 'rgba(40,30,20,0.35)' : 'rgba(220,200,160,0.25)'; ctx.fillRect(azar(k, 801) * x0, c[0] - 16 + azar(k, 802) * (abajo - c[0] + 30), 2, 1.5); }
+    // Antena de radio con luz que parpadea
+    ctx.fillStyle = tinta('#3a3c40'); ctx.fillRect(8, 362, 2, 72);
+    trazo(ctx, 'rgba(60,60,60,0.6)', 0.6, [[9, 366], [0, 434]]); trazo(ctx, 'rgba(60,60,60,0.6)', 0.6, [[9, 366], [20, 434]]);
+    punto(ctx, 9, 361, 2, Math.floor(t * 1.5) % 2 ? '#ff3b2f' : '#5a1a14');
+    // Carpa militar al fondo: lado largo, punta con la entrada abierta, costuras y vientos
+    sombraElipse(ctx, 80, 433, 66, 6, 0.3);
+    ctx.fillStyle = tinta('#556b3a');
+    ctx.beginPath(); ctx.moveTo(20, 432); ctx.lineTo(32, 396); ctx.lineTo(118, 396); ctx.lineTo(130, 432); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = tinta('#647c46'); ctx.fillRect(32, 396, 86, 5);
+    ctx.fillStyle = tinta('#45582f');
+    ctx.beginPath(); ctx.moveTo(118, 396); ctx.lineTo(130, 432); ctx.lineTo(146, 432); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = tinta('#141410');
+    ctx.beginPath(); ctx.moveTo(124, 410); ctx.lineTo(130, 432); ctx.lineTo(141, 432); ctx.closePath(); ctx.fill();   // entrada
+    for (const x of [50, 75, 100]) trazo(ctx, 'rgba(30,40,20,0.5)', 0.8, [[x, 397], [x + (x - 75) * 0.12, 431]]);
+    trazo(ctx, 'rgba(220,210,180,0.45)', 0.6, [[32, 397], [10, 436]]); trazo(ctx, 'rgba(220,210,180,0.45)', 0.6, [[118, 397], [150, 437]]);
+    // Mástil con la bandera del campamento, que flamea
+    ctx.fillStyle = tinta('#9aa0a8'); ctx.fillRect(160, 350, 2.4, 84);
+    ctx.fillStyle = tinta('#2f4a2a');
+    ctx.beginPath(); ctx.moveTo(162.4, 352);
+    for (let k = 0; k <= 8; k++) ctx.lineTo(162.4 + k * 4, 352 + Math.sin(t * 5 + k * 0.8) * 2.2);
+    for (let k = 8; k >= 0; k--) ctx.lineTo(162.4 + k * 4, 372 + Math.sin(t * 5 + k * 0.8) * 2.2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = tinta('#e2bf2f');
+    ctx.beginPath(); ctx.moveTo(172, 357 + Math.sin(t * 5 + 2) * 2); ctx.lineTo(182, 362 + Math.sin(t * 5 + 4) * 2); ctx.lineTo(172, 367 + Math.sin(t * 5 + 2) * 2); ctx.closePath(); ctx.fill();
+    // Cajas de munición apiladas bajo una red de camuflaje
+    trazo(ctx, '#4a3c2a', 1.4, [[138, 454], [138, 426]]); trazo(ctx, '#4a3c2a', 1.4, [[198, 454], [198, 426]]);
+    for (const [x, y, w] of [[140, 450, 26], [168, 450, 24], [150, 436, 24]]) {
+      cubo(ctx, x, y, w, 14, 5, '#4a5532');
+      ctx.fillStyle = tinta('rgba(226,191,47,0.75)'); ctx.fillRect(x + 4, y + 5, w - 8, 1.5); ctx.fillRect(x + 4, y + 8, (w - 8) * 0.6, 1.2);
+    }
+    ctx.fillStyle = tinta('rgba(70, 84, 46, 0.82)');
+    ctx.beginPath(); ctx.moveTo(132, 428); ctx.quadraticCurveTo(168, 418, 204, 428); ctx.lineTo(200, 436); ctx.quadraticCurveTo(168, 430, 136, 437); ctx.closePath(); ctx.fill();
+    for (let k = 0; k < 9; k++) { ctx.fillStyle = tinta(k % 2 ? 'rgba(96,78,48,0.8)' : 'rgba(46,58,32,0.85)'); ctx.beginPath(); ctx.ellipse(138 + k * 7.5, 429 + (k % 3), 3.6, 2.2, 0.3, 0, Math.PI * 2); ctx.fill(); }
+    // Tambores de combustible
+    for (const x of [30, 46]) cilindro(ctx, x, 476, 7, 19, '#3f4a2e');
+    ctx.fillStyle = tinta('rgba(0,0,0,0.3)'); ctx.fillRect(23, 463, 30, 1.5); ctx.fillRect(23, 470, 30, 1.5);
+    // Parapeto de bolsas de arena: tres filas trabadas, cada bolsa con su costura y las puntas atadas
+    sombraElipse(ctx, 118, 506, 52, 5, 0.3);
+    for (let fila = 0; fila < 3; fila++) for (let k = 0; k < 6 - fila; k++) {
+      const x = 76 + k * 16 + fila * 8, y = 496 - fila * 8, color = ['#9d8558', '#a88f60', '#b39a69'][fila];
+      ctx.fillStyle = tinta(color);
+      ctx.beginPath(); ctx.moveTo(x - 8, y); ctx.quadraticCurveTo(x - 8.6, y - 4.6, x - 4, y - 4.8); ctx.lineTo(x + 4, y - 4.8);
+      ctx.quadraticCurveTo(x + 8.6, y - 4.6, x + 8, y); ctx.quadraticCurveTo(x + 8.6, y + 4.6, x + 4, y + 4.4); ctx.lineTo(x - 4, y + 4.4); ctx.quadraticCurveTo(x - 8.6, y + 4.6, x - 8, y); ctx.fill();
+      ctx.strokeStyle = tinta('rgba(60,46,28,0.65)'); ctx.lineWidth = 0.8; ctx.stroke();
+      trazo(ctx, 'rgba(60,46,28,0.4)', 0.5, [[x - 5, y - 0.6], [x + 5, y - 0.6]]);           // costura
+      trazo(ctx, 'rgba(255,240,200,0.25)', 0.8, [[x - 4, y - 3.6], [x + 4, y - 3.6]]);        // luz de arriba
     }
   },
   dibujarEntidadesUltra(ctx, cam) {

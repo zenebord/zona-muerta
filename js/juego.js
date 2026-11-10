@@ -514,7 +514,7 @@ class Juego {
     const j = this.jugador, e = this.entrada;
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e); else j.actualizar(dt, e, this);
-    if (!j.muerto && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);
+    if (!j.muerto && !(j.aTierra && j.protegido) && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);   // cuerpo a tierra no dispara
     e.dispararPulsado = false;
 
     this.prepararMontanas();

@@ -97,12 +97,20 @@ Jugador.prototype.dibujar = function (ctx, camaraX, ahora) {
     ctx.restore();
     return;
   }
+  if (this.aTierra && this.cubierto > 0.3) {   // cuerpo a tierra: sombra chata debajo, no proyectada
+    sombraElipse(ctx, sx, this.y + 1, 44, 5, 0.35);
+    ctx.save(); ctx.translate(sx, this.y); cuerpo(); ctx.restore();
+    return;
+  }
   conSombra(ctx, sx, this.y, cuerpo, 0.32, alturaSuelo(this.x));
 };
 
 Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   ctx.scale(this.direccion, 1);
-  if (this.cubierto > 0.01) { ctx.beginPath(); ctx.rect(-80, -200, 160, 200); ctx.clip(); ctx.translate(0, this.cubierto * 26); }
+  // Con parapeto (defensa zombie) baja detrás de las bolsas; sin parapeto (defensa ultra) se tira cuerpo a tierra:
+  // el cuerpo gira hasta quedar boca abajo, con la cabeza hacia adelante y el pecho en el piso
+  if (this.aTierra && this.cubierto > 0.01) { const p = this.cubierto; ctx.translate(-36 * p, -9 * p); ctx.rotate(p * Math.PI / 2); }
+  else if (this.cubierto > 0.01) { ctx.beginPath(); ctx.rect(-80, -200, 160, 200); ctx.clip(); ctx.translate(0, this.cubierto * 26); }
   // Agachado: todo el cuerpo baja y las piernas se doblan para que las botas sigan en el piso
   const ag = this.montada ? 0 : this.agachado;
   if (ag > 0) ctx.translate(0, ag * BAJA_AGACHADO);
@@ -161,6 +169,14 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta); ctx.translate(0, 62 - ty);
   dibujarCabeza(ctx, S, C, ty, e);
   ctx.restore();
+
+  // Cuerpo a tierra: suelta el arma y se tapa la cabeza con las dos manos
+  if (tapa && !this.montada) {
+    manoConGuante(ctx, gatillo.x, gatillo.y, Clejos);
+    brazoDetallado(ctx, 4, -52 + ty, 6, -81 + ty, C);
+    manoConGuante(ctx, 6, -81 + ty, C);
+    return;
+  }
 
   if (this.montada) {
     // Mano del gatillo fija en las empuñaduras (su brazo va detrás del torso); el brazo izquierdo sigue la recarga de la cinta

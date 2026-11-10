@@ -53,6 +53,9 @@ y entrá a <http://127.0.0.1:8791/>.
   carril. Durante las olas, y siempre al terminar una, cae una **caja en paracaídas** con un arma o munición en otro
   carril de su columna: hay que ir a buscarla antes de que desaparezca (13 s). El ataque aéreo se recarga cada 25 s.
   **Si pasan más de 5 zombies, se pierde**; el récord de olas se guarda por dificultad.
+  Detrás de la línea hay un campamento militar (carpa, bandera, antena, cajas bajo red de camuflaje, tambores y
+  parapeto de bolsas de arena). Durante el ataque aéreo el tirador se tira cuerpo a tierra con las manos en la
+  cabeza: no dispara ni cambia de carril hasta que termina.
 - **Defensa zombie** (antes «Torreta»): fijo en una M2 Browning sobre un parapeto de bolsas de arena, en medio de la calle. Los zombies
   llegan en olas por los dos lados y cada ola es peor: más zombies, más rápidos, más corredores y, desde la
   cuarta, más resistentes (ya no caen de un tiro). Las flechas giran la ametralladora (el tirador rodea el
