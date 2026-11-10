@@ -15,6 +15,7 @@ Object.assign(Juego.prototype, {
       .filter(z => z.estado !== 'muerto')
       .map(z => ({ z, d: (z.x - j.x) * j.direccion }))
       .filter(o => (ambosLados ? Math.abs(o.d) : o.d) < alcance + o.z.ancho / 2 && o.d > (ambosLados ? -alcance : -12) && Math.abs((o.z.y - o.z.altura) - j.y) < 75)
+      .filter(o => j.carril === undefined || o.z.carril === j.carril)   // defensa ultra: sólo su carril
       .sort((a, b) => Math.abs(a.d) - Math.abs(b.d))
       .slice(0, cuantos)
       .map(o => o.z);

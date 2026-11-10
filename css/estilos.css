@@ -281,6 +281,14 @@ kbd {
 .boton-tactil.apretado { background: rgba(201,169,110,.6); color: var(--noche); transform: scale(.94); }
 .boton-tactil.fuego.apretado { background: rgba(229,57,53,.75); color: var(--texto); }
 .tactil:not(.en-pruebas) .solo-pruebas { display: none; }
+/* Defensa ultra: ▲ ▼ cambian de carril donde estaba la barra de caminar; sin caminar, saltar ni agacharse */
+.solo-ultra { display: none; }
+.tactil.en-ultra .solo-ultra { display: flex; }
+.tactil.en-ultra .pad-mover, .tactil.en-ultra .boton-tactil.saltar, .tactil.en-ultra .extras-tactiles .boton-tactil[data-tecla="ArrowDown"] { display: none; }
+.carriles-tactiles { position: absolute; left: var(--izq); bottom: var(--abajo); flex-direction: column; gap: 10px; pointer-events: none; }
+.carriles-tactiles .boton-tactil.carril { position: relative; width: var(--b); height: calc(var(--b) * 0.78); border-radius: 18px; font-size: calc(var(--b) * 0.34); }
+.tactil.en-ultra .armas-tactiles { left: calc(var(--izq) + var(--b) + 12px); bottom: var(--abajo); flex-direction: column; width: auto; }
+.tactil.en-ultra .extras-tactiles { left: calc(var(--izq) + var(--b) * 2 + 40px); }
 .tactil.en-torreta .armas-tactiles, .tactil.en-torreta .boton-tactil[data-tecla="ArrowDown"], .tactil.en-torreta .boton-tactil.saltar { display: none; }   /* defensa zombie: fijo en la M2, sin cambiar de arma, bajarse ni saltar */
 .tactil #lienzo { touch-action: none; }
 .tactil .capa { touch-action: pan-y; }   /* las ventanas (pausa, menú de armas) se desplazan con el dedo */
@@ -576,6 +584,29 @@ kbd {
 .boton.resaltado { background: var(--arena); color: var(--noche); }
 .panel-asistente button:disabled { opacity: .4; cursor: default; pointer-events: none; }
 .asist-codigo { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--texto); user-select: text; background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 6px 8px; }
+.boton.grande.ultra { border-color: #ff6b3c; }
+/* Tienda de la defensa ultra */
+.hud-mision .dinero { color: #8fe07a; }
+.tienda-dinero { margin: -4px 0 4px; font-size: 26px; font-weight: 900; color: #8fe07a; letter-spacing: .08em; }
+.tienda-contenido { width: min(860px, 94vw); max-height: 62vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.tienda-contenido h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .25em; color: var(--arena); border-bottom: 1px solid rgba(201,169,110,.3); padding-bottom: 4px; }
+.tienda-fila { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.tienda-item { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; text-align: left; cursor: pointer;
+  font: inherit; color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.45); }
+.tienda-item .nombre { font-weight: 700; font-size: 14px; }
+.tienda-item .detalle { font-size: 11px; opacity: .7; }
+.tienda-item .precio { font-weight: 900; color: #8fe07a; font-size: 14px; }
+.tienda-item .candado { position: absolute; right: 8px; top: 8px; font-size: 12px; }
+.tienda-item:hover:not([disabled]), .tienda-item:focus-visible { border-color: #8fe07a; background: rgba(40,60,30,.6); outline: none; }
+.tienda-item[disabled] { cursor: default; opacity: .45; }
+.tienda-item.caro .precio { color: #ff8a65; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #tienda-ultra { gap: 6px; padding: 8px 12px; }
+  #tienda-ultra h2 { font-size: 20px; letter-spacing: .2em; margin: 0; }
+  .tienda-dinero { font-size: 18px; margin: 0; }
+  .tienda-contenido { max-height: calc(100vh - 110px); }
+  .tienda-item { padding: 6px 8px; } .tienda-item .nombre { font-size: 12px; }
+}
 [hidden] { display: none !important; }
 
 /* ---- Teléfono apaisado (pantalla baja): controles más chicos y transparentes, HUD que no se pisa ---- */

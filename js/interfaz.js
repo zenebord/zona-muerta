@@ -58,7 +58,7 @@
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
-    juego.aviso(opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
+    juego.aviso(opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : juego.cloaca ? 'cloaca' : 'ciudad');
     ultimo = performance.now();
@@ -88,6 +88,15 @@
     const resumen = t('fin.resumen', { ronda: juego.ronda, dificultad: dif, bajas: juego.bajas, tiempo, armas: juego.jugador.inventario.length });
     if (juego.resultado === 'mision-cumplida') { titulo.textContent = t('fin.cumplida'); titulo.style.color = '#4caf50'; detalle.textContent = `${misionActual.nombre}: ${misionActual.descripcion} ${resumen}`; }
     else if (juego.resultado === 'mision-fallida') { titulo.textContent = t('fin.tiempo'); titulo.style.color = '#ff8a65'; detalle.textContent = t('fin.fallida', { mision: misionActual.nombre, resumen }); }
+    else if (juego.ultra) {
+      // Récord de olas de la defensa ultra, por dificultad
+      const clave = 'zonaMuerta.recordUltra.' + juego.dificultad.id;
+      let record = 0; try { record = parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch { /* sin almacenamiento */ }
+      const nuevo = juego.ronda > record;
+      if (nuevo) { try { localStorage.setItem(clave, String(juego.ronda)); } catch { /* ídem */ } }
+      titulo.textContent = juego.resultado === 'invadido' ? t('fin.invadido') : t('fin.ola', { ola: juego.ronda }); titulo.style.color = '';
+      detalle.textContent = t('fin.ultra', { olas: Math.max(0, juego.ronda - 1), dificultad: dif, bajas: juego.bajas, dinero: juego.dinero, torretas: juego.torretas.length, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
+    }
     else if (juego.torreta) {
       // Récord de olas por dificultad, guardado en este navegador
       const clave = 'zonaMuerta.recordTorreta.' + juego.dificultad.id;
@@ -300,6 +309,7 @@
       case 'mapa-cloaca': iniciar(null, { mapa: 'cloaca' }); break;
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
+      case 'ultra':     iniciar(null, { ultra: true }); break;
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;
@@ -344,6 +354,7 @@
     if (personajesAbierto) { if (e.code === 'Escape') cerrarPersonajes(); return; }
     if (TECLAS_BLOQUEADAS.has(e.code)) e.preventDefault();
     if (!juego) return;
+    if (juego.enTienda) { if ((e.code === 'Escape' || e.code === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
     if ((juego.pruebas || juego.entrenamiento) && e.code === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
     if (menuPruebasAbierto) {
       if (armaEnDetalle) {   // en la ficha: Esc vuelve a la lista, Enter la usa
@@ -363,10 +374,12 @@
       case 'ArrowRight': en.derecha = true; break;
       case 'ArrowLeft':  en.izquierda = true; break;
       case 'ArrowUp':    if (!e.repeat) en.saltarPulsado = true; break;
-      case 'ArrowDown':  en.abajo = true; if (!e.repeat) juego.alternarMontar(); break;   // mantenida: agacharse; junto a una M2: montarla
+      case 'ArrowDown':  en.abajo = true; if (!e.repeat) { en.abajoPulsado = true; juego.alternarMontar(); } break;   // mantenida: agacharse; junto a una M2: montarla
       case 'KeyF':       en.disparar = true; if (!e.repeat) en.dispararPulsado = true; break;
       case 'KeyS':       if (!e.repeat) j.recargar(juego); break;
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
+      case 'KeyT':       if (!e.repeat && juego.ultra) juego.comprarTorreta(); break;
+      case 'KeyB':       if (!e.repeat && juego.ultra) juego.alternarTienda(); break;
       case 'KeyQ': case 'KeyG': if (!e.repeat) { j.cambiarArma(-1); mostrarSelectorArmas(); } break;
       case 'KeyE': case 'KeyH': if (!e.repeat) { j.cambiarArma(1); mostrarSelectorArmas(); } break;
       default:

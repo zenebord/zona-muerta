@@ -89,5 +89,6 @@
     const j = window.ZonaMuerta && ZonaMuerta.juego();
     cuerpo.classList.toggle('en-pruebas', !!(j && (j.pruebas || j.entrenamiento)));
     cuerpo.classList.toggle('en-torreta', !!(j && j.torreta));   // fijo en la M2: no se cambia de arma ni se baja
+    cuerpo.classList.toggle('en-ultra', !!(j && j.ultra));       // defensa ultra: carriles y torretas en vez de caminar
   }, 500);
 })();

@@ -95,7 +95,7 @@ const Escenario = {
         ctx.fillStyle = g; ctx.fillRect(sx, fondo, paso, frente - fondo);
         // Líneas laterales blancas gastadas y la doble amarilla del centro, cortada
         ctx.fillStyle = 'rgba(230, 225, 210, 0.35)'; ctx.fillRect(sx, fondo + 6, paso, 2); ctx.fillRect(sx, frente - 10, paso, 3);
-        if (Math.floor(wx / 48) % 2 === 0) { ctx.fillStyle = '#b8932e'; ctx.fillRect(sx, y + 18, paso, 3); ctx.fillRect(sx, y + 24, paso, 3); }
+        if (!Mundo.carriles && Math.floor(wx / 48) % 2 === 0) { ctx.fillStyle = '#b8932e'; ctx.fillRect(sx, y + 18, paso, 3); ctx.fillRect(sx, y + 24, paso, 3); }
         if (azar(Math.floor(wx / 16), 99) < 0.14) {   // grietas: trazos finos en zigzag
           const gy = fondo + 12 + azar(wx, 98) * 120;
           ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)'; ctx.lineWidth = 1.2;

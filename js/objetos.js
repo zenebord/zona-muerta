@@ -45,6 +45,7 @@ class Proyectil {
     const cruces = [];
     for (const z of juego.zombies) {
       if (z.estado === 'muerto' || this.golpeados.has(z)) continue;
+      if (this.carril !== undefined && z.carril !== this.carril) continue;   // defensa ultra: sólo su carril
       const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, z.caja());
       if (t !== null) cruces.push([t, z]);
     }
@@ -70,7 +71,7 @@ class Proyectil {
     }
 
     // Granadas y lanzagranadas: tocan el piso
-    const piso = alturaSuelo(this.x);
+    const piso = this.pisoY ?? alturaSuelo(this.x);   // en un carril, el piso es el del carril
     if (this.arma.explosivo && this.y >= piso - 3) {
       if (this.arma.mecha) {         // granada de mano: rebota y rueda
         this.y = piso - 3; this.vy = -Math.abs(this.vy) * 0.35; this.vx *= 0.6; this.rebotes++;

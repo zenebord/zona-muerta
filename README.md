@@ -44,6 +44,15 @@ y entrá a <http://127.0.0.1:8791/>.
     barra se pone verde. En la cloaca no hay montañas, así que no hay M2 ni cajas especiales.
 - **Misiones**: 17 misiones que se juegan dentro de la pelea infinita (matar zombies, conseguir
   armas, sobrevivir, y varias contrarreloj). El progreso queda guardado en el navegador.
+- **Defensa zombie ultra** (`js/defensa-ultra.js`): el tirador defiende su sector, a la izquierda, y los zombies llegan
+  desde la derecha por **4 carriles**; con ↑ y ↓ (o ▲ ▼ en el celular) cambia de carril. Las balas y el cuchillo sólo
+  pegan en el carril propio. Arranca con una Glock y un cargador de repuesto; sin balas pasa a otra arma con munición o
+  al **cuchillo**. Cada zombie muerto paga **dinero** ($10, $15 los corredores, +$2 por ola), que se gasta en la
+  **tienda** (B o TIENDA, pausa la partida): armas que se habilitan cada dos olas, munición para las que tiene y hasta 4
+  **torretas automáticas** (una por carril, $300 / $500 / $800 / $1200; T compra una directo) que disparan solas en su
+  carril. Durante las olas, y siempre al terminar una, cae una **caja en paracaídas** con un arma o munición en otro
+  carril de su columna: hay que ir a buscarla antes de que desaparezca (13 s). El ataque aéreo se recarga cada 25 s.
+  **Si pasan más de 5 zombies, se pierde**; el récord de olas se guarda por dificultad.
 - **Defensa zombie** (antes «Torreta»): fijo en una M2 Browning sobre un parapeto de bolsas de arena, en medio de la calle. Los zombies
   llegan en olas por los dos lados y cada ola es peor: más zombies, más rápidos, más corredores y, desde la
   cuarta, más resistentes (ya no caen de un tiro). Las flechas giran la ametralladora (el tirador rodea el

@@ -124,7 +124,7 @@ Object.assign(Escenario, {
   dibujarFondoDelMundo(ctx, camaraX, tiempo) {
     const desde = indiceTrozo(camaraX) - 1, hasta = indiceTrozo(camaraX + ANCHO) + 1;
     for (let i = desde; i <= hasta; i++) {
-      for (const c of chatarraDeTrozo(i)) this.dibujarChatarra(ctx, c, c.x - camaraX, tiempo);
+      if (!Mundo.carriles) for (const c of chatarraDeTrozo(i)) this.dibujarChatarra(ctx, c, c.x - camaraX, tiempo);   // con carriles, la calle libre
       for (const f of farolasDeTrozo(i)) this.dibujarFarola(ctx, f, f.x - camaraX, tiempo);
     }
   },

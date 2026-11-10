@@ -30,6 +30,7 @@
       <button class="boton grande" data-accion="infinita" data-t="menu.infinita">PELEA INFINITA</button>
       <button class="boton grande" data-accion="misiones" data-t="menu.misiones">MISIONES</button>
       <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
+      <button class="boton grande ultra" data-accion="ultra" data-t="menu.ultra">DEFENSA ZOMBIE ULTRA</button>
       <button class="boton grande" data-accion="entrenamiento" data-t="menu.entrenamiento">ENTRENAMIENTO</button>
       <button class="boton chico" data-accion="pruebas" data-t="menu.pruebas">CAMPO DE PRUEBAS</button>
       <button class="boton chico" data-accion="controles" data-t="menu.controles">CONTROLES</button>
@@ -82,6 +83,7 @@
       <tr><td><kbd>↓</kbd></td><td data-t="controles.abajo"></td></tr>
       <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
       <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
+      <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
       <tr><td><kbd>F</kbd></td><td data-t="controles.disparar"></td></tr>
       <tr><td><kbd>S</kbd></td><td data-t="controles.recargar"></td></tr>
       <tr><td><kbd>Q</kbd> / <kbd>E</kbd> · <kbd>G</kbd> / <kbd>H</kbd></td><td data-t="controles.cambiar"></td></tr>
@@ -124,6 +126,11 @@
       <button class="boton-tactil fuego" data-tecla="KeyF" data-t="tactil.fuego">FUEGO</button>
       <button class="boton-tactil saltar" data-tecla="ArrowUp" data-t-aria="tactil.saltar">▲<small data-t="tactil.salto">SALTO</small></button>
       <button class="boton-tactil recargar" data-tecla="KeyS" data-t="tactil.recargar">RECARGAR</button>
+      <!-- Defensa ultra: cambiar de carril (en lugar de caminar) -->
+      <div class="carriles-tactiles solo-ultra">
+        <button class="boton-tactil carril" data-tecla="ArrowUp" data-t-aria="tactil.carrilArriba" aria-label="Carril de arriba">▲</button>
+        <button class="boton-tactil carril" data-tecla="ArrowDown" data-t-aria="tactil.carrilAbajo" aria-label="Carril de abajo">▼</button>
+      </div>
       <div class="armas-tactiles">
         <button class="boton-tactil pildora" data-tecla="KeyG" data-t-aria="tactil.armaAnt.aria" data-t="tactil.armaAnt">◀ ARMA</button>
         <button class="boton-tactil pildora" data-tecla="KeyH" data-t-aria="tactil.armaSig.aria" data-t="tactil.armaSig">ARMA ▶</button>
@@ -131,6 +138,7 @@
       <div class="extras-tactiles">
         <button class="boton-tactil pildora" data-tecla="ArrowDown" data-t-aria="tactil.abajo.aria" data-t="tactil.abajo">▼ ABAJO</button>
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
+        <button class="boton-tactil pildora solo-ultra" data-tecla="KeyB" data-t="tactil.tienda">TIENDA</button>
         <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
       </div>
     </div>
@@ -148,6 +156,13 @@
       <button class="boton chico" data-accion="reanudar" data-t="pausa.seguir">SEGUIR</button>
       <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
       <button class="boton chico" data-accion="al-menu" data-t="pausa.salir">SALIR AL MENÚ</button>
+    </div>
+    <!-- Tienda de la defensa ultra: armas, munición y torretas con el dinero de los zombies (pausa la partida) -->
+    <div id="tienda-ultra" class="capa oculta" role="dialog" aria-labelledby="tienda-titulo">
+      <h2 id="tienda-titulo" data-t="tienda.titulo">TIENDA</h2>
+      <p id="tienda-dinero" class="tienda-dinero"></p>
+      <div id="tienda-contenido" class="tienda-contenido"></div>
+      <button class="boton chico" type="button" data-comprar="cerrar" data-t="tienda.seguir">SEGUIR</button>
     </div>
     <div id="menu-pruebas" class="capa oculta">
       <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
@@ -338,6 +353,7 @@
   <script src="js/objetos.js"></script>
   <script src="js/juego.js"></script>
   <script src="js/poderes.js"></script>
+  <script src="js/defensa-ultra.js"></script>
   <script src="js/rama.js"></script>
   <script src="js/asistente.js"></script>
   <script src="js/interfaz.js"></script>

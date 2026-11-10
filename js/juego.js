@@ -6,10 +6,12 @@ class Juego {
     this.pruebas = !!opciones.pruebas;    // campo de pruebas: planicie, sin rondas, todas las armas
     this.torreta = !!opciones.torreta;    // torreta: fijo en una M2, olas por los dos lados, cada una peor
     this.entrenamiento = !!opciones.entrenamiento;   // entrenamiento: polígono de tiro con blancos en movimiento
+    this.ultra = !!opciones.ultra;        // defensa ultra: 4 carriles, el sector a la izquierda (js/defensa-ultra.js)
     // Mapa de la pelea infinita: la ciudad en ruinas o la cloaca (canal subterráneo con zombies tóxicos)
-    this.mapa = opciones.mapa === 'cloaca' && !this.pruebas && !this.torreta && !this.entrenamiento && !mision ? 'cloaca' : 'ciudad';
+    this.mapa = opciones.mapa === 'cloaca' && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !mision ? 'cloaca' : 'ciudad';
     this.cloaca = this.mapa === 'cloaca';
-    Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca;
+    Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra;
+    Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
     Mundo.interior = this.entrenamiento || this.cloaca;   // el polígono y la cloaca son lugares cerrados
     Audio_.lugar(this.entrenamiento ? 'galpon' : this.cloaca ? 'cloaca' : 'aire');
     this.mision = mision ? new SeguimientoMision(mision) : null;
@@ -37,12 +39,14 @@ class Juego {
       ronda: document.getElementById('hud-ronda'), dificultad: document.getElementById('hud-dificultad'),
       aviso: document.getElementById('aviso'), avisoRonda: document.getElementById('aviso-ronda'),
     };
-    document.getElementById('hud-aereo').classList.toggle('oculta', !this.torreta);   // el ataque aéreo es solo del modo torreta
+    document.getElementById('hud-aereo').classList.toggle('oculta', !(this.torreta || this.ultra));   // el ataque aéreo es de las defensas
     this.textoModo = '';   // lo pone actualizarHud (cambia si se cambia el idioma en plena partida)
-    if (this.torreta) {
+    if (this.torreta || this.ultra) {
       this.aereo = { listoEn: 0, activo: null, recarga: 20 };   // se puede pedir desde el arranque
       this.misiles = []; this.aviones = [];
       this.hud.aereo = document.getElementById('hud-aereo');
+    }
+    if (this.torreta) {
       const m2 = new AmetralladoraFija(this.jugador.x);
       this.ametralladoras.set('torreta', m2);
       this.jugador.montar(m2);
@@ -59,6 +63,7 @@ class Juego {
       this.ent = { serie: 1, porSerie: 15, aparecidos: 0, proximo: 0, entreSeries: 2.2, puntos: 0, disparos: 0, aciertos: 0, racha: 0, mejorRacha: 0,
         reacciones: [], record, serieActual: null, disparosAcertados: new Set(), alturaTiro: {} };
     }
+    if (this.ultra) this.prepararUltra();
     if (this.pruebas || this.entrenamiento) {
       for (const id of ORDEN_INVENTARIO) this.jugador.recoger(id);
       for (const id of ARMAS_ESPECIALES) this.jugador.reserva[id] = 999;
@@ -178,7 +183,11 @@ class Juego {
       const tam = { pistola: 6, metralleta: 6.5, rifle: 9, escopeta: 10, ametralladora: 10, lanzagranadas: 8, laser: 6 }[arma.categoria] || 6;
       this.explosiones.push(new Fogonazo(x, y, direccion, tam * (0.85 + Math.random() * 0.3), arma.categoria === 'laser' ? 'laser' : 'fuego'));
     }
-    for (let k = antes; k < this.proyectiles.length; k++) { this.proyectiles[k].desdeX = this.jugador.x; this.proyectiles[k].disparoId = this.disparoId; }   // barrido desde el cuerpo
+    for (let k = antes; k < this.proyectiles.length; k++) {
+      const p = this.proyectiles[k];
+      p.desdeX = this.jugador.x; p.disparoId = this.disparoId;   // barrido desde el cuerpo
+      if (this.ultra) { p.carril = this.jugador.carril; p.pisoY = this.jugador.y; }   // la bala va por su carril
+    }
     // El casquillo sale por la ventana de expulsión, vuela, rebota y se esfuma
     if (casquillo) this.casquillos.push(new Casquillo(casquillo.x, casquillo.y, direccion, casquillo.tipo));
   }
@@ -204,12 +213,13 @@ class Juego {
 
   alMorirZombie(zombie, arma) {
     this.bajas++;
+    if (this.ultra) this.cobrarZombieUltra(zombie);
     if (this.mision) this.mision.alMatar(arma);
   }
 
   alternarMontar() {
     const j = this.jugador;
-    if (j.muerto || this.torreta) return;
+    if (j.muerto || this.torreta || this.ultra) return;
     if (j.montada) { j.desmontar(); this.aviso(t('aviso.bajaste'), 1200); return; }
     for (const a of this.ametralladoras.values()) {
       if (a.cercaDe(j)) { j.montar(a); this.aviso(t('aviso.m2Montada'), 2200); return; }
@@ -240,10 +250,10 @@ class Juego {
 
   iniciarRonda() {
     this.ronda++;
-    this.porAparecer = this.torreta ? this.zombiesDeOla(this.ronda) : Dificultad.zombiesDeRonda(this.dificultad, this.ronda);
+    this.porAparecer = this.torreta || this.ultra ? this.zombiesDeOla(this.ronda) : Dificultad.zombiesDeRonda(this.dificultad, this.ronda);
     this.enDescanso = false;
     this.proximoZombie = 0.5;
-    if (this.torreta) {
+    if (this.torreta || this.ultra) {
       const novedades = [this.ronda >= 2 ? t('ronda.rapidos') : '', this.ronda >= 3 ? t('ronda.corredores') : '', this.ronda >= 4 ? t('ronda.resistentes') : ''].filter(Boolean);
       this.avisoRonda(`${t('ronda.ola')} ${this.ronda}`, t('ronda.olaZombies', { n: this.porAparecer }) + (novedades.length ? ' · ' + novedades.join(', ') : ''));
     } else this.avisoRonda(`${t('ronda.ronda')} ${this.ronda}`, t('ronda.zombies', { n: this.porAparecer }) + (this.cloaca && this.ronda === 1 ? t('ronda.toxicos') : ''));
@@ -256,7 +266,8 @@ class Juego {
     const j = this.jugador;
     if (!j.muerto && j.vida < j.vidaMax) j.vida = Math.min(j.vidaMax, j.vida + 20);
     Audio_.rondaSuperada();
-    if (this.torreta) this.avisoRonda(t('ronda.olaSuperada'), t('ronda.olaLlega', { n: this.ronda + 1, s: this.dificultad.descanso }));
+    if (this.ultra) this.soltarCajaUltra(true);   // al terminar cada ola, siempre cae un arma
+    if (this.torreta || this.ultra) this.avisoRonda(t('ronda.olaSuperada'), t('ronda.olaLlega', { n: this.ronda + 1, s: this.dificultad.descanso }));
     else this.avisoRonda(t('ronda.superada'), t('ronda.llega', { n: this.ronda + 1, s: this.dificultad.descanso }));
   }
 
@@ -264,7 +275,7 @@ class Juego {
    * Siete misiles repartidos por la pantalla (ninguno sobre el parapeto); al terminar no queda ningún zombie a la vista.
    * Mientras dura, el tirador se agacha detrás de las bolsas de arena y no recibe daño. */
   pedirAtaqueAereo() {
-    if (!this.torreta || this.terminado || this.jugador.muerto) return;
+    if (!this.aereo || this.terminado || this.jugador.muerto) return;
     const a = this.aereo;
     if (a.activo) return;
     if (this.tiempoJugado < a.listoEn) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
@@ -457,7 +468,8 @@ class Juego {
   aparecerZombies(dt) {
     const d = this.dificultad;
     if (this.pruebas || this.entrenamiento) return;
-    if (this.torreta && this.aereo.activo) return;   // mientras caen los misiles no entra nadie: la pantalla queda limpia
+    if (this.aereo && this.aereo.activo) return;   // mientras caen los misiles no entra nadie: la pantalla queda limpia
+    if (this.ultra && !this.enDescanso && this.porAparecer > 0) return this.aparecerOlaUltra(dt);
     if (this.torreta && !this.enDescanso && this.porAparecer > 0) return this.aparecerOla(dt);
     if (this.enDescanso) { if (this.tiempoJugado >= this.descansoHasta) this.iniciarRonda(); return; }
     if (this.porAparecer <= 0) { if (this.zombiesVivos() === 0) this.terminarRonda(); return; }
@@ -477,6 +489,7 @@ class Juego {
   }
 
   aparecerCajas(dt) {
+    if (this.ultra) return this.cajasUltra(dt);
     if (this.pruebas || this.torreta || this.entrenamiento) return;
     this.proximaCaja -= dt;
     if (this.proximaCaja > 0) return;
@@ -492,11 +505,12 @@ class Juego {
 
   /* ---------- Actualización por cuadro ---------- */
   actualizar(dt) {
+    if (this.enTienda) { this.actualizarHud(); return; }   // defensa ultra: con la tienda abierta, todo queda quieto
     this.ahora += dt * 1000;
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
 
-    j.actualizar(dt, e, this);
+    if (this.ultra) this.actualizarJugadorUltra(dt, e); else j.actualizar(dt, e, this);
     if (!j.muerto && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);
     e.dispararPulsado = false;
 
@@ -509,14 +523,16 @@ class Juego {
     for (const x of this.explosiones) x.actualizar(dt);
     for (const p of this.particulas) p.actualizar(dt);
     for (const c of this.casquillos) c.actualizar(dt);
-    if (this.torreta) this.actualizarAereo(dt);
+    if (this.aereo) this.actualizarAereo(dt);
+    if (this.ultra) for (const tt of this.torretas) tt.actualizar(dt, this);
     if (this.entrenamiento) this.actualizarEntrenamiento(dt);
     for (const e2 of this.escupitajos) e2.actualizar(dt, this);
     for (const c of this.charcos) c.actualizar(dt, this);
     if (this.cloaca && this.ahora >= this.proximaGota) { Audio_.gota(Math.random()); this.proximaGota = this.ahora + 400 + Math.random() * 1800; }
     for (const c of this.cajas) {
       c.actualizar(dt);
-      if (!j.muerto && c.tocaA(j)) {
+      if (!j.muerto && c.tocaA(j) && c.alRecoger) { c.alRecoger(this); c.vivo = false; }
+      else if (!j.muerto && c.tocaA(j)) {
         const nueva = j.recoger(c.armaId), a = ARMAS[c.armaId];
         this.aviso(t(nueva ? 'aviso.nueva' : 'aviso.municion') + a.nombre.toUpperCase(), 1800);
         Audio_.recoger();
@@ -538,7 +554,7 @@ class Juego {
     this.escupitajos = this.escupitajos.filter(e2 => e2.vivo);
     this.charcos = this.charcos.filter(c => c.vivo);
 
-    const objetivo = this.torreta || this.entrenamiento ? j.x - ANCHO / 2 : j.x - ANCHO / 2 + j.direccion * 110;   // centrada: se ven los dos lados
+    const objetivo = this.ultra ? j.x - ULTRA.tiradorX : this.torreta || this.entrenamiento ? j.x - ANCHO / 2 : j.x - ANCHO / 2 + j.direccion * 110;   // centrada: se ven los dos lados
     this.camaraX += (objetivo - this.camaraX) * Math.min(1, dt * 4);
     this.sacudida = Math.max(0, this.sacudida - dt * 40);
     this.destello = Math.max(0, (this.destello || 0) - dt);
@@ -570,11 +586,11 @@ class Juego {
     document.body.classList.toggle('envenenado', j.veneno > 0);
     const reserva = j.montada ? '∞' : (j.reserva[arma.id] === undefined ? '∞' : j.reserva[arma.id]);
     const mun = j.municionActual();
-    const vidaActual = this.torreta ? Math.round(this.dificultad.vidaZombie * this.ajustesDeOla(Math.max(1, this.ronda)).vida) : this.dificultad.vidaZombie;
+    const vidaActual = this.torreta || this.ultra ? Math.round(this.dificultad.vidaZombie * this.ajustesDeOla(Math.max(1, this.ronda)).vida) : this.dificultad.vidaZombie;
     const tiros = disparosParaMatar(arma, vidaActual);
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
-    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : '') + this.dificultad.nombre.toUpperCase();
+    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : '') + this.dificultad.nombre.toUpperCase();
     if (modo !== this.textoModo) { this.textoModo = modo; h.dificultad.textContent = modo; }
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +
@@ -583,13 +599,14 @@ class Juego {
       `<span class="municion ${mun <= 0 ? 'vacio' : ''}">${mun}</span> / ${reserva} ${estado}` +
       (j.montada ? '' : `<br><small>${t('hud.armas', { n: j.inventario.length })} · ${t(document.body.classList.contains('tactil') ? 'hud.cambiaTactil' : 'hud.cambiaTeclado')}</small>`);
     h.bajas.textContent = '☠ ' + this.bajas;
-    if (this.torreta) this.actualizarHudAereo();
+    if (this.aereo) this.actualizarHudAereo();
     h.tiempo.textContent = formatearTiempo(this.tiempoJugado);
-    const palabra = t(this.torreta ? 'ronda.ola' : 'ronda.ronda');
+    const palabra = t(this.torreta || this.ultra ? 'ronda.ola' : 'ronda.ronda');
     if (this.pruebas) h.ronda.innerHTML = `${t('hud.pruebas')}<small>${t(document.body.classList.contains('tactil') ? 'hud.pruebasTactil' : 'hud.pruebasTeclado')}</small>`;
     else if (this.enDescanso) h.ronda.innerHTML = `${palabra} ${this.ronda + 1}<small>${t('hud.en', { s: Math.max(0, Math.ceil(this.descansoHasta - this.tiempoJugado)) })}</small>`;
     else h.ronda.innerHTML = `${palabra} ${this.ronda}<small>${t('hud.quedan', { n: this.porAparecer + this.zombiesVivos() })}</small>`;
-    if (this.mision) {
+    if (this.ultra) this.hudUltra();
+    else if (this.mision) {
       const m = this.mision, resto = m.tiempoRestante();
       h.mision.classList.add('activa');
       h.mision.innerHTML = `${m.mision.nombre} · <span class="progreso">${m.progresoTexto()}</span>` +
@@ -617,29 +634,33 @@ class Juego {
     else if (this.pruebas) Escenario.dibujarCampo(ctx, cam);
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);
-      if (this.torreta) for (const v of this.aviones) v.dibujar(ctx, cam);
+      if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam);
       Escenario.dibujarRuinas(ctx, cam, this.tiempoJugado);   // antes del suelo: las montañas las tapan
       Escenario.dibujarSuelo(ctx, cam);
       Escenario.dibujarFondoDelMundo(ctx, cam, this.tiempoJugado);
+      if (this.ultra) this.dibujarCarrilesUltra(ctx, cam);
     }
     if (this.entrenamiento) { this.dibujarDistancias(ctx, cam); for (const b of this.blancos) b.dibujar(ctx, cam); }
     if (j.montada) j.dibujar(ctx, cam, this.ahora);
     const eM2 = j.montada ? j.estadoArma() : null;
     for (const a of this.ametralladoras.values()) a.dibujar(ctx, cam, j.direccion, a.cercaDe(j), j.montada === a ? eM2.tapa : 0, j.montada === a ? eM2.retroX : 0, j.montada === a ? eM2.corredera : 0);
-    for (const c of this.cajas) c.dibujar(ctx, cam);
-    for (const c of this.charcos) c.dibujar(ctx, cam, this.tiempoJugado);
-    Pincel.bisel = this.zombies.length <= 25;   // con hordas grandes se aliviana el dibujo de los zombies
-    for (const z of this.zombies) z.dibujar(ctx, cam, this.ahora);
-    Pincel.bisel = true;
-    if (!j.montada) j.dibujar(ctx, cam, this.ahora);
+    if (this.ultra) this.dibujarEntidadesUltra(ctx, cam);   // cajas, torretas, zombies y tirador, del carril del fondo al de adelante
+    else {
+      for (const c of this.cajas) c.dibujar(ctx, cam);
+      for (const c of this.charcos) c.dibujar(ctx, cam, this.tiempoJugado);
+      Pincel.bisel = this.zombies.length <= 25;   // con hordas grandes se aliviana el dibujo de los zombies
+      for (const z of this.zombies) z.dibujar(ctx, cam, this.ahora);
+      Pincel.bisel = true;
+      if (!j.montada) j.dibujar(ctx, cam, this.ahora);
+    }
     for (const p of this.proyectiles) p.dibujar(ctx, cam);
     for (const e2 of this.escupitajos) e2.dibujar(ctx, cam);
     for (const c of this.casquillos) c.dibujar(ctx, cam);
-    if (this.torreta) { for (const m of this.misiles) m.dibujar(ctx, cam); }
+    if (this.misiles) { for (const m of this.misiles) m.dibujar(ctx, cam); }
     for (const x of this.explosiones) x.dibujar(ctx, cam);
     for (const p of this.particulas) p.dibujar(ctx, cam);
     if (this.cloaca) Escenario.dibujarCloacaFrente(ctx, cam, this.tiempoJugado);
-    else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); Escenario.dibujarFrente(ctx, cam); }
+    else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ALTO * 0.95);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, ANCHO, ALTO);
