@@ -189,6 +189,15 @@ Object.assign(Juego.prototype, {
     if (!j.muerto) j.direccion = 1;
     this.revisarMunicionUltra();
   },
+  // Puntería en el carril: la bala baja (o sube) hasta el pecho del zombie más cercano, sea grande o chiquito
+  apuntarUltra(p) {
+    const objetivo = this.zombies
+      .filter(z => z.carril === p.carril && z.estado !== 'muerto' && !z.paso && (z.x - p.x) * p.direccion > 10)
+      .sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
+    if (!objetivo) return 0;
+    const cuadros = Math.abs(objetivo.x - p.x) / Math.max(1, Math.abs(p.vx));
+    return Math.max(-3, Math.min(3, (objetivo.y - objetivo.altura - objetivo.alto * 0.55 - p.y) / cuadros));
+  },
   cambiarCarril(delta) {
     const j = this.jugador, nuevo = Math.max(0, Math.min(ULTRA.carriles.length - 1, j.carril + delta));
     if (nuevo !== j.carril) j.carril = nuevo;

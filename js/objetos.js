@@ -46,7 +46,9 @@ class Proyectil {
     for (const z of juego.zombies) {
       if (z.estado === 'muerto' || this.golpeados.has(z)) continue;
       if (this.carril !== undefined && z.carril !== this.carril) continue;   // defensa ultra: sólo su carril
-      const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, z.caja());
+      // En un carril cuenta el carril, no la altura: le pega igual a un zombie chiquito (ahí no hay cómo agacharse)
+      const caja = this.carril !== undefined ? { ...z.caja(), y: -1e4, h: 2e4 } : z.caja();
+      const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, caja);
       if (t !== null) cruces.push([t, z]);
     }
     for (const b of juego.blancos || []) {

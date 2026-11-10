@@ -186,7 +186,10 @@ class Juego {
     for (let k = antes; k < this.proyectiles.length; k++) {
       const p = this.proyectiles[k];
       p.desdeX = this.jugador.x; p.disparoId = this.disparoId;   // barrido desde el cuerpo
-      if (this.ultra) { p.carril = this.jugador.carril; p.pisoY = this.jugador.y; }   // la bala va por su carril
+      if (this.ultra) {   // la bala va por su carril, apuntada al pecho del zombie más cercano
+        p.carril = this.jugador.carril; p.pisoY = this.jugador.y;
+        if (!p.arma.explosivo) p.vy += this.apuntarUltra(p);
+      }
     }
     // El casquillo sale por la ventana de expulsión, vuela, rebota y se esfuma
     if (casquillo) this.casquillos.push(new Casquillo(casquillo.x, casquillo.y, direccion, casquillo.tipo));
