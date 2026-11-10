@@ -569,4 +569,5 @@ kbd {
 .panel-config .nota.izq { text-align: left; margin-bottom: 6px; }
 .boton.resaltado { background: var(--arena); color: var(--noche); }
 .panel-asistente button:disabled { opacity: .4; cursor: default; pointer-events: none; }
+.asist-codigo { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--texto); user-select: text; background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 6px 8px; }
 [hidden] { display: none !important; }

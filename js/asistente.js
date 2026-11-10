@@ -76,6 +76,7 @@ const Asistente = (() => {
   let compartido = {};            // { clave: valor } fijado por el dueño para todos
   let pedidosLocales = [];        // pedidos que no se pudieron guardar en la base
   try { const d = JSON.parse(localStorage.getItem(CLAVE_LOCAL) || '{}'); personal = d.personal || {}; pedidosLocales = d.pedidos || []; } catch { /* sin almacenamiento */ }
+  if (Rama.conServidor()) personal = Rama.ajustes();   // con el servidor, los ajustes viven en la rama del jugador (git)
   const guardarLocal = () => { try { localStorage.setItem(CLAVE_LOCAL, JSON.stringify({ personal, pedidos: pedidosLocales })); } catch { /* ídem */ } };
 
   // Vuelve a poner cada perilla tocada en su valor efectivo: personal, si no el compartido, si no el original
@@ -94,17 +95,21 @@ const Asistente = (() => {
     if (!(clave in original)) original[clave] = p.leer();
     const antes = p.leer(), ahora = normalizar(p, valor);
     personal[clave] = ahora; guardarLocal(); reaplicar();
+    if (Rama.conServidor()) Rama.guardarAjustes(personal, `Ajuste ${clave}: ${fmt(antes)} → ${fmt(ahora)}`);
     return { clave, antes, ahora, ajustadoAlLimite: !p.booleano && Number(valor) !== ahora };
   }
   function restaurar(claves) {
     const lista = claves && claves.length ? claves : Object.keys(personal);
     for (const k of lista) delete personal[k];
     guardarLocal(); reaplicar();
+    if (Rama.conServidor() && lista.length) Rama.guardarAjustes(personal, `Restaura ${lista.join(', ')}`);
     return lista;
   }
   /* ---------- Capacidades de claude.ai (todas opcionales) ---------- */
   let sample = null, db = null, usuario = null, esDueno = false, conTools = false;
   const usar = nombre => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(nombre).catch(() => null) : Promise.resolve(null);
+  let servidorIA = false;   // con el servidor de construcción, el asistente pasa por /api/ia
+  if (Rama.conServidor()) fetch('/api/estado').then(r => r.json()).then(d => { servidorIA = !!d.ia; pintarEstado(); }, () => {});
   usar('sample').then(async s => {
     sample = s;
     if (s) { const lim = await s.limits().catch(() => null); conTools = !!lim?.tools; }
@@ -123,6 +128,9 @@ const Asistente = (() => {
 
   async function anotarPedido(resumen, detalle) {
     const pedido = { resumen: String(resumen).slice(0, 300), detalle: String(detalle || '').slice(0, 2000), idioma: Idioma.actual(), fecha: new Date().toISOString(), estado: 'nuevo' };
+    if (Rama.conServidor()) {
+      try { const r = await fetch(`/api/pedido/${Rama.id()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pedido) }); if (r.ok) return 'guardado en la rama del jugador para el desarrollador'; } catch { /* queda local */ }
+    }
     if (db) {
       try { await db.collection('pedidos').add(pedido); pintarPedidos(); return 'guardado en la lista del desarrollador'; } catch { /* sin permiso de escritura: queda local */ }
     }
@@ -210,10 +218,9 @@ const Asistente = (() => {
     return partes.join('\n\n');
   }
 
-  async function reglas() {
-    const j = window.ZonaMuerta?.juego();
+  // Lo fijo (instrucciones y mapa del código) va primero y se cachea; el estado del juego cambia en cada pedido
+  async function reglasFijas() {
     const idioma = { es: 'español (tuteo)', pt: 'portugués de Brasil', en: 'inglés' }[Idioma.actual()] || 'español';
-    const parches = Rama.parches();
     return [
       'Eres el asistente de construcción del juego «Zona Muerta» (zombies, vista lateral, armas reales a escala, canvas 2D en JavaScript sin librerías). Quien te escribe juega su propia «rama» del juego: lo que cambies se aplica en vivo en su juego, y el dueño después decide si lo pasa a la versión principal.',
       `Responde en ${idioma}, breve (1 a 4 frases), sin markdown.`,
@@ -232,7 +239,12 @@ const Asistente = (() => {
       '',
       'MAPA DEL CÓDIGO (archivo: línea:declaración; «.x» es un método):',
       await mapa(),
-      '',
+    ].join('\n');
+  }
+  function estadoDelJuego() {
+    const j = window.ZonaMuerta?.juego();
+    const parches = Rama.parches();
+    return [
       'PARCHES DE ESTA RAMA: ' + (parches.length ? '' : 'ninguno'),
       ...parches.slice(-10).map(p => `- ${p.id} [${p.activo ? 'activo' : 'apagado'}${p.error ? ', error: ' + p.error : ''}] ${p.descripcion}\n${p.codigo.slice(0, 1500)}`),
       '',
@@ -246,6 +258,7 @@ const Asistente = (() => {
       j ? `PARTIDA EN CURSO: arma en mano ${j.jugador.arma().id}, modo ${j.torreta ? 'defensa zombie' : j.entrenamiento ? 'entrenamiento' : j.pruebas ? 'campo de pruebas' : j.cloaca ? 'cloaca' : 'ciudad'}.` : 'Ahora está en el menú principal.',
     ].join('\n');
   }
+  const reglas = async () => `${await reglasFijas()}\n\n${estadoDelJuego()}`;
   let ultimoPedido = '';
   const HERRAMIENTAS = [
     { name: 'cambiar_ajustes', description: 'Aplica uno o varios cambios de valores al juego en el acto. Devuelve, por cada uno, el valor anterior y el nuevo (ya recortado a sus límites), o el error si la clave no existe.',
@@ -300,7 +313,7 @@ const Asistente = (() => {
   function pintarEstado() {
     const nota = $('asist-estado');
     if (!nota) return;
-    if (!sample || !conTools) { nota.textContent = t(sample ? 'asist.sinTools' : 'asist.noDisponible'); nota.hidden = false; texto.disabled = enviarBtn.disabled = true; }
+    if (Rama.conServidor() ? !servidorIA : (!sample || !conTools)) { nota.textContent = t(Rama.conServidor() ? 'asist.sinClave' : sample ? 'asist.sinTools' : 'asist.noDisponible'); nota.hidden = false; texto.disabled = enviarBtn.disabled = true; }
     else if (deshabilitado) { nota.textContent = t('asist.sinPermiso'); nota.hidden = false; texto.disabled = enviarBtn.disabled = true; }
     else { nota.hidden = true; texto.disabled = enviarBtn.disabled = ocupado; }
   }
@@ -319,7 +332,7 @@ const Asistente = (() => {
       ul.appendChild(li);
     }
     $('asist-restaurar').disabled = !Object.keys(personal).length;
-    $('asist-fijar').hidden = !(esDueno && db);
+    $('asist-fijar').hidden = !(esDueno && db) || Rama.conServidor();
     $('asist-fijar').disabled = !Object.keys(personal).length;
     $('asist-quitar').hidden = !(esDueno && db && Object.keys(compartido).length);
   }
@@ -330,9 +343,43 @@ const Asistente = (() => {
     $('asist-pedidos-n').textContent = t('asist.pedidosLocales', { n: pedidosLocales.length });
   }
 
+  /* ---------- Con el servidor de construcción ---------- */
+  // El bucle de herramientas corre acá (las herramientas tocan este juego); cada vuelta pasa por /api/ia, que
+  // agrega la clave y los topes. Cada pedido es una conversación nueva que sólo crece: la charla anterior va como
+  // texto y las respuestas se devuelven tal cual (con sus bloques de razonamiento) dentro del mismo pedido.
+  const definiciones = () => HERRAMIENTAS.map(h => ({ name: h.name, description: h.description, input_schema: h.inputSchema || { type: 'object', properties: {} } }));
+  async function preguntarServidor(msj, alEscribir, signal) {
+    const charla = turnos.slice(0, -1).slice(-8).map(x => `${x.role === 'user' ? 'Jugador' : 'Asistente'}: ${x.content}`).join('\n');
+    const mensajes = [{ role: 'user', content: `${estadoDelJuego()}\n\n${charla ? `CONVERSACIÓN RECIENTE:\n${charla}\n\n` : ''}PEDIDO DEL JUGADOR:\n${msj}` }];
+    const sistema = await reglasFijas();
+    let escrito = '';
+    for (let vuelta = 0; vuelta < 12; vuelta++) {
+      const r = await fetch('/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
+        body: JSON.stringify({ jugador: Rama.id(), sistema, mensajes, herramientas: definiciones() }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw { code: r.status === 429 ? (d.error === 'tope' ? 'tope' : 'rate_limited') : d.error === 'sin_clave' ? 'sin_clave' : 'upstream_error', text: escrito || undefined };
+      mensajes.push({ role: 'assistant', content: d.content });
+      for (const b of d.content || []) if (b.type === 'text' && b.text.trim()) { escrito += (escrito ? '\n\n' : '') + b.text.trim(); alEscribir({ text: escrito }); }
+      if (d.stop_reason === 'refusal') throw { code: 'refused', text: escrito || undefined };
+      if (d.stop_reason === 'pause_turn') continue;
+      if (d.stop_reason !== 'tool_use') break;
+      const resultados = [];
+      for (const b of d.content) {
+        if (b.type !== 'tool_use') continue;
+        const h = HERRAMIENTAS.find(x => x.name === b.name);
+        try {
+          const salida = h ? await h.execute(b.input || {}, { signal }) : 'herramienta desconocida';
+          resultados.push({ type: 'tool_result', tool_use_id: b.id, content: typeof salida === 'string' ? salida : JSON.stringify(salida) });
+        } catch (e) { resultados.push({ type: 'tool_result', tool_use_id: b.id, content: String((e && e.message) || e), is_error: true }); }
+      }
+      mensajes.push({ role: 'user', content: resultados });
+    }
+    return escrito || '…';
+  }
+
   async function enviar() {
     const msj = texto.value.trim();
-    if (!msj || ocupado || !sample || deshabilitado) return;
+    if (!msj || ocupado || deshabilitado || (Rama.conServidor() ? !servidorIA : !sample)) return;
     texto.value = '';
     burbuja('yo', msj); ultimoPedido = msj;
     turnos.push({ role: 'user', content: msj });
@@ -343,11 +390,13 @@ const Asistente = (() => {
     ocupado = true; pintarEstado(); pararBtn.hidden = false;
     control = new AbortController();
     try {
-      const { text } = await sample([{ role: 'user', content: await reglas() }, ...turnos], {
-        model: 'claude-sonnet-5-5', modelTier: 'default',   // Sonnet; si a quien juega no le está disponible, responde el modelo estándar
-        signal: control.signal, tools: HERRAMIENTAS,
-        onText: ({ text }) => { resp.classList.remove('pensando'); resp.textContent = text; lista.scrollTop = lista.scrollHeight; },
-      });
+      const alEscribir = ({ text }) => { resp.classList.remove('pensando'); resp.textContent = text; lista.scrollTop = lista.scrollHeight; };
+      const { text } = Rama.conServidor()
+        ? { text: await preguntarServidor(msj, alEscribir, control.signal) }
+        : await sample([{ role: 'user', content: await reglas() }, ...turnos], {
+          model: 'claude-sonnet-5-5', modelTier: 'default',   // Sonnet; si a quien juega no le está disponible, responde el modelo estándar
+          signal: control.signal, tools: HERRAMIENTAS, onText: alEscribir,
+        });
       resp.textContent = text;
       turnos.push({ role: 'assistant', content: text });
     } catch (e) {
@@ -355,7 +404,9 @@ const Asistente = (() => {
       if (e && e.text) resp.textContent = e.text; else resp.remove();
       const codigo = e && e.code;
       if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'tools_unavailable'].includes(codigo)) { deshabilitado = true; }
-      else if (codigo !== 'cancelled') agregarNota(t(codigo === 'rate_limited' ? 'asist.limite' : codigo === 'refused' ? 'asist.rechazado' : codigo === 'session_expired' ? 'asist.sesion' : 'asist.error'));
+      else if (codigo === 'tope') agregarNota(t('asist.topeDiario', { n: 30 }));
+      else if (codigo === 'sin_clave') { servidorIA = false; }
+      else if (codigo !== 'cancelled' && !(e && e.name === 'AbortError')) agregarNota(t(codigo === 'rate_limited' ? 'asist.limite' : codigo === 'refused' ? 'asist.rechazado' : codigo === 'session_expired' ? 'asist.sesion' : 'asist.error'));
       turnos.pop();   // el pedido sin respuesta no queda en la conversación
     } finally {
       ocupado = false; control = null; pararBtn.hidden = true; pintarEstado();
@@ -387,6 +438,15 @@ const Asistente = (() => {
       acciones.append(alt, borrar); li.appendChild(acciones); ul.appendChild(li);
     }
     $('rama-enviar').disabled = !parches.some(p => p.activo);
+    // Con el servidor todo se guarda solo en git: no hace falta enviar; se muestra el código para usarlo en otro lado
+    $('rama-enviar').hidden = Rama.conServidor();
+    $('rama-otra').hidden = !Rama.conServidor();
+    const est = $('rama-estado');
+    est.hidden = !Rama.conServidor();
+    if (Rama.conServidor()) {
+      est.textContent = t({ guardado: 'rama.guardada', guardando: 'rama.guardando', error: 'rama.errorGuardar', pendiente: 'rama.guardando' }[Rama.estado()] || 'rama.guardada', { codigo: Rama.id() });
+      $('rama-codigo').placeholder = t('rama.otraPlaceholder');
+    }
   }
   async function enviarRama() {
     const datos = Rama.exportar();
@@ -400,6 +460,8 @@ const Asistente = (() => {
     try { await navigator.clipboard.writeText(json); agregarNota(t('rama.copiada')); } catch { agregarNota(t('rama.noEnviada')); }
   }
   $('rama-recargar').addEventListener('click', () => location.reload());
+  $('rama-usar').addEventListener('click', () => { const c = $('rama-codigo').value.trim().toLowerCase(); if (!Rama.usarRama(c)) agregarNota(t('rama.codigoInvalido')); });
+  window.addEventListener('rama-guardada', () => { if (abierto) pintarRama(); });
   $('rama-enviar').addEventListener('click', enviarRama);
 
   $('asist-form').addEventListener('submit', e => { e.preventDefault(); enviar(); });

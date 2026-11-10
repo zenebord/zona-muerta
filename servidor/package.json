@@ -1,0 +1,12 @@
+{
+  "name": "zona-muerta-servidor",
+  "private": true,
+  "type": "module",
+  "description": "Servidor de la etapa de construcción: sirve el juego desde la rama main, guarda las ramas de los jugadores en git y hace de puente con la API de Claude para el asistente.",
+  "scripts": {
+    "start": "node servidor.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  }
+}
