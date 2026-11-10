@@ -134,7 +134,12 @@
         <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
       </div>
     </div>
-    <p class="girar-telefono" data-t="girar">Girá el teléfono para jugar más grande</p>
+    <!-- En un teléfono parado el juego se tapa con este aviso (y la partida se pausa): se juega apaisado -->
+    <div class="girar-obligatorio" role="alert">
+      <div class="icono-girar" aria-hidden="true"></div>
+      <p data-t="girar">Gira el teléfono para jugar</p>
+      <small data-t="girarNota">Si la pantalla no gira, activa la rotación automática.</small>
+    </div>
     <div id="selector-armas" class="selector-armas" aria-live="polite"></div>
     <div id="aviso" class="aviso"></div>
     <div id="aviso-ronda" class="aviso-ronda"></div>

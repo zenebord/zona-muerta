@@ -177,8 +177,8 @@ kbd {
 
 .capa {
   position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-  background: rgba(10,6,12,.82);
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 12px;
+  background: rgba(10,6,12,.82); overflow-y: auto; overscroll-behavior: contain;   /* en pantallas bajas, se desplaza */
 }
 .capa h2 { font-size: 48px; letter-spacing: .3em; margin: 0 0 8px; color: var(--arena); }
 .capa p { margin: 0 0 16px; max-width: 520px; line-height: 1.5; }
@@ -231,7 +231,7 @@ kbd {
 
 /* ---- Controles táctiles: ocultos salvo en pantallas táctiles (clase .tactil en <body>) ----
  * Tamaños según el lado corto de la pantalla (vmin): --b botones comunes, --f fuego, --m margen al borde. */
-.controles-tactiles, .girar-telefono { display: none; }
+.controles-tactiles, .girar-obligatorio { display: none; }
 .tactil .controles-tactiles {
   display: block; position: fixed; inset: 0; z-index: 5; pointer-events: none;
   --b: clamp(72px, 21vmin, 120px); --f: clamp(96px, 29vmin, 160px); --m: 14px;
@@ -281,16 +281,21 @@ kbd {
 .boton-tactil.apretado { background: rgba(201,169,110,.6); color: var(--noche); transform: scale(.94); }
 .boton-tactil.fuego.apretado { background: rgba(229,57,53,.75); color: var(--texto); }
 .tactil:not(.en-pruebas) .solo-pruebas { display: none; }
-.tactil #lienzo, .tactil .capa { touch-action: none; }
+.tactil #lienzo { touch-action: none; }
+.tactil .capa { touch-action: pan-y; }   /* las ventanas (pausa, menú de armas) se desplazan con el dedo */
 
 /* Parado: el juego arriba; abajo botones más grandes, con SALTO y RECARGAR encima de FUEGO */
 @media (orientation: portrait) {
   .tactil .controles-tactiles { --b: clamp(80px, 24vmin, 130px); --f: clamp(104px, 31vmin, 170px); }
   .tactil #pantalla-juego { justify-content: flex-start; padding-top: 0; }
-  .tactil .girar-telefono {
-    display: block; position: absolute; left: 0; right: 0; top: calc(100vw * 9 / 16 + 18px);
-    margin: 0; text-align: center; font-size: 13px; letter-spacing: .1em; opacity: .55; pointer-events: none;
+  /* Se juega apaisado: parado, un aviso tapa todo el juego */
+  .tactil .girar-obligatorio {
+    display: flex; position: fixed; inset: 0; z-index: 60; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 24px; text-align: center; background: var(--noche);
   }
+  .tactil .girar-obligatorio p { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .12em; color: var(--arena); }
+  .tactil .girar-obligatorio small { font-size: 13px; opacity: .65; max-width: 260px; line-height: 1.4; }
+  .icono-girar { width: 54px; height: 90px; border: 3px solid var(--arena); border-radius: 10px; animation: girar-telefono 2.2s ease-in-out infinite; }
   /* Columna derecha: FUEGO abajo, SALTO arriba de FUEGO, RECARGAR arriba de SALTO */
   .tactil .boton-tactil.saltar { right: calc(var(--der) + (var(--f) - var(--b)) / 2); bottom: calc(var(--abajo) + var(--f) + 14px); }
   .tactil .boton-tactil.recargar { right: calc(var(--der) + (var(--f) - var(--b) * 0.85) / 2); bottom: calc(var(--abajo) + var(--f) + var(--b) + 26px); }
@@ -571,3 +576,30 @@ kbd {
 .panel-asistente button:disabled { opacity: .4; cursor: default; pointer-events: none; }
 .asist-codigo { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--texto); user-select: text; background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 6px 8px; }
 [hidden] { display: none !important; }
+
+/* ---- Teléfono apaisado (pantalla baja): controles más chicos y transparentes, HUD que no se pisa ---- */
+@keyframes girar-telefono { 0%, 25% { transform: rotate(0); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .icono-girar { animation: none; transform: rotate(-90deg); } }
+@media (orientation: landscape) and (max-height: 500px) {
+  .tactil .controles-tactiles { --b: clamp(54px, 16vmin, 84px); --f: clamp(72px, 22vmin, 112px); --m: 10px; }
+  .tactil .boton-tactil, .tactil .pad-mover { background: rgba(20,16,24,.26); border-color: rgba(201,169,110,.55); box-shadow: none; font-size: 13px; }
+  .tactil .boton-tactil.fuego { background: rgba(139,15,15,.38); }
+  .tactil .boton-tactil.recargar { font-size: 9px; letter-spacing: .02em; }
+  .tactil .boton-tactil.pildora { height: 36px; min-width: 52px; padding: 0 10px; border-radius: 18px; font-size: 11px; }
+  .tactil .armas-tactiles { bottom: calc(var(--abajo) + var(--b) + 10px); }
+  .hud-aereo { min-width: 0; padding: 3px 7px 6px; }
+  .hud-aereo .nombre { font-size: 10px; }
+  .hud-aereo .estado { font-size: 8px; }
+  .aviso-ronda { top: 30%; font-size: 22px; letter-spacing: .2em; }
+  .aviso { top: 42%; font-size: 14px; }
+}
+.capa > * { flex-shrink: 0; }   /* nada se aplasta: si no entra, la ventana se desplaza */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Menú de armas (tecla C / botón ARMAS) en un teléfono apaisado: título chico, lista con su propio alto */
+  #menu-pruebas { gap: 6px; padding: 8px 12px; }
+  #menu-pruebas h2 { font-size: 20px; letter-spacing: .2em; margin: 0; }
+  .tactil #menu-pruebas > .ayuda { display: none; }
+  #menu-pruebas .lista-grupos-armas { max-height: calc(100vh - 120px); margin: 0; }
+  #menu-pruebas .fila-botones { margin: 0; gap: 6px; }
+  #menu-pruebas .boton { font-size: 11px; padding: 6px 10px; letter-spacing: .1em; }
+}

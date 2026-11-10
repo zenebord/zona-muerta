@@ -44,6 +44,7 @@
     misionActual = mision || null;
     opcionesActuales = opciones;
     juego = new Juego(lienzo, misionActual, Dificultad.actual(), opciones);
+    if (window.Tactil) Tactil.alEmpezar();   // en un teléfono: pantalla completa y apaisado (donde se pueda)
     pausado = false; menuPruebasAbierto = false;
     capaPausa.classList.add('oculta');
     capaFin.classList.add('oculta');
@@ -52,7 +53,8 @@
     ajustarResolucion();
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     tituloPruebas();
-    juego.aviso(opciones.entrenamiento ? t('aviso.entrenamiento') : opciones.torreta ? t('aviso.torreta') : opciones.pruebas ? t('aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
+    const tactil = document.body.classList.contains('tactil');
+    juego.aviso(opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.torreta ? t('aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : juego.cloaca ? 'cloaca' : 'ciudad');
     ultimo = performance.now();
@@ -216,7 +218,8 @@
     capaPruebas.classList.add('viendo-detalle');
     document.getElementById('detalle-arma').classList.remove('oculta');
     dibujarFicha(id);
-    document.querySelector('#detalle-arma .boton-usar').focus();
+    document.querySelector('#detalle-arma .boton-usar').focus({ preventScroll: true });   // la ficha abre desde arriba (nombre y dibujo)
+    document.getElementById('detalle-arma').scrollTop = 0;
   }
   function ocultarDetalleArma() {
     if (!armaEnDetalle) return;
@@ -396,7 +399,7 @@
   });
 
   // Gancho para depurar desde la consola: ZonaMuerta.juego() devuelve la partida en curso
-  window.ZonaMuerta = { juego: () => juego, iniciar };
+  window.ZonaMuerta = { juego: () => juego, iniciar, pausar: () => { if (juego && !pausado && !juego.terminado) alternarPausa(); } };
 
   /* ---- Configuración ---- */
   const capaConfig = document.getElementById('capa-config');

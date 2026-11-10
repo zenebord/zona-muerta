@@ -63,7 +63,28 @@
     pad.addEventListener('contextmenu', e => e.preventDefault());
   }
 
-  // El botón de cajas solo tiene sentido en el campo de pruebas
+  // Apaisado obligatorio: con el teléfono parado, un aviso tapa el juego (CSS) y la partida se pausa
+  const parado = window.matchMedia ? matchMedia('(orientation: portrait)') : null;
+  const revisarOrientacion = () => { if (parado && parado.matches && cuerpo.classList.contains('tactil') && window.ZonaMuerta) ZonaMuerta.pausar(); };
+  if (parado) parado.addEventListener('change', revisarOrientacion);
+  // Al empezar una partida en un teléfono: pantalla completa y orientación trabada en apaisado. Sólo anda donde
+  // el navegador lo permite (Android, fuera de un marco); si no, queda el aviso de girar.
+  window.Tactil = {
+    alEmpezar() {
+      if (!cuerpo.classList.contains('tactil')) return;
+      try {
+        const el = document.documentElement, pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (pedir && !document.fullscreenElement) {
+          Promise.resolve(pedir.call(el, { navigationUI: 'hide' }))
+            .then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'))
+            .catch(() => { /* no se permite acá: queda el aviso */ });
+        }
+      } catch { /* ídem */ }
+      setTimeout(revisarOrientacion, 0);
+    },
+  };
+
+  // El botón de armas (tecla C) solo tiene sentido en el campo de pruebas y en el entrenamiento
   setInterval(() => {
     const j = window.ZonaMuerta && ZonaMuerta.juego();
     cuerpo.classList.toggle('en-pruebas', !!(j && (j.pruebas || j.entrenamiento)));
