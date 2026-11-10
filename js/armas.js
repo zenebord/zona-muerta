@@ -13,7 +13,7 @@ const VIDA_ZOMBIE_NORMAL = 15;
 
 const ARMAS = {
   // --- Pistolas: 3 tiros ---
-  glock:    { id: 'glock',    nombre: 'Glock 17',        categoria: 'pistola', dano: 5, cargador: 17, cadencia: 240, recarga: 1300, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#3a3a3a' },
+  glock:    { id: 'glock',    nombre: 'Glock 17',        categoria: 'pistola', dano: 5, cargador: 17, cadencia: 240, recarga: 1300, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#b0966f' },
   magnum:   { id: 'magnum',   nombre: 'Magnum .44',      categoria: 'pistola', dano: 5, cargador: 6,  cadencia: 380, recarga: 2600, automatica: false, velocidad: 17, alcance: 700, recargaTipo: 'tambor', recargaUnidad: 'bala', color: '#b9b9c4' },
   colt1911: { id: 'colt1911', nombre: 'Colt 1911',       categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 300, recarga: 1250, automatica: false, velocidad: 16, alcance: 600, recargaTipo: 'cargador-pistola', recargaFinal: 'liberar', recargaUnidad: 'cargador', color: '#3b3f44' },
   deagle:   { id: 'deagle',   nombre: 'Desert Eagle',    categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 420, recarga: 1600, automatica: false, velocidad: 18, alcance: 760, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#8e8e96' },
