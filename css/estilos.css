@@ -565,4 +565,8 @@ kbd {
 .asist-ajustes .boton.mini { padding: 3px 8px; font-size: 11px; }
 @media (max-width: 760px), (max-height: 460px) { .asist-mensajes { min-height: 110px; max-height: 30vh; } .asist-msj { font-size: 13px; } }
 
+.asist-ajustes .acciones { display: inline-flex; gap: 4px; flex-shrink: 0; }
+.panel-config .nota.izq { text-align: left; margin-bottom: 6px; }
+.boton.resaltado { background: var(--arena); color: var(--noche); }
+.panel-asistente button:disabled { opacity: .4; cursor: default; pointer-events: none; }
 [hidden] { display: none !important; }

@@ -151,17 +151,90 @@ const Asistente = (() => {
     }
     return filas.join('\n');
   }
-  function reglas() {
+  /* ---------- Código fuente, para que el asistente lea antes de parchear ---------- */
+  // Se lee de los mismos archivos que cargó la página; si no se puede, del paquete js/codigo-fuente.js
+  const fuentes = {};
+  let paquete = null, mapaCodigo = null;
+  const archivosDeCodigo = () => [...document.scripts].map(s => s.getAttribute('src') || '').filter(src => /^js\/.+\.js$/.test(src) && !/sonidos-|codigo-fuente|asistente|rama\.js/.test(src)).map(src => src.slice(3));
+  function cargarPaquete() {
+    if (!paquete) paquete = new Promise(listo => {
+      const s = document.createElement('script'); s.src = 'js/codigo-fuente.js';
+      s.onload = () => listo(window.CODIGO_FUENTE || {}); s.onerror = () => listo({});
+      document.head.appendChild(s);
+    });
+    return paquete;
+  }
+  async function fuente(archivo) {
+    if (fuentes[archivo] !== undefined) return fuentes[archivo];
+    try { const r = await fetch('js/' + archivo); if (r.ok) return (fuentes[archivo] = await r.text()); } catch { /* sin acceso: paquete */ }
+    return (fuentes[archivo] = (await cargarPaquete())[archivo] ?? null);
+  }
+  // Mapa breve: en qué línea está cada declaración de cada archivo
+  async function mapa() {
+    if (mapaCodigo) return mapaCodigo;
+    const lineas = [];
+    for (const f of archivosDeCodigo()) {
+      const txt = await fuente(f);
+      if (txt == null) continue;
+      const decl = [];
+      txt.split('\n').forEach((l, i) => {
+        let m = /^(?:async\s+)?(?:function\s+(\w+)|class\s+(\w+)|(?:const|let|var)\s+(\w+))/.exec(l);
+        if (m) return decl.push(`${i + 1}:${m[1] || m[2] || m[3]}`);
+        if ((m = /^\s*reemplazar\('(\w+)'/.exec(l)) || (m = /^  (\w+): modelo\(/.exec(l))) return decl.push(`${i + 1}:modelo ${m[1]}`);
+        if ((m = /^  (?:async\s+|static\s+)?(\w+)\s*\([^)]*\)\s*\{/.exec(l)) && !/^(if|for|while|switch|return|catch|dibujarCm|dibujar)$/.test(m[1])) decl.push(`${i + 1}:.${m[1]}`);
+      });
+      lineas.push(`${f} (${txt.split('\n').length} líneas): ${decl.join(' ')}`);
+    }
+    return (mapaCodigo = lineas.join('\n'));
+  }
+  async function leerCodigo(lecturas) {
+    const partes = [];
+    let total = 0;
+    for (const l of (Array.isArray(lecturas) ? lecturas : []).slice(0, 8)) {
+      let bloque;
+      if (l.buscar) {
+        const que = String(l.buscar), archivos = l.archivo ? [String(l.archivo)] : archivosDeCodigo(), hallados = [];
+        for (const f of archivos) { const txt = await fuente(f); if (txt == null) continue; txt.split('\n').forEach((x, i) => { if (x.includes(que) && hallados.length < 40) hallados.push(`${f}:${i + 1}: ${x.slice(0, 220)}`); }); }
+        bloque = `BUSCAR «${que}»:\n` + (hallados.join('\n') || '(sin resultados)');
+      } else {
+        const f = String(l.archivo || ''), txt = await fuente(f);
+        if (txt == null) { bloque = `${f}: no existe o no se pudo leer`; }
+        else {
+          const ls = txt.split('\n'), desde = Math.max(1, Number(l.desde) || 1), hasta = Math.min(ls.length, Number(l.hasta) || desde + 120, desde + 249);
+          bloque = `${f} líneas ${desde}-${hasta} de ${ls.length}:\n` + ls.slice(desde - 1, hasta).map((x, i) => `${desde + i}: ${x}`).join('\n');
+        }
+      }
+      if (total + bloque.length > 28000) { partes.push('(se cortó: pide menos líneas por vez)'); break; }
+      total += bloque.length; partes.push(bloque);
+    }
+    return partes.join('\n\n');
+  }
+
+  async function reglas() {
     const j = window.ZonaMuerta?.juego();
     const idioma = { es: 'español (tuteo)', pt: 'portugués de Brasil', en: 'inglés' }[Idioma.actual()] || 'español';
+    const parches = Rama.parches();
     return [
-      'Eres el asistente de construcción del juego «Zona Muerta» (zombies, vista lateral, armas reales a escala). Quien te escribe está probando el juego mientras se desarrolla y te pide mejoras.',
-      `Responde en ${idioma}, breve (1 a 3 frases), sin listas largas ni markdown.`,
-      'Tienes dos herramientas:',
-      '1) cambiar_ajustes: cambia al instante valores del juego. Úsala cuando el pedido se resuelve moviendo valores (daño, cargador, cadencia, recarga, alcance, retroceso, velocidad o salto del jugador, vida y velocidad de los zombies, etc.). Si el pedido es vago («más fuerte», «más rápido»), elige un cambio razonable (entre 25 % y 60 %) y dilo. No inventes claves: usa sólo las de la lista. Si un valor se recorta al límite, avísalo.',
-      '2) anotar_pedido: para todo lo que necesita programación nueva (armas nuevas, dibujos o diseño de un arma, animaciones, sonidos, música, mapas, enemigos, modos, menús, errores). Anótalo con un resumen claro para el desarrollador y avisa que quedó anotado; no prometas fechas.',
-      'Si te piden deshacer, usa restaurar_ajustes. Los cambios valen sólo para quien juega, hasta que el dueño los fije para todos.',
-      'Si el mensaje no es un pedido sobre el juego, responde amable y en una frase.',
+      'Eres el asistente de construcción del juego «Zona Muerta» (zombies, vista lateral, armas reales a escala, canvas 2D en JavaScript sin librerías). Quien te escribe juega su propia «rama» del juego: lo que cambies se aplica en vivo en su juego, y el dueño después decide si lo pasa a la versión principal.',
+      `Responde en ${idioma}, breve (1 a 4 frases), sin markdown.`,
+      'HERRAMIENTAS:',
+      '1) cambiar_ajustes: mueve valores del juego (daño, cargador, cadencia, recarga, alcance, retroceso; velocidad, salto y vida del jugador; vida, velocidad, daño y cantidad de zombies; cajas). Es lo más rápido y seguro: úsalo siempre que alcance con un valor. Si el pedido es vago, elige un cambio razonable (25 % a 60 %) y dilo. Sólo claves de la lista.',
+      '2) leer_codigo: lee el código del juego por archivo y rango de líneas, o buscando un texto. Pide varias lecturas en una sola llamada. Antes de escribir un parche, lee lo que vas a tocar.',
+      '3) aplicar_parche: agrega a la rama de este jugador un parche de JavaScript que cambia el juego (armas nuevas, dibujos, comportamientos, efectos, reglas). Se ejecuta ahora y cada vez que el juego carga. Si tira error no se guarda: corrígelo y reintenta una sola vez.',
+      '4) restaurar_ajustes: deshace ajustes de valores. Para deshacer un parche, dile al jugador que lo apague en «Mi rama».',
+      '5) anotar_pedido: para lo que no puedas hacer con un parche (menús y botones de la interfaz, sonidos grabados nuevos, cambios enormes) o si no estás seguro de hacerlo bien.',
+      'REGLAS DE LOS PARCHES:',
+      '- JavaScript de navegador en el ámbito global, después de cargar armas, modelos, escenario, jugador, zombies, objetos, juego y poderes, y antes de la interfaz. Ves ARMAS, ARMAS_COMUNES, ARMAS_ESPECIALES, ARMAS_LEGENDARIAS, ORDEN_INVENTARIO, GRUPOS_ARMAS, DIBUJO_ARMAS, FICHAS, DIFICULTADES, AJUSTE, MAT, pintar, suave, Rc, RRc, Cc, Ec, trazo, rayas, punto, modelo, reemplazar, Audio_, t, Idioma y las clases Juego, Jugador, Zombie, ZombieToxico, Proyectil, Caja, Explosion, etc.',
+      '- No puedes reasignar constantes (const, class); sí cambiar propiedades de objetos, agregar elementos a listas y reemplazar métodos de prototipo. Si envuelves un método, guarda el original: const orig = Zombie.prototype.actualizar; Zombie.prototype.actualizar = function (...a) { /* ... */ return orig.apply(this, a); };',
+      '- Tiene que correr bien una vez sobre el juego recién cargado. Sin red, sin almacenamiento, sin eval, sin timers sueltos, sin tocar el asistente ni la rama. Escribe código prolijo con comentarios cortos en español: puede terminar en la versión principal.',
+      '- Las armas se dibujan en centímetros reales (x hacia la boca, y hacia abajo, origen arriba de la empuñadura) con los ayudantes de armas-modelos.js; copia el estilo de un modelo parecido. Un arma nueva necesita: entrada en ARMAS (copia los campos de una parecida), modelo en DIBUJO_ARMAS (modelo({...}) con agarre, anguloEmpunadura y culataCm), sumarla a ORDEN_INVENTARIO y a la lista de su tipo (ARMAS_COMUNES, ARMAS_ESPECIALES...). Revisa armas.js y cómo se usan esas listas antes.',
+      '- Lo que el juego arma al cargar (menús de armas, catálogo) sólo cambia al recargar: dile al jugador que toque «Recargar el juego» en «Mi rama» cuando haga falta.',
+      '',
+      'MAPA DEL CÓDIGO (archivo: línea:declaración; «.x» es un método):',
+      await mapa(),
+      '',
+      'PARCHES DE ESTA RAMA: ' + (parches.length ? '' : 'ninguno'),
+      ...parches.slice(-10).map(p => `- ${p.id} [${p.activo ? 'activo' : 'apagado'}${p.error ? ', error: ' + p.error : ''}] ${p.descripcion}\n${p.codigo.slice(0, 1500)}`),
       '',
       'CLAVES DE ARMAS: arma.<id>.<campo>. Campos: ' + Object.entries(CAMPOS_ARMA).map(([k, c]) => `${k} (${c.desc}${c.booleano ? '' : `; ${c.min} a ${c.max}`})`).join('; ') + '.',
       'CLAVES DE JUGABILIDAD: ' + Object.entries(GLOBALES).map(([k, g]) => `${k} = ${fmt(AJUSTE[g.campo])} (${g.desc}; ${g.min} a ${g.max})`).join('; ') + '.',
@@ -173,12 +246,25 @@ const Asistente = (() => {
       j ? `PARTIDA EN CURSO: arma en mano ${j.jugador.arma().id}, modo ${j.torreta ? 'defensa zombie' : j.entrenamiento ? 'entrenamiento' : j.pruebas ? 'campo de pruebas' : j.cloaca ? 'cloaca' : 'ciudad'}.` : 'Ahora está en el menú principal.',
     ].join('\n');
   }
+  let ultimoPedido = '';
   const HERRAMIENTAS = [
-    { name: 'cambiar_ajustes', description: 'Aplica uno o varios cambios al juego en el acto. Devuelve, por cada uno, el valor anterior y el nuevo (ya recortado a sus límites), o el error si la clave no existe.',
+    { name: 'cambiar_ajustes', description: 'Aplica uno o varios cambios de valores al juego en el acto. Devuelve, por cada uno, el valor anterior y el nuevo (ya recortado a sus límites), o el error si la clave no existe.',
       inputSchema: { type: 'object', properties: { cambios: { type: 'array', items: { type: 'object', properties: { clave: { type: 'string' }, valor: {} }, required: ['clave', 'valor'] } } }, required: ['cambios'] },
       execute(input) {
         const cambios = Array.isArray(input.cambios) ? input.cambios.slice(0, 20) : [];
         return cambios.map(c => { try { const r = cambiar(String(c.clave), c.valor); agregarChip(r); return r; } catch (e) { return { clave: c.clave, error: e.message }; } });
+      } },
+    { name: 'leer_codigo', description: 'Lee el código fuente del juego. Pasa una lista de lecturas: {archivo, desde, hasta} para un rango de líneas (hasta 250 por lectura) o {buscar} para encontrar un texto en todos los archivos (o en uno, con archivo). Devuelve las líneas numeradas.',
+      inputSchema: { type: 'object', properties: { lecturas: { type: 'array', items: { type: 'object', properties: { archivo: { type: 'string', description: 'p. ej. armas.js' }, desde: { type: 'number' }, hasta: { type: 'number' }, buscar: { type: 'string' } } } } }, required: ['lecturas'] },
+      async execute(input) { agregarNota('🔎 ' + t('rama.leyendo')); return leerCodigo(input.lecturas); } },
+    { name: 'aplicar_parche', description: 'Agrega a la rama de este jugador un parche de JavaScript y lo ejecuta ahora. Devuelve el id del parche y si conviene recargar, o el error (en ese caso no se guardó nada).',
+      inputSchema: { type: 'object', properties: { descripcion: { type: 'string', description: 'qué cambia, en una línea, para el jugador y el desarrollador' }, codigo: { type: 'string', description: 'el JavaScript del parche' }, requiereRecarga: { type: 'boolean', description: 'true si el cambio sólo se ve después de recargar el juego' } }, required: ['descripcion', 'codigo'] },
+      execute(input) {
+        try {
+          const p = Rama.aplicar({ descripcion: input.descripcion, pedido: ultimoPedido, codigo: input.codigo });
+          agregarNota('🧩 ' + p.descripcion); if (input.requiereRecarga) marcarRecarga(); pintarRama();
+          return { ok: true, id: p.id };
+        } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
       } },
     { name: 'anotar_pedido', description: 'Anota para el desarrollador un pedido que necesita programación nueva. Devuelve dónde quedó guardado.',
       inputSchema: { type: 'object', properties: { resumen: { type: 'string', description: 'una línea, qué hay que hacer' }, detalle: { type: 'string', description: 'detalles útiles del pedido' } }, required: ['resumen'] },
@@ -248,7 +334,7 @@ const Asistente = (() => {
     const msj = texto.value.trim();
     if (!msj || ocupado || !sample || deshabilitado) return;
     texto.value = '';
-    burbuja('yo', msj);
+    burbuja('yo', msj); ultimoPedido = msj;
     turnos.push({ role: 'user', content: msj });
     turnos = turnos.slice(-MAX_TURNOS);
     while (turnos.length && turnos[0].role !== 'user') turnos.shift();
@@ -257,8 +343,8 @@ const Asistente = (() => {
     ocupado = true; pintarEstado(); pararBtn.hidden = false;
     control = new AbortController();
     try {
-      const { text } = await sample([{ role: 'user', content: reglas() }, ...turnos], {
-        modelTier: 'quick', signal: control.signal, tools: HERRAMIENTAS,
+      const { text } = await sample([{ role: 'user', content: await reglas() }, ...turnos], {
+        modelTier: 'complex', signal: control.signal, tools: HERRAMIENTAS,
         onText: ({ text }) => { resp.classList.remove('pensando'); resp.textContent = text; lista.scrollTop = lista.scrollHeight; },
       });
       resp.textContent = text;
@@ -277,6 +363,44 @@ const Asistente = (() => {
   }
 
   reaplicar();   // los ajustes guardados en este navegador valen desde que carga el juego
+  /* ---------- Mi rama ---------- */
+  let hayQueRecargar = false;
+  function marcarRecarga() { hayQueRecargar = true; $('rama-recargar').classList.add('resaltado'); }
+  function pintarRama() {
+    const ul = $('rama-parches');
+    if (!ul) return;
+    ul.textContent = '';
+    const parches = Rama.parches();
+    if (!parches.length) { const li = document.createElement('li'); li.className = 'vacio'; li.textContent = t('rama.sinParches'); ul.appendChild(li); }
+    for (const p of parches) {
+      const li = document.createElement('li');
+      const span = document.createElement('span');
+      span.textContent = p.descripcion + (p.error ? ` · ${t('rama.conError')}` : !p.activo ? ` · ${t('rama.apagado')}` : p.enviado ? ` · ${t('rama.enviadoEstado')}` : '');
+      if (p.error) span.title = p.error;
+      li.appendChild(span);
+      const acciones = document.createElement('span'); acciones.className = 'acciones';
+      const alt = document.createElement('button'); alt.type = 'button'; alt.className = 'boton mini'; alt.textContent = t(p.activo ? 'rama.apagar' : 'rama.encender');
+      alt.onclick = () => { Rama.alternar(p.id, !p.activo); marcarRecarga(); pintarRama(); };
+      const borrar = document.createElement('button'); borrar.type = 'button'; borrar.className = 'boton mini peligro'; borrar.textContent = t('rama.borrar');
+      borrar.onclick = () => { Rama.borrar(p.id); marcarRecarga(); pintarRama(); };
+      acciones.append(alt, borrar); li.appendChild(acciones); ul.appendChild(li);
+    }
+    $('rama-enviar').disabled = !parches.some(p => p.activo);
+  }
+  async function enviarRama() {
+    const datos = Rama.exportar();
+    if (!datos.parches.length) return;
+    if (db) {
+      try { await db.doc('ramas/' + datos.rama).set({ ...datos, idioma: Idioma.actual(), estado: 'en revisión' }); Rama.marcarEnviados(datos.parches.map(p => p.id)); pintarRama(); agregarNota(t('rama.enviada')); return; }
+      catch { /* sin permiso de escritura: archivo o portapapeles */ }
+    }
+    const json = JSON.stringify(datos, null, 2), descargas = await usar('downloads');
+    if (descargas) { try { await descargas.save({ filename: `rama-zona-muerta-${datos.rama}.json`, data: json }); agregarNota(t('rama.descargada')); return; } catch { /* rechazada: portapapeles */ } }
+    try { await navigator.clipboard.writeText(json); agregarNota(t('rama.copiada')); } catch { agregarNota(t('rama.noEnviada')); }
+  }
+  $('rama-recargar').addEventListener('click', () => location.reload());
+  $('rama-enviar').addEventListener('click', enviarRama);
+
   $('asist-form').addEventListener('submit', e => { e.preventDefault(); enviar(); });
   texto.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } });
   pararBtn.addEventListener('click', () => control?.abort());
@@ -296,7 +420,8 @@ const Asistente = (() => {
       capa.classList.remove('oculta');
       texto.placeholder = t('asist.placeholder');
       if (!saludo) { saludo = true; lista.prepend(Object.assign(document.createElement('div'), { className: 'asist-msj claude', textContent: t('asist.bienvenida') })); }
-      pintarEstado(); pintarAjustes(); pintarPedidos();
+      pintarEstado(); pintarAjustes(); pintarPedidos(); pintarRama();
+      for (const a of Rama.avisos()) agregarNota('⚠ ' + t(a.clave, a));
       (texto.disabled ? $('asist-volver') : texto).focus();
     },
     cerrar() {
@@ -307,6 +432,6 @@ const Asistente = (() => {
     },
     abierto: () => abierto,
     // Para probar sin claude.ai (consola): Asistente._cambiar('arma.ak47.dano', 9)
-    _cambiar: cambiar, _restaurar: restaurar, _reglas: reglas, _herramientas: HERRAMIENTAS,
+    _cambiar: cambiar, _restaurar: restaurar, _reglas: reglas, _herramientas: HERRAMIENTAS, _leerCodigo: leerCodigo, _mapa: mapa,
   };
 })();

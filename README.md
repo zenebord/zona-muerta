@@ -99,20 +99,30 @@ y entrá a <http://127.0.0.1:8791/>.
 - **Idiomas**: español, portugués (Brasil) e inglés. Al principio se elige según el idioma del navegador.
   Se traducen menús, HUD, avisos, misiones, dificultades, controles y los carteles del escenario.
 
-## Asistente de construcción (temporal)
+## Asistente de construcción y ramas de jugador (temporal)
 
 Mientras se arma el juego, el panel de configuración (rueda arriba a la izquierda) tiene **Abrir asistente**: un chat
-con Claude adentro del juego para pedir cambios. Sólo anda con el juego abierto en claude.ai y la sesión iniciada; la
-primera vez pide permiso, y cada mensaje gasta el uso de Claude de quien juega.
+con Claude adentro del juego. Sólo anda con el juego abierto en claude.ai y la sesión iniciada; la primera vez pide
+permiso, y cada mensaje gasta el uso de Claude de quien juega (usa el modelo más capaz: un cambio de código tarda
+alrededor de un minuto).
 
-- **Lo que se resuelve con números** (daño, cargador, cadencia, recarga, alcance, retroceso de cada arma; velocidad,
-  salto y vida del jugador; velocidad, vida, daño y cantidad de zombies; frecuencia de cajas) lo aplica al instante,
-  dentro de límites. Nunca escribe código. Los cambios quedan en el navegador de quien juega, con «Deshacer» y
-  «Restaurar todo». El dueño del artefacto ve además **Fijar para todos** (documento `ajustes/compartidos` de la base).
-- **Lo que necesita programación** (armas nuevas, dibujos, mecánicas, mapas, sonidos) lo anota como pedido en la
-  colección `pedidos` de la base del artefacto, para leerlo y programarlo desde Claude Code. Quien no puede escribir en la
-  base (visitantes de fuera de la organización) lo guarda en su navegador y tiene un botón para copiarlo.
-- Para retirarlo: ver el comentario de arriba de `js/asistente.js`.
+- **Ajustes de valores**: daño, cargador, cadencia, recarga, alcance y retroceso de cada arma; velocidad, salto y vida
+  del jugador; vida, velocidad, daño y cantidad de zombies; frecuencia de cajas. Quedan en el navegador de quien juega;
+  el dueño ve además **Fijar para todos** (documento `ajustes/compartidos` de la base del artefacto).
+- **Rama del jugador** (`js/rama.js`): para lo que necesita código, el asistente lee el código del juego y escribe un
+  **parche** de JavaScript que se aplica en vivo. Los parches viven en el navegador de cada jugador («Mi rama»: apagar,
+  borrar, recargar) y se aplican en cada carga, después de los datos, modelos y clases y antes de la interfaz. Un parche
+  que falla al aplicarse no se guarda; uno que tira un error al jugar se apaga solo y el juego se recarga; si la carga
+  anterior se colgó, se apaga el último parche.
+- **Enviar a revisión**: la rama va a la colección `ramas` de la base del artefacto (dueño y miembros de la
+  organización). Quien no puede escribir ahí la descarga como archivo `.json` (o la copia) para mandarla.
+- **Fusionar en main** (desde Claude Code, cuando el dueño lo pide): leer `ramas` con ArtifactData, crear una rama de
+  git `rama/<id>`, pasar cada parche aprobado al código real (prolijo, en el archivo que corresponde), probar, fusionar
+  en `main`, agregar los ids de los parches a `PARCHES_FUSIONADOS` (`js/rama.js`) para que se borren solos de las ramas
+  de los jugadores, marcar la rama como fusionada en la base y publicar.
+- **Al publicar**: generar `js/codigo-fuente.js` con `python3 herramientas/empaquetar-codigo.py . js/codigo-fuente.js`
+  y subirlo junto al resto (es el plan B del asistente para leer el código; no se versiona).
+- Para retirar todo: ver el comentario de arriba de `js/asistente.js` y `js/rama.js`.
 
 ## Controles
 
