@@ -39,19 +39,7 @@ const ARMA_TORRETA = { id: 'torreta', nombre: 'Torreta', categoria: 'metralleta'
 /* ---------- El cuchillo: lo único que queda sin balas ---------- */
 ARMAS.cuchillo = { id: 'cuchillo', nombre: 'Cuchillo', categoria: 'cuerpo', cuerpo: true, unaMano: true, dano: 7, cadencia: 300, golpe: 280,
   alcance: 46, objetivos: 1, empuje: 1.4, filo: true, cargador: 1, automatica: true, color: '#9aa0a8' };
-// Cuchillo de combate (30 cm): hoja de 19 cm con filo y canal, guarda de acero, mango estriado y pomo
-DIBUJO_ARMAS.cuchillo = modelo({ casquillo: null,
-  anclas: { manoDelantera: [0, 6], cargador: [0, 3], corredera: [0, 3], expulsion: [0, 0], boca: [0.5, -20] },
-  dibujarCm(ctx) {
-    pintar(ctx, RRc(-1.6, -0.6, 3.2, 11.4, 1.2), '#2a2b2f');                                                   // mango
-    for (let y = 1; y < 10; y += 1.4) trazo(ctx, 'rgba(255,255,255,0.08)', 0.35, [[-1.4, y], [1.4, y]]);      // estrías
-    pintar(ctx, Cc(0, 11.2, 1.0, 10), MAT.acero);                                                               // pomo
-    pintar(ctx, RRc(-3.0, -1.8, 6.0, 1.3, 0.5), MAT.acero);                                                     // guarda
-    pintar(ctx, [[-1.3, -1.8], [1.5, -1.8], [1.8, -12], [1.2, -17], [0, -19.8], [-1.0, -16.5], [-1.3, -10]], MAT.inox, { brillo: 0.5 });   // hoja
-    trazo(ctx, 'rgba(255,255,255,0.6)', 0.3, [[1.5, -3], [1.7, -12], [1.1, -16.6]]);                            // filo
-    trazo(ctx, 'rgba(0,0,0,0.35)', 0.25, [[-0.2, -2.5], [-0.2, -13]]);                                          // canal
-  } });
-Object.assign(DIBUJO_ARMAS.cuchillo, { agarre: 'cuerpo', anguloEmpunadura: 0 });
+// Su dibujo está en armas-modelos-3.js, con el resto de las armas cuerpo a cuerpo
 
 /* ---------- Zombie de carril: camina derecho hacia el sector ---------- */
 class ZombieCarril extends Zombie {
