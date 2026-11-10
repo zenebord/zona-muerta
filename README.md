@@ -103,7 +103,7 @@ y entrá a <http://127.0.0.1:8791/>.
 
 Mientras se arma el juego, el panel de configuración (rueda arriba a la izquierda) tiene **Abrir asistente**: un chat
 con Claude adentro del juego. Sólo anda con el juego abierto en claude.ai y la sesión iniciada; la primera vez pide
-permiso, y cada mensaje gasta el uso de Claude de quien juega (usa el modelo más capaz: un cambio de código tarda
+permiso, y cada mensaje gasta el uso de Claude de quien juega (usa Claude Sonnet 5.5, o el modelo estándar si a esa persona no le está disponible; un cambio de código tarda
 alrededor de un minuto).
 
 - **Ajustes de valores**: daño, cargador, cadencia, recarga, alcance y retroceso de cada arma; velocidad, salto y vida

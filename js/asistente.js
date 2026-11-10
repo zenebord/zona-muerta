@@ -344,7 +344,8 @@ const Asistente = (() => {
     control = new AbortController();
     try {
       const { text } = await sample([{ role: 'user', content: await reglas() }, ...turnos], {
-        modelTier: 'complex', signal: control.signal, tools: HERRAMIENTAS,
+        model: 'claude-sonnet-5-5', modelTier: 'default',   // Sonnet; si a quien juega no le está disponible, responde el modelo estándar
+        signal: control.signal, tools: HERRAMIENTAS,
         onText: ({ text }) => { resp.classList.remove('pensando'); resp.textContent = text; lista.scrollTop = lista.scrollHeight; },
       });
       resp.textContent = text;
