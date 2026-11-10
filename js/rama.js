@@ -85,9 +85,10 @@ const Rama = (() => {
     try { ejecutar(p); p.error = null; }
     catch (e) { apagar(p, String((e && e.message) || e)); cambioAlCargar = true; avisos.push({ clave: 'rama.fallo', descripcion: p.descripcion }); }
   }
+  // Si llegó acá, ningún parche colgó la carga (un bucle infinito nunca pasaría de la vuelta de arriba)
+  try { localStorage.removeItem(CLAVE_CARGA); } catch { /* ídem */ }
   guardarLocal();
   if (cambioAlCargar) setTimeout(() => subir('Apaga parches que fallaron al cargar'), 0);
-  setTimeout(() => { try { localStorage.removeItem(CLAVE_CARGA); } catch { /* ídem */ } }, 1500);   // si llegó acá, la carga anduvo
 
   // Un parche que tira un error mientras se juega se apaga solo y el juego se recarga sin él (el primer error ya
   // corta el ciclo de dibujo, así que esperar a un segundo dejaría el juego congelado)
