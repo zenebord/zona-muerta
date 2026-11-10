@@ -129,9 +129,9 @@ kbd {
 /* ---- Juego ---- */
 #pantalla-juego { background: #000; padding: 0; }
 #lienzo {
-  width: min(100vw, calc(100vh * 16 / 9));
+  width: min(100vw, calc(100vh * var(--proporcion, 1.7778)));   /* --proporcion: ancho/alto del mundo visible */
   height: auto;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--proporcion, 1.7778);
   display: block;
 }
 
@@ -139,7 +139,7 @@ kbd {
   position: absolute;
   left: 50%; top: 0;
   transform: translateX(-50%);
-  width: min(100vw, calc(100vh * 16 / 9));
+  width: min(100vw, calc(100vh * var(--proporcion, 1.7778)));
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 12px 16px;
   pointer-events: none;

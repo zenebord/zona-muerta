@@ -3,7 +3,10 @@
  * el mismo trozo siempre tiene lo mismo, sin guardar nada. Casi todo es calle; cada tanto hay una
  * montaña, que es lo único que tiene ametralladora fija y armas especiales.
  */
-const ANCHO = 960, ALTO = 540;
+// Alto fijo; el ancho visible se estira con la pantalla (de 16:9 a 21:9, ver ajustarResolucion en interfaz.js):
+// el mundo se desplaza con la cámara, así que un teléfono apaisado ve más calle en vez de franjas negras
+let ANCHO = 960;
+const ALTO = 540;
 const SUELO_BASE = 440;          // y del piso en la calle
 const TAMANO_TROZO = 1200;
 const ALTURA_MONTANA = 150;

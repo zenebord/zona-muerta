@@ -11,7 +11,11 @@
 
   // El lienzo se dibuja a la resolución real de la pantalla (hasta 2× de 960×540) para que los bordes salgan nítidos
   function ajustarResolucion(forzar = false) {
-    const anchoCss = Math.min(window.innerWidth, window.innerHeight * 16 / 9);
+    const proporcion = Math.min(21 / 9, Math.max(16 / 9, window.innerWidth / Math.max(1, window.innerHeight)));
+    const ancho = Math.round(ALTO * proporcion / 2) * 2;
+    if (ancho !== ANCHO) { try { ANCHO = ancho; forzar = true; } catch { /* terreno.js viejo en caché: queda en 16:9 */ } }
+    document.documentElement.style.setProperty('--proporcion', String(ANCHO / ALTO));
+    const anchoCss = Math.min(window.innerWidth, window.innerHeight * ANCHO / ALTO);
     const tope = Config.get('calidad') === 'normal' ? 1 : 2;   // calidad normal: sin alta resolución
     const escala = Math.max(1, Math.min(tope, anchoCss * (window.devicePixelRatio || 1) / ANCHO));
     if (!forzar && Math.abs(escala - Lienzo.escala) < 0.01 && lienzo.width === Math.round(ANCHO * escala)) return;
