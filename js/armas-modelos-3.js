@@ -1,0 +1,1350 @@
+/* ===== Rediseño realista de las armas (reemplaza los modelos anteriores) =====
+ * Mismo sistema que armas-modelos.js (cm reales, origen en la empuñadura, x hacia la boca, y hacia abajo),
+ * pero cada arma con sus rasgos de verdad: estrías, cachas cuadriculadas, cantos redondeados, rieles,
+ * miras, tornillos, cajones fresados. Las anclas siguen apuntando a las mismas piezas, así las recargas y
+ * los agarres funcionan igual. El agarre y las piezas móviles se heredan del modelo anterior si no se dan.
+ */
+// Detalles de terminación
+function cuadriculado(ctx, pts, paso = 0.55, color = 'rgba(0,0,0,0.4)') {   // cuadrillé de las cachas
+  if (Pincel.silueta) return;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const [x, y] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  ctx.save(); ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.clip();
+  ctx.strokeStyle = color; ctx.lineWidth = 0.14; ctx.beginPath();
+  const h = y1 - y0;
+  for (let x = x0 - h; x < x1 + h; x += paso) { ctx.moveTo(x, y0); ctx.lineTo(x + h, y1); ctx.moveTo(x + h, y0); ctx.lineTo(x, y1); }
+  ctx.stroke(); ctx.restore();
+}
+function punteado(ctx, pts, paso = 0.5, color = 'rgba(255,255,255,0.07)') {   // texturado de polímero
+  if (Pincel.silueta) return;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const [x, y] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  ctx.save(); ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.clip();
+  ctx.fillStyle = color;
+  for (let y = y0; y < y1; y += paso) for (let x = x0 + ((y / paso) % 2) * paso / 2; x < x1; x += paso) ctx.fillRect(x, y, paso * 0.35, paso * 0.35);
+  ctx.restore();
+}
+function Ec(cx, cy, rx, ry, n = 32) { return Array.from({ length: n }, (_, k) => [cx + Math.cos(k / n * Math.PI * 2) * rx, cy + Math.sin(k / n * Math.PI * 2) * ry]); }   // elipse
+const tornillo = (ctx, x, y, r = 0.32) => { punto(ctx, x, y, r, '#4a4c52'); trazo(ctx, 'rgba(0,0,0,0.6)', 0.1, [[x - r * 0.7, y], [x + r * 0.7, y]]); };
+// Reemplaza el modelo de un arma conservando agarre, ángulo, culata y piezas móviles del anterior
+function reemplazar(id, def) {
+  const viejo = DIBUJO_ARMAS[id] || {}, nuevo = modelo(def);
+  for (const k of ['agarre', 'anguloEmpunadura', 'culataCm', 'moviles', 'casquilloVaciado']) if (nuevo[k] === undefined && viejo[k] !== undefined) nuevo[k] = viejo[k];
+  DIBUJO_ARMAS[id] = nuevo;
+}
+
+/* ======================= PISTOLAS ======================= */
+
+// Glock 17 (20,2 cm, 13,9 de alto): corredera con el frente achaflanado, estrías traseras inclinadas, ventana
+// con la recámara cuadrada del cañón, extractor y grabado; miras con punto blanco. Armazón de polímero con riel
+// de una ranura, empuñadura a 22° con apoyos para los dedos y texturado, guardamonte de frente plano estriado
+reemplazar('glock', { casquillo: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [0.4, 5.4], cargador: [-4.8, 10.2], corredera: [-2.0, -2.0], expulsion: [6.2, -3.4], boca: [16.7, -2.0] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, P = MAT.polimero, cs = e.corredera * 3.6;
+    const grip = suave([[-3.0, -0.4], [-3.9, 0.2], [-3.7, 1.0], [-7.0, 9.4], [-7.0, 10.0], [-2.2, 10.0], [-1.9, 9.2], [-1.3, 8.5], [-1.5, 7.7], [-0.8, 6.8], [-0.9, 6.0], [-0.1, 5.0], [0.3, 3.9], [0.9, 2.4], [1.0, 1.0]], 0.4, 3);
+    pintar(ctx, grip, P, { mate: true });
+    punteado(ctx, suave([[-3.4, 1.8], [-6.4, 9.0], [-2.6, 9.0], [-1.8, 7.4], [-0.5, 4.0], [0.1, 1.8]], 0.4, 2), 0.42, 'rgba(255,255,255,0.09)');
+    pintar(ctx, suave([[-2.2, 1.0], [-0.8, 1.0], [-0.9, 1.7], [-2.3, 1.7]], 0.25, 2), '#2a2b2f', { mate: true });   // emblema
+    pintar(ctx, suave([[-3.0, -0.5], [15.4, -0.5], [15.6, 0.6], [15.0, 1.6], [8.4, 1.6], [7.8, 1.0], [1.0, 1.0], [-3.0, 1.0]], 0.4, 3), P, { mate: true });   // armazón
+    if (!sil) { ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(11.4, 1.0, 1.2, 0.5); }                    // ranura del riel
+    pintar(ctx, suave([[1.0, 1.0], [7.8, 1.0], [7.8, 3.8], [7.2, 4.0], [2.0, 4.0], [1.0, 3.0]], 0.5, 3), P, { mate: true, huecos: [suave([[1.8, 1.0], [7.0, 1.0], [7.0, 3.2], [2.4, 3.2], [1.7, 2.5]], 0.5, 3)] });
+    for (let y = 1.5; y < 3.7; y += 0.45) trazo(ctx, 'rgba(255,255,255,0.1)', 0.12, [[7.1, y], [7.7, y]]);   // estrías del guardamonte
+    pintar(ctx, [[3.0, 1.0], [3.9, 1.0], [4.1, 2.2], [3.5, 3.0], [3.0, 2.6]], P); trazo(ctx, '#4a4c52', 0.22, [[3.45, 1.4], [3.55, 2.5]]);
+    pintar(ctx, suave(Rc(0.4, 1.3, 0.9, 1.2), 0.2, 2), '#2a2b2f');                                         // retén del cargador
+    pintar(ctx, suave([[1.0, -0.7], [3.0, -0.7], [3.0, -0.2], [1.0, -0.2]], 0.2, 2), MAT.acero);            // retén de corredera
+    pintar(ctx, Rc(5.2, -0.5, 1.2, 0.6), MAT.acero);                                                         // palanca de desarme
+    if (!e.sinCargador) pintar(ctx, suave([[-7.3, 9.8], [-2.0, 9.8], [-1.8, 10.6], [-2.4, 11.0], [-7.4, 10.8]], 0.3, 2), P);
+    pintar(ctx, RRc(2.4, -3.0, 14.2, 1.8, 0.4), MAT.acero);                                                 // cañón (se ve al retroceder)
+    ctx.save(); ctx.translate(-cs, 0);
+    pintar(ctx, suave([[-3.4, -0.5], [-3.4, -3.3], [-3.1, -3.7], [15.6, -3.7], [16.8, -3.0], [16.8, -1.0], [16.3, -0.5]], 0.35, 3), MAT.pavonado, { brillo: 0.25 });
+    trazo(ctx, 'rgba(255,255,255,0.12)', 0.18, [[-3.0, -3.35], [15.4, -3.35]]);                             // bisel de arriba
+    for (let k = 0; k < 8; k++) trazo(ctx, 'rgba(0,0,0,0.55)', 0.16, [[-3.0 + k * 0.36, -3.2], [-2.7 + k * 0.36, -0.9]]);   // estrías inclinadas
+    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(4.0, -3.7, 4.8, 1.1); }
+    ctx.save(); ctx.beginPath(); ctx.rect(4.0, -3.7, 4.8, 1.1); ctx.clip(); pintar(ctx, Rc(4.0 + cs, -3.6, 6, 0.9), '#5a5d63', { brillo: 0.4 }); ctx.restore();   // recámara cuadrada
+    pintar(ctx, suave(Rc(8.9, -2.9, 1.4, 0.6), 0.2, 2), MAT.acero);                                         // extractor
+    if (!sil) for (let k = 0; k < 6; k++) { ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(10.4 + k * 0.7, -2.1, 0.5, 0.28); }   // grabado
+    pintar(ctx, [[-3.0, -3.7], [-1.0, -3.7], [-1.0, -4.4], [-1.6, -4.4], [-1.7, -4.0], [-2.3, -4.0], [-2.4, -4.4], [-3.0, -4.4]], P);   // alza en U
+    pintar(ctx, Rc(15.0, -4.4, 0.8, 0.7), P); punto(ctx, 15.4, -4.1, 0.18, '#f2f2f2');
+    ctx.restore();
+  } });
+
+// Colt 1911 (21,6 cm): corredera plana con estrías atrás y casquillo de cañón, martillo de anillo,
+// seguro de empuñadura, cachas de nogal cuadriculadas con dos tornillos, disparador largo
+reemplazar('colt1911', { casquillo: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [0.2, 5.0], cargador: [-4.4, 9.8], corredera: [1.6, -0.6], expulsion: [5, -3.3], boca: [18.0, -1.9] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-4.6, -0.6], [-6.6, -0.3], [-6.2, 0.4], [-5.2, 1.2], [-6.8, 9.2], [-6.8, 9.8], [-1.6, 9.8], [0.8, 0.9], [-4.6, 0.9]], 0.4, 3), MAT.acero);   // armazón con seguro de empuñadura
+    const cacha = [[-0.7, 1.8], [-2.4, 8.8], [-5.6, 8.8], [-4.4, 1.8]];
+    pintar(ctx, suave(cacha, 0.6, 3), MAT.nogal); cuadriculado(ctx, cacha, 0.55, 'rgba(20,8,2,0.45)');
+    tornillo(ctx, -2.6, 2.8); tornillo(ctx, -3.9, 7.8);
+    pintar(ctx, suave([[-4.4, -0.6], [13.6, -0.6], [13.6, 1.4], [9.4, 1.4], [8.6, 0.9], [-4.4, 0.9]], 0.4, 3), MAT.acero);
+    guardamonteC(ctx, 0.9, 6.0, 0.9, 2.6, MAT.acero);
+    pintar(ctx, Rc(1.4, 0.9, 1.1, 1.5), MAT.acero);                                                         // disparador largo
+    if (!e.sinCargador) pintar(ctx, Rc(-6.9, 9.6, 5.3, 0.7), MAT.acero);
+    pintar(ctx, suave([[-5.4, -2.4], [-4.2, -3.4], [-3.4, -3.2], [-3.6, -0.8], [-4.6, -0.8]], 0.4, 2), MAT.acero, { huecos: [Cc(-4.3, -2.6, 0.45, 10)] });   // martillo
+    pintar(ctx, suave([[-3.0, -1.2], [-0.4, -1.2], [-0.2, -0.6], [-3.0, -0.6]], 0.3, 2), MAT.acero);     // seguro manual
+    pintar(ctx, suave([[1.2, -1.0], [4.2, -1.0], [4.4, -0.4], [1.2, -0.4]], 0.3, 2), MAT.pavonado); tornillo(ctx, 3.6, 0.2, 0.28);   // retén de corredera
+    pintar(ctx, Rc(4.0, -2.8, 13.6, 1.8), MAT.acero);
+    ctx.save(); ctx.translate(-e.corredera * 3.8, 0);
+    pintar(ctx, suave([[-4.6, -0.6], [-4.6, -3.2], [-4.2, -3.5], [17.0, -3.5], [17.2, -3.0], [17.2, -0.6]], 0.3, 2), MAT.acero, { brillo: 0.32 });
+    rayas(ctx, -4.0, -1.4, -3.1, -0.9, 0.36, 'rgba(0,0,0,0.55)', 0.18);
+    pintar(ctx, suave([[17.0, -3.3], [18.0, -3.3], [18.0, -0.8], [17.0, -0.8]], 0.4, 2), MAT.acero);      // casquillo del cañón
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[-4.2, -1.6], [16.8, -1.6]]);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0c0c0e'; ctx.fillRect(3.6, -3.5, 3.6, 0.8); }
+    pintar(ctx, Rc(15.8, -4.0, 0.6, 0.5), MAT.acero); pintar(ctx, Rc(-3.8, -4.0, 1.1, 0.5), MAT.acero);
+    ctx.restore();
+  } });
+
+// Beretta 92FS (21,7 cm): corredera abierta arriba (se ve el cañón), palanca de seguro/desamartillador,
+// martillo redondeado a la vista, cachas negras con estrías verticales, guardamonte redondo
+reemplazar('beretta92', { casquillo: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [0.4, 5.2], cargador: [-4.6, 10.4], corredera: [-3, -2.2], expulsion: [5, -3.4], boca: [17.2, -2.0] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-4.4, -0.4], [-5.2, 0.6], [-6.6, 9.6], [-6.6, 10.2], [-1.4, 10.2], [-0.9, 9.4], [1.0, 0.9]], 0.6, 3), MAT.pavonado);
+    const cacha = [[-0.6, 1.8], [-2.0, 9.0], [-5.6, 9.0], [-4.5, 1.8]];
+    pintar(ctx, suave(cacha, 0.7, 3), MAT.polimero, { mate: true });
+    if (!Pincel.silueta) for (let k = 0; k < 7; k++) trazo(ctx, 'rgba(255,255,255,0.08)', 0.22, [[-4.4 + k * 0.5, 2.2], [-5.6 + k * 0.5 + 0.6, 8.6]]);
+    punto(ctx, -3.2, 3.4, 0.5, '#8a8f97'); tornillo(ctx, -3.6, 7.8, 0.26);
+    pintar(ctx, suave([[-4.4, -0.6], [14.6, -0.6], [14.6, 0.6], [7.2, 0.8], [6.4, 1.1], [-4.4, 1.1]], 0.4, 3), MAT.pavonado);
+    pintar(ctx, suave([[1.0, 1.0], [6.8, 1.0], [7.2, 2.8], [6.2, 3.8], [2.4, 3.8], [1.2, 2.8]], 0.9, 4), MAT.pavonado, { huecos: [suave([[1.9, 1.0], [6.2, 1.0], [6.4, 2.6], [5.6, 3.1], [2.6, 3.1], [1.9, 2.4]], 0.8, 4)] });
+    pintar(ctx, [[2.8, 1.0], [3.7, 1.0], [3.9, 2.3], [3.3, 2.8], [2.9, 2.2]], MAT.acero);
+    if (!e.sinCargador) pintar(ctx, Rc(-6.9, 10.0, 5.8, 0.8), MAT.polimero);
+    pintar(ctx, Cc(-5.3, -1.6, 1.0, 14), MAT.pavonado);                                                    // martillo
+    pintar(ctx, Rc(1.6, -0.9, 2.6, 0.5), MAT.pavonado);
+    pintar(ctx, RRc(1.4, -3.3, 16.2, 1.7, 0.6), MAT.acero, { brillo: 0.4 });                               // cañón a la vista
+    ctx.save(); ctx.translate(-e.corredera * 3.8, 0);
+    pintar(ctx, suave([[-5, -0.6], [-5, -3.2], [-4.4, -3.7], [1.4, -3.7], [2.4, -2.6], [12.4, -2.6], [13.4, -3.6], [17.4, -3.6], [17.8, -2.8], [17.6, -0.6]], 0.4, 3), MAT.pavonado, { brillo: 0.22 });
+    rayas(ctx, -4.6, -2.2, -3.2, -0.9, 0.42, 'rgba(0,0,0,0.6)', 0.18);
+    pintar(ctx, Cc(-3.0, -2.4, 0.75, 12), MAT.pavonado); trazo(ctx, '#d33', 0.25, [[-3.3, -2.4], [-2.7, -2.4]]);   // seguro / desamartillador
+    pintar(ctx, Rc(16.2, -4.2, 0.7, 0.6), MAT.acero); pintar(ctx, Rc(-4.4, -4.2, 1.2, 0.6), MAT.acero);
+    ctx.restore();
+  } });
+
+// Walther PPK (15,5 cm): corredera de cantos redondeados que se afina adelante, estrías verticales, palanca de
+// seguro y desamartillador, grabado, alza y guion bajos; armazón de acero con la cola sobre la mano, martillo
+// con espuela calada, cachas envolventes cuadriculadas con el escudo y cargador con apoyo para el meñique
+reemplazar('ppk', { casquillo: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [0.2, 4.4], cargador: [-3.8, 8.0], corredera: [-2.6, -2], expulsion: [4, -2.6], boca: [12.2, -1.6] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, N = MAT.niquel, cs = e.corredera * 3.0;
+    pintar(ctx, suave([[-3.2, -0.3], [-5.0, -0.2], [-4.6, 0.6], [-5.6, 7.4], [-5.4, 7.8], [-1.6, 7.8], [-1.2, 7.2], [-0.2, 2.4], [0.9, 0.7]], 0.5, 3), N, { brillo: 0.5 });   // armazón
+    const cacha = suave([[-0.7, 1.0], [-1.9, 7.4], [-5.5, 7.4], [-4.8, 0.4], [-4.2, 0.0]], 0.6, 3);   // envuelve el lomo
+    pintar(ctx, cacha, MAT.polimero); cuadriculado(ctx, suave([[-1.0, 2.8], [-2.0, 6.8], [-4.6, 6.8], [-3.9, 2.8]], 0.4, 2), 0.42, 'rgba(255,255,255,0.1)');
+    pintar(ctx, Ec(-2.6, 1.9, 0.9, 0.55, 16), '#3a3c42', { brillo: 0.4 });                                 // escudo
+    pintar(ctx, suave([[0.8, 0.7], [5.2, 0.7], [5.4, 2.2], [4.6, 3.0], [1.6, 3.0], [0.9, 2.0]], 0.9, 4), N, { huecos: [suave([[1.5, 0.7], [4.7, 0.7], [4.8, 2.0], [4.2, 2.4], [1.9, 2.4], [1.5, 1.8]], 0.7, 4)] });
+    pintar(ctx, [[2.3, 0.7], [3.0, 0.7], [3.2, 1.9], [2.6, 2.2], [2.3, 1.6]], MAT.acero);
+    pintar(ctx, suave([[-3.2, -0.4], [10.0, -0.4], [10.4, 0.2], [9.8, 0.6], [5.4, 0.6], [4.4, 0.8], [-3.2, 0.8]], 0.4, 3), N, { brillo: 0.5 });
+    tornillo(ctx, 6.6, 0.1, 0.22);
+    if (!e.sinCargador) pintar(ctx, suave([[-5.6, 7.6], [-1.4, 7.6], [-0.6, 8.2], [-0.6, 8.8], [-1.6, 9.2], [-5.6, 8.6]], 0.4, 2), MAT.polimero);   // apoyo del meñique
+    pintar(ctx, suave([[-3.4, -0.6], [-4.6, -1.4], [-4.9, -2.4], [-4.2, -2.9], [-3.4, -2.4], [-3.0, -0.8]], 0.3, 2), N, { huecos: [Cc(-4.15, -2.05, 0.32, 10)] });   // martillo calado
+    ctx.save(); ctx.translate(-cs, 0);
+    pintar(ctx, suave([[-3.4, -0.4], [-3.6, -1.8], [-3.1, -2.9], [10.6, -2.9], [11.8, -2.6], [12.3, -1.8], [12.2, -0.8], [11.6, -0.4]], 0.6, 4), N, { brillo: 0.55 });
+    trazo(ctx, 'rgba(255,255,255,0.35)', 0.16, [[-2.8, -2.45], [11.4, -2.45]]);
+    rayas(ctx, -2.8, -1.0, -2.5, -0.8, 0.3, 'rgba(0,0,0,0.4)', 0.13);
+    pintar(ctx, Cc(-2.0, -1.8, 0.55, 12), N); pintar(ctx, suave([[-2.0, -2.2], [-3.1, -2.5], [-3.2, -2.0], [-2.0, -1.4]], 0.2, 2), N);   // seguro
+    if (!sil) { ctx.fillStyle = '#0c0c0e'; ctx.fillRect(3.2, -2.9, 3.0, 0.7); for (let k = 0; k < 5; k++) { ctx.fillStyle = 'rgba(30,32,36,0.35)'; ctx.fillRect(6.8 + k * 0.6, -1.5, 0.4, 0.25); } }
+    pintar(ctx, [[-2.8, -2.9], [-1.2, -2.9], [-1.2, -3.3], [-1.7, -3.3], [-1.8, -3.1], [-2.2, -3.1], [-2.3, -3.3], [-2.8, -3.3]], N);   // alza
+    pintar(ctx, [[10.6, -2.9], [10.8, -3.4], [11.2, -3.4], [11.3, -2.9]], N);
+    ctx.restore();
+  } });
+
+// Desert Eagle Mark XIX (27 cm): cañón fijo de perfil triangular con la arista que brilla, panel rebajado con
+// el grabado y riel arriba; corredera corta atrás con estrías inclinadas, ventana con el cerrojo rotativo,
+// seguro ambidiestro y alza; martillo con espuela estriada, guardamonte cuadrado con gancho, cachas envolventes
+reemplazar('deagle', { casquillo: 'grande', origen: PISTOLA,
+  anclas: { manoDelantera: [0.8, 5.4], cargador: [-5.0, 9.8], corredera: [-3.6, -2.6], expulsion: [6, -4.5], boca: [22.6, -2.6] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, N = MAT.niquel, cs = e.corredera * 4.2;
+    const grip = suave([[-4.4, 0.0], [-5.8, 0.8], [-7.6, 9.0], [-7.4, 9.8], [-1.8, 9.8], [-1.4, 9.0], [-0.8, 7.2], [0.2, 5.0], [1.2, 3.6], [1.6, 1.4]], 0.6, 3);
+    pintar(ctx, grip, MAT.polimero, { mate: true });
+    if (!sil) { ctx.save(); ctx.beginPath(); grip.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.clip(); for (let k = 0; k < 14; k++) trazo(ctx, 'rgba(255,255,255,0.07)', 0.2, [[-5.4 + k * 0.5, 1.4], [-7.2 + k * 0.5, 9.6]]); ctx.restore(); }
+    pintar(ctx, suave([[-4.6, -0.6], [11.6, -0.6], [11.6, 1.0], [8.4, 1.2], [7.6, 1.4], [-4.6, 1.4], [-5.8, 0.6], [-5.8, -0.2]], 0.4, 3), N, { brillo: 0.5 });   // armazón
+    pintar(ctx, suave([[1.4, 1.2], [7.8, 1.2], [8.4, 2.4], [8.0, 4.4], [6.8, 4.6], [2.6, 4.6], [1.6, 3.4]], 0.6, 3), N, { huecos: [suave([[2.2, 1.2], [7.2, 1.2], [7.5, 2.4], [7.2, 3.8], [2.8, 3.8], [2.3, 3.0]], 0.6, 3)] });
+    pintar(ctx, [[8.3, 2.0], [9.2, 2.6], [8.3, 3.0]], N);                                                   // gancho del guardamonte
+    pintar(ctx, [[3.2, 1.2], [4.2, 1.2], [4.4, 2.6], [3.8, 3.2], [3.2, 2.5]], MAT.acero);
+    pintar(ctx, Cc(10.6, 0.3, 0.45, 10), MAT.acero);                                                        // botón de desarme
+    if (!e.sinCargador) pintar(ctx, suave(Rc(-7.8, 9.6, 6.6, 0.8), 0.3, 2), N);
+    pintar(ctx, suave([[-5.0, -0.8], [-6.4, -1.8], [-7.0, -3.0], [-6.4, -3.8], [-5.4, -3.4], [-4.6, -1.4]], 0.4, 2), N);   // martillo
+    for (let k = 0; k < 4; k++) trazo(ctx, 'rgba(0,0,0,0.45)', 0.1, [[-6.8 + k * 0.35, -3.2 + k * 0.1], [-6.1 + k * 0.35, -3.6 + k * 0.1]]);
+    // Cañón fijo
+    pintar(ctx, suave([[11.0, -5.0], [22.2, -5.0], [22.6, -4.4], [22.6, -1.0], [22.0, -0.4], [11.0, -0.4]], 0.35, 3), N, { brillo: 0.55 });
+    pintar(ctx, suave(Rc(12.6, -3.3, 8.8, 2.2), 0.4, 2), '#7d838c', { brillo: 0.15 });                       // panel rebajado
+    trazo(ctx, 'rgba(255,255,255,0.4)', 0.18, [[11.4, -3.75], [22.2, -3.75]]);                              // arista del perfil triangular
+    if (!sil) for (let k = 0; k < 9; k++) { ctx.fillStyle = 'rgba(30,32,36,0.35)'; ctx.fillRect(13.4 + k * 0.8, -2.4, 0.55, 0.3); }   // grabado
+    pintar(ctx, Rc(11.4, -5.8, 10.6, 0.8), N); rayas(ctx, 12.2, 21.4, -5.8, -5.1, 1.0, 'rgba(0,0,0,0.45)', 0.25);   // riel
+    pintar(ctx, [[21.2, -5.8], [21.4, -6.7], [22.0, -6.7], [22.2, -5.8]], N);                               // guion
+    // Corredera corta
+    ctx.save(); ctx.translate(-cs, 0);
+    pintar(ctx, suave([[-5.0, -0.6], [-5.0, -3.9], [-4.3, -5.0], [11.0, -5.0], [11.0, -0.6]], 0.35, 3), N, { brillo: 0.5 });
+    for (let k = 0; k < 7; k++) trazo(ctx, 'rgba(0,0,0,0.4)', 0.2, [[-4.4 + k * 0.42, -4.4], [-4.1 + k * 0.42, -1.0]]);
+    trazo(ctx, 'rgba(255,255,255,0.3)', 0.18, [[-4.0, -3.75], [10.8, -3.75]]);
+    if (!sil) { ctx.fillStyle = '#0c0c0e'; ctx.fillRect(4.0, -5.0, 4.6, 1.2); ctx.fillStyle = '#6b7078'; ctx.fillRect(4.2, -4.9, 2.6, 0.8); }   // ventana y cerrojo
+    pintar(ctx, Cc(-2.6, -2.9, 0.75, 12), N); pintar(ctx, suave([[-2.4, -3.5], [-4.2, -3.9], [-4.3, -3.3], [-2.4, -2.4]], 0.2, 2), N);   // seguro
+    pintar(ctx, [[-4.4, -5.0], [-2.4, -5.0], [-2.4, -5.8], [-3.0, -5.8], [-3.1, -5.4], [-3.7, -5.4], [-3.8, -5.8], [-4.4, -5.8]], N);   // alza
+    ctx.restore();
+  } });
+
+// Revólver (S&W 29 y Colt Python): armazón, tambor estriado que se vuelca, puente arriba con el alza,
+// martillo con espuela, varilla extractora bajo el cañón y cachas de madera
+function revolver(ctx, e, op) {
+  const { largo, funda, costilla, acabado, madera } = op;
+  pintar(ctx, suave([[-2.8, -0.9], [-1.2, 0.4], [-0.4, 1.6], [-1.0, 7.4], [-1.8, 9.2], [-5.4, 9.6], [-6.0, 8.0], [-5.2, 3.4], [-5.0, 1.0], [-4.0, -0.4]], 0.9, 5), madera);   // cacha
+  cuadriculado(ctx, [[-1.6, 2.4], [-1.6, 7.2], [-5.0, 7.6], [-4.6, 2.4]], 0.5, 'rgba(15,6,2,0.45)');
+  pintar(ctx, Cc(-3.2, 4.2, 0.55, 12), '#b8a26a');                                                        // medallón
+  pintar(ctx, suave([[-2.8, -1.0], [1.4, -1.0], [1.4, -5.0], [6.4, -5.0], [6.4, 0.6], [5.2, 0.8], [1.2, 0.8], [-0.6, 1.6], [-2.6, 0.2]], 0.4, 3), acabado, { brillo: 0.4 });   // armazón
+  tornillo(ctx, -0.2, -0.4); tornillo(ctx, 4.8, 0.3, 0.26);
+  pintar(ctx, suave([[0.6, 0.6], [5.0, 0.6], [5.2, 2.0], [4.2, 3.0], [1.4, 3.0], [0.6, 2.0]], 0.9, 4), acabado, { huecos: [suave([[1.2, 0.6], [4.4, 0.6], [4.5, 1.8], [3.8, 2.4], [1.6, 2.4], [1.2, 1.7]], 0.7, 4)] });
+  pintar(ctx, [[2.0, 0.6], [2.9, 0.6], [3.0, 1.8], [2.4, 2.2], [2.0, 1.6]], MAT.acero);
+  pintar(ctx, suave([[-3.6, -2.0], [-2.4, -3.8], [-1.2, -4.4], [-0.4, -3.6], [-0.4, -1.0], [-2.4, -1.0]], 0.4, 2), acabado);   // martillo
+  rayas(ctx, -2.6, -1.6, -4.0, -3.4, 0.3, 'rgba(0,0,0,0.5)', 0.14);
+  pintar(ctx, Rc(0, -5.6, 1.4, 0.7), acabado);                                                            // alza
+  pintar(ctx, Cc(0.6, -2.0, 0.5, 10), acabado);                                                          // retén del tambor
+  // Cañón con costilla (ventilada en el Python), funda de la varilla o «underlug» completo
+  pintar(ctx, suave([[6.4, -4.4], [largo, -4.4], [largo, -2.2], [6.4, -2.2]], 0.3, 2), acabado, { brillo: 0.45 });
+  pintar(ctx, Rc(6.4, -5.2, largo - 6.8, 0.9), acabado);
+  if (costilla && !Pincel.silueta) for (let x = 8; x < largo - 1.4; x += 1.2) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(x, -5.1, 0.6, 0.5); }
+  pintar(ctx, suave(funda === 'completa' ? [[6.4, -2.2], [largo, -2.2], [largo, 0.2], [largo - 1, 0.6], [6.4, 0.6]] : [[6.4, -2.2], [12.4, -2.2], [12.4, -0.6], [11.8, 0.2], [6.4, 0.2]], 0.5, 3), acabado, { brillo: 0.35 });
+  pintar(ctx, [[largo - 1.4, -5.2], [largo - 0.6, -6.6], [largo - 0.2, -6.6], [largo - 0.2, -5.2]], acabado);   // guion
+  punto(ctx, largo - 0.4, -6.2, 0.18, '#d33');
+  // Tambor de seis con estrías; se vuelca hacia afuera para recargar
+  ctx.save(); ctx.translate(-e.abierto * 1.5, e.abierto * 4.2);
+  pintar(ctx, suave([[1.6, -4.6], [6.2, -4.6], [6.4, -4.0], [6.4, -0.4], [6.2, 0.2], [1.6, 0.2], [1.4, -0.4], [1.4, -4.0]], 0.6, 3), acabado, { brillo: 0.5 });
+  if (!Pincel.silueta) for (const y of [-3.4, -2.2, -1.0]) { ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(3.9, y, 1.8, 0.28, 0, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+reemplazar('magnum', { casquillo: null, casquilloVaciado: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [-0.2, 5.0], cargador: [3.8, -2.4], corredera: [3.8, -2.4], expulsion: [3.8, -2.4], boca: [23.8, -3.3] },
+  dibujarCm(ctx, e) { revolver(ctx, e, { largo: 23.8, funda: 'media', costilla: false, acabado: '#b9bdc6', madera: '#7a3f22' }); } });
+reemplazar('python', { casquillo: null, casquilloVaciado: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [-0.2, 5.0], cargador: [3.8, -2.4], corredera: [3.8, -2.4], expulsion: [3.8, -2.4], boca: [22.8, -3.3] },
+  dibujarCm(ctx, e) { revolver(ctx, e, { largo: 22.8, funda: 'completa', costilla: true, acabado: '#232a36', madera: '#5a2e18' }); } });
+
+// Mauser C96 (31 cm): cajón fresado con paneles rebajados, depósito delante del gatillo con su panel y tapa,
+// cañón cónico con anillo, alza tangencial graduada, guion, cerrojo con orejas estriadas, martillo de anillo,
+// empuñadura «mango de escoba» de nogal con ranuras, ranura para la culata-funda y argolla
+reemplazar('mauser', { casquillo: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [-0.6, 5.0], cargador: [6.4, -3.4], corredera: [-1.6, -2.4], expulsion: [3, -3.2], boca: [25.8, -2.0] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, B = MAT.pavonado, REB = '#1c1d22', ab = Math.max(e.corredera, e.abierto);
+    pintar(ctx, suave([[0.4, 0.2], [-2.4, 9.4], [-3.2, 10.6], [-5.0, 11.0], [-6.6, 10.4], [-7.0, 9.4], [-4.6, 1.4], [-3.6, -0.2]], 1.4, 6), B);   // armazón de la empuñadura
+    const cacha = suave([[-0.2, 1.2], [-2.6, 9.0], [-3.4, 9.8], [-5.0, 10.0], [-6.2, 9.4], [-4.2, 1.6], [-3.4, 0.8]], 1.0, 5);
+    pintar(ctx, cacha, MAT.nogal);
+    if (!sil) { ctx.save(); ctx.beginPath(); cacha.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.clip();
+      for (let k = 0; k < 20; k++) { const t = k / 19, cx = -1.8 - t * 3.0, cy = 1.4 + t * 8.4; trazo(ctx, 'rgba(15,6,2,0.55)', 0.2, [[cx - 2.9, cy - 0.95], [cx + 2.9, cy + 0.95]]); }
+      ctx.restore(); }
+    trazo(ctx, '#0b0b0d', 0.35, [[-6.3, 7.2], [-6.8, 9.2]]);                                                // ranura de la culata
+    if (!sil) { ctx.beginPath(); ctx.arc(-5.0, 11.7, 0.75, 0, Math.PI * 2); ctx.strokeStyle = '#4a4c52'; ctx.lineWidth = 0.28; ctx.stroke(); }   // argolla
+    pintar(ctx, suave([[3.6, -0.2], [9.8, -0.2], [9.6, 4.6], [9.0, 5.2], [4.4, 5.2], [3.8, 4.6]], 0.4, 3), B, { brillo: 0.35 });   // depósito
+    pintar(ctx, suave(Rc(4.6, 0.6, 4.2, 3.4), 0.4, 2), REB, { mate: true });
+    pintar(ctx, suave(Rc(3.8, 4.8, 5.8, 0.6), 0.2, 2), B);                                                  // tapa del depósito
+    if (!sil) { ctx.beginPath(); ctx.moveTo(3.6, 0.6); ctx.quadraticCurveTo(3.4, 3.6, 1.4, 3.4); ctx.quadraticCurveTo(-0.2, 3.2, 0.2, 0.8); ctx.strokeStyle = B; ctx.lineWidth = 0.6; ctx.stroke(); }   // guardamonte
+    pintar(ctx, [[1.4, -0.2], [2.2, -0.2], [2.4, 1.4], [1.8, 1.9], [1.5, 1.0]], MAT.acero);
+    pintar(ctx, suave([[-3.4, -0.2], [11.4, -0.2], [11.4, -3.4], [-3.2, -3.4]], 0.4, 3), B, { brillo: 0.4 });   // cajón
+    pintar(ctx, suave(Rc(4.2, -2.9, 6.6, 2.2), 0.35, 2), REB, { mate: true });                              // panel fresado
+    pintar(ctx, suave(Rc(0.4, -2.9, 2.8, 2.2), 0.35, 2), REB, { mate: true });
+    pintar(ctx, [[11.4, -3.0], [25.8, -2.75], [25.8, -1.35], [11.4, -1.1]], B, { brillo: 0.45 });            // cañón cónico
+    pintar(ctx, suave(Rc(12.6, -3.15, 0.9, 2.2), 0.2, 2), B);                                                // anillo
+    trazo(ctx, 'rgba(255,255,255,0.22)', 0.15, [[13.6, -2.55], [25.6, -2.45]]);
+    pintar(ctx, suave([[8.6, -3.4], [13.8, -3.4], [13.8, -3.9], [9.0, -4.2]], 0.2, 2), B);                   // alza tangencial
+    rayas(ctx, 10.0, 13.2, -3.95, -3.55, 0.6, 'rgba(255,255,255,0.2)', 0.08);
+    pintar(ctx, suave(Rc(12.6, -4.5, 1.0, 1.0), 0.2, 2), B);
+    pintar(ctx, [[24.6, -2.75], [24.9, -3.8], [25.3, -3.8], [25.6, -2.75]], B);                              // guion
+    if (ab > 0.3 && !sil) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(4.6, -3.4, 4.6, 0.8); }
+    ctx.save(); ctx.translate(-ab * 3.4, 0);
+    pintar(ctx, suave([[-3.4, -3.4], [0.6, -3.4], [0.6, -2.0], [-3.4, -2.0]], 0.3, 2), MAT.acero);          // cerrojo
+    pintar(ctx, suave([[-4.4, -3.8], [-2.2, -3.8], [-2.2, -1.8], [-4.4, -1.8]], 0.5, 2), MAT.acero);         // orejas para amartillar
+    rayas(ctx, -4.1, -2.5, -3.6, -2.0, 0.32, 'rgba(0,0,0,0.5)', 0.12);
+    ctx.restore();
+    pintar(ctx, suave([[-3.4, -1.6], [-4.4, -2.2], [-5.0, -3.2], [-4.4, -4.0], [-3.4, -3.8], [-3.0, -2.4]], 0.4, 3), B, { huecos: [Cc(-4.1, -3.0, 0.4, 12)] });   // martillo de anillo
+  } });
+
+/* ======================= METRALLETAS Y FUSILES DE ASALTO ======================= */
+
+// Uzi (64 cm con la culata desplegada): cajón largo de chapa con los dos nervios estampados a lo largo, tapa
+// superior con la manija de carga arriba en el medio, alza y guion con orejas protectoras, ventana de
+// expulsión, empuñadura con el cargador adentro y seguro de empuñadura atrás, guardamonte grande, guardamanos
+// bajo el frente, tuerca moleteada del cañón y culata metálica desplegada con cantonera curva
+reemplazar('uzi', { casquillo: 'pistola',
+  anclas: { manoDelantera: [13.6, 0.8], cargador: [-0.8, 10.2], corredera: [3.7, -8.5], expulsion: [6.8, -4.4], boca: [25.0, -3.6] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, A = '#2c2e33', cc = e.corredera * 5;
+    // Culata desplegada: brazo con nervio, bisagras y cantonera curva
+    pintar(ctx, suave([[-15.0, -3.6], [-31.4, -3.0], [-31.4, -1.6], [-15.0, -1.4]], 0.4, 2), A, { brillo: 0.35 });
+    trazo(ctx, 'rgba(0,0,0,0.45)', 0.16, [[-16.0, -2.5], [-30.6, -2.3]]);
+    pintar(ctx, suave([[-33.2, -6.6], [-31.8, -6.6], [-31.0, -3.6], [-31.0, 2.4], [-31.8, 5.0], [-33.2, 5.0], [-33.6, -0.8]], 0.6, 3), A, { brillo: 0.35 });
+    tornillo(ctx, -31.4, -2.3, 0.4); tornillo(ctx, -15.6, -2.5, 0.4);
+    // Empuñadura con panel, seguro de empuñadura y cargador recto que asoma abajo
+    if (!e.sinCargador) {
+      pintar(ctx, suave([[-3.2, 9.4], [1.2, 9.4], [1.0, 19.2], [-3.4, 19.2]], 0.3, 2), A, { brillo: 0.3 });
+      trazo(ctx, 'rgba(255,255,255,0.08)', 0.3, [[-1.1, 10.0], [-1.2, 18.6]]);
+      pintar(ctx, suave(Rc(-3.6, 18.8, 4.8, 0.9), 0.3, 2), A);
+    }
+    pintar(ctx, suave([[-4.0, -0.4], [2.4, -0.4], [2.2, 3.0], [1.6, 4.2], [2.0, 5.6], [1.6, 9.8], [-3.6, 9.8], [-3.8, 4.0]], 0.6, 3), MAT.polimero, { mate: true });
+    const panel = suave([[-3.0, 1.4], [1.0, 1.4], [0.8, 8.8], [-2.8, 8.8]], 0.6, 3);
+    pintar(ctx, panel, '#232427', { mate: true }); cuadriculado(ctx, panel, 0.5, 'rgba(255,255,255,0.07)');
+    pintar(ctx, suave([[-4.8, 0.2], [-3.8, 0.2], [-3.8, 6.6], [-4.4, 6.8], [-5.0, 3.4]], 0.4, 2), A);          // seguro de empuñadura
+    // Guardamonte grande y disparador
+    pintar(ctx, suave([[2.2, -0.4], [9.6, -0.4], [9.8, 3.2], [8.8, 4.0], [3.2, 4.0], [2.2, 3.0]], 0.6, 3), A, { huecos: [suave([[3.0, -0.4], [8.8, -0.4], [9.0, 2.8], [8.4, 3.3], [3.6, 3.3], [3.0, 2.4]], 0.5, 3)] });
+    pintar(ctx, [[4.2, -0.4], [5.0, -0.4], [5.2, 1.4], [4.6, 1.8], [4.2, 1.0]], MAT.acero);
+    // Guardamanos bajo el frente del cajón
+    pintar(ctx, suave([[9.6, -0.9], [20.0, -0.9], [20.0, 1.2], [19.2, 1.8], [10.2, 1.8], [9.6, 1.0]], 0.6, 3), MAT.polimero, { mate: true });
+    rayas(ctx, 11.0, 18.8, -0.4, 1.4, 1.1, 'rgba(255,255,255,0.06)', 0.3);
+    // Cajón de chapa con los nervios estampados
+    pintar(ctx, suave([[-15.6, -0.8], [-15.6, -6.8], [-15.0, -7.4], [20.4, -7.4], [20.4, -0.8]], 0.4, 3), A, { brillo: 0.3 });
+    for (const y of [-5.9, -2.2]) pintar(ctx, suave([[-14.2, y - 0.45], [18.8, y - 0.45], [19.2, y], [18.8, y + 0.45], [-14.2, y + 0.45], [-14.6, y]], 0.3, 2), '#25272b', { brillo: 0.4 });
+    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(4.6, -5.2, 4.6, 1.6); }                               // ventana de expulsión
+    pintar(ctx, Cc(-1.8, -3.6, 0.55, 12), MAT.acero);                                                         // selector
+    if (!sil) { ctx.beginPath(); ctx.arc(-14.6, 0.4, 0.8, 0, Math.PI * 2); ctx.strokeStyle = '#3a3c42'; ctx.lineWidth = 0.28; ctx.stroke(); }   // argolla
+    // Tapa superior con la ranura y la manija de carga, alza y guion con orejas
+    pintar(ctx, suave([[-14.8, -7.4], [-14.8, -8.0], [19.6, -8.0], [19.6, -7.4]], 0.2, 2), A);
+    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(-1.6, -8.0, 6.6, 0.3); }
+    pintar(ctx, suave([[2.6 - cc, -9.0], [4.8 - cc, -9.0], [4.8 - cc, -8.0], [2.6 - cc, -8.0]], 0.4, 2), MAT.acero);
+    pintar(ctx, [[-14.0, -8.0], [-13.6, -9.8], [-12.0, -9.8], [-11.6, -8.0]], A, { huecos: [suave(Rc(-13.2, -9.4, 1.2, 1.0), 0.3, 2)] });
+    pintar(ctx, [[17.6, -8.0], [17.9, -10.2], [19.6, -10.2], [19.9, -8.0]], A, { huecos: [suave(Rc(18.3, -9.8, 0.9, 1.4), 0.3, 2)] });
+    pintar(ctx, Rc(18.6, -9.6, 0.3, 1.6), MAT.acero);
+    // Tuerca del cañón moleteada y cañón
+    pintar(ctx, suave([[20.4, -6.2], [23.0, -6.2], [23.0, -1.0], [20.4, -1.0]], 0.5, 2), MAT.acero); rayas(ctx, 20.8, 22.6, -6.0, -1.2, 0.4, 'rgba(0,0,0,0.4)', 0.16);
+    pintar(ctx, Rc(23.0, -4.3, 2.0, 1.4), MAT.pavonado);
+  } });
+Object.assign(DIBUJO_ARMAS.uzi, { agarre: 'hombro', culataCm: 33.6, anguloEmpunadura: 0.12 });   // con la culata desplegada va al hombro
+
+// AK-47 (88 cm): culata de madera con caída y cantonera de chapa, cajón con tapa curvada atrás, palanca
+// selectora larga, cargador curvo nervado, guardamanos con canaletas, alza de hoja, bloque de gases con
+// el tubo arriba, varilla de limpieza bajo el cañón y guion con capuchón
+reemplazar('ak47', { casquillo: 'bala',
+  anclas: { manoDelantera: [29, -2.6], cargador: [10.4, -2.2], corredera: [17, -5.4], expulsion: [12, -7.4], boca: [47.2, -5.0] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-4.2, -6.6], [-40, -4.0], [-40.6, -3.6], [-40.6, 8.8], [-39.8, 9.2], [-28, 4.8], [-8.6, 0.6], [-4.2, -1.8]], 0.8, 4), MAT.madera);   // culata
+    pintar(ctx, suave([[-41.2, -3.8], [-40.4, -3.8], [-40.4, 9.2], [-41.2, 9.0]], 0.3, 2), MAT.acero);
+    pintar(ctx, suave([[-1.2, -2.0], [2.8, -2.0], [1.6, 7.8], [-2.4, 7.8], [-2.8, 1.2]], 0.7, 3), '#5a2e18');   // pistolete
+    guardamonteC(ctx, 2.8, 8.6, -2.0, 3.0, MAT.acero);
+    pintar(ctx, [[4.2, -2.0], [5.0, -2.0], [5.2, -0.2], [4.6, 0.4], [4.2, -0.4]], MAT.acero);
+    if (!e.sinCargador) {
+      pintar(ctx, suave([[7.4, -2.2], [13.2, -2.2], [15.4, 6.2], [19.0, 15.2], [14.0, 17.4], [10.4, 8.2], [7.4, -0.2]], 0.6, 4), MAT.acero);
+      for (const t of [0.25, 0.5, 0.75]) trazo(ctx, 'rgba(0,0,0,0.4)', 0.3, [[7.8 + t * 3.6, -1.6 + t * 9], [12.6 + t * 5.6, -1.4 + t * 15.4]]);
+    }
+    pintar(ctx, suave([[-4.2, -2.0], [-4.2, -6.2], [-2.6, -7.4], [21, -7.4], [21, -2.0]], 0.5, 3), MAT.pavonado, { brillo: 0.25 });   // cajón y tapa
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.25, [[-3.6, -5.4], [20.6, -5.4]]);
+    pintar(ctx, Cc(-3.2, -6.6, 0.45, 10), MAT.acero);                                                     // botón de la tapa
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(9.4, -5.2, 7.6, 1.2); }
+    pintar(ctx, [[2.6, -4.2], [15.6, -5.0], [15.8, -4.2], [2.8, -3.6]], MAT.acero);                     // palanca selectora
+    pintar(ctx, suave([[20.6, -7.6], [24.2, -8.6], [24.4, -7.0], [20.8, -6.6]], 0.3, 2), MAT.pavonado);   // alza de hoja
+    pintar(ctx, suave([[21, -2.4], [21, -6.6], [35.6, -6.4], [36.0, -4.0], [35.0, -2.4]], 0.6, 3), MAT.madera);   // guardamanos inferior
+    for (const x of [24.6, 28.6, 32.6]) trazo(ctx, 'rgba(20,8,2,0.5)', 0.4, [[x, -5.6], [x + 1.6, -5.6]]);
+    pintar(ctx, suave([[22, -6.8], [22, -9.0], [33, -9.0], [33.8, -7.8], [33, -6.8]], 0.6, 3), MAT.madera);   // guardamanos superior sobre el tubo
+    pintar(ctx, suave([[33, -9.2], [36.4, -9.2], [36.6, -4.4], [33, -4.4]], 0.4, 2), MAT.pavonado);      // bloque de gases
+    pintar(ctx, Rc(36, -5.8, 10.8, 1.3), MAT.pavonado);                                                     // cañón
+    trazo(ctx, '#3c3e44', 0.45, [[33.4, -3.6], [45.4, -3.6]]);                                              // varilla de limpieza
+    pintar(ctx, suave([[43.4, -4.4], [43.8, -9.6], [45.6, -9.6], [46, -4.4]], 0.4, 2), MAT.pavonado, { huecos: [suave([[44.1, -9.0], [45.3, -9.0], [45.3, -7.4], [44.1, -7.4]], 0.3, 2)] });   // guion con capuchón
+    pintar(ctx, Rc(46.4, -6.0, 1.0, 1.7), MAT.acero);
+    pintar(ctx, suave([[16.4 - e.corredera * 8, -6.2], [19.2 - e.corredera * 8, -6.2], [19.2 - e.corredera * 8, -4.6], [16.4 - e.corredera * 8, -4.6]], 0.4, 2), MAT.acero);   // manija
+  } });
+
+// M16A1 (99 cm): culata fija de polímero, cajón inferior con el pistolete, cajón superior con asa y alza,
+// asistente de cierre, guardamanos redondo ventilado, anillo delta, guion triangular y apagallamas «jaula»
+reemplazar('m16', { casquillo: 'bala',
+  anclas: { manoDelantera: [30, -1.6], cargador: [9.6, 3.6], corredera: [-2, -8.6], expulsion: [10, -6.8], boca: [61, -5.0] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-4, -7.8], [-37, -7.6], [-38.4, -7.4], [-38.4, 3.8], [-33, 3.2], [-12, -1.2], [-4, -1.8]], 0.8, 4), MAT.polimero, { mate: true });   // culata
+    pintar(ctx, suave([[-39.2, -7.8], [-38.2, -7.8], [-38.2, 4.0], [-39.2, 4.0]], 0.3, 2), MAT.goma);
+    pintar(ctx, suave([[-0.6, 1.0], [3.0, 1.0], [1.6, 10.0], [-2.6, 10.0], [-2.8, 4.0]], 0.8, 4), MAT.polimero, { mate: true });   // pistolete
+    pintar(ctx, suave([[-4, -4.4], [14.4, -4.4], [14.4, 4.4], [6.0, 4.4], [4.4, 1.2], [-4, 1.2]], 0.5, 3), MAT.aleacion);   // cajón inferior
+    guardamonteC(ctx, 3.2, 10.0, 1.2, 2.6, MAT.aleacion);
+    pintar(ctx, [[4.6, 1.2], [5.4, 1.2], [5.6, 2.8], [5.0, 3.2], [4.6, 2.4]], MAT.acero);
+    if (!e.sinCargador) pintar(ctx, suave([[6.6, 4.2], [12.6, 4.2], [14.0, 12], [15.2, 17.0], [9.4, 18.0], [8.2, 12]], 0.5, 3), MAT.aleacion);
+    pintar(ctx, Cc(1.2, -1.6, 0.6, 10), MAT.pavonado); pintar(ctx, Rc(2.4, -5.4, 2.6, 1.2), MAT.pavonado);   // selector y retén del cerrojo
+    pintar(ctx, suave([[-4, -4.4], [-4, -8.2], [19.4, -8.2], [19.4, -4.4]], 0.4, 3), MAT.aleacion);      // cajón superior
+    pintar(ctx, suave([[-2.4, -8.2], [-1.6, -13.2], [13.2, -13.2], [14.2, -8.2], [11.8, -8.2], [11.2, -11.6], [0.8, -11.6], [0.4, -8.2]], 0.5, 3), MAT.aleacion);   // asa
+    pintar(ctx, suave([[-1.6, -14.6], [1.0, -14.6], [1.0, -13.2], [-1.6, -13.2]], 0.4, 2), MAT.aleacion);   // alza
+    pintar(ctx, Cc(14.4, -5.6, 0.85, 12), MAT.aleacion);                                                    // asistente de cierre
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(6.4, -7.4, 6.0, 1.6); }
+    pintar(ctx, suave([[19.4, -8.6], [21, -8.6], [21, -1.2], [19.4, -1.2]], 0.4, 2), MAT.acero);            // anillo delta
+    pintar(ctx, suave([[21, -8.2], [46, -7.6], [47.6, -6.8], [47.6, -2.4], [46, -1.6], [21, -1.4]], 1.0, 4), MAT.polimero, { mate: true });   // guardamanos
+    if (!Pincel.silueta) for (let x = 23; x < 45; x += 1.6) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x, -7.0, 0.6, 1.6); }   // ventilación
+    pintar(ctx, Rc(47.6, -5.7, 9.2, 1.3), MAT.pavonado);
+    pintar(ctx, suave([[50, -4.4], [51.4, -12.6], [52.4, -12.6], [53.6, -4.4], [53, -3.2], [50.6, -3.2]], 0.3, 2), MAT.pavonado);   // guion triangular
+    pintar(ctx, Rc(50.8, -3.4, 1.6, 1.1), MAT.pavonado);
+    pintar(ctx, suave([[56.6, -6.2], [61, -6.2], [61, -3.8], [56.6, -3.8]], 0.4, 2), MAT.pavonado); rayas(ctx, 57.6, 60.4, -6.0, -4.0, 0.7, '#000', 0.28);   // apagallamas
+    pintar(ctx, suave([[-5.8 - e.corredera * 6, -9.0], [-2.0 - e.corredera * 6, -9.0], [-2.0 - e.corredera * 6, -8.0], [-5.8 - e.corredera * 6, -8.0]], 0.3, 2), MAT.aleacion);   // manija en T
+  } });
+
+// MP5 (70 cm): culata retráctil de dos varillas, alza de tambor, cajón de chapa con el tubo de la manija
+// adelante, manija de carga, guardamanos abultado, guion anular, cargador curvo y grupo del disparador
+reemplazar('mp5', { casquillo: 'pistola',
+  anclas: { manoDelantera: [28, -1.6], cargador: [9.4, -1.4], corredera: [29, -8.8], expulsion: [12, -7.5], boca: [45.6, -4.4] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, Rc(-24, -7.6, 20, 0.8), MAT.acero); pintar(ctx, Rc(-24, -3.4, 20, 0.8), MAT.acero);
+    pintar(ctx, suave([[-26.6, -9.4], [-23.8, -9.4], [-23.8, -0.4], [-26.6, -0.4]], 0.8, 3), MAT.polimero);   // cantonera
+    pintar(ctx, suave([[-1, 1.0], [3, 1.0], [1.8, 10.0], [-2.4, 10.0], [-2.6, 4.0]], 0.8, 3), MAT.polimero, { mate: true });
+    pintar(ctx, suave([[-4, -1.6], [9, -1.6], [9, 0.6], [7.8, 3.2], [1.8, 3.2], [1.0, 1.0], [-4, 1.0]], 0.5, 3), MAT.polimero, { mate: true });   // grupo del disparador
+    pintar(ctx, [[3.6, -0.4], [4.4, -0.4], [4.6, 1.4], [4.0, 1.8], [3.6, 1.0]], MAT.acero);
+    pintar(ctx, Cc(-1.6, -0.4, 0.6, 10), MAT.acero);
+    if (!e.sinCargador) pintar(ctx, suave([[7.0, -1.6], [11.0, -1.6], [13.6, 6.0], [16.6, 13.4], [13.0, 14.6], [10.2, 7.0], [7.0, 1.0]], 0.5, 3), MAT.pavonado);
+    pintar(ctx, suave([[-4, -8.2], [26.4, -8.2], [26.4, -1.4], [-4, -1.4]], 0.6, 3), MAT.pavonado, { brillo: 0.25 });   // cajón de chapa
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.25, [[-3.6, -5.6], [26, -5.6]]);
+    for (const x of [2, 8, 14, 20]) tornillo(ctx, x, -3.4, 0.26);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(9.6, -7.4, 5.2, 1.4); }
+    pintar(ctx, suave([[24, -8.4], [38, -8.4], [38, -5.6], [24, -5.6]], 0.6, 3), MAT.pavonado);          // tubo de la manija
+    pintar(ctx, suave([[21, -5.6], [36, -5.4], [37.4, -3.6], [36, -0.8], [22, -0.8], [21, -2.4]], 1.4, 4), MAT.polimero, { mate: true });   // guardamanos
+    pintar(ctx, Rc(37.6, -5.0, 7.0, 1.3), MAT.pavonado); pintar(ctx, suave([[43.6, -5.6], [45.6, -5.6], [45.6, -3.0], [43.6, -3.0]], 0.4, 2), MAT.acero);
+    pintar(ctx, Cc(36.6, -9.6, 1.4, 16), MAT.pavonado); punto(ctx, 36.6, -9.6, 0.7, '#0b0b0d');           // guion anular
+    pintar(ctx, Rc(35.6, -8.4, 2.0, 1.0), MAT.pavonado);
+    pintar(ctx, Cc(-1.0, -9.6, 1.5, 16), MAT.pavonado); pintar(ctx, Rc(-2.6, -8.4, 3.2, 0.6), MAT.pavonado);   // alza de tambor
+    ctx.save(); ctx.translate(-e.corredera * 2.4, -e.corredera * 1.4);
+    pintar(ctx, suave([[28.0, -9.8], [30.4, -9.8], [30.4, -8.2], [28.0, -8.2]], 0.6, 2), MAT.acero);      // manija de carga
+    ctx.restore();
+  } });
+
+// Thompson M1928 (85 cm): culata de nogal, cajón con la parte de atrás redondeada, alza Lyman, perilla de
+// carga arriba, cañón con aletas, compensador Cutts, empuñadura delantera vertical y tambor de 50
+reemplazar('thompson', { casquillo: 'pistola',
+  anclas: { manoDelantera: [26.4, 3.6], cargador: [15.4, 4.0], corredera: [15, -9.4], expulsion: [10, -7.6], boca: [41.4, -5.2] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-5.6, -7.6], [-31.4, -5.6], [-32, -5.0], [-32, 7.6], [-31.2, 8.0], [-20, 5.4], [-9.4, 2.4], [-5.6, 0.2]], 0.8, 4), MAT.nogal);   // culata
+    pintar(ctx, suave([[-32.8, -5.4], [-31.8, -5.4], [-31.8, 8.0], [-32.8, 7.8]], 0.3, 2), MAT.acero);
+    pintar(ctx, suave([[-1.0, -0.8], [3.2, -0.8], [2.2, 8.4], [-2.2, 8.4], [-2.6, 1.6]], 0.9, 4), MAT.nogal);   // pistolete
+    for (const y of [3, 4.6, 6.2]) trazo(ctx, 'rgba(15,6,2,0.4)', 0.25, [[-1.8, y], [2.0, y - 0.2]]);
+    guardamonteC(ctx, 3.0, 7.4, -0.8, 3.0, MAT.pavonado);
+    pintar(ctx, [[4.0, -0.8], [4.8, -0.8], [5.0, 1.0], [4.4, 1.4], [4.0, 0.6]], MAT.acero);
+    if (!e.sinCargador) {   // tambor de 50, más largo que alto, entre el guardamonte y la empuñadura delantera
+      pintar(ctx, Ec(15.4, 4.0, 7.8, 5.4, 40), MAT.pavonado, { brillo: 0.35 });
+      pintar(ctx, Ec(15.4, 4.0, 6.2, 4.1, 36), '#2c2f35', { brillo: 0.2 });
+      if (!Pincel.silueta) for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; punto(ctx, 15.4 + Math.cos(a) * 7.0, 4.0 + Math.sin(a) * 4.8, 0.22, '#4a4c52'); }
+      pintar(ctx, Ec(15.4, 4.0, 1.9, 1.3, 16), MAT.acero); trazo(ctx, '#16171a', 0.3, [[14.2, 4.0], [16.6, 4.0]]);   // llave del tambor
+    }
+    pintar(ctx, suave([[-6, -1.4], [-6, -7.4], [-4.6, -9.2], [19, -9.2], [19, -1.4]], 0.8, 4), MAT.pavonado, { brillo: 0.3 });   // cajón
+    trazo(ctx, 'rgba(0,0,0,0.45)', 0.25, [[-5.4, -4.4], [18.6, -4.4]]);
+    pintar(ctx, Cc(1.2, -3.0, 0.7, 10), MAT.pavonado); pintar(ctx, Cc(4.0, -3.0, 0.7, 10), MAT.pavonado);   // selector y seguro
+    pintar(ctx, suave([[-4.4, -9.2], [-3.6, -11.8], [-0.8, -11.8], [-0.2, -9.2]], 0.4, 2), MAT.pavonado);   // alza Lyman
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(7.4, -8.0, 4.6, 1.4); }
+    pintar(ctx, Rc(19, -6.8, 14, 3.8), MAT.pavonado);                                                     // aletas de enfriamiento
+    if (!Pincel.silueta) for (let x = 19.6; x < 32.6; x += 0.9) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x, -6.8, 0.3, 3.8); }
+    pintar(ctx, Rc(33, -5.8, 3.4, 1.8), MAT.pavonado);
+    pintar(ctx, suave([[36.2, -7.0], [41.4, -7.0], [41.4, -3.4], [36.2, -3.4]], 0.5, 2), MAT.pavonado); rayas(ctx, 37.4, 40.4, -6.8, -5.6, 1.0, '#000', 0.3);   // Cutts
+    pintar(ctx, [[39.6, -7.0], [39.8, -8.4], [40.4, -8.4], [40.6, -7.0]], MAT.acero);
+    pintar(ctx, suave([[23.6, -3.0], [29.0, -3.0], [28.4, 8.6], [24.2, 8.6]], 1.0, 4), MAT.nogal);       // empuñadura delantera
+    for (const y of [1.6, 3.8, 6.0]) trazo(ctx, 'rgba(15,6,2,0.45)', 0.35, [[24.0, y], [28.6, y]]);
+    pintar(ctx, suave([[13.6 - e.corredera * 6, -11.0], [16.4 - e.corredera * 6, -11.0], [16.2 - e.corredera * 6, -9.2], [13.8 - e.corredera * 6, -9.2]], 0.6, 2), MAT.acero);   // perilla de carga
+  } });
+
+// Kriss Vector (medida sobre la foto de referencia): cajón alto con riel de punta a punta y miras plegables,
+// mira holográfica, frente bajo con riel inferior y empuñadura vertical, bloque inferior en «V» que baja con el
+// pozo del cargador largo, guardamonte grande que cierra contra el pie del pistolete, pistolete con panel de
+// goma, manija de carga plateada adelante, culata plegable (brazo, tirante y cantonera con dos pernos) y supresor
+reemplazar('vector', { casquillo: 'pistola',
+  anclas: { manoDelantera: [31.4, 6.0], cargador: [15.8, 11.4], corredera: [29.6, -3.4], expulsion: [12, -4.6], boca: [62.2, -1.0] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, P = MAT.polimero, A = MAT.aleacion, cc = e.corredera * 5;
+    // Culata plegable desplegada
+    pintar(ctx, suave([[-24.4, -0.6], [-26.2, -1.4], [-28.8, 8.4], [-27.4, 9.4]], 0.5, 2), P, { mate: true });   // tirante
+    pintar(ctx, suave([[-7.0, -5.0], [-23.0, -5.0], [-26.6, -3.0], [-29.0, -1.0], [-29.0, 1.0], [-27.4, 0.8], [-24.4, -1.6], [-22.6, -2.6], [-7.0, -2.6]], 0.8, 3), P, { mate: true });   // brazo
+    pintar(ctx, suave([[-28.6, -2.2], [-31.6, -2.4], [-33.0, -1.4], [-33.0, 13.2], [-31.8, 13.8], [-28.6, 13.4], [-28.2, 12.0], [-28.4, 0.2]], 0.6, 3), P, { mate: true });   // cantonera
+    rayas(ctx, -32.4, -31.0, -0.8, 12.6, 0.45, 'rgba(255,255,255,0.05)', 0.14);
+    tornillo(ctx, -27.4, 0.1, 0.42); tornillo(ctx, -27.4, 9.0, 0.42);
+    pintar(ctx, suave([[-4.0, -6.0], [-7.4, -6.0], [-7.4, -1.8], [-4.0, -1.8]], 0.5, 2), P, { mate: true });   // bisagra
+    // Supresor sobre la rosca del cañón
+    pintar(ctx, Rc(35.0, -2.0, 1.6, 2.0), MAT.acero);
+    pintar(ctx, suave([[36.4, -3.3], [62.2, -3.3], [62.2, 1.3], [36.4, 1.3]], 0.8, 3), '#2b2c30', { brillo: 0.4 });
+    trazo(ctx, 'rgba(255,255,255,0.14)', 0.3, [[37.2, -2.2], [61.6, -2.2]]);
+    // Cargador largo
+    if (!e.sinCargador) {
+      pintar(ctx, suave([[13.8, 11.2], [18.2, 11.2], [17.2, 24.4], [12.6, 24.4]], 0.5, 3), P);
+      trazo(ctx, 'rgba(255,255,255,0.06)', 0.3, [[15.4, 12.0], [14.8, 23.6]]);
+      pintar(ctx, suave(Rc(12.3, 23.6, 5.2, 1.4), 0.4, 2), '#2a2b2f');
+    }
+    // Bloque inferior en «V» con el guardamonte grande (el hueco llega hasta abajo)
+    pintar(ctx, suave([[1.0, -2.0], [23.4, -2.0], [23.6, 1.8], [20.4, 11.4], [-0.6, 11.4], [-0.6, 9.6], [0.6, 0.0]], 0.7, 3), P,
+      { mate: true, huecos: [suave([[9.2, -1.8], [2.0, -1.8], [1.0, 1.0], [0.4, 4.0], [0.0, 9.8], [4.8, 9.9], [8.8, 2.2]], 0.7, 3)] });
+    trazo(ctx, 'rgba(255,255,255,0.08)', 0.25, [[22.8, 2.4], [19.8, 10.8]]);
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.3, [[16.6, 2.2], [15.0, 4.6], [13.4, 2.2]]);                          // la «V»
+    pintar(ctx, suave(Rc(21.0, 3.6, 0.9, 1.7), 0.3, 2), '#2a2b2f');                                            // retén del cargador
+    for (const [x, y] of [[21.6, 0.2], [11.8, 10.4], [5.2, 10.6], [18.4, 9.6]]) tornillo(ctx, x, y, 0.36);
+    pintar(ctx, [[4.0, -1.8], [4.8, -1.8], [5.0, -0.2], [4.4, 0.6], [4.0, -0.4]], MAT.acero);                  // disparador
+    // Pistolete con panel de goma
+    const grip = suave([[0.8, -1.8], [0.6, 1.4], [0.2, 4.6], [0.0, 8.0], [-0.4, 10.4], [-1.6, 11.2], [-4.8, 11.0], [-5.8, 9.6], [-6.0, 6.8], [-5.2, 2.4], [-4.4, -1.8]], 0.8, 4);
+    pintar(ctx, grip, P, { mate: true });
+    const goma = suave([[-0.8, 1.6], [-1.4, 9.4], [-4.6, 9.4], [-4.8, 3.0], [-3.4, 1.4]], 0.6, 3);
+    pintar(ctx, goma, '#232427', { mate: true }); punteado(ctx, goma, 0.42, 'rgba(255,255,255,0.08)');
+    // Cajón superior: parte de atrás alta y frente que baja con el riel inferior
+    pintar(ctx, suave([[-4.4, -6.9], [35.3, -6.9], [35.3, 1.7], [22.6, 1.7], [22.6, -2.0], [-4.4, -2.0]], 0.5, 3), P, { mate: true });
+    trazo(ctx, 'rgba(255,255,255,0.08)', 0.2, [[-4.0, -6.3], [35.0, -6.3]]);
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.16, [[22.6, -4.8], [35.0, -4.8]]);
+    for (const [x, y] of [[33.7, -0.7], [27.7, -0.7], [23.6, -4.0], [11.2, -5.0], [17.8, -5.0], [24.6, 0.6]]) tornillo(ctx, x, y, 0.36);
+    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(24.6, -4.0, 9.6, 1.1); }
+    pintar(ctx, suave(Rc(26.6 - cc, -3.9, 7.0, 0.9), 0.3, 2), '#8d939c', { brillo: 0.5 });                   // manija de carga
+    pintar(ctx, Cc(1.8, -4.6, 0.6, 12), A); pintar(ctx, suave([[1.8, -5.0], [3.2, -5.6], [3.4, -5.2], [2.0, -4.4]], 0.2, 2), A);   // selector
+    // Rieles, miras plegables y mira holográfica
+    pintar(ctx, Rc(-4.0, -7.7, 39.0, 0.8), A); if (!sil) for (let x = -3.6; x < 34.6; x += 1.0) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x, -7.7, 0.45, 0.45); }
+    pintar(ctx, Rc(26.0, 1.7, 8.4, 0.9), A);
+    pintar(ctx, [[-0.4, -7.7], [0.0, -11.0], [0.8, -11.0], [1.2, -7.7]], P); pintar(ctx, [[30.4, -7.7], [30.8, -11.6], [31.6, -11.6], [32.0, -7.7]], P);
+    pintar(ctx, Rc(7.6, -8.5, 11.2, 0.8), A);
+    pintar(ctx, suave([[7.0, -8.5], [19.0, -8.5], [19.0, -11.6], [17.6, -11.6], [17.6, -14.0], [10.0, -14.0], [9.0, -12.8], [7.0, -12.4]], 0.5, 3), '#26272b',
+      { huecos: [suave(Rc(10.6, -13.4, 6.2, 1.7), 0.4, 2)], brillo: 0.3 });
+    pintar(ctx, Cc(8.2, -10.4, 0.7, 12), '#3a3c42'); pintar(ctx, Rc(15.4, -11.2, 1.6, 0.6), '#d6b84a', { brillo: 0.2 });
+    // Empuñadura vertical
+    pintar(ctx, suave([[29.6, 2.6], [33.4, 2.6], [33.0, 12.2], [30.0, 12.2]], 0.8, 3), P, { mate: true });
+    for (let y = 7.6; y < 11.8; y += 0.8) trazo(ctx, 'rgba(255,255,255,0.08)', 0.25, [[30.2, y], [32.8, y]]);
+  } });
+DIBUJO_ARMAS.vector.culataCm = 33;
+DIBUJO_ARMAS.vector.anguloEmpunadura = 0.15;
+
+/* ======================= RIFLES ======================= */
+
+// Mira telescópica más detallada: campanas, torretas, anillas con tornillos, lentes
+function mira2(ctx, x0, x1, eje, diam, objetivo, ocular, anillas, base) {
+  for (const ax of anillas) { pintar(ctx, suave([[ax, eje - diam / 2 - 0.3], [ax + 2, eje - diam / 2 - 0.3], [ax + 2, base], [ax, base]], 0.3, 2), MAT.pavonado); tornillo(ctx, ax + 1, eje - diam / 2 - 0.1, 0.22); }
+  pintar(ctx, suave([[x0, eje - ocular / 2], [x0 + 6, eje - ocular / 2], [x0 + 8, eje - diam / 2], [x1 - 9, eje - diam / 2], [x1 - 5, eje - objetivo / 2], [x1, eje - objetivo / 2], [x1, eje + objetivo / 2], [x1 - 5, eje + objetivo / 2], [x1 - 9, eje + diam / 2], [x0 + 8, eje + diam / 2], [x0 + 6, eje + ocular / 2], [x0, eje + ocular / 2]], 0.5, 3), MAT.pavonado, { brillo: 0.4 });
+  const mx = (x0 + x1) / 2 - 1.6;
+  pintar(ctx, suave([[mx, eje - diam / 2 - 1.8], [mx + 3, eje - diam / 2 - 1.8], [mx + 3, eje - diam / 2], [mx, eje - diam / 2]], 0.3, 2), MAT.pavonado); rayas(ctx, mx + 0.4, mx + 2.6, eje - diam / 2 - 1.7, eje - diam / 2 - 0.4, 0.35, 'rgba(255,255,255,0.15)', 0.12);
+  trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[x0 + 8, eje - diam / 2 + 0.4], [x1 - 9, eje - diam / 2 + 0.4]]);
+  if (!Pincel.silueta) { const g = ctx.createLinearGradient(x1, eje - objetivo / 2, x1, eje + objetivo / 2); g.addColorStop(0, '#9fd2f0'); g.addColorStop(1, '#1d4c6c'); ctx.fillStyle = g; ctx.fillRect(x1 - 0.4, eje - objetivo / 2 + 0.5, 0.4, objetivo - 1); }
+}
+
+// Remington 700 (105 cm): culata de nogal con carrillera Monte Carlo y pistolete con tapa, cantonera de goma,
+// fuste con cuadrillé, cajón redondo, cerrojo con manija curva, cañón cónico y mira telescópica
+reemplazar('remington700', { casquillo: 'bala',
+  anclas: { manoDelantera: [26, 1.2], cargador: [9, -6.8], corredera: [-1.2, -1.6], expulsion: [8, -6.8], boca: [69, -5.0] },
+  dibujarCm(ctx, e) {
+    const culata = suave([[-4, -4.2], [-12, -5.6], [-30, -5.8], [-34.6, -5.4], [-34.6, 8.4], [-26, 6.2], [-13, 2.6], [-6.4, 2.8], [-4.6, 6.6], [-1.4, 7.2], [0.6, 2.4], [8, 2.0], [26, 1.4], [40, -0.6], [41.2, -2.2], [40, -3.4], [16, -3.6]], 0.9, 4);
+    pintar(ctx, culata, MAT.nogal);
+    cuadriculado(ctx, [[-4.4, 0.4], [-1.6, 0.4], [-0.8, 5.2], [-3.6, 5.6]], 0.45, 'rgba(15,6,2,0.4)');
+    cuadriculado(ctx, [[18, -2.6], [30, -2.8], [30, 0.6], [18, 1.0]], 0.45, 'rgba(15,6,2,0.4)');
+    pintar(ctx, suave([[-36.0, -5.6], [-34.4, -5.6], [-34.4, 8.6], [-36.0, 8.4]], 0.5, 2), MAT.goma);          // cantonera
+    pintar(ctx, suave([[-4.8, 6.4], [-1.2, 7.0], [-1.4, 7.8], [-5.0, 7.2]], 0.3, 2), MAT.pavonado);            // tapa del pistolete
+    if (!Pincel.silueta) { for (const [x, y] of [[-26, 7.0], [34, 0.6]]) { ctx.beginPath(); ctx.arc(x, y + 0.9, 0.7, 0, Math.PI * 2); ctx.strokeStyle = '#3a3c42'; ctx.lineWidth = 0.3; ctx.stroke(); } }
+    pintar(ctx, Rc(8.4, 1.8, 7.2, 0.6), MAT.pavonado);
+    guardamonteC(ctx, 1.6, 7.8, 2.2, 2.4, MAT.pavonado);
+    pintar(ctx, suave([[-6, -6.8], [15.4, -6.8], [15.4, -3.4], [-6, -3.4]], 1.4, 4), MAT.pavonado, { brillo: 0.4 });   // cajón redondo
+    pintar(ctx, suave([[-8.4, -6.2], [-6, -6.4], [-6, -3.8], [-8.4, -4.0]], 0.8, 3), MAT.pavonado);
+    pintar(ctx, [[15.4, -6.6], [69, -5.6], [69, -4.4], [15.4, -3.6]], MAT.pavonado, { brillo: 0.45 });       // cañón cónico
+    mira2(ctx, -11, 26, -10.6, 2.6, 5.0, 4.0, [-1, 11], -6.8);
+    const ab = Math.max(e.corredera, e.abierto);
+    if (ab > 0.3 && !Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(4, -6.6, 6.5, 1.2); }
+    ctx.save(); ctx.translate(-ab * 8.5, 0);
+    if (!Pincel.silueta) { ctx.beginPath(); ctx.moveTo(1.0, -5.0); ctx.quadraticCurveTo(0.6, -2.6, -0.8, -1.8); ctx.strokeStyle = MAT.acero; ctx.lineWidth = 0.75; ctx.stroke(); }
+    pintar(ctx, Cc(-1.2, -1.5, 1.0, 14), '#4a4c52');                                                         // bola de la manija
+    ctx.restore();
+  } });
+
+// Barrett M82A1 (145 cm): cajón superior largo con nervios, asa de transporte, cajón inferior con el
+// pistolete y el cargador de 10, culata con almohadilla grande, cañón grueso, freno de boca de dos cámaras,
+// bípode plegado y mira
+reemplazar('barrett', { casquillo: 'grande',
+  anclas: { manoDelantera: [26, -3.6], cargador: [10, 1.2], corredera: [10, -8.4], expulsion: [14, -11], boca: [104, -8.2] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-12, -11.6], [-37.6, -11.6], [-38.8, -10.4], [-38.8, 4.8], [-34, 5.6], [-28, 1.6], [-12, -1.4]], 0.9, 4), MAT.pavonado);   // culata
+    pintar(ctx, suave([[-41.2, -12.2], [-38.6, -12.2], [-38.6, 5.8], [-41.2, 5.8]], 0.9, 3), MAT.goma);
+    pintar(ctx, suave([[-30, -6.4], [-22, -6.4], [-22, -2.8], [-30, -1.6]], 0.8, 3), '#2a2c31', { mate: true });   // aligeramiento
+    pintar(ctx, suave([[-0.6, 1.0], [3.6, 1.0], [2.2, 10.4], [-2.6, 10.4], [-2.4, 4.0]], 0.8, 4), MAT.polimero, { mate: true });
+    pintar(ctx, suave([[-12, -5.6], [20, -5.6], [20, 1.2], [6, 1.2], [4.4, 3.6], [-12, 1.2]], 0.5, 3), MAT.pavonado);   // cajón inferior
+    guardamonteC(ctx, 3.6, 9.4, 1.0, 2.8, MAT.pavonado);
+    pintar(ctx, [[4.8, 1.0], [5.6, 1.0], [5.8, 2.6], [5.2, 3.0], [4.8, 2.2]], MAT.acero);
+    if (!e.sinCargador) { pintar(ctx, suave([[5.6, 0.6], [15.2, 0.6], [15.2, 12.8], [5.6, 12.8]], 0.6, 3), MAT.pavonado); rayas(ctx, 6.6, 14.2, 2, 11.6, 2.4, 'rgba(255,255,255,0.06)', 0.4); }
+    pintar(ctx, suave([[-10, -12.2], [47, -12.2], [47, -5.6], [-10, -5.6]], 0.6, 3), MAT.pavonado, { brillo: 0.3 });   // cajón superior
+    if (!Pincel.silueta) for (let x = 24; x < 46; x += 2.8) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x, -11.2, 1.4, 4.4); }   // nervios
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.3, [[-9.6, -8.6], [46.6, -8.6]]);
+    pintar(ctx, suave([[14, -12.2], [15.4, -16.6], [30, -16.6], [31.4, -12.2], [28.6, -12.2], [28, -15.0], [17.4, -15.0], [16.8, -12.2]], 0.6, 3), MAT.pavonado);   // asa
+    pintar(ctx, Rc(47, -10.0, 51, 3.4), MAT.pavonado, { brillo: 0.4 });                                     // cañón
+    pintar(ctx, suave([[97, -11.4], [104.2, -11.4], [104.2, -5.0], [97, -5.0]], 0.6, 3), MAT.acero);        // freno de boca
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(98.4, -10.6, 1.6, 4.8); ctx.fillRect(101.2, -10.6, 1.6, 4.8); }
+    pintar(ctx, suave([[42, -6.0], [46, -6.0], [46, -4.4], [42, -4.4]], 0.3, 2), MAT.pavonado);             // bípode plegado
+    trazo(ctx, MAT.pavonado, 1.0, [[44, -4.6], [70, -4.0]]); trazo(ctx, '#2a2c30', 0.9, [[44, -4.0], [70, -3.4]]);
+    mira2(ctx, -6, 26, -18.6, 3.4, 5.8, 4.6, [0, 15], -12.2);
+    const dx = -e.corredera * 9;
+    pintar(ctx, suave([[7.6 + dx, -9.4], [12 + dx, -9.4], [12 + dx, -7.6], [7.6 + dx, -7.6]], 0.4, 2), MAT.acero);   // manija de carga
+  } });
+
+// Mosin-Nagant 91/30 (123 cm): culata larga de cuello recto, guardamanos de madera hasta casi la boca,
+// dos abrazaderas, cajón hexagonal, depósito con chapa, manija de cerrojo recta, perilla de amartillar
+reemplazar('mosin', { casquillo: 'bala',
+  anclas: { manoDelantera: [34, 0.6], cargador: [8, -7], corredera: [0, -1.4], expulsion: [8, -6.6], boca: [84, -5.6] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-39, -5.0], [-6, -4.2], [-2, -3.6], [18, -3.4], [72, -3.4], [73.4, -2.0], [72, -0.6], [18, 0.8], [14, 2.6], [4, 2.8], [1, 1.4], [-3, 2.4], [-9, 2.8], [-26, 6.4], [-39, 8.4]], 0.9, 4), MAT.maderaClara);   // culata y fuste
+    pintar(ctx, suave([[-39.8, -5.2], [-38.8, -5.2], [-38.8, 8.6], [-39.8, 8.4]], 0.3, 2), MAT.acero);
+    pintar(ctx, suave([[3, 0.6], [14, 0.6], [14, 3.4], [3, 3.4]], 0.4, 2), MAT.pavonado);                   // depósito
+    guardamonteC(ctx, 1.6, 8.0, 0.6, 2.4, MAT.pavonado);
+    pintar(ctx, suave([[-2, -6.8], [18, -6.8], [18, -3.6], [-2, -3.6]], 0.3, 2), MAT.pavonado, { brillo: 0.35 });   // cajón
+    trazo(ctx, 'rgba(255,255,255,0.12)', 0.25, [[-1.6, -5.6], [17.6, -5.6]]);
+    pintar(ctx, suave([[19, -7.0], [70, -6.6], [70, -5.6], [19, -5.6]], 0.4, 2), MAT.maderaClara);         // guardamanos superior
+    pintar(ctx, Rc(18, -6.4, 67, 1.6), MAT.pavonado, { brillo: 0.4 });
+    for (const bx of [32, 69]) pintar(ctx, suave([[bx, -7.2], [bx + 1.4, -7.2], [bx + 1.4, -0.6], [bx, -0.6]], 0.3, 2), MAT.pavonado);   // abrazaderas
+    pintar(ctx, suave([[19.4, -6.8], [25.4, -7.8], [25.6, -6.6], [19.6, -6.4]], 0.3, 2), MAT.pavonado);     // alza tangencial
+    pintar(ctx, suave([[81.6, -6.4], [81.8, -9.2], [83.8, -9.2], [84, -6.4]], 0.5, 2), MAT.pavonado, { huecos: [suave([[82.4, -8.6], [83.2, -8.6], [83.2, -7.0], [82.4, -7.0]], 0.2, 2)] });   // guion con capuchón
+    const ab = Math.max(e.corredera, e.abierto);
+    if (ab > 0.3 && !Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(4, -6.8, 7, 1.2); }
+    ctx.save(); ctx.translate(-ab * 10, 0);
+    pintar(ctx, suave([[-6.2, -6.6], [-2, -6.6], [-2, -3.8], [-6.2, -3.8]], 1.0, 3), MAT.acero);          // perilla de amartillar
+    rayas(ctx, -5.6, -3, -6.2, -4.2, 0.6, 'rgba(0,0,0,0.4)', 0.16);
+    trazo(ctx, MAT.acero, 0.85, [[0.4, -5.2], [0.2, -1.6]]); pintar(ctx, Cc(0.2, -1.0, 0.95, 12), '#4a4c52');
+    ctx.restore();
+  } });
+
+// Dragunov SVD (122,5 cm): culata esqueleto con hueco para el pulgar y carrillera, cajón tipo AK, cargador
+// de 10, guardamanos con ranuras, cañón largo con apagallamas ranurado y mira PSO-1
+reemplazar('svd', { casquillo: 'bala',
+  anclas: { manoDelantera: [38, -3.4], cargador: [10, -2.2], corredera: [19, -5.2], expulsion: [14, -7], boca: [86.6, -5.9] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-4.6, -7.2], [-32.4, -7.0], [-33.6, -6.6], [-33.6, 8.6], [-30.4, 8.6], [-16, 3.2], [-2.8, 7.6], [-0.6, 7.6], [0.6, 0.6], [-4.6, -1.6]], 0.9, 4), MAT.madera,
+      { huecos: [suave([[-6, -4.4], [-27.4, -4.4], [-28.2, 4.4], [-17, 0.6], [-5.6, 4.4], [-3.8, 0.2]], 1.6, 5)] });   // culata esqueleto
+    pintar(ctx, suave([[-26.4, -9.6], [-13, -9.6], [-12, -7.0], [-26.4, -7.0]], 1.0, 3), MAT.madera);            // carrillera
+    pintar(ctx, suave([[-34.6, -7.0], [-33.4, -7.0], [-33.4, 8.8], [-34.6, 8.6]], 0.4, 2), MAT.goma);
+    guardamonteC(ctx, 3.2, 9.2, -2.0, 3.0, MAT.acero);
+    pintar(ctx, [[4.2, -2.0], [5.0, -2.0], [5.2, -0.2], [4.6, 0.4], [4.2, -0.4]], MAT.acero);
+    if (!e.sinCargador) pintar(ctx, suave([[7, -2.2], [12.6, -2.2], [13.8, 4], [15.4, 9.4], [10.6, 10.6], [9.4, 5], [7, 0]], 0.5, 3), MAT.pavonado);
+    pintar(ctx, suave([[-4.6, -2.0], [-4.6, -6.6], [-3.0, -7.8], [26, -7.8], [26, -2.0]], 0.5, 3), MAT.pavonado, { brillo: 0.25 });
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.25, [[-4, -5.6], [25.6, -5.6]]);
+    pintar(ctx, [[2.6, -4.2], [14.4, -4.8], [14.6, -4.0], [2.8, -3.6]], MAT.acero);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(10, -5.2, 7, 1.2); }
+    pintar(ctx, suave([[27, -7.8], [50, -7.6], [51.4, -5.6], [50, -3.4], [27, -3.2]], 1.0, 4), MAT.madera, { huecos: Array.from({ length: 5 }, (_, k) => suave([[30 + k * 4, -6.6], [32.4 + k * 4, -6.6], [32.4 + k * 4, -5.4], [30 + k * 4, -5.4]], 0.5, 2)) });
+    pintar(ctx, Rc(50, -6.6, 31, 1.4), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, suave([[52, -7.4], [55, -7.4], [55, -4.6], [52, -4.6]], 0.3, 2), MAT.pavonado);              // bloque de gases
+    pintar(ctx, suave([[81, -7.2], [86.8, -7.2], [86.8, -4.6], [81, -4.6]], 0.5, 2), MAT.pavonado); rayas(ctx, 82.2, 85.8, -7.0, -4.8, 1.2, '#000', 0.35);   // apagallamas
+    pintar(ctx, [[77, -6.6], [77.4, -9.6], [78.6, -9.6], [79, -6.6]], MAT.pavonado);
+    mira2(ctx, -2, 22, -12.6, 2.6, 4.2, 3.6, [3, 16], -7.8);
+    pintar(ctx, suave([[-4, -10.4], [-0.8, -10.4], [-0.8, -14.6], [-4, -14.6]], 0.8, 3), MAT.goma);          // ocular de goma
+    pintar(ctx, suave([[16.4 - e.corredera * 8, -6.2], [19.4 - e.corredera * 8, -6.2], [19.4 - e.corredera * 8, -4.6], [16.4 - e.corredera * 8, -4.6]], 0.4, 2), MAT.acero);
+  } });
+
+// Winchester 1894 (96 cm): culata de cuello recto con cantonera, cajón con la ventana de carga, martillo,
+// palanca con lazo, tubo de balas bajo el cañón hasta casi la boca, fuste con abrazadera, alza y guion
+reemplazar('winchester1894', { casquillo: 'bala',
+  anclas: { manoDelantera: [27, -1.0], cargador: [11, -0.2], corredera: [-8, 4], expulsion: [9, -5.6], boca: [61, -4.2] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-35, -5.4], [-4, -4.2], [0, -4.4], [0, 1.6], [-5, 2.0], [-20, 5.6], [-35, 8.0]], 0.9, 4), MAT.maderaClara);   // culata
+    pintar(ctx, suave([[-35.8, -5.6], [-34.8, -5.6], [-34.8, 8.2], [-35.8, 7.8], [-36.4, 1.2]], 0.4, 2), MAT.acero);
+    pintar(ctx, suave([[0, -5.8], [17.4, -5.8], [17.4, 0.6], [16, 2.0], [0, 2.0]], 0.8, 4), MAT.pavonado, { brillo: 0.4 });   // cajón
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(10, -1.2, 4.6, 1.4); }                   // ventana de carga
+    tornillo(ctx, 3.0, -3.0); tornillo(ctx, 6.6, -1.6); tornillo(ctx, 14.6, -3.6);
+    pintar(ctx, suave([[-1.6, -5.0], [-3.0, -7.4], [-1.8, -7.6], [0.6, -5.4]], 0.3, 2), MAT.pavonado);    // martillo
+    pintar(ctx, Rc(17.4, -5.2, 43.6, 1.6), MAT.pavonado, { brillo: 0.4 });                                  // cañón
+    pintar(ctx, Rc(17.4, -3.4, 41.4, 1.5), MAT.pavonado, { brillo: 0.35 });                                 // tubo de balas
+    pintar(ctx, suave([[17.4, -3.6], [32, -3.6], [32.8, -2.2], [32, -0.8], [17.4, -0.6]], 0.8, 3), MAT.maderaClara);   // fuste
+    pintar(ctx, suave([[32, -3.8], [33.2, -3.8], [33.2, -1.0], [32, -1.0]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, suave([[56.6, -5.4], [57.8, -5.4], [57.8, -1.6], [56.6, -1.6]], 0.3, 2), MAT.pavonado);     // abrazadera
+    pintar(ctx, suave([[26, -5.2], [29, -5.2], [29, -6.2], [26, -6.2]], 0.2, 2), MAT.pavonado);             // alza
+    pintar(ctx, [[59.6, -5.2], [59.8, -6.6], [60.4, -6.6], [60.6, -5.2]], MAT.pavonado);
+    ctx.save(); ctx.translate(14, 1.6); ctx.rotate(e.palanca * 0.95);                                         // palanca
+    if (!Pincel.silueta) {
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-13.2, 0.4); ctx.quadraticCurveTo(-16.6, 0.6, -16.0, 3.6); ctx.quadraticCurveTo(-15.2, 6.8, -10.4, 6.6); ctx.quadraticCurveTo(-5.8, 6.4, -5.6, 2.8); ctx.lineTo(-3, 2.2);
+      ctx.strokeStyle = MAT.pavonado; ctx.lineWidth = 1.1; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.25; ctx.stroke();
+    } else { ctx.fillStyle = Pincel.silueta; ctx.fillRect(-16, 0, 13, 6.6); }
+    ctx.restore();
+  } });
+
+DIBUJO_ARMAS.svd.culataCm = 34.6;   // Dragunov: culata a la medida real
+
+/* ======================= ESCOPETAS ======================= */
+function bombaNervada(ctx, x, y, w, h, color, desplazamiento) {   // guardamanos que se bombea, con canaletas
+  ctx.save(); ctx.translate(-desplazamiento, 0);
+  pintar(ctx, suave([[x, y], [x + w, y], [x + w + 0.6, y + h / 2], [x + w, y + h], [x, y + h], [x - 0.6, y + h / 2]], 1.0, 3), color, { mate: color === MAT.polimero });
+  if (!Pincel.silueta) for (let k = x + 1.4; k < x + w - 1; k += 1.3) { ctx.fillStyle = 'rgba(0,0,0,0.32)'; ctx.fillRect(k, y + 0.5, 0.45, h - 1); }
+  ctx.restore();
+}
+
+// Recortada de dos caños yuxtapuestos (50 cm): de perfil se ve un solo caño largo y horizontal, con la banda de
+// arriba y la de abajo; báscula templada con grabado, palanca de apertura, martillo exterior (el otro apenas
+// asoma detrás), dos disparadores, delantera de madera cuadriculada y culata cortada en pistolete
+reemplazar('recortada', { casquillo: null, casquilloVaciado: 'escopeta',
+  anclas: { manoDelantera: [14, 0.6], cargador: [7.4, -3.2], corredera: [-0.5, -5.6], expulsion: [7, -3], boca: [37.4, -3.3] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, BAS = '#6f6a62';
+    pintar(ctx, suave([[-14.6, -4.4], [-2, -3.8], [0, -3.6], [0, 1.4], [-1.4, 1.8], [-2.8, 8.4], [-3.6, 9.0], [-7.0, 9.0], [-7.8, 3.2], [-14.6, 4.4]], 0.9, 4), MAT.nogal);
+    cuadriculado(ctx, [[-1.6, 2.6], [-2.8, 7.6], [-6.4, 7.6], [-6.8, 3.2]], 0.45, 'rgba(15,6,2,0.4)');
+    pintar(ctx, suave([[-15.4, -4.6], [-14.4, -4.6], [-14.4, 4.6], [-15.4, 4.4]], 0.3, 2), MAT.acero);       // corte de la culata
+    pintar(ctx, suave([[0, -4.8], [7.8, -4.8], [8.0, 0.4], [6.6, 1.6], [0, 1.6]], 0.6, 3), BAS, { brillo: 0.5 });   // báscula
+    if (!sil) for (let k = 0; k < 3; k++) { ctx.strokeStyle = 'rgba(40,40,45,0.35)'; ctx.lineWidth = 0.12; ctx.beginPath(); ctx.arc(3.8, -1.6, 1.0 + k * 0.6, 0, Math.PI * 2); ctx.stroke(); }
+    pintar(ctx, suave([[-1.2, -5.4], [2.6, -5.6], [2.6, -4.8], [-1.2, -4.8]], 0.3, 2), BAS);                  // palanca de apertura
+    pintar(ctx, suave([[0.0, -4.6], [-1.8, -6.4], [-1.0, -6.9], [1.0, -4.8]], 0.3, 2), '#1b1c20');            // martillo de atrás
+    pintar(ctx, suave([[-0.6, -4.6], [-2.4, -6.6], [-1.6, -7.1], [0.6, -4.8]], 0.3, 2), MAT.pavonado);        // martillo
+    guardamonteC(ctx, 1.2, 7.0, 1.6, 2.6, BAS);
+    pintar(ctx, [[2.4, 1.6], [3.1, 1.6], [3.3, 3.0], [2.7, 3.2]], MAT.acero); pintar(ctx, [[4.4, 1.6], [5.1, 1.6], [5.3, 3.0], [4.7, 3.2]], MAT.acero);
+    // Caños: giran sobre la bisagra para cargar
+    ctx.save(); ctx.translate(7.6, 0.6); ctx.rotate(e.abierto * 0.6); ctx.translate(-7.6, -0.6);
+    pintar(ctx, [[7.2, -2.2], [37.0, -2.2], [37.0, -1.7], [7.2, -1.7]], '#1c1d21');                            // banda de abajo
+    pintar(ctx, suave([[7.2, -4.4], [37.4, -4.3], [37.4, -2.2], [7.2, -2.1]], 0.5, 3), MAT.pavonado, { brillo: 0.5 });
+    trazo(ctx, 'rgba(255,255,255,0.2)', 0.16, [[7.8, -3.75], [36.8, -3.7]]);
+    pintar(ctx, [[7.2, -4.9], [37.0, -4.7], [37.0, -4.3], [7.2, -4.4]], MAT.pavonado, { brillo: 0.3 });       // banda de arriba
+    pintar(ctx, suave(Rc(36.8, -4.5, 0.6, 2.5), 0.2, 2), MAT.acero);                                          // boca
+    pintar(ctx, suave([[8.6, -1.8], [21.4, -1.8], [22.2, -0.8], [20.8, 0.6], [8.6, 0.8]], 0.8, 3), MAT.nogal);   // delantera
+    cuadriculado(ctx, [[11.0, -1.4], [19.0, -1.4], [19.0, 0.2], [11.0, 0.2]], 0.45, 'rgba(15,6,2,0.4)');
+    punto(ctx, 36.6, -5.1, 0.32, '#e0d8c0');
+    if (e.abierto > 0.5) punto(ctx, 7.6, -3.2, 0.95, '#0a0a0c');
+    ctx.restore();
+  } });
+
+// Mossberg 500 (100 cm): culata y pistolete sintéticos, cajón de aluminio con el seguro arriba, cañón con
+// guion de perla, tubo del depósito con tapa y bomba nervada que corre sobre el tubo
+reemplazar('mossberg', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [34, -2.4], cargador: [12, 1.4], corredera: [34, -2.6], expulsion: [10, -5], boca: [64, -5.0] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-35, -5.2], [-4, -4.4], [0, -4.6], [0, 1.6], [-2, 2.2], [-5, 2.6], [-24, 6.0], [-35, 8.0]], 0.9, 4), MAT.polimero, { mate: true });
+    pintar(ctx, suave([[-36.2, -5.4], [-35, -5.4], [-35, 8.2], [-36.2, 8.0]], 0.5, 2), MAT.goma);
+    pintar(ctx, suave([[0, -6.2], [20.6, -6.2], [20.6, 1.4], [0, 1.4]], 0.6, 3), MAT.aleacion, { brillo: 0.3 });
+    pintar(ctx, suave([[0.4, -6.8], [2.4, -6.8], [2.4, -6.2], [0.4, -6.2]], 0.2, 2), MAT.polimero);          // seguro arriba
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(6, -5.4, 7, 1.6); ctx.fillRect(6, 1.0, 11, 0.5); }
+    guardamonteC(ctx, 1.2, 8.0, 1.4, 2.4, MAT.polimero);
+    pintar(ctx, [[2.6, 1.4], [3.4, 1.4], [3.6, 2.8], [3.0, 3.2], [2.6, 2.4]], MAT.acero);
+    pintar(ctx, Rc(20.6, -5.8, 43.4, 1.6), MAT.pavonado, { brillo: 0.4 });
+    punto(ctx, 63.4, -6.4, 0.4, '#e0d8c0');
+    pintar(ctx, Rc(20.6, -3.8, 35.4, 2.4), MAT.pavonado); pintar(ctx, suave([[56, -4.0], [57.8, -4.0], [57.8, -1.2], [56, -1.2]], 0.5, 2), MAT.acero);
+    bombaNervada(ctx, 25, -4.6, 19.6, 4.4, MAT.polimero, e.bombeo * 9);
+  } });
+
+// SPAS-12 (104 cm): culata metálica plegable con gancho, pistolete, cajón, protección perforada sobre el
+// cañón, tubo del depósito, bomba
+reemplazar('spas12', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [33, -2.4], cargador: [11, 1.5], corredera: [33, -2.6], expulsion: [11, -6.5], boca: [60.5, -5.6] },
+  dibujarCm(ctx, e) {
+    trazo(ctx, MAT.pavonado, 0.9, [[-2, -6.4], [-29, -6.0]]); trazo(ctx, MAT.pavonado, 0.9, [[-2.4, 0.2], [-28.4, 3.4]]);   // culata de varillas
+    pintar(ctx, suave([[-30.6, -8.0], [-28.4, -7.6], [-28.2, 5.0], [-30.6, 5.4]], 0.6, 3), MAT.pavonado);
+    pintar(ctx, suave([[-28.4, -7.6], [-24.4, -9.0], [-24.0, -8.0], [-27.6, -6.6]], 0.4, 2), MAT.pavonado);   // gancho del antebrazo
+    pintar(ctx, suave([[-0.6, 1.4], [3.4, 1.4], [2.0, 10.6], [-2.6, 10.6], [-2.4, 4]], 0.8, 4), MAT.polimero, { mate: true });
+    pintar(ctx, suave([[-2, -7], [22, -7], [22, 1.6], [-2, 1.6]], 0.6, 3), MAT.pavonado, { brillo: 0.25 });
+    trazo(ctx, 'rgba(255,255,255,0.08)', 0.25, [[-1.6, -3.6], [21.6, -3.6]]);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(7.4, -6.2, 6.6, 1.6); }
+    guardamonteC(ctx, 3.4, 9.2, 1.6, 2.6, MAT.pavonado);
+    pintar(ctx, [[4.6, 1.6], [5.4, 1.6], [5.6, 3.0], [5.0, 3.4], [4.6, 2.6]], MAT.acero);
+    pintar(ctx, Rc(22, -6.4, 38.4, 1.6), MAT.pavonado);
+    pintar(ctx, suave([[22, -8.4], [56, -8.4], [56.6, -6.4], [56, -4.2], [22, -4.2]], 1.2, 3), MAT.pavonado, { huecos: Array.from({ length: 9 }, (_, k) => Cc(25.2 + k * 3.6, -6.3, 0.9, 10)) });   // protección perforada
+    pintar(ctx, Rc(22, -4.0, 32, 2.4), MAT.pavonado);
+    pintar(ctx, suave([[57.2, -6.4], [57.6, -8.8], [58.6, -8.8], [59, -6.4]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, suave([[59.4, -6.8], [60.6, -6.8], [60.6, -4.6], [59.4, -4.6]], 0.3, 2), MAT.acero);
+    bombaNervada(ctx, 25, -4.8, 17, 4.6, MAT.polimero, e.bombeo * 8);
+  } });
+
+// AA-12 (96 cm): cajón y culata en línea recta, asa superior con riel, tambor de 20, camisa del cañón con
+// ventilaciones, guion, pistolete
+reemplazar('aa12', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [40, -2], cargador: [16.2, 2.0], corredera: [0, -6.8], expulsion: [16, -7], boca: [62.4, -4.8] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-36, -8], [30, -8], [30, 0], [23.6, 0], [22.8, 2.0], [9.8, 2.0], [9.4, 0], [-6, 0], [-30, 3.4], [-36, 3.6]], 0.9, 4), MAT.pavonado, { brillo: 0.25 });   // cajón y culata
+    pintar(ctx, suave([[-37.4, -8.4], [-35.8, -8.4], [-35.8, 4.0], [-37.4, 4.0]], 0.6, 2), MAT.goma);
+    trazo(ctx, 'rgba(255,255,255,0.08)', 0.3, [[-35.6, -4.4], [29.6, -4.4]]);
+    for (const x of [-28, -18, -8, 6, 20]) tornillo(ctx, x, -6.4, 0.3);
+    pintar(ctx, suave([[-0.6, 0], [3.4, 0], [2.0, 9.6], [-2.6, 9.6], [-2.4, 3]], 0.8, 4), MAT.polimero, { mate: true });
+    guardamonteC(ctx, 3.4, 9.2, 0, 2.6, MAT.pavonado);
+    pintar(ctx, [[4.6, 0], [5.4, 0], [5.6, 1.4], [5.0, 1.8], [4.6, 1.0]], MAT.acero);
+    if (!e.sinCargador) {   // tambor de 20, más largo que alto
+      pintar(ctx, Ec(16.2, 6.6, 8.8, 5.6, 40), MAT.polimero, { brillo: 0.25 });
+      pintar(ctx, Ec(16.2, 6.6, 6.8, 4.0, 36), '#25272b', { mate: true });
+      if (!Pincel.silueta) for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; trazo(ctx, 'rgba(255,255,255,0.06)', 0.25, [[16.2 + Math.cos(a) * 2.4, 6.6 + Math.sin(a) * 1.5], [16.2 + Math.cos(a) * 6.4, 6.6 + Math.sin(a) * 3.8]]); }
+      pintar(ctx, Ec(16.2, 6.6, 1.8, 1.2, 16), '#3a3c42');
+    }
+    pintar(ctx, suave([[2, -11.6], [26, -11.6], [26, -8], [23, -8], [23, -10.2], [5, -10.2], [5, -8], [2, -8]], 0.6, 3), MAT.pavonado);   // asa con riel
+    rayas(ctx, 5.6, 22.4, -11.6, -10.8, 1.1, 'rgba(0,0,0,0.6)', 0.25);
+    pintar(ctx, suave([[30, -7.2], [58, -7.2], [58, -2.4], [30, -2.4]], 0.8, 3), MAT.pavonado, { huecos: Array.from({ length: 6 }, (_, k) => { const x = 32.6 + k * 4.2; return suave([[x, -6.2], [x + 2.4, -6.2], [x + 2.4, -4.8], [x, -4.8]], 0.5, 2); }) });   // camisa ventilada
+    pintar(ctx, Rc(58, -5.6, 4.4, 1.6), MAT.acero);
+    pintar(ctx, [[55, -7.2], [55.4, -9.2], [56.2, -9.2], [56.6, -7.2]], MAT.pavonado);
+    pintar(ctx, suave([[-2 - e.corredera * 6, -7.8], [2 - e.corredera * 6, -7.8], [2 - e.corredera * 6, -6.4], [-2 - e.corredera * 6, -6.4]], 0.4, 2), MAT.acero);
+  } });
+
+// Saiga-12 (110 cm): mecanismo AK con culata y guardamanos de polímero, cargador recto y ancho de 8,
+// cañón grueso con bloque de gases y guion
+reemplazar('saiga', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [36, -4.6], cargador: [10, -2.2], corredera: [19, -5.2], expulsion: [14, -7], boca: [64.5, -5.9] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-4.6, -6.8], [-38, -4.2], [-38.8, -3.8], [-38.8, 8.6], [-38, 8.8], [-9, 1.2], [-4.6, -1.8]], 0.9, 4), MAT.polimero, { mate: true });
+    pintar(ctx, suave([[-1.2, -2.0], [2.8, -2.0], [1.6, 7.8], [-2.4, 7.8], [-2.8, 1.2]], 0.8, 4), MAT.polimero, { mate: true });
+    guardamonteC(ctx, 3.2, 9.2, -2.2, 3.2, MAT.acero);
+    pintar(ctx, [[4.2, -2.0], [5.0, -2.0], [5.2, -0.2], [4.6, 0.4], [4.2, -0.4]], MAT.acero);
+    if (!e.sinCargador) { pintar(ctx, suave([[6.6, -2.2], [14.2, -2.2], [15.4, 12.4], [7.6, 13.2]], 0.6, 3), MAT.polimero, { mate: true }); trazo(ctx, 'rgba(255,255,255,0.08)', 0.3, [[8, 0], [9, 12]]); }
+    pintar(ctx, suave([[-4.6, -2.0], [-4.6, -6.4], [-3.0, -7.8], [26, -7.8], [26, -2.0]], 0.5, 3), MAT.pavonado, { brillo: 0.25 });
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.25, [[-4, -5.6], [25.6, -5.6]]);
+    pintar(ctx, [[2.6, -4.2], [15.6, -5.0], [15.8, -4.2], [2.8, -3.6]], MAT.acero);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(10.4, -5.2, 7.4, 1.2); }
+    pintar(ctx, suave([[27, -7.6], [46, -7.4], [46.6, -4.4], [44, -3.0], [27, -3.0]], 1.0, 4), MAT.polimero, { mate: true });
+    rayas(ctx, 29, 44, -7.0, -3.6, 1.6, 'rgba(255,255,255,0.06)', 0.4);
+    pintar(ctx, suave([[44, -9.8], [47.6, -9.8], [47.6, -7.0], [44, -7.0]], 0.4, 2), MAT.pavonado);
+    pintar(ctx, Rc(46, -7.2, 18.6, 2.4), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, [[60.4, -7.2], [61, -10.0], [62.2, -10.0], [62.8, -7.2]], MAT.pavonado);
+    pintar(ctx, suave([[16.4 - e.corredera * 8, -6.2], [19.4 - e.corredera * 8, -6.2], [19.4 - e.corredera * 8, -4.6], [16.4 - e.corredera * 8, -4.6]], 0.4, 2), MAT.acero);
+  } });
+
+// Benelli M4 (101 cm): culata telescópica con carrillera y pistolete, cajón con riel y alza fantasma, manija
+// de carga grande, tubo del depósito, guardamanos fijo, cañón
+reemplazar('benelli', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [33, -2.4], cargador: [11, 1.6], corredera: [9, -1.6], expulsion: [10, -5.5], boca: [66, -5.1] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, Rc(-18, -5.0, 16, 2.4), MAT.polimero);                                                      // tubo telescópico
+    pintar(ctx, suave([[-31.6, -7.2], [-17, -7.2], [-15, -4.0], [-17, 0.6], [-26, 5.0], [-31.6, 5.6]], 0.9, 4), MAT.polimero, { mate: true });   // culata
+    pintar(ctx, suave([[-32.8, -7.4], [-31.4, -7.4], [-31.4, 5.8], [-32.8, 5.8]], 0.5, 2), MAT.goma);
+    pintar(ctx, suave([[-0.6, 1.4], [3.4, 1.4], [2.0, 10.6], [-2.6, 10.6], [-2.4, 4]], 0.8, 4), MAT.polimero, { mate: true });
+    punteado(ctx, [[-0.4, 3], [2.6, 3], [1.8, 9.6], [-2.2, 9.6]], 0.45);
+    pintar(ctx, suave([[-2, -6.6], [19, -6.6], [19, 1.6], [-2, 1.6]], 0.6, 3), MAT.aleacion, { brillo: 0.25 });
+    guardamonteC(ctx, 3.4, 9.2, 1.6, 2.6, MAT.polimero);
+    pintar(ctx, [[4.6, 1.6], [5.4, 1.6], [5.6, 3.0], [5.0, 3.4], [4.6, 2.6]], MAT.acero);
+    pintar(ctx, Rc(-1, -8.0, 20, 1.4), MAT.pavonado); rayas(ctx, -0.4, 18.4, -8.0, -6.8, 1.0, 'rgba(0,0,0,0.6)', 0.25);   // riel
+    pintar(ctx, suave([[0, -8.0], [1, -10.4], [3.2, -10.4], [4, -8.0]], 0.4, 2), MAT.pavonado, { huecos: [Cc(2.1, -9.4, 0.45, 10)] });   // alza fantasma
+    pintar(ctx, Rc(19, -6.0, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, Rc(19, -3.8, 34, 2.6), MAT.pavonado); pintar(ctx, suave([[53, -4.0], [55, -4.0], [55, -1.0], [53, -1.0]], 0.5, 2), MAT.acero);
+    pintar(ctx, suave([[22, -4.8], [44, -4.8], [44.6, -2.6], [44, -0.2], [22, -0.2]], 1.0, 3), MAT.polimero, { mate: true });
+    rayas(ctx, 24, 42, -4.4, -0.6, 1.4, 'rgba(255,255,255,0.06)', 0.4);
+    pintar(ctx, suave([[63.6, -6.0], [64, -8.6], [65, -8.6], [65.4, -6.0]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, suave([[7.2 - e.corredera * 5, -2.8], [11.4 - e.corredera * 5, -2.8], [11.4 - e.corredera * 5, -0.8], [7.2 - e.corredera * 5, -0.8]], 0.6, 3), MAT.acero);   // manija de carga
+  } });
+
+// Remington 870 (106 cm): culata y bomba de nogal, cajón de acero con ventana, cañón con costilla ventilada
+// y perla, tubo del depósito
+reemplazar('rem870', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [34, -2.4], cargador: [12, 1.4], corredera: [34, -2.6], expulsion: [10, -5], boca: [67.6, -5.2] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-36, -5.2], [-4, -4.4], [0, -4.8], [0, 1.4], [-3, 2.8], [-6.4, 4.8], [-9, 4.9], [-24, 6.2], [-36, 8.2]], 1.4, 5), MAT.nogal);   // culata con semipistolete
+    cuadriculado(ctx, [[-1.2, 1.4], [-3.4, 2.8], [-6.2, 4.2], [-5.2, 0.4]], 0.42, 'rgba(15,6,2,0.4)');
+    pintar(ctx, suave([[-37.2, -5.4], [-36, -5.4], [-36, 8.4], [-37.2, 8.2]], 0.5, 2), MAT.goma);
+    pintar(ctx, suave([[0, -6.4], [20.6, -6.4], [20.6, 1.4], [0, 1.4]], 0.6, 3), MAT.pavonado, { brillo: 0.4 });
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(6, -5.6, 7, 1.6); }
+    guardamonteC(ctx, 1.2, 8.0, 1.4, 2.4, MAT.pavonado);
+    pintar(ctx, [[2.6, 1.4], [3.4, 1.4], [3.6, 2.8], [3.0, 3.2], [2.6, 2.4]], MAT.acero);
+    pintar(ctx, Rc(20.6, -6.0, 47, 1.6), MAT.pavonado, { brillo: 0.45 });
+    pintar(ctx, Rc(20.6, -7.0, 47, 0.7), MAT.pavonado);
+    if (!Pincel.silueta) for (let x = 22; x < 66.4; x += 1.4) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(x, -6.8, 0.6, 0.4); }
+    punto(ctx, 67, -7.4, 0.4, '#e0d8c0');
+    pintar(ctx, Rc(20.6, -4.0, 36, 2.4), MAT.pavonado); pintar(ctx, suave([[56.6, -4.2], [58.4, -4.2], [58.4, -1.4], [56.6, -1.4]], 0.5, 2), MAT.acero);
+    bombaNervada(ctx, 25, -4.8, 19, 4.6, MAT.nogal, e.bombeo * 9);
+  } });
+
+// Winchester 1887 (101 cm): cajón grande de bloque redondeado, palanca con lazo, culata de cuello recto,
+// fuste corto, tubo del depósito y cañón largo
+reemplazar('winchester1887', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [30, -1.8], cargador: [14, -1], corredera: [-6, 4], expulsion: [10, -7], boca: [68, -5.5] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-34, -6.0], [-4, -5.0], [0, -5.0], [0, 2.2], [-6, 2.6], [-20, 6.2], [-34, 8.6]], 0.9, 4), MAT.madera);
+    pintar(ctx, suave([[-35, -6.2], [-34, -6.2], [-34, 8.8], [-35, 8.6]], 0.3, 2), MAT.acero);
+    pintar(ctx, suave([[0, -5.6], [2.4, -7.6], [6.6, -8.0], [21, -8.0], [21, 2.6], [0, 2.6]], 1.0, 4), MAT.pavonado, { brillo: 0.4 });   // cajón
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[2, -6.4], [20.6, -6.6]]);
+    tornillo(ctx, 5, -2); tornillo(ctx, 17, -4);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(11, -1.8, 5, 1.6); }
+    pintar(ctx, suave([[-1, -6.6], [-2.6, -8.8], [-1.2, -9.0], [1, -6.8]], 0.3, 2), MAT.pavonado);         // martillo
+    pintar(ctx, Rc(21, -6.4, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, Rc(21, -4.4, 40, 2.0), MAT.pavonado);
+    pintar(ctx, suave([[21, -4.6], [38, -4.6], [38.8, -3.0], [38, -1.6], [21, -1.4]], 0.8, 3), MAT.madera);
+    pintar(ctx, suave([[60, -4.6], [61.4, -4.6], [61.4, -2.0], [60, -2.0]], 0.3, 2), MAT.pavonado);
+    punto(ctx, 67.4, -6.9, 0.4, '#e0d8c0');
+    ctx.save(); ctx.translate(15, 2.4); ctx.rotate(e.palanca * 0.9);
+    if (!Pincel.silueta) {
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-14, 0.4); ctx.quadraticCurveTo(-17.6, 0.8, -16.8, 3.8); ctx.quadraticCurveTo(-15.8, 7.0, -10.8, 6.8); ctx.quadraticCurveTo(-6.4, 6.6, -6, 2.8); ctx.lineTo(-3, 2.2);
+      ctx.strokeStyle = MAT.pavonado; ctx.lineWidth = 1.2; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.25; ctx.stroke();
+    } else { ctx.fillStyle = Pincel.silueta; ctx.fillRect(-16, 0, 14, 6.6); }
+    ctx.restore();
+  } });
+
+/* ======================= ESPECIALES ======================= */
+
+// M79 (73 cm): culata gruesa de madera con almohadilla, báscula con palanca de apertura arriba, cañón de
+// 40 mm con el alza de escalera levantada, delantera de madera; se quiebra hacia abajo para cargar
+reemplazar('m79', { casquillo: null, casquilloVaciado: 'granada40',
+  anclas: { manoDelantera: [16, 2.2], cargador: [8.2, -3.5], corredera: [-1, -5.6], expulsion: [8, -3.5], boca: [43.6, -3.5] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-28.6, -5.6], [-2, -4.6], [0, -4.6], [0, 2.4], [-2, 2.6], [-6, 9.0], [-11, 9.6], [-28.6, 10.6]], 1.0, 4), MAT.madera);
+    pintar(ctx, suave([[-30.8, -6.0], [-28.4, -6.0], [-28.4, 11.0], [-30.8, 11.0]], 0.8, 3), MAT.goma);
+    pintar(ctx, suave([[0, -5.4], [9, -5.4], [9, 2.0], [0, 2.0]], 0.6, 3), MAT.oliva, { mate: true });
+    pintar(ctx, suave([[-1.6, -6.2], [2.8, -6.4], [2.8, -5.4], [-1.6, -5.4]], 0.3, 2), MAT.acero);          // palanca de apertura
+    tornillo(ctx, 6.6, -1.8);
+    guardamonteC(ctx, 1.2, 7.4, 2.0, 2.6, MAT.oliva);
+    pintar(ctx, [[2.6, 2.0], [3.4, 2.0], [3.6, 3.4], [3.0, 3.8], [2.6, 3.0]], MAT.acero);
+    ctx.save(); ctx.translate(8.6, 2.0); ctx.rotate(e.abierto * 0.6); ctx.translate(-8.6, -2.0);
+    pintar(ctx, suave([[8.4, -6.0], [43.6, -6.0], [43.6, -1.0], [8.4, -1.0]], 1.0, 3), MAT.oliva, { mate: true, brillo: 0.2 });   // cañón de 40 mm
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.3, [[9, -5.2], [43, -5.2]]);
+    pintar(ctx, suave([[9.4, -1.0], [24, -1.0], [24.8, 0.8], [23.6, 2.4], [10, 2.4]], 0.8, 3), MAT.madera);   // delantera
+    // Alza de escalera levantada, con su marco
+    if (!Pincel.silueta) { ctx.strokeStyle = MAT.pavonado; ctx.lineWidth = 0.5; ctx.strokeRect(11.6, -11.2, 2.6, 5.2); for (let y = -10.4; y < -6.2; y += 1.0) trazo(ctx, MAT.pavonado, 0.2, [[11.8, y], [14.0, y]]); }
+    pintar(ctx, Rc(11.2, -6.4, 3.4, 0.6), MAT.pavonado);
+    pintar(ctx, [[42.0, -6.0], [42.2, -7.6], [42.8, -7.6], [43.0, -6.0]], MAT.pavonado);
+    if (e.abierto > 0.5) punto(ctx, 8.8, -3.5, 2.0, '#0a0a0c');
+    ctx.restore();
+  } });
+
+// Bazuca M9 (155 cm): tubo de 60 mm en dos tramos con su unión, aro trasero acampanado (por ahí entra el
+// cohete), apoyo de hombro de madera, empuñadura con el disparador y empuñadura delantera, caja de la
+// mira, contactos eléctricos y refuerzo de la boca
+reemplazar('bazuca', { casquillo: null,
+  anclas: { manoDelantera: [18, 3.4], cargador: [-72, -4], corredera: [-72, -4], expulsion: [-76, -4], boca: [80.5, -4] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[-26, -1.0], [-6, -1.0], [-7.6, 4.4], [-24, 4.8]], 0.8, 3), MAT.madera);              // apoyo de hombro
+    pintar(ctx, suave([[-0.6, -0.8], [3.2, -0.8], [2.0, 8.8], [-2.2, 8.8], [-2.0, 3]], 0.8, 4), MAT.madera);
+    guardamonteC(ctx, 3.2, 8.4, -0.8, 2.8, MAT.oliva);
+    pintar(ctx, [[4.4, -0.8], [5.2, -0.8], [5.4, 0.8], [4.8, 1.2], [4.4, 0.4]], MAT.acero);
+    pintar(ctx, suave([[16.2, -0.8], [20.2, -0.8], [19.8, 8.2], [16.6, 8.2]], 0.8, 3), MAT.madera);
+    pintar(ctx, suave([[-74, -7.4], [80, -7.4], [80, -0.8], [-74, -0.8]], 2.6, 5), MAT.oliva, { mate: true, brillo: 0.25 });   // tubo
+    trazo(ctx, 'rgba(255,255,255,0.12)', 0.4, [[-70, -6.4], [78, -6.4]]);
+    pintar(ctx, suave([[-78.4, -9.0], [-74, -7.8], [-74, -0.4], [-78.4, 0.8]], 0.8, 3), MAT.acero);       // aro trasero acampanado
+    if (!e.sinCargador && !Pincel.silueta) { ctx.fillStyle = '#2b2d22'; ctx.fillRect(-78.2, -6.4, 1.4, 4.8); }
+    pintar(ctx, suave([[-1.4, -8.2], [1.4, -8.2], [1.4, 0], [-1.4, 0]], 0.4, 2), MAT.acero);               // unión de los dos tramos
+    for (const x of [-0.6, 0.6]) tornillo(ctx, x, -4.2, 0.24);
+    pintar(ctx, suave([[76, -8.4], [80.6, -8.4], [80.6, 0.6], [76, 0.6]], 1.2, 3), MAT.oliva);              // refuerzo de la boca
+    pintar(ctx, suave([[8, -11.6], [17, -11.6], [17, -7.4], [8, -7.4]], 0.6, 3), MAT.oliva);                // caja de la mira
+    pintar(ctx, Rc(16.2, -13.0, 1.2, 1.6), MAT.acero); punto(ctx, 9.4, -9.6, 0.5, '#6fa8c8');
+    pintar(ctx, suave([[-68, -8.6], [-64, -8.6], [-64, -7.4], [-68, -7.4]], 0.3, 2), MAT.acero);            // contacto eléctrico
+    trazo(ctx, '#2a2620', 0.35, [[-66, -8.4], [-40, -9.4], [-10, -9.0], [6, -8.0]]);                        // cable
+    if (!Pincel.silueta) for (const x of [-50, 50]) { ctx.beginPath(); ctx.ellipse(x, -0.2, 1.0, 0.9, 0, 0, Math.PI * 2); ctx.strokeStyle = '#3a3c42'; ctx.lineWidth = 0.35; ctx.stroke(); }   // argollas
+  } });
+
+// RPG-7 (95 cm el tubo; con la granada cargada 123 cm): tubo de 40 mm, tobera trasera acampanada, protectores
+// térmicos de madera adelante y atrás con sus abrazaderas, mecanismo de disparo con guardamonte y pistolete,
+// alza plegada y guion, mira óptica PGO-7 en su montura lateral con ocular de goma, y la granada PG-7V que asoma
+// por la boca (motor oscuro, cabeza verde con banda amarilla y espoleta). Disparada, el tubo queda vacío.
+reemplazar('rpg7', { casquillo: null,
+  anclas: { manoDelantera: [17, -0.6], cargador: [37, -4], corredera: [37, -4], expulsion: [-58, -4], boca: [64, -4] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, T = '#3b3e3a', M = MAT.madera;
+    pintar(ctx, suave([[-46, -6.3], [-55.6, -8.4], [-58.4, -8.8], [-58.4, 0.8], [-55.6, 0.4], [-46, -1.7]], 0.5, 3), T, { brillo: 0.35 });   // tobera
+    pintar(ctx, suave(Rc(-59.2, -9.2, 1.2, 10.4), 0.4, 2), T);
+    pintar(ctx, Rc(-46, -6.0, 83, 4.0), T, { brillo: 0.45 });                                                 // tubo
+    trazo(ctx, 'rgba(255,255,255,0.14)', 0.3, [[-45, -5.1], [36, -5.1]]);
+    // Protector térmico trasero, mecanismo y pistolete
+    pintar(ctx, suave([[-22, -7.0], [-5.6, -7.0], [-4.8, -6.2], [-4.8, -1.8], [-5.6, -1.0], [-22, -1.0], [-22.8, -1.8], [-22.8, -6.2]], 0.8, 3), M);
+    for (const x of [-23.4, -5.0]) pintar(ctx, suave(Rc(x, -7.2, 0.9, 6.4), 0.3, 2), T);
+    pintar(ctx, suave([[-3.4, -2.0], [9.2, -2.0], [9.2, 0.6], [6.8, 1.0], [-2.0, 1.0], [-3.4, 0.0]], 0.4, 2), T);   // mecanismo de disparo
+    tornillo(ctx, -1.6, -0.6, 0.3); tornillo(ctx, 7.6, -0.8, 0.3);
+    guardamonteC(ctx, 1.6, 7.6, 0.6, 2.8, T);
+    pintar(ctx, [[3.0, 0.6], [3.8, 0.6], [4.0, 2.2], [3.4, 2.7], [3.0, 1.8]], MAT.acero);
+    const grip = suave([[-1.0, 0.6], [2.2, 0.6], [1.2, 9.2], [-2.6, 9.2], [-2.6, 3.0]], 0.8, 4);
+    pintar(ctx, grip, '#3a2418', { brillo: 0.25 });
+    for (const y of [3.4, 5.0, 6.6]) trazo(ctx, 'rgba(0,0,0,0.35)', 0.22, [[-2.2, y], [1.4, y - 0.2]]);
+    // Protector térmico delantero y abrazaderas
+    pintar(ctx, suave([[9.6, -7.2], [30.2, -7.0], [31.2, -6.0], [31.2, -2.0], [30.2, -1.0], [9.6, -0.8], [8.8, -1.8], [8.8, -6.2]], 0.8, 3), M);
+    for (const x of [8.4, 30.8]) pintar(ctx, suave(Rc(x, -7.4, 0.9, 6.8), 0.3, 2), T);
+    // Alza plegada, guion, refuerzo de la boca y argollas
+    pintar(ctx, suave([[2.0, -6.0], [6.0, -6.0], [5.6, -6.9], [2.4, -6.8]], 0.2, 2), T);
+    pintar(ctx, [[33.0, -6.0], [33.4, -8.2], [34.0, -8.2], [34.4, -6.0]], T);
+    pintar(ctx, suave(Rc(35.4, -6.4, 1.8, 4.8), 0.4, 2), T);
+    if (!sil) for (const [x, y] of [[-30, -1.0], [24, -0.2]]) { ctx.beginPath(); ctx.ellipse(x, y + 0.9, 0.9, 0.8, 0, 0, Math.PI * 2); ctx.strokeStyle = '#3a3c42'; ctx.lineWidth = 0.3; ctx.stroke(); }
+    // Mira PGO-7 sobre la montura lateral
+    pintar(ctx, suave([[-4.8, -10.4], [6.4, -10.4], [6.4, -7.6], [5.0, -6.0], [-3.4, -6.0], [-4.8, -7.6]], 0.4, 2), '#2b2d2b');
+    pintar(ctx, suave([[-7.6, -14.6], [10.4, -14.6], [11.4, -13.6], [11.4, -10.6], [10.4, -10.0], [-7.6, -10.0]], 0.5, 3), '#313430', { brillo: 0.35 });
+    pintar(ctx, suave(Rc(11.2, -14.2, 2.8, 3.8), 0.4, 2), '#313430');
+    pintar(ctx, suave(Rc(0.4, -16.0, 2.4, 1.6), 0.3, 2), '#313430'); rayas(ctx, 0.8, 2.4, -15.8, -14.6, 0.4, 'rgba(255,255,255,0.12)', 0.1);
+    pintar(ctx, Cc(5.6, -12.3, 0.85, 12), '#262826');
+    pintar(ctx, suave([[-7.6, -14.4], [-11.4, -15.2], [-11.8, -14.6], [-11.8, -9.8], [-7.6, -10.2]], 0.6, 3), MAT.goma);
+    if (!sil) { const g = ctx.createLinearGradient(0, -14.2, 0, -10.4); g.addColorStop(0, '#9fd2f0'); g.addColorStop(1, '#1d4c6c'); ctx.fillStyle = g; ctx.fillRect(13.7, -13.8, 0.35, 3.0); }
+    // Granada PG-7V (sólo mientras está cargada)
+    if (!e.sinCargador) {
+      pintar(ctx, Rc(37.2, -5.8, 3.6, 3.6), '#2e302c');
+      pintar(ctx, suave([[40.6, -5.6], [43.8, -8.2], [52.6, -8.2], [61.2, -5.2], [61.2, -2.8], [52.6, 0.2], [43.8, 0.2], [40.6, -2.4]], 0.5, 3), MAT.oliva, { brillo: 0.35 });
+      trazo(ctx, 'rgba(0,0,0,0.3)', 0.2, [[44.2, -8.0], [44.2, 0.0]]); trazo(ctx, 'rgba(0,0,0,0.3)', 0.2, [[52.6, -8.0], [52.6, 0.0]]);
+      trazo(ctx, '#d6c36a', 0.5, [[47.4, -8.1], [47.4, 0.1]]);
+      pintar(ctx, suave([[61.2, -4.8], [63.4, -4.6], [64.0, -4.0], [63.4, -3.4], [61.2, -3.2]], 0.3, 2), '#1d1e1c');
+    }
+  } });
+
+// Granada M67: cuerpo esférico de acero verde con su costura, espoleta, cuchara y anilla con el pasador
+reemplazar('granadas', { casquillo: null,
+  anclas: { manoDelantera: [1, 1.5], cargador: [1, 1.5], corredera: [1, 1.5], expulsion: [0, 0], boca: [5, -2] },
+  dibujarCm(ctx, e) {
+    if (e.sinCargador) return;
+    pintar(ctx, Cc(2.6, -0.4, 3.2, 28), '#4a5a2c', { brillo: 0.4 });
+    trazo(ctx, 'rgba(0,0,0,0.35)', 0.22, [[-0.5, -0.6], [5.7, -0.6]]);                                     // costura
+    if (!Pincel.silueta) { ctx.fillStyle = '#d9c24a'; ctx.font = '0.9px sans-serif'; ctx.fillText('M67', 1.4, 1.2); }
+    pintar(ctx, suave([[1.4, -5.4], [3.8, -5.4], [3.8, -3.4], [1.4, -3.4]], 0.4, 2), '#3a3c40');           // espoleta
+    pintar(ctx, suave([[1.8, -5.0], [4.0, -5.2], [5.2, -3.4], [5.8, 0.6], [5.2, 1.6], [4.6, 1.2], [4.8, -2.4], [3.0, -3.8]], 0.4, 3), MAT.acero, { brillo: 0.4 });   // cuchara
+    if (!Pincel.silueta) { ctx.beginPath(); ctx.arc(0.2, -5.4, 1.1, 0, Math.PI * 2); ctx.strokeStyle = '#c8c8c8'; ctx.lineWidth = 0.32; ctx.stroke(); trazo(ctx, '#c8c8c8', 0.25, [[1.2, -5.0], [2.6, -4.6]]); }   // anilla
+  } });
+
+// Láser alienígena: cuerpo orgánico violeta con nervaduras, bobinas que brillan, emisor de tres puntas y
+// celda de energía a la vista
+reemplazar('laser', { casquillo: null,
+  anclas: { manoDelantera: [22, 1.2], cargador: [8, 4.4], corredera: [2, -6], expulsion: [0, 0], boca: [37, -3] },
+  dibujarCm(ctx, e) {
+    const V = MAT.violeta, oscuro = ajustarColor(V, -0.3);
+    pintar(ctx, suave([[-18, -6.0], [-6, -8.4], [-1, -7.6], [-1, 1.2], [-5, 1.6], [-14, 4.6], [-18.6, 3.0]], 1.6, 5), V);   // culata orgánica
+    pintar(ctx, suave([[-13, -4.0], [-6, -5.4], [-5, -1.6], [-12, 1.0]], 1.2, 4), oscuro);                   // hueco nervado
+    pintar(ctx, suave([[-0.6, 0.8], [3.4, 0.8], [2.0, 9.2], [-2.6, 9.2], [-2.4, 3]], 1.0, 4), oscuro);
+    pintar(ctx, suave([[-2, -8.2], [24, -8.8], [31, -6.4], [31.4, -0.4], [26, 1.8], [-2, 1.8]], 1.8, 5), V, { brillo: 0.45 });   // cuerpo
+    if (!Pincel.silueta) for (let x = 3; x < 22; x += 2.6) { ctx.strokeStyle = 'rgba(30,15,50,0.55)'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(x, -8.2); ctx.quadraticCurveTo(x + 1.2, -3.4, x, 1.6); ctx.stroke(); }   // nervaduras
+    // Emisor de tres puntas
+    for (const [dy, l] of [[-5.6, 6], [-3.0, 7], [-0.4, 6]]) pintar(ctx, suave([[31, dy - 0.6], [31 + l, dy - 0.2], [31 + l, dy + 0.2], [31, dy + 0.6]], 0.3, 2), oscuro);
+    if (!Pincel.silueta) {
+      ctx.save(); ctx.shadowColor = MAT.verde; ctx.shadowBlur = 4; ctx.fillStyle = MAT.verde;
+      ctx.fillRect(2, -6.6, 22, 0.55); ctx.fillRect(4, -2.4, 16, 0.45);
+      for (let x = 24.6; x < 30.6; x += 1.4) { ctx.beginPath(); ctx.ellipse(x, -3.2, 0.35, 2.6, 0, 0, Math.PI * 2); ctx.fill(); }   // bobinas
+      ctx.beginPath(); ctx.arc(36.6, -3.0, 0.6, 0, Math.PI * 2); ctx.fill();
+      if (!e.sinCargador) { ctx.beginPath(); ctx.arc(8, 4.4, 2.0, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = '#1d5a12'; ctx.lineWidth = 0.4; ctx.stroke(); }
+      ctx.restore();
+    }
+  } });
+
+/* ======================= ARMAS DE PALANCA (medidas sobre foto de un Winchester de palanca) ======================= */
+// Palanca integrada: placa gruesa pegada bajo el cajón desde el pivote, lazo chico que rodea el disparador
+// y lazo para los dedos justo debajo de la garganta de la culata. Gira sobre el pivote al accionarla.
+function palancaLazo(ctx, e, px, py, base) {
+  ctx.save(); ctx.translate(px, py); ctx.rotate(e.palanca * 0.95); ctx.translate(-px, -py);
+  pintar(ctx, suave([[px + 0.6, base - 0.2], [px + 0.6, base + 1.1], [4.4, base + 1.3], [3.4, base + 0.1]], 0.4, 2), MAT.pavonado, { brillo: 0.35 });   // placa
+  pintar(ctx, Cc(px, py, 0.45, 10), MAT.acero);                                                              // pivote
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fillRect(-7.6, base + 1.8, 12, 5.4); ctx.restore(); return; }
+  ctx.beginPath();
+  ctx.moveTo(4.4, base + 1.2); ctx.quadraticCurveTo(3.6, base + 3.6, 1.2, base + 3.3); ctx.lineTo(-0.2, base + 2.5);   // lazo del disparador
+  ctx.lineTo(-1.2, base + 2.0); ctx.lineTo(-6.2, base + 2.0); ctx.quadraticCurveTo(-7.6, base + 2.0, -7.6, base + 3.4);
+  ctx.lineTo(-7.6, base + 5.6); ctx.quadraticCurveTo(-7.6, base + 7.0, -6.2, base + 7.0); ctx.lineTo(-1.8, base + 7.0);
+  ctx.quadraticCurveTo(-0.6, base + 7.0, -0.6, base + 5.6); ctx.lineTo(-0.2, base + 2.5);                    // lazo para los dedos
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#121316'; ctx.lineWidth = 1.15; ctx.stroke();
+  ctx.strokeStyle = MAT.pavonado; ctx.lineWidth = 0.85; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 0.22; ctx.stroke();
+  ctx.restore();
+}
+
+// Winchester 1894 (96 cm): culata de nogal de garganta recta con caída, cajón bajo con la ventana de carga y
+// el cerrojo a la vista, martillo, palanca integrada, fuste sobre el tubo de balas, abrazaderas, alza y guion
+reemplazar('winchester1894', { casquillo: 'bala',
+  anclas: { manoDelantera: [23, -1.4], cargador: [10.6, -2.4], corredera: [-4, 4.6], expulsion: [6, -5.4], boca: [64, -4.7] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[0, -4.6], [-2.2, -3.8], [-8, -1.6], [-31.8, 0.6], [-32.2, 1.4], [-32.2, 12.2], [-31.4, 12.6], [-10, 3.2], [-6, 1.8], [-2.6, 1.2], [0, -0.2]], 0.9, 4), MAT.maderaClara);   // culata
+    pintar(ctx, suave([[-33, 0.6], [-32, 0.6], [-32, 12.6], [-33, 12.4]], 0.3, 2), MAT.pavonado);             // cantonera
+    pintar(ctx, Rc(1.0, -0.3, 0.9, 2.3), MAT.acero);                                                          // disparador
+    palancaLazo(ctx, e, 13, 0.4, -0.2);
+    pintar(ctx, suave([[0, -0.3], [0, -4.8], [1.2, -5.4], [14, -5.4], [14, 0], [12.4, 0.2], [0, -0.3]], 0.6, 3), MAT.pavonado, { brillo: 0.4 });   // cajón
+    if (!Pincel.silueta) { ctx.fillStyle = '#9aa0a8'; ctx.fillRect(3.2, -4.8, 4.2, 0.7); ctx.fillStyle = '#0a0a0c'; ctx.fillRect(9.2, -2.6, 3.6, 0.9); }   // cerrojo y ventana de carga
+    tornillo(ctx, 2.0, -2.2, 0.26); tornillo(ctx, 11.8, -4.2, 0.24);
+    pintar(ctx, suave([[0.2, -4.8], [-0.4, -6.6], [0.6, -7.0], [1.6, -5.2]], 0.3, 2), MAT.pavonado);       // martillo
+    pintar(ctx, Rc(14, -5.4, 50, 1.4), MAT.pavonado, { brillo: 0.45 });                                       // cañón
+    pintar(ctx, Rc(14, -3.8, 48.6, 1.6), MAT.pavonado, { brillo: 0.35 });                                    // tubo de balas
+    pintar(ctx, suave([[14, -4.4], [31.6, -4.4], [31.6, -1.6], [14, -1.6]], 0.6, 3), MAT.maderaClara);       // fuste
+    pintar(ctx, suave([[31.6, -5.6], [32.6, -5.6], [32.6, -1.4], [31.6, -1.4]], 0.3, 2), MAT.pavonado);      // abrazadera
+    pintar(ctx, suave([[60.2, -5.6], [61.0, -5.6], [61.0, -2.0], [60.2, -2.0]], 0.3, 2), MAT.pavonado);      // abrazadera delantera
+    pintar(ctx, suave([[17.2, -5.4], [19.6, -5.4], [19.6, -6.1], [17.2, -6.1]], 0.2, 2), MAT.pavonado);      // alza
+    pintar(ctx, suave([[62.2, -5.4], [62.4, -6.8], [63.4, -6.8], [63.6, -5.4]], 0.3, 2), MAT.pavonado);      // guion encapuchado
+  } });
+DIBUJO_ARMAS.winchester1894.culataCm = 32;
+DIBUJO_ARMAS.winchester1894.moviles = { corredera: e => girarCm(-4, 4.6, 13, 0.4, e.palanca * 0.95) };   // la mano viaja con la palanca
+
+// Winchester 1887 (101 cm): la escopeta de palanca, con el cajón grande de bloque redondeado; misma palanca integrada
+reemplazar('winchester1887', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [30, -1.8], cargador: [14, -1], corredera: [-4, 6.8], expulsion: [10, -7], boca: [68, -5.5] },
+  dibujarCm(ctx, e) {
+    pintar(ctx, suave([[0, -5.0], [-2.4, -4.0], [-8, -1.6], [-33.4, 1.2], [-33.8, 2.0], [-33.8, 13.2], [-33.0, 13.6], [-10, 5.6], [-6, 4.2], [-2.6, 3.6], [0, 2.2]], 0.9, 4), MAT.madera);   // culata
+    pintar(ctx, suave([[-34.6, 1.2], [-33.6, 1.2], [-33.6, 13.6], [-34.6, 13.4]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, Rc(1.0, 2.2, 0.9, 2.3), MAT.acero);
+    palancaLazo(ctx, e, 15.6, 2.8, 2.2);
+    pintar(ctx, suave([[0, 2.4], [0, -5.6], [2.4, -7.6], [6.6, -8.0], [21, -8.0], [21, 2.6], [15, 2.8], [0, 2.4]], 1.0, 4), MAT.pavonado, { brillo: 0.4 });   // cajón grande
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[2, -6.4], [20.6, -6.6]]);
+    tornillo(ctx, 5, -2); tornillo(ctx, 17, -4);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(11, -1.8, 5, 1.6); }
+    pintar(ctx, suave([[-1, -6.6], [-2.6, -8.8], [-1.2, -9.0], [1, -6.8]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, Rc(21, -6.4, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, Rc(21, -4.4, 40, 2.0), MAT.pavonado);
+    pintar(ctx, suave([[21, -4.6], [38, -4.6], [38.8, -3.0], [38, -1.6], [21, -1.4]], 0.8, 3), MAT.madera);
+    pintar(ctx, suave([[60, -4.6], [61.4, -4.6], [61.4, -2.0], [60, -2.0]], 0.3, 2), MAT.pavonado);
+    punto(ctx, 67.4, -6.9, 0.4, '#e0d8c0');
+  } });
+DIBUJO_ARMAS.winchester1887.culataCm = 33.6;
+DIBUJO_ARMAS.winchester1887.moviles = { corredera: e => girarCm(-4, 6.8, 15.6, 2.8, e.palanca * 0.95) };
+
+/* ======================= M16 (medido sobre foto de perfil) ======================= */
+// 91 cm: culata fija A2, cajón inferior con pistolete largo inclinado (10 cm, con saliente para el dedo),
+// cargador curvo gris de 30, cajón superior con asa y alza de tambor, asistente de cierre, guardamanos corto
+// y grueso con nervaduras, anillo delta, torre del guion con orejas y apagallamas «jaula»
+reemplazar('m16', { casquillo: 'bala',
+  anclas: { manoDelantera: [26, -2.6], cargador: [11.8, 1.8], corredera: [-4.4, -8.8], expulsion: [9.4, -5.4], boca: [56.4, -5.8] },
+  dibujarCm(ctx, e) {
+    const NEGRO = '#1e1f22';
+    pintar(ctx, suave([[-4.7, -7.4], [-33.6, -7.2], [-33.9, 6.0], [-30, 6.0], [-4.7, -2.6]], 0.9, 4), NEGRO, { mate: true });   // culata A2
+    pintar(ctx, suave([[-34.8, -7.4], [-33.6, -7.4], [-33.6, 6.2], [-34.8, 6.2]], 0.5, 2), MAT.goma);
+    trazo(ctx, 'rgba(255,255,255,0.06)', 0.3, [[-32, -6.6], [-6, -6.6]]);
+    if (!Pincel.silueta) { ctx.beginPath(); ctx.ellipse(-29.6, 6.9, 0.8, 0.7, 0, 0, Math.PI * 2); ctx.strokeStyle = '#3a3c42'; ctx.lineWidth = 0.3; ctx.stroke(); }
+    // Pistolete largo e inclinado con la saliente para el dedo y estrías
+    const grip = suave([[-0.4, -0.2], [-1.4, 3.4], [-2.4, 4.6], [-2.6, 5.8], [-4.4, 10.0], [-5.8, 10.4], [-7.8, 9.6], [-6.2, 4.6], [-3.4, -0.2]], 0.7, 4);
+    pintar(ctx, grip, NEGRO, { mate: true });
+    if (!Pincel.silueta) for (let k = 0; k < 6; k++) trazo(ctx, 'rgba(255,255,255,0.07)', 0.22, [[-4.4 - k * 0.42, 1.8 + k * 1.3], [-6.0 - k * 0.38, 2.4 + k * 1.3]]);
+    // Cargador curvo gris de 30
+    if (!e.sinCargador) {
+      pintar(ctx, suave([[7.8, 1.4], [15.8, 1.4], [16.4, 7.4], [17.2, 13.6], [9.2, 13.8], [8.4, 7.6]], 0.5, 3), '#6b6e70', { mate: true });
+      for (const x of [10.2, 12.4, 14.6]) trazo(ctx, 'rgba(0,0,0,0.25)', 0.35, [[x, 2.6], [x + 0.9, 12.8]]);
+    }
+    // Cajón inferior con el pozo del cargador y guardamonte
+    pintar(ctx, suave([[-4.7, -2.9], [16.2, -2.9], [16.2, 1.9], [7.4, 1.9], [6.6, 0.2], [-4.7, 0.2]], 0.5, 3), MAT.aleacion);
+    guardamonteC(ctx, 0.6, 7.0, 0.2, 2.6, MAT.aleacion);
+    pintar(ctx, [[2.6, 0.2], [3.4, 0.2], [3.6, 1.8], [3.0, 2.2], [2.6, 1.4]], MAT.acero);
+    pintar(ctx, Cc(0.8, -1.4, 0.65, 12), MAT.pavonado); trazo(ctx, '#b9bdc6', 0.2, [[0.8, -1.4], [1.3, -1.9]]);   // selector
+    pintar(ctx, suave([[6.0, -2.6], [7.2, -2.6], [7.2, -0.4], [6.0, -0.4]], 0.3, 2), MAT.pavonado);            // retén del cerrojo
+    tornillo(ctx, -3.6, -1.6, 0.3); tornillo(ctx, 15.0, -1.6, 0.3);                                             // pernos de desarme
+    // Cajón superior, asa con el alza de tambor, ventana y asistente de cierre
+    pintar(ctx, suave([[-4.7, -2.9], [-4.7, -8.6], [16.2, -8.6], [16.2, -2.9]], 0.4, 3), MAT.aleacion, { brillo: 0.25 });
+    pintar(ctx, suave([[-3.2, -8.6], [-2.4, -12.6], [-0.2, -12.8], [1.0, -11.4], [13.6, -11.4], [15.2, -8.6], [12.8, -8.6], [12.2, -10.2], [1.4, -10.2], [0.8, -8.6]], 0.5, 3), MAT.aleacion);
+    pintar(ctx, Cc(-1.0, -12.0, 1.1, 14), MAT.pavonado); punto(ctx, -1.0, -12.0, 0.35, '#0a0a0c');
+    if (!Pincel.silueta) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(6.8, -6.6, 5.0, 1.8); }
+    pintar(ctx, Cc(13.8, -6.0, 0.9, 12), MAT.aleacion);
+    pintar(ctx, suave([[-5.8 - e.corredera * 6, -9.2], [-3.2 - e.corredera * 6, -9.2], [-3.2 - e.corredera * 6, -8.2], [-5.8 - e.corredera * 6, -8.2]], 0.3, 2), MAT.aleacion);   // manija de carga
+    // Anillo delta y guardamanos corto, grueso y nervado
+    pintar(ctx, suave([[16.2, -9.2], [17.6, -9.2], [17.6, -2.0], [16.2, -2.0]], 0.4, 2), MAT.pavonado);
+    pintar(ctx, suave([[17.6, -9.0], [35.0, -8.8], [35.4, -5.6], [35.0, -2.4], [17.6, -2.2]], 1.6, 5), NEGRO, { mate: true });
+    if (!Pincel.silueta) for (let x = 19; x < 34.4; x += 1.1) { ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(x, -8.4, 0.45, 5.6); }
+    trazo(ctx, 'rgba(255,255,255,0.08)', 0.3, [[18, -7.6], [34.8, -7.6]]);
+    // Torre del guion con orejas, argolla, cañón y apagallamas
+    pintar(ctx, suave([[35.2, -4.6], [35.6, -7.0], [36.6, -12.4], [37.4, -12.4], [37.6, -7.0], [40.8, -6.8], [40.8, -4.8], [35.2, -4.0]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, [[36.2, -12.4], [36.4, -13.6], [36.8, -13.6], [36.8, -12.4]], MAT.pavonado); pintar(ctx, [[37.2, -12.4], [37.4, -13.6], [37.8, -13.6], [37.8, -12.4]], MAT.pavonado);
+    if (!Pincel.silueta) { ctx.beginPath(); ctx.ellipse(36.4, -2.8, 0.8, 0.9, 0, 0, Math.PI * 2); ctx.strokeStyle = '#2a2c30'; ctx.lineWidth = 0.32; ctx.stroke(); }
+    pintar(ctx, Rc(40.8, -6.4, 11.8, 1.2), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, suave([[52.4, -6.8], [56.4, -6.8], [56.4, -4.8], [52.4, -4.8]], 0.4, 2), MAT.pavonado); rayas(ctx, 53.2, 55.8, -6.6, -5.0, 0.6, '#000', 0.25);
+  } });
+DIBUJO_ARMAS.m16.culataCm = 34.6;
+DIBUJO_ARMAS.m16.anguloEmpunadura = 0.42;   // el pistolete del AR va bien inclinado
+
+/* ======================= REVISIÓN CON FOTOS: SPAS-12, SVD, BARRETT, REVÓLVERES ======================= */
+
+// Revólver de doble acción visto del lado derecho, a partir de fotos de un S&W Model 29 (pavonado, cachas de
+// tiro ensanchadas abajo, funda corta de la varilla, rampa roja) y de un Colt Python (niquelado, costilla
+// ventilada, «underlug» hasta la boca, cachas de nogal con medallón dorado). Cañón de 6" en los dos.
+function revolver2(ctx, e, op) {
+  const { largo, colt, acabado, madera } = op, sil = Pincel.silueta;
+  // Martillo: el cuerpo queda metido en la ranura del armazón y asoma la espuela ancha cuadriculada
+  pintar(ctx, suave(colt
+    ? [[1.2, -2.6], [0.9, -4.2], [0.1, -5.3], [-1.0, -6.0], [-2.4, -6.3], [-3.5, -6.1], [-3.8, -5.5], [-3.0, -5.1], [-2.1, -4.6], [-1.6, -3.6], [-1.6, -2.4]]
+    : [[1.2, -2.6], [0.9, -4.0], [0.2, -5.0], [-0.8, -5.7], [-2.2, -6.0], [-3.7, -5.9], [-4.1, -5.4], [-3.3, -5.0], [-2.2, -4.6], [-1.6, -3.6], [-1.6, -2.4]], 0.45, 3), MAT.acero, { brillo: 0.45 });
+  if (!sil) for (let k = 0; k < 5; k++) trazo(ctx, 'rgba(0,0,0,0.55)', 0.1, [[-1.0 - k * 0.55, -5.6 - k * 0.06], [-1.3 - k * 0.55, -5.0 - k * 0.06]]);
+  // Armazón: lomo con la joroba detrás del martillo, puente superior, frente del armazón y la parte baja
+  pintar(ctx, suave(colt
+    ? [[-3.8, 0.2], [-3.8, -1.8], [-3.0, -3.4], [-1.6, -4.4], [0.0, -5.0], [1.0, -5.2], [7.4, -5.2], [7.8, -4.6], [7.8, 0.4], [7.2, 1.0], [1.6, 1.0], [0.4, 1.6], [-0.6, 2.0], [-1.6, 1.2]]
+    : [[-3.8, 0.2], [-3.7, -1.6], [-2.8, -3.0], [-1.4, -3.9], [0.0, -4.6], [1.0, -5.0], [7.4, -5.0], [7.8, -4.6], [7.8, 0.4], [7.2, 1.0], [1.6, 1.0], [0.4, 1.6], [-0.6, 2.0], [-1.6, 1.2]], 0.45, 3), acabado, { brillo: 0.5 });
+  if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(2.0, -4.3, 4.2, 4.4); }                              // ventana del tambor
+  // Cachas de madera cuadriculadas con borde liso
+  const cacha = colt
+    ? [[-3.8, -0.4], [-0.8, 1.0], [-0.4, 2.0], [-0.9, 4.6], [-1.4, 7.4], [-1.6, 9.2], [-2.4, 10.4], [-6.0, 10.7], [-7.2, 9.6], [-7.0, 6.8], [-6.0, 3.2], [-4.6, 0.6]]
+    : [[-3.8, -0.4], [-0.8, 1.0], [-0.2, 2.0], [-0.8, 4.4], [-1.6, 6.8], [-1.6, 8.6], [-1.0, 9.6], [-2.0, 10.6], [-6.0, 10.6], [-7.0, 9.4], [-6.7, 6.8], [-5.8, 3.6], [-4.6, 0.8]];
+  pintar(ctx, suave(cacha, 0.9, 5), madera, { brillo: 0.35 });
+  cuadriculado(ctx, colt ? [[-1.4, 3.0], [-2.4, 9.2], [-5.8, 9.4], [-5.4, 4.0], [-3.6, 2.4]] : [[-1.2, 3.0], [-2.2, 9.2], [-6.0, 9.2], [-5.6, 4.2], [-3.8, 2.4]], 0.42, 'rgba(15,6,2,0.5)');
+  pintar(ctx, Cc(-2.6, 1.6, colt ? 0.6 : 0.5, 14), colt ? '#c9a227' : '#9aa0a8', { brillo: 0.5 });   // medallón
+  tornillo(ctx, -3.9, 6.0, 0.28);                                                                     // tornillo de las cachas
+  // Placa lateral, retén del tambor (botón S&W o pestillo Colt) y tornillos
+  trazo(ctx, 'rgba(0,0,0,0.45)', 0.12, [[1.6, -3.9], [-0.6, -3.6], [-2.0, -2.6], [-2.6, -1.0], [-1.6, 0.6], [1.4, 0.9]]);
+  tornillo(ctx, -1.2, -1.4, 0.26); tornillo(ctx, 0.9, 0.2, 0.24); tornillo(ctx, 6.9, -0.4, 0.24);
+  if (colt) pintar(ctx, suave([[-0.8, -2.9], [1.6, -2.7], [1.8, -2.1], [-0.2, -1.8], [-0.9, -2.3]], 0.3, 2), acabado, { brillo: 0.6 });
+  else { pintar(ctx, suave([[-0.1, -2.9], [1.7, -2.9], [1.7, -1.9], [-0.1, -1.9]], 0.35, 2), acabado, { brillo: 0.5 }); rayas(ctx, 0.3, 1.4, -2.7, -2.1, 0.28, 'rgba(0,0,0,0.5)', 0.1); }
+  // Alza regulable sobre el puente
+  pintar(ctx, suave([[0.8, -4.9], [3.8, -4.9], [3.8, -5.8], [1.2, -5.9], [0.8, -5.5]], 0.25, 2), MAT.pavonado);
+  tornillo(ctx, 3.1, -5.4, 0.2);
+  // Cola del disparador y guardamonte redondo
+  pintar(ctx, suave([[2.2, 0.9], [3.4, 0.9], [3.4, 2.0], [2.9, 3.0], [2.3, 3.2], [2.6, 2.1]], 0.3, 2), MAT.acero);
+  pintar(ctx, suave([[0.6, 0.9], [6.0, 0.9], [5.8, 2.6], [4.6, 3.9], [2.6, 4.1], [1.0, 3.2], [0.3, 1.8]], 0.8, 4), acabado,
+    { huecos: [suave([[1.1, 0.9], [5.2, 0.9], [5.0, 2.3], [4.1, 3.3], [2.7, 3.4], [1.5, 2.7], [1.0, 1.8]], 0.7, 4)], brillo: 0.4 });
+  // Cañón
+  if (!colt) pintar(ctx, suave([[7.6, -4.6], [9.0, -4.5], [largo, -4.4], [largo, -2.2], [9.0, -2.2], [7.6, -2.0]], 0.25, 2), acabado, { brillo: 0.55 });
+  if (colt) {
+    // Cañón y «underlug» de una sola pieza, hasta la boca
+    pintar(ctx, suave([[7.6, -4.6], [largo, -4.4], [largo, 0.3], [largo - 0.6, 0.7], [10.8, 0.7], [9.0, 0.2], [7.6, 0.2]], 0.35, 3), acabado, { brillo: 0.55 });
+    trazo(ctx, 'rgba(0,0,0,0.18)', 0.1, [[8.6, -2.0], [largo - 0.3, -2.0]]);
+    trazo(ctx, 'rgba(255,255,255,0.3)', 0.14, [[9.4, -1.2], [largo - 0.4, -1.2]]);
+    // Costilla ventilada: barra superior apoyada en postes, con las ventanas abiertas
+    const huecos = []; for (let x = 9.2; x + 2.6 < largo - 4.0; x += 3.5) huecos.push(suave(Rc(x, -5.2, 2.6, 0.75), 0.25, 2));
+    pintar(ctx, [[7.6, -4.4], [largo - 0.3, -4.4], [largo - 0.3, -5.8], [7.6, -5.6]], acabado, { huecos, brillo: 0.6 });
+    rayas(ctx, 8.0, largo - 1.0, -5.75, -5.6, 0.25, 'rgba(0,0,0,0.35)', 0.07);
+    pintar(ctx, [[largo - 3.6, -5.8], [largo - 0.9, -6.6], [largo - 0.3, -6.6], [largo - 0.3, -5.8]], acabado);   // guion en rampa
+    if (!sil) for (let k = 0; k < 4; k++) { ctx.fillStyle = 'rgba(30,30,36,0.45)'; ctx.fillRect(10 + k * 0.9, -3.6, 0.6, 0.35); }   // grabado «PYTHON 357»
+  } else {
+    pintar(ctx, [[7.6, -4.4], [largo - 0.2, -4.3], [largo - 0.2, -4.9], [7.6, -5.0]], acabado, { brillo: 0.5 });   // costilla lisa
+    rayas(ctx, 8.0, largo - 1.0, -4.95, -4.75, 0.25, 'rgba(0,0,0,0.3)', 0.07);
+    pintar(ctx, suave([[7.6, -2.3], [13.4, -2.3], [14.2, -1.5], [13.8, -0.6], [13.0, -0.1], [7.6, 0.0]], 0.4, 3), acabado, { brillo: 0.35 });   // funda corta de la varilla
+    pintar(ctx, [[largo - 4.2, -4.8], [largo - 1.0, -5.9], [largo - 0.3, -5.9], [largo - 0.3, -4.7]], acabado);   // rampa del guion
+    pintar(ctx, [[largo - 1.8, -5.3], [largo - 1.0, -5.7], [largo - 0.6, -5.7], [largo - 0.6, -5.1]], '#d0322a', { brillo: 0.3 });   // inserto rojo
+    if (!sil) for (let k = 0; k < 5; k++) { ctx.fillStyle = 'rgba(200,210,230,0.18)'; ctx.fillRect(10 + k * 0.9, -3.6, 0.6, 0.35); }   // grabado «44 MAGNUM»
+  }
+  trazo(ctx, 'rgba(255,255,255,0.22)', 0.18, [[8.4, -3.9], [largo - 0.4, -3.9]]);
+  // Tambor de seis con estrías y muescas del retén; se vuelca hacia afuera para recargar
+  ctx.save(); ctx.translate(-e.abierto * 1.5, e.abierto * 4.2);
+  pintar(ctx, suave([[1.9, -4.45], [5.9, -4.45], [6.35, -3.9], [6.35, -0.4], [5.9, 0.15], [1.9, 0.15], [1.7, -0.3], [1.7, -4.0]], 0.35, 3), acabado, { brillo: 0.55 });
+  if (!sil) {
+    const rx = colt ? 1.2 : 1.5, cx = colt ? 4.3 : 4.1;
+    for (const [y, ry] of [[-3.75, 0.2], [-2.15, 0.45], [-0.55, 0.2]]) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(cx, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(cx, y + ry * 0.45, rx * 0.8, ry * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(2.1, -3.0, 0.5, 0.3); ctx.fillRect(2.1, -1.45, 0.5, 0.3);
+    trazo(ctx, 'rgba(255,255,255,0.28)', 0.16, [[2.0, -3.15], [6.1, -3.15]]);
+  }
+  ctx.restore();
+}
+reemplazar('magnum', { casquillo: null, casquilloVaciado: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [-0.2, 5.0], cargador: [3.8, -2.4], corredera: [3.8, -2.4], expulsion: [3.8, -2.4], boca: [23.8, -3.3] },
+  dibujarCm(ctx, e) { revolver2(ctx, e, { largo: 23.8, colt: false, acabado: '#20242e', madera: '#8a4421' }); } });
+reemplazar('python', { casquillo: null, casquilloVaciado: 'pistola', origen: PISTOLA,
+  anclas: { manoDelantera: [-0.2, 5.0], cargador: [3.8, -2.4], corredera: [3.8, -2.4], expulsion: [3.8, -2.4], boca: [23.0, -3.3] },
+  dibujarCm(ctx, e) { revolver2(ctx, e, { largo: 23.0, colt: true, acabado: '#a9aeb7', madera: '#7a3a1a' }); } });
+
+// SPAS-12 (104 cm con la culata abierta, 82 plegada): culata plegable de chapa estampada con agujeros y gancho
+// para el antebrazo, pistolete de polímero con apoyos para los dedos, cajón largo de aluminio con la ventana
+// de expulsión y el cerrojo cromado, bomba grande nervada con labios, protector térmico con ventanas sobre el
+// cañón, tubo del depósito con tapa y anilla, guion con orejas protectoras
+reemplazar('spas12', { casquillo: 'escopeta',
+  anclas: { manoDelantera: [40, -2.4], cargador: [15.4, 0.6], corredera: [40, -2.4], expulsion: [15, -6.2], boca: [71, -7.5] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, NEGRO = '#2a2c30', ALU = '#2e3036', b = e.bombeo * 8;
+    // Culata plegable: brazo superior, culatín y brazo inferior que traba en el pistolete
+    pintar(ctx, suave([[-2.4, -8.8], [-30.4, -8.4], [-31.6, -7.4], [-31.6, 4.6], [-30.4, 5.6], [-28.6, 5.2], [-3.4, 1.4], [-3.4, -6.6]], 0.6, 3), NEGRO,
+      { brillo: 0.25, huecos: [suave([[-4.4, -6.6], [-29.0, -6.4], [-29.2, 3.0], [-4.4, -0.4]], 1.4, 4), ...[-8, -12.2, -16.4, -20.6, -24.8].map(x => Cc(x, -7.6, 0.5, 10))] });
+    pintar(ctx, suave([[-32.8, -8.8], [-31.4, -8.6], [-31.4, 5.8], [-32.6, 6.0], [-33.2, -1.4]], 0.6, 3), MAT.goma);   // cantonera curva
+    pintar(ctx, suave([[-30.8, -8.6], [-30.2, -9.6], [-25.6, -10.6], [-23.8, -10.0], [-23.4, -9.0], [-24.4, -8.8], [-25.4, -9.4], [-29.4, -8.6]], 0.4, 3), NEGRO);   // gancho plegado
+    punto(ctx, -30.2, -8.9, 0.4, '#4a4c52');
+    // Pistolete con apoyos para los dedos
+    const grip = suave([[-3.8, -0.2], [0.8, -0.2], [1.4, 1.6], [0.5, 3.0], [1.1, 4.6], [0.2, 6.0], [0.7, 7.6], [-0.2, 9.4], [-1.0, 11.4], [-2.6, 11.9], [-5.2, 11.5], [-5.6, 10.2], [-4.9, 5.0], [-4.4, 1.6]], 0.55, 3);
+    pintar(ctx, grip, MAT.polimero, { mate: true }); punteado(ctx, grip, 0.45);
+    // Cajón de aluminio
+    pintar(ctx, suave([[-4.0, -9.4], [27.0, -9.4], [27.0, 0.4], [-4.0, 0.4]], 0.5, 3), ALU, { brillo: 0.3 });
+    trazo(ctx, 'rgba(255,255,255,0.07)', 0.25, [[-3.6, -3.2], [26.6, -3.2]]);
+    pintar(ctx, suave([[-3.6, 0.2], [8.6, 0.2], [8.6, 1.4], [-3.6, 1.4]], 0.4, 2), MAT.polimero, { mate: true });   // grupo del disparador
+    guardamonteC(ctx, 1.6, 7.8, 1.0, 2.8, MAT.polimero);
+    pintar(ctx, [[3.0, 1.2], [3.8, 1.2], [4.0, 2.8], [3.4, 3.2], [3.0, 2.4]], MAT.acero);
+    punto(ctx, 7.6, 0.8, 0.35, '#8a2a22');                                                                        // seguro
+    if (!sil) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(10.8, -7.6, 8.4, 2.8); ctx.fillRect(10.6, 0.0, 9.6, 0.5); }   // ventana de expulsión y boca de carga
+    ctx.save(); ctx.beginPath(); ctx.rect(10.8, -7.6, 8.4, 2.8); ctx.clip();
+    pintar(ctx, Rc(10.8 - b, -7.2, 8.4, 2.0), '#a9adb5', { brillo: 0.5 });                                          // cerrojo cromado
+    ctx.restore();
+    pintar(ctx, Cc(17.6 - b, -6.2, 0.55, 12), MAT.acero);                                                       // manija del cerrojo
+    pintar(ctx, Cc(22.4, -2.4, 0.6, 12), '#3a3c42');                                                            // retén del cerrojo
+    pintar(ctx, [[-1.6, -9.4], [1.2, -9.4], [1.0, -10.6], [0.0, -11.0], [-0.8, -10.6]], NEGRO, { huecos: [Cc(0.0, -10.1, 0.32, 8)] });   // alza de anillo
+    // Tubo del depósito, cañón y abrazadera
+    pintar(ctx, Rc(27.0, -4.8, 36.4, 2.8), NEGRO, { brillo: 0.35 });
+    pintar(ctx, suave([[63.2, -5.0], [65.6, -5.0], [65.6, -1.8], [63.2, -1.8]], 0.5, 2), MAT.acero);               // tapa
+    if (!sil) { ctx.beginPath(); ctx.arc(64.4, -0.8, 0.8, 0, Math.PI * 2); ctx.strokeStyle = '#3a3c42'; ctx.lineWidth = 0.3; ctx.stroke(); }   // anilla
+    pintar(ctx, [[27.0, -8.8], [71.0, -8.7], [71.0, -6.3], [27.0, -6.2]], MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, suave([[60.0, -9.0], [61.6, -9.0], [61.6, -4.8], [60.0, -4.8]], 0.3, 2), MAT.pavonado);             // abrazadera
+    // Protector térmico con ventanas (se ve el cañón a través)
+    pintar(ctx, suave([[27.0, -10.4], [55.0, -10.4], [56.0, -9.4], [56.0, -6.0], [27.0, -6.0]], 0.6, 3), NEGRO,
+      { brillo: 0.3, huecos: Array.from({ length: 7 }, (_, k) => suave(Rc(29.4 + k * 3.6, -9.6, 2.4, 2.4), 0.7, 3)) });
+    // Guion con orejas protectoras
+    pintar(ctx, suave([[66.4, -9.0], [69.6, -9.0], [69.6, -6.0], [66.4, -6.0]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, [[66.6, -9.0], [67.0, -11.8], [69.0, -11.8], [69.4, -9.0]], MAT.pavonado, { huecos: [suave(Rc(67.6, -11.2, 0.8, 1.4), 0.3, 2)] });
+    pintar(ctx, Rc(67.85, -11.2, 0.3, 1.4), MAT.acero);
+    // Bomba grande con nervios y labios, que corre sobre el tubo
+    ctx.save(); ctx.translate(-b, 0);
+    pintar(ctx, suave([[29.0, -6.6], [30.4, -6.2], [49.4, -6.2], [51.0, -6.8], [51.4, -5.6], [51.2, 0.6], [50.2, 1.4], [30.2, 1.0], [29.0, 0.8], [28.6, -2.6]], 0.8, 3), MAT.polimero, { mate: true });
+    if (!sil) for (let x = 31.2; x < 49; x += 1.15) { ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(x, -5.6, 0.45, 5.6); ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(x + 0.5, -5.6, 0.2, 5.6); }
+    pintar(ctx, suave([[47.8, 1.0], [49.6, 1.0], [49.6, 1.8], [47.8, 1.8]], 0.3, 2), MAT.acero);                   // botón de modo
+    ctx.restore();
+  } });
+DIBUJO_ARMAS.spas12.culataCm = 33.2;   // culatín a la medida real
+
+// Dragunov SVD (122 cm): culata esqueleto de madera laminada con hueco para el pulgar y carrillera aparte,
+// cantonera de acero, cajón tipo AK con tapa redondeada y palanca de seguro larga, cargador de 10 con nervios,
+// guardamanos de dos piezas con ventilaciones ovaladas, bloque de gases, cañón largo, guion con capuchón y
+// apagallamas largo ranurado; mira PSO-1 sobre montura lateral con torreta arriba y ocular de goma largo
+reemplazar('svd', { casquillo: 'bala',
+  anclas: { manoDelantera: [38, -4.2], cargador: [10, -1.6], corredera: [18.4, -5.6], expulsion: [13, -6.6], boca: [87.6, -6.2] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, c = e.corredera * 8;
+    // Culata esqueleto: lomo, culatín, barra inferior y pistolete forman el hueco para el pulgar
+    pintar(ctx, suave([[-4.8, -7.6], [-32.4, -7.2], [-33.6, -6.6], [-33.6, 8.4], [-32.4, 9.4], [-29.4, 9.4], [-6.0, 9.0], [-2.2, 9.0], [-1.2, 8.0], [0.8, 0.8], [1.0, -1.8], [-4.8, -1.8]], 0.8, 4), MAT.madera,
+      { huecos: [suave([[-6.6, -4.2], [-27.6, -4.0], [-28.6, -3.0], [-28.4, 5.6], [-27.2, 6.4], [-7.8, 6.4], [-6.2, 5.2], [-4.4, -2.0]], 1.6, 5)] });
+    pintar(ctx, suave([[-27.4, -7.2], [-27.4, -9.8], [-26.4, -10.6], [-13.6, -10.6], [-12.4, -9.6], [-12.0, -7.4]], 0.8, 4), MAT.madera);   // carrillera
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.2, [[-27.2, -7.35], [-12.2, -7.45]]);
+    tornillo(ctx, -24.6, -8.8, 0.3); tornillo(ctx, -15.2, -8.8, 0.3);
+    pintar(ctx, suave([[-34.6, -7.0], [-33.4, -7.0], [-33.4, 9.4], [-34.4, 9.2], [-34.8, 1.2]], 0.4, 2), MAT.acero);   // cantonera
+    // Cargador de 10 con nervios de refuerzo
+    if (!e.sinCargador) {
+      pintar(ctx, suave([[6.8, -2.0], [12.8, -2.0], [13.4, 2.6], [14.8, 8.0], [14.6, 9.0], [9.2, 9.8], [8.6, 9.2], [7.6, 4.0], [6.8, 0.6]], 0.5, 3), MAT.pavonado);
+      pintar(ctx, suave([[8.4, 0.2], [11.8, 0.2], [12.6, 4.0], [13.4, 7.8], [9.8, 8.4], [9.0, 4.2]], 0.5, 3), '#1b1c20', { mate: true });
+      if (!sil) for (let k = 0; k < 5; k++) trazo(ctx, 'rgba(255,255,255,0.09)', 0.3, [[8.8 + k * 0.25, 1.0 + k * 1.5], [12.0 + k * 0.3, 1.0 + k * 1.5]]);
+      pintar(ctx, suave([[8.8, 9.2], [14.8, 8.4], [15.0, 9.2], [9.2, 10.2]], 0.3, 2), MAT.acero);
+    }
+    // Montura lateral de la mira (del lado izquierdo: asoma por encima del cajón)
+    pintar(ctx, suave([[2.4, -11.2], [15.6, -11.2], [15.6, -8.0], [14.0, -7.2], [3.2, -7.2], [2.4, -8.0]], 0.5, 3), '#1d1e22');
+    trazo(ctx, '#3a3c42', 0.5, [[3.6, -9.6], [0.6, -8.6]]);                                                     // palanca de la montura
+    // Cajón estampado, tapa redondeada, remaches, ventana con el portacerrojo y la manija de carga
+    pintar(ctx, suave([[-4.8, -1.8], [-4.8, -6.8], [22.6, -6.8], [23.4, -6.0], [23.4, -1.8]], 0.4, 2), MAT.pavonado, { brillo: 0.3 });
+    pintar(ctx, suave([[-4.4, -6.6], [-4.4, -7.6], [-3.4, -8.4], [20.6, -8.4], [21.4, -7.6], [21.4, -6.6]], 0.6, 3), MAT.pavonado, { brillo: 0.45 });
+    pintar(ctx, Cc(-4.6, -7.4, 0.45, 10), MAT.acero);                                                           // botón de la tapa
+    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(9.4, -6.6, 7.8, 1.2); }
+    ctx.save(); ctx.beginPath(); ctx.rect(9.4, -6.6, 7.8, 1.2); ctx.clip(); pintar(ctx, Rc(9.4 - c, -6.5, 9, 1.0), MAT.acero); ctx.restore();
+    pintar(ctx, suave([[17.4 - c, -6.4], [19.8 - c, -6.4], [20.2 - c, -5.6], [19.8 - c, -4.8], [17.4 - c, -4.8]], 0.4, 2), MAT.acero);   // manija
+    pintar(ctx, suave([[-3.4, -5.4], [9.0, -5.6], [9.2, -4.9], [-2.6, -4.3], [-2.6, -2.6], [-3.6, -2.8]], 0.3, 2), MAT.acero);   // palanca de seguro
+    for (const [x, y] of [[0.6, -3.2], [4.0, -3.0], [19.6, -3.0], [21.6, -2.6], [14.8, -2.6]]) punto(ctx, x, y, 0.22, '#4a4c52');
+    pintar(ctx, suave([[5.4, -1.9], [6.4, -1.9], [6.4, -0.4], [5.4, -0.6]], 0.2, 2), MAT.acero);                // retén del cargador
+    guardamonteC(ctx, 1.2, 5.6, -1.8, 3.4, MAT.acero);
+    pintar(ctx, [[2.4, -1.8], [3.2, -1.8], [3.4, 0.0], [2.8, 0.6], [2.4, -0.2]], MAT.acero);
+    // Alza tangencial delante del cajón
+    pintar(ctx, [[21.4, -7.2], [25.4, -7.6], [25.4, -8.6], [21.4, -8.2]], MAT.pavonado);
+    // Cañón y bloque de gases (debajo del guardamanos)
+    pintar(ctx, Rc(23.4, -6.9, 55.6, 1.5), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, suave([[50.4, -8.4], [54.6, -8.4], [55.6, -7.4], [55.6, -5.2], [50.4, -5.0]], 0.4, 2), MAT.pavonado);
+    pintar(ctx, Cc(53.4, -4.2, 0.6, 10), MAT.acero);                                                            // regulador de gases
+    // Guardamanos superior e inferior con ventilaciones ovaladas
+    pintar(ctx, suave([[23.6, -6.0], [23.6, -8.0], [24.6, -8.8], [49.0, -8.6], [50.2, -7.6], [50.2, -6.0]], 0.5, 3), MAT.madera);
+    pintar(ctx, suave([[23.6, -6.0], [50.2, -6.0], [50.2, -3.6], [49.0, -2.6], [24.8, -2.0], [23.6, -2.8]], 0.6, 3), MAT.madera);
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.18, [[23.8, -6.0], [50.0, -6.0]]);
+    if (!sil) for (const [x, y, w] of [[29, -7.3, 4.6], [36.4, -7.3, 4.6], [43.8, -7.3, 4.0], [27.4, -4.2, 5.2], [35.2, -4.2, 5.2], [43, -4.2, 4.6]]) {
+      ctx.fillStyle = '#121214'; ctx.beginPath(); ctx.ellipse(x + w / 2, y, w / 2, y < -6 ? 0.45 : 0.7, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    pintar(ctx, suave([[22.6, -8.8], [23.8, -8.8], [23.8, -2.0], [22.6, -2.0]], 0.3, 2), MAT.acero);             // anillo trasero
+    pintar(ctx, suave([[49.8, -8.8], [51.0, -8.8], [51.0, -2.6], [49.8, -2.6]], 0.3, 2), MAT.acero);             // anillo delantero
+    // Base del guion con capuchón, tetón de bayoneta y apagallamas largo ranurado
+    pintar(ctx, suave([[74.4, -7.4], [78.6, -7.4], [78.6, -5.0], [74.4, -5.0]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, [[74.8, -5.0], [78.2, -5.0], [77.8, -3.6], [75.2, -3.8]], MAT.pavonado);
+    pintar(ctx, [[76.2, -7.4], [76.4, -9.8], [76.9, -9.8], [77.1, -7.4]], MAT.acero);
+    if (!sil) { ctx.beginPath(); ctx.arc(76.65, -9.0, 1.3, Math.PI * 1.05, Math.PI * 1.95); ctx.strokeStyle = MAT.pavonado; ctx.lineWidth = 0.45; ctx.stroke(); }
+    pintar(ctx, suave([[78.6, -7.3], [87.6, -7.3], [87.6, -5.0], [78.6, -5.0]], 0.4, 2), MAT.pavonado, { brillo: 0.4 });
+    if (!sil) for (const y of [-6.75, -6.15, -5.55]) { ctx.fillStyle = '#0a0a0c'; ctx.beginPath(); ctx.ellipse(83.4, y, 3.0, 0.17, 0, 0, Math.PI * 2); ctx.fill(); }
+    // Mira PSO-1: ocular de goma largo, tubo, torreta de elevación arriba y parasol
+    pintar(ctx, suave([[-4.0, -14.0], [20.0, -14.0], [20.0, -11.2], [-4.0, -11.2]], 0.4, 2), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, suave([[20.0, -14.0], [21.6, -14.6], [25.6, -14.6], [25.6, -10.6], [21.6, -10.6], [20.0, -11.2]], 0.4, 2), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, suave([[-4.0, -14.0], [-5.6, -14.4], [-8.0, -14.4], [-8.0, -10.8], [-5.6, -10.8], [-4.0, -11.2]], 0.4, 2), MAT.pavonado);
+    pintar(ctx, suave([[-8.0, -14.8], [-11.4, -15.6], [-11.9, -15.0], [-11.9, -10.4], [-8.0, -10.4]], 0.7, 3), MAT.goma);
+    rayas(ctx, -7.4, -5.8, -14.2, -11.0, 0.5, 'rgba(0,0,0,0.5)', 0.14);
+    pintar(ctx, suave([[7.8, -16.4], [11.8, -16.4], [11.8, -14.0], [7.8, -14.0]], 0.4, 2), MAT.pavonado);
+    rayas(ctx, 8.2, 11.4, -16.2, -14.2, 0.4, 'rgba(255,255,255,0.14)', 0.12);
+    pintar(ctx, Cc(14.8, -12.6, 0.8, 12), '#1d1e22');                                                           // tapa de la pila
+    if (!sil) { const g = ctx.createLinearGradient(0, -14.4, 0, -10.8); g.addColorStop(0, '#9fd2f0'); g.addColorStop(1, '#1d4c6c'); ctx.fillStyle = g; ctx.fillRect(25.2, -14.1, 0.4, 3.0); }
+  } });
+DIBUJO_ARMAS.svd.culataCm = 34.6;
+
+// Barrett M82A1 (145 cm): cajón superior largo de chapa con ventanas ovaladas adelante y riel arriba, cajón
+// inferior que sigue como culata con hueco trapezoidal y almohadilla grande, pistolete, cargador de 10,
+// cañón grueso estriado, freno de boca de dos cámaras en punta de flecha, bípode plegado con agujeros de
+// regulación, asa de transporte y mira con anillas
+reemplazar('barrett', { casquillo: 'grande',
+  anclas: { manoDelantera: [27, -5.0], cargador: [15, 1.4], corredera: [10, -9.6], expulsion: [13, -11.2], boca: [105.4, -9.4] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, CH = '#2a2c30', dx = -e.corredera * 9;
+    // Cajón inferior y culata
+    pintar(ctx, suave([[24.0, -6.4], [24.0, 1.0], [-1.0, 1.0], [-3.6, 1.6], [-14.0, 2.4], [-34.4, 5.8], [-39.2, 6.0], [-39.2, -13.0], [-14.0, -13.0], [-14.0, -6.4]], 0.6, 3), CH,
+      { brillo: 0.25, huecos: [suave([[-37.0, -9.4], [-27.0, -9.4], [-27.0, 2.2], [-37.0, 3.6]], 1.2, 4)] });
+    trazo(ctx, 'rgba(0,0,0,0.5)', 0.2, [[-14.0, -12.8], [-14.0, -6.6]]);
+    for (const x of [-20, -8, 20]) tornillo(ctx, x, -3.6, 0.32);
+    pintar(ctx, suave([[-41.6, -13.4], [-39.0, -13.4], [-39.0, 6.4], [-41.6, 6.4]], 0.9, 3), MAT.goma);          // almohadilla
+    if (!sil) rayas(ctx, -41.2, -39.4, -12.6, 5.6, 0.6, 'rgba(255,255,255,0.05)', 0.2);
+    // Pistolete, guardamonte y disparador
+    const grip = suave([[-0.8, 0.8], [3.2, 0.8], [2.6, 3.4], [2.2, 5.2], [1.4, 9.6], [0.6, 10.6], [-2.2, 10.6], [-3.2, 9.6], [-1.8, 4.2], [-1.8, 1.6]], 0.8, 4);
+    pintar(ctx, grip, MAT.polimero, { mate: true }); punteado(ctx, grip, 0.45);
+    guardamonteC(ctx, 3.2, 9.0, 1.0, 2.8, CH);
+    pintar(ctx, [[4.4, 1.0], [5.2, 1.0], [5.4, 2.6], [4.8, 3.0], [4.4, 2.2]], MAT.acero);
+    pintar(ctx, Cc(1.2, -1.8, 0.7, 12), MAT.pavonado); trazo(ctx, '#b9bdc6', 0.2, [[1.2, -1.8], [1.7, -2.3]]);   // seguro
+    // Cargador de 10 con nervios y tapa
+    if (!e.sinCargador) {
+      pintar(ctx, suave([[9.6, 0.6], [20.6, 0.6], [20.6, 12.0], [9.6, 12.0]], 0.6, 3), MAT.pavonado);
+      pintar(ctx, suave([[10.6, 2.6], [19.6, 2.6], [19.6, 10.0], [10.6, 10.0]], 0.6, 3), '#1b1c20', { mate: true });
+      for (const y of [4.4, 6.2, 8.0]) trazo(ctx, 'rgba(255,255,255,0.08)', 0.35, [[11.2, y], [19.0, y]]);
+      pintar(ctx, suave([[9.2, 11.6], [21.0, 11.6], [21.0, 12.6], [9.2, 12.6]], 0.3, 2), MAT.acero);
+    }
+    pintar(ctx, suave([[21.0, 0.0], [22.2, 0.0], [22.2, 1.6], [21.0, 1.6]], 0.3, 2), MAT.acero);                // retén
+    // Cajón superior con ventanas ovaladas adelante (se ve el cañón adentro)
+    pintar(ctx, Rc(24.0, -10.8, 31.0, 3.0), MAT.pavonado);
+    pintar(ctx, suave([[-14.0, -13.0], [54.0, -13.0], [54.6, -12.4], [54.6, -6.4], [-14.0, -6.4]], 0.5, 3), CH,
+      { brillo: 0.3, huecos: Array.from({ length: 8 }, (_, k) => suave(Rc(28.4 + k * 3.1, -10.3, 2.2, 1.8), 0.85, 4)) });
+    trazo(ctx, 'rgba(255,255,255,0.09)', 0.3, [[-13.6, -11.2], [54.2, -11.2]]);
+    for (const x of [-10, 4, 24]) tornillo(ctx, x, -7.4, 0.3);
+    if (!sil) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(9.0, -11.0, 8.0, 2.6); }                               // ventana de expulsión
+    ctx.save(); ctx.beginPath(); ctx.rect(9.0, -11.0, 8.0, 2.6); ctx.clip(); pintar(ctx, Rc(9.0 + dx, -10.7, 8.0, 2.0), MAT.acero); ctx.restore();
+    pintar(ctx, suave([[7.6 + dx, -10.2], [11.6 + dx, -10.2], [12.2 + dx, -9.4], [11.6 + dx, -8.6], [7.6 + dx, -8.6]], 0.4, 2), MAT.acero);   // manija de carga
+    // Riel con dientes, asa de transporte y guion plegado
+    pintar(ctx, Rc(-10.0, -14.0, 48.0, 1.0), CH);
+    if (!sil) for (let x = -9.4; x < 37.6; x += 1.0) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x, -14.0, 0.45, 0.55); }
+    pintar(ctx, suave([[39.0, -13.0], [39.6, -15.8], [50.4, -15.8], [51.0, -13.0], [49.8, -13.0], [49.4, -14.8], [40.6, -14.8], [40.2, -13.0]], 0.5, 3), CH);
+    pintar(ctx, [[52.0, -13.0], [52.4, -14.4], [53.6, -14.4], [53.8, -13.0]], CH);
+    // Cañón grueso con estrías longitudinales
+    pintar(ctx, [[54.6, -11.0], [97.2, -10.8], [97.2, -8.0], [54.6, -7.8]], MAT.pavonado, { brillo: 0.45 });
+    if (!sil) for (const y of [-10.1, -9.3, -8.5]) { ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.fillRect(58, y - 0.16, 34, 0.32); }
+    // Bípode plegado hacia adelante: abrazadera, dos patas con agujeros y zapatas
+    pintar(ctx, suave([[50.6, -6.6], [55.0, -6.6], [55.0, -4.4], [50.6, -4.4]], 0.4, 2), CH);
+    for (const [y0, y1] of [[-6.2, -5.6], [-4.8, -4.2]]) {
+      pintar(ctx, suave([[53.0, y0 - 0.5], [81.0, y1 - 0.5], [81.0, y1 + 0.5], [53.0, y0 + 0.5]], 0.3, 2), MAT.acero, { brillo: 0.3 });
+      if (!sil) for (let x = 64; x < 79; x += 1.4) punto(ctx, x, y0 + (y1 - y0) * (x - 53) / 28, 0.22, '#0a0a0c');
+    }
+    pintar(ctx, suave([[80.4, -7.0], [83.2, -7.0], [83.2, -3.4], [80.4, -3.4]], 0.4, 2), MAT.goma);
+    // Freno de boca de dos cámaras con ventanas en punta de flecha
+    pintar(ctx, suave([[96.6, -11.4], [97.8, -11.4], [97.8, -7.4], [96.6, -7.4]], 0.3, 2), MAT.acero);
+    pintar(ctx, suave([[97.6, -12.4], [105.4, -12.4], [105.4, -6.4], [97.6, -6.4]], 0.5, 3), MAT.acero, { brillo: 0.4,
+      huecos: [[[98.6, -9.4], [99.6, -11.6], [101.2, -11.6], [100.2, -9.4], [101.2, -7.2], [99.6, -7.2]], [[101.8, -9.4], [102.8, -11.6], [104.4, -11.6], [103.4, -9.4], [104.4, -7.2], [102.8, -7.2]]] });
+    // Mira sobre el riel
+    mira2(ctx, -6, 28, -19.0, 3.4, 5.8, 4.6, [1, 17], -14.0);
+  } });
+DIBUJO_ARMAS.barrett.culataCm = 42.6;

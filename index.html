@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zona Muerta — Zombies del Apocalipsis</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ===== MENÚ PRINCIPAL ===== -->
+  <section id="menu-principal" class="pantalla visible">
+    <div class="humo"></div>
+    <!-- Personaje: arriba a la derecha, con la vista previa del elegido -->
+    <button class="boton-personaje" type="button" data-accion="personaje-abrir">
+      <canvas id="vista-personaje" width="128" height="150" aria-hidden="true"></canvas>
+      <span class="rotulo" data-t="personaje.titulo">PERSONAJE</span>
+      <span id="nombre-personaje" class="nombre"></span>
+    </button>
+    <h1 class="titulo" data-t="menu.titulo">ZONA MUERTA</h1>
+    <p class="subtitulo" data-t="menu.sub">Sobrevive al apocalipsis zombie</p>
+    <div class="selector-dificultad" id="selector-dificultad">
+      <span class="rotulo" data-t="menu.dificultad">DIFICULTAD</span>
+      <button class="opcion-dificultad" data-dificultad="facil" data-t-mayus="dif.facil">FÁCIL</button>
+      <button class="opcion-dificultad" data-dificultad="medio" data-t-mayus="dif.medio">MEDIO</button>
+      <button class="opcion-dificultad" data-dificultad="dificil" data-t-mayus="dif.dificil">DIFÍCIL</button>
+      <p id="descripcion-dificultad" class="descripcion-dificultad"></p>
+    </div>
+    <nav class="opciones">
+      <button class="boton grande" data-accion="infinita" data-t="menu.infinita">PELEA INFINITA</button>
+      <button class="boton grande" data-accion="misiones" data-t="menu.misiones">MISIONES</button>
+      <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
+      <button class="boton grande" data-accion="entrenamiento" data-t="menu.entrenamiento">ENTRENAMIENTO</button>
+      <button class="boton chico" data-accion="pruebas" data-t="menu.pruebas">CAMPO DE PRUEBAS</button>
+      <button class="boton chico" data-accion="controles" data-t="menu.controles">CONTROLES</button>
+      <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
+    </nav>
+    <p class="pie" data-t="menu.pie">Flechas para moverte y saltar · F dispara · S recarga</p>
+  </section>
+
+  <!-- ===== MAPAS DE LA PELEA INFINITA ===== -->
+  <section id="panel-mapas" class="pantalla">
+    <h2 data-t="mapas.titulo">ELIGE EL MAPA</h2>
+    <p class="ayuda" data-t="mapas.ayuda">Pelea infinita: rondas cada vez más duras hasta que caigas.</p>
+    <div class="lista-mapas">
+      <button class="tarjeta-mapa ciudad" data-accion="mapa-ciudad">
+        <span class="vista" aria-hidden="true"></span>
+        <h3 data-t="mapas.ciudad">CIUDAD EN RUINAS</h3>
+        <p data-t="mapas.ciudad.texto">La calle al atardecer, con montañas que tienen ametralladoras M2 y cajas con armas especiales.</p>
+        <span class="etiqueta" data-t="mapas.ciudad.etiqueta">ZOMBIES COMUNES Y CORREDORES</span>
+      </button>
+      <button class="tarjeta-mapa cloaca" data-accion="mapa-cloaca">
+        <span class="vista" aria-hidden="true"></span>
+        <h3 data-t="mapas.cloaca">CLOACA</h3>
+        <p data-t="mapas.cloaca.texto">Un canal subterráneo gigante. Entre los zombies de siempre aparecen zombies tóxicos: saltan, dan volteretas y escupen ácido. Agáchate (↓) para esquivar el chorro y no pises los charcos.</p>
+        <span class="etiqueta toxica" data-t="mapas.cloaca.etiqueta">ZOMBIES TÓXICOS</span>
+      </button>
+    </div>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
+  </section>
+
+  <!-- ===== PANEL DE MISIONES ===== -->
+  <section id="panel-misiones" class="pantalla">
+    <h2 data-t="misiones.titulo">MISIONES</h2>
+    <p class="ayuda" data-t="misiones.ayuda">Todas las misiones se juegan dentro de la pelea infinita. Elige una y a sobrevivir.</p>
+    <div id="lista-misiones" class="lista-misiones"></div>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+      <button class="boton chico peligro" data-accion="borrar-progreso" data-t="misiones.borrar">BORRAR PROGRESO</button>
+    </div>
+  </section>
+
+  <!-- ===== CONTROLES ===== -->
+  <section id="panel-controles" class="pantalla">
+    <h2 data-t="controles.titulo">CONTROLES</h2>
+    <table class="tabla-controles">
+      <tr><td><kbd>→</kbd></td><td data-t="controles.avanzar">Avanzar</td></tr>
+      <tr><td><kbd>←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
+      <tr><td><kbd>↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
+      <tr><td><kbd>↓</kbd></td><td data-t="controles.abajo"></td></tr>
+      <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
+      <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
+      <tr><td><kbd>F</kbd></td><td data-t="controles.disparar"></td></tr>
+      <tr><td><kbd>S</kbd></td><td data-t="controles.recargar"></td></tr>
+      <tr><td><kbd>Q</kbd> / <kbd>E</kbd> · <kbd>G</kbd> / <kbd>H</kbd></td><td data-t="controles.cambiar"></td></tr>
+      <tr><td><kbd>C</kbd></td><td data-t-html="controles.c"></td></tr>
+      <tr><td><kbd>1</kbd> … <kbd>5</kbd></td><td data-t="controles.grupos"></td></tr>
+      <tr><td data-t="controles.rueda"></td><td data-t="controles.cambiar"></td></tr>
+      <tr><td><kbd>P</kbd> / <kbd>Esc</kbd></td><td data-t="controles.pausa"></td></tr>
+      <tr><td data-t="controles.engranaje"></td><td data-t="controles.engranaje.texto"></td></tr>
+      <tr><td data-t="controles.celular"></td><td data-t="controles.celular.texto"></td></tr>
+    </table>
+    <p class="ayuda" data-t="controles.ayuda"></p>
+    <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+  </section>
+
+  <!-- ===== JUEGO ===== -->
+  <section id="pantalla-juego" class="pantalla">
+    <canvas id="lienzo" width="960" height="540"></canvas>
+    <div id="hud" class="hud">
+      <div class="hud-izq">
+        <div class="barra-vida"><div id="vida-relleno"></div><span id="vida-texto">100</span></div>
+        <div id="hud-arma" class="hud-arma"></div>
+        <button id="hud-aereo" class="hud-aereo oculta" type="button" data-t-aria="hud.aereo.aria" aria-label="Pedir ataque aéreo"></button>
+      </div>
+      <div class="hud-centro">
+        <div id="hud-mision" class="hud-mision"></div>
+      </div>
+      <div class="hud-der">
+        <div id="hud-ronda" class="hud-ronda">RONDA 1</div>
+        <div id="hud-bajas">☠ 0</div>
+        <div id="hud-tiempo">00:00</div>
+        <div id="hud-dificultad" class="hud-dificultad"></div>
+      </div>
+    </div>
+    <!-- Controles táctiles: solo se muestran en pantallas táctiles; cada botón equivale a una tecla -->
+    <div id="controles-tactiles" class="controles-tactiles" data-t-aria="tactil.aria" aria-label="Controles táctiles">
+      <div class="pad-mover" data-t-aria="tactil.mover">
+        <span class="mitad" data-lado="ArrowLeft">◀</span>
+        <span class="mitad" data-lado="ArrowRight">▶</span>
+      </div>
+      <button class="boton-tactil fuego" data-tecla="KeyF" data-t="tactil.fuego">FUEGO</button>
+      <button class="boton-tactil saltar" data-tecla="ArrowUp" data-t-aria="tactil.saltar">▲<small data-t="tactil.salto">SALTO</small></button>
+      <button class="boton-tactil recargar" data-tecla="KeyS" data-t="tactil.recargar">RECARGAR</button>
+      <div class="armas-tactiles">
+        <button class="boton-tactil pildora" data-tecla="KeyG" data-t-aria="tactil.armaAnt.aria" data-t="tactil.armaAnt">◀ ARMA</button>
+        <button class="boton-tactil pildora" data-tecla="KeyH" data-t-aria="tactil.armaSig.aria" data-t="tactil.armaSig">ARMA ▶</button>
+      </div>
+      <div class="extras-tactiles">
+        <button class="boton-tactil pildora" data-tecla="ArrowDown" data-t-aria="tactil.abajo.aria" data-t="tactil.abajo">▼ ABAJO</button>
+        <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
+        <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
+      </div>
+    </div>
+    <p class="girar-telefono" data-t="girar">Girá el teléfono para jugar más grande</p>
+    <div id="selector-armas" class="selector-armas" aria-live="polite"></div>
+    <div id="aviso" class="aviso"></div>
+    <div id="aviso-ronda" class="aviso-ronda"></div>
+    <div id="pausa" class="capa oculta">
+      <h2 data-t="pausa.titulo">PAUSA</h2>
+      <button class="boton chico" data-accion="reanudar" data-t="pausa.seguir">SEGUIR</button>
+      <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
+      <button class="boton chico" data-accion="al-menu" data-t="pausa.salir">SALIR AL MENÚ</button>
+    </div>
+    <div id="menu-pruebas" class="capa oculta">
+      <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
+      <p class="ayuda" data-t-html="pruebas.ayuda"></p>
+      <div id="lista-armas-prueba" class="lista-grupos-armas"></div>
+      <!-- Ficha del arma elegida: imagen, descripción, datos y USAR -->
+      <div id="detalle-arma" class="detalle-arma oculta" aria-live="polite">
+        <div class="cabecera-detalle"><h3 id="detalle-nombre"></h3><span id="detalle-grupo" class="chip-grupo"></span></div>
+        <div class="vista-detalle"><canvas id="detalle-vista" width="1120" height="380" aria-hidden="true"></canvas><span id="detalle-largo" class="largo"></span></div>
+        <p id="detalle-desc" class="detalle-desc"></p>
+        <dl id="detalle-datos" class="detalle-datos"></dl>
+        <div class="fila-botones botones-detalle">
+          <button class="boton chico" type="button" data-accion="volver-armas" data-t="boton.volver">VOLVER</button>
+          <button class="boton chico boton-usar" type="button" data-accion="usar-arma" data-t="detalle.usar">USAR</button>
+        </div>
+      </div>
+      <div class="fila-botones">
+        <button class="boton chico" data-accion="poner-m2" data-t="pruebas.ponerM2">PONER M2 BROWNING</button>
+        <button class="boton chico" data-accion="quitar-m2" data-t="pruebas.quitarM2">QUITAR LA M2 CERCANA</button>
+        <button class="boton chico" data-accion="poner-zombie" data-t="pruebas.zombie">ZOMBIE DE PRUEBA</button>
+        <button class="boton chico peligro" data-accion="borrar-generado" data-t="pruebas.borrar">BORRAR TODO (X)</button>
+      </div>
+      <button class="boton chico" data-accion="cerrar-pruebas" data-t="pruebas.seguir">SEGUIR (C)</button>
+    </div>
+    <div id="fin" class="capa oculta">
+      <h2 id="fin-titulo">TE DEVORARON</h2>
+      <p id="fin-detalle"></p>
+      <button class="boton chico" data-accion="reintentar" data-t="fin.otraVez">OTRA VEZ</button>
+      <button class="boton chico" data-accion="al-menu" data-t="fin.menu">MENÚ</button>
+    </div>
+  </section>
+
+  <!-- ===== CONFIGURACIÓN: engranaje arriba a la izquierda, en todas las pantallas ===== -->
+  <button id="boton-config" class="boton-config" type="button" data-accion="config-abrir" data-t-aria="boton.config" data-t-title="boton.config" aria-label="Configuración">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <defs><mask id="agujero-engranaje"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="3.3" fill="#000"/></mask></defs>
+      <g fill="currentColor" mask="url(#agujero-engranaje)">
+        <circle cx="12" cy="12" r="7.3"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(45 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(90 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(135 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(180 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(225 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(270 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(315 12 12)"/>
+      </g>
+    </svg>
+  </button>
+  <div id="capa-personaje" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="personaje-titulo">
+    <div class="panel-config panel-personajes">
+      <h2 id="personaje-titulo" data-t="personaje.elegir">ELIGE TU PERSONAJE</h2>
+      <div id="lista-personajes" class="lista-personajes"></div>
+      <p class="nota" data-t="personaje.nota"></p>
+      <div class="fila-botones"><button class="boton chico" type="button" data-accion="personaje-cerrar" data-t="config.cerrar">CERRAR</button></div>
+    </div>
+  </div>
+  <!-- Asistente de construcción (temporal: se retira cuando el juego esté terminado, ver js/asistente.js) -->
+  <div id="capa-asistente" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="asistente-titulo">
+    <div class="panel-config panel-asistente">
+      <h2 id="asistente-titulo" data-t="asist.titulo">ASISTENTE</h2>
+      <p class="asist-intro" data-t="asist.intro"></p>
+      <p id="asist-estado" class="asist-estado" hidden></p>
+      <div id="asist-mensajes" class="asist-mensajes" aria-live="polite"></div>
+      <form id="asist-form" class="asist-form">
+        <textarea id="asist-texto" rows="2" maxlength="600"></textarea>
+        <button class="boton mini" type="submit" id="asist-enviar" data-t="asist.enviar">ENVIAR</button>
+        <button class="boton mini" type="button" id="asist-parar" data-t="asist.parar" hidden>PARAR</button>
+      </form>
+      <section>
+        <h3 data-t="asist.activos">AJUSTES ACTIVOS</h3>
+        <ul id="asist-ajustes" class="asist-ajustes"></ul>
+        <div class="fila-doble">
+          <button class="boton mini" type="button" id="asist-restaurar" data-t="asist.restaurar">RESTAURAR TODO</button>
+          <button class="boton mini" type="button" id="asist-fijar" data-t="asist.fijar" hidden>FIJAR PARA TODOS</button>
+          <button class="boton mini peligro" type="button" id="asist-quitar" data-t="asist.quitar" hidden>QUITAR LOS DE TODOS</button>
+        </div>
+        <p class="nota" data-t="asist.pedidosNota"></p>
+        <div id="asist-pedidos-locales" class="fila-doble" hidden><span id="asist-pedidos-n"></span><button class="boton mini" type="button" id="asist-copiar" data-t="asist.copiar">COPIAR PEDIDOS</button></div>
+      </section>
+      <div class="fila-botones"><button class="boton chico" type="button" id="asist-volver" data-accion="asist-volver" data-t="asist.volver">VOLVER</button></div>
+    </div>
+  </div>
+  <div id="capa-config" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="config-titulo">
+    <div class="panel-config">
+      <h2 id="config-titulo" data-t="config.titulo">CONFIGURACIÓN</h2>
+      <section>
+        <h3 data-t="config.sonido">SONIDO</h3>
+        <label class="fila-rango"><span data-t="config.general">Volumen general</span><input type="range" min="0" max="100" step="5" data-config="general"><output></output></label>
+        <label class="fila-rango"><span data-t="config.efectos">Efectos</span><input type="range" min="0" max="100" step="5" data-config="efectos"><output></output></label>
+        <label class="fila-rango"><span data-t="config.musica">Música</span><input type="range" min="0" max="100" step="5" data-config="musica"><output></output></label>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="silencio"><span data-t="config.silencio">Silenciar todo</span></label>
+          <button class="boton mini" type="button" data-accion="config-probar" data-t="config.probar">Probar</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="config.idioma">IDIOMA</h3>
+        <div class="segmentos" data-config-opciones="idioma">
+          <button type="button" data-valor="es" lang="es">Español</button>
+          <button type="button" data-valor="pt" lang="pt-BR">Português</button>
+          <button type="button" data-valor="en" lang="en">English</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="config.juego">JUEGO</h3>
+        <div class="fila-opcion"><span data-t="config.dificultad">Dificultad</span>
+          <div class="segmentos" data-config-opciones="dificultad">
+            <button type="button" data-valor="facil" data-t="dif.facil">Fácil</button>
+            <button type="button" data-valor="medio" data-t="dif.medio">Medio</button>
+            <button type="button" data-valor="dificil" data-t="dif.dificil">Difícil</button>
+          </div>
+        </div>
+        <p class="nota" data-t="config.dificultadNota">Se aplica en la próxima partida</p>
+      </section>
+      <section>
+        <h3 data-t="config.pantalla">PANTALLA Y CONTROLES</h3>
+        <div class="fila-opcion"><span data-t="config.calidad">Calidad gráfica</span>
+          <div class="segmentos" data-config-opciones="calidad">
+            <button type="button" data-valor="alta" data-t="config.alta">Alta</button>
+            <button type="button" data-valor="normal" data-t="config.normal">Normal</button>
+          </div>
+        </div>
+        <div class="fila-opcion"><span data-t="config.tactil">Botones en pantalla</span>
+          <div class="segmentos" data-config-opciones="tactil">
+            <button type="button" data-valor="auto" data-t="config.auto">Automático</button>
+            <button type="button" data-valor="si" data-t="config.si">Siempre</button>
+            <button type="button" data-valor="no" data-t="config.no">Nunca</button>
+          </div>
+        </div>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="vibracion"><span data-t="config.vibracion">Vibración al tocar</span></label>
+          <button class="boton mini" type="button" id="boton-completa" data-accion="config-completa" data-t="config.completa">Pantalla completa</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="asist.seccion">ASISTENTE DE PRUEBAS</h3>
+        <div class="fila-opcion"><span data-t="asist.notaConfig">Pide cambios en armas o jugabilidad mientras se arma el juego</span>
+          <button class="boton mini" type="button" data-accion="asist-abrir" data-t="asist.abrir">Abrir asistente</button>
+        </div>
+      </section>
+      <div class="fila-botones">
+        <button class="boton chico peligro" type="button" data-accion="config-restablecer" data-t="config.restablecer">RESTABLECER</button>
+        <button class="boton chico" type="button" data-accion="config-cerrar" data-t="config.cerrar">CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/sonidos-datos.js"></script>
+  <script src="js/sonidos-ambiente.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/idioma.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/musica.js"></script>
+  <script src="js/armas.js"></script>
+  <script src="js/dificultad.js"></script>
+  <script src="js/dibujo.js"></script>
+  <script src="js/armas-dibujo.js"></script>
+  <script src="js/armas-dibujo-2.js"></script>
+  <script src="js/armas-modelos.js"></script>
+  <script src="js/armas-modelos-2.js"></script>
+  <script src="js/armas-modelos-3.js"></script>
+  <script src="js/misiones.js"></script>
+  <script src="js/fichas-armas.js"></script>
+  <script src="js/terreno.js"></script>
+  <script src="js/escenario.js"></script>
+  <script src="js/escenario-objetos.js"></script>
+  <script src="js/escenario-cloaca.js"></script>
+  <script src="js/jugador.js"></script>
+  <script src="js/jugador-dibujo.js"></script>
+  <script src="js/skins.js"></script>
+  <script src="js/zombie.js"></script>
+  <script src="js/zombie-toxico.js"></script>
+  <script src="js/objetos.js"></script>
+  <script src="js/juego.js"></script>
+  <script src="js/poderes.js"></script>
+  <script src="js/asistente.js"></script>
+  <script src="js/interfaz.js"></script>
+  <script src="js/tactil.js"></script>
+</body>
+</html>
