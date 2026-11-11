@@ -45,124 +45,175 @@ const ESPECIES = {
   toro:        { vida: 1, vel: 1, largo: 40, pata: 19, grosor: 26, cuello: 7, angCuello: 0.22, grosorCuello: 15, cabeza: [11, 8], color: '#2a2622', panza: '#3a332c', cuernos: 'toro', cola: 'larga', orejas: 'costado', hocico: 5, argolla: true, joroba: true, ancho: 60, alto: 54 },
 };
 
-// Cuadrúpedo mirando a la derecha con las patas en (0, 0): patas del lado lejano, cola, cuerpo, cuello y
-// cabeza, patas del lado cercano. Todos con algo de zombie: costillas a la vista, heridas y ojos que brillan.
+// Pelaje podrido: el color del animal tirando a gris verdoso de carne muerta
+function podrido(hex, k = 0.3) {
+  const a = parseInt(hex.slice(1), 16), b = 0x56604a, m = (s, i) => Math.round(((a >> s) & 255) * (1 - k) + ((b >> s) & 255) * k);
+  return '#' + [16, 8, 0].map(s => m(s).toString(16).padStart(2, '0')).join('');
+}
+
+// Cuadrúpedo mirando a la derecha con las patas en (0, 0), agazapado y con la cabeza baja para atacar: patas del
+// lado lejano, cola, cuerpo con el lomo erizado, calvas de piel podrida y la herida con las costillas, cuello y
+// cabeza con las orejas aplastadas hacia atrás, el hocico arrugado que muestra encías y colmillos, baba de sangre y
+// ojos rojos encendidos bajo el ceño; patas del lado cercano con el hueso a la vista y garras.
 function dibujarCuadrupedo(ctx, z, E, golpeado) {
   const col = c => golpeado ? ajustarColor(c, 0.7) : c, sil = Pincel.silueta;
   const anda = z.estado === 'camina' || z.estado === 'embiste', ataca = z.estado === 'ataca', carga = z.estado === 'carga';
-  const f = z.fase, R = z.recogido || 0, mitad = E.largo / 2;
-  const bob = anda ? -Math.abs(Math.sin(f)) * 1.4 : carga ? Math.sin(z.ahora / 40) * 0.8 : 0;
-  const yc = -E.pata * (1 - R * 0.55) - E.grosor * 0.42 + bob;
-  const piel = col(E.color), oscuro = col(ajustarColor(E.color, -0.3));
-  const pata = (x0, desfase, tono, adelante) => {
-    const a = anda ? Math.sin(f + desfase) * 0.55 : carga && adelante ? Math.sin(z.ahora / 70) * 0.5 : ataca ? Math.sin(z.ahora / 110 + desfase) * 0.18 : 0;
-    const L1 = E.pata * 0.54, L2 = E.pata * 0.52, y0 = yc + E.grosor * 0.25;
-    const dobla = (adelante ? -1 : 1) * (0.2 + (anda ? Math.max(0, Math.sin(f + desfase + 1.2)) * 0.7 : 0) + R * 1.7);
+  const f = z.fase, R = z.recogido || 0, mitad = E.largo / 2, G = E.grosor, ahora = z.ahora;
+  const bob = anda ? -Math.abs(Math.sin(f)) * 1.4 : carga ? Math.sin(ahora / 40) * 0.8 : 0;
+  const yc = -E.pata * (1 - R * 0.55) - G * 0.42 + bob;
+  const base = podrido(E.color, E.color === '#f0ece2' || E.color === '#f0e8da' ? 0.22 : 0.3);
+  const piel = col(base), oscuro = col(ajustarColor(base, -0.32)), carne = col('#6a1414'), hueso = col('#ddd2b4');
+  const garras = E.orejas === 'caidas' || E.orejas === 'gato';
+  const pata = (x0, desfase, tono, adelante, cerca) => {
+    const a = anda ? Math.sin(f + desfase) * 0.55 : carga && adelante ? Math.sin(ahora / 70) * 0.5 : ataca ? Math.sin(ahora / 90 + desfase) * 0.25 : 0;
+    const L1 = E.pata * 0.54, L2 = E.pata * 0.52, y0 = yc + G * 0.25;
+    const dobla = (adelante ? -1 : 1) * (0.25 + (anda ? Math.max(0, Math.sin(f + desfase + 1.2)) * 0.7 : 0) + R * 1.7);
     const kx = x0 + Math.sin(a) * L1, ky = y0 + Math.cos(a) * L1;
     const b = a + dobla, px = kx + Math.sin(b) * L2, py = Math.min(0, ky + Math.cos(b) * L2);
-    const g = E.grosor * 0.36;
+    const g = G * 0.36;
     pieza(ctx, poli(segmento(x0, y0, kx, ky, g, g * 0.75)), tono, Math.min(x0, kx) - g, Math.max(x0, kx) + g);
     pieza(ctx, poli(segmento(kx, ky, px, py, g * 0.7, g * 0.5)), tono, Math.min(kx, px) - g, Math.max(kx, px) + g);
-    pieza(ctx, elipse(px + 0.8, py - 0.6, g * 0.42, g * 0.3), col(E.color === '#3a3a40' ? '#2a2a2e' : '#2a2420'), px - g, px + g);
+    if (cerca && !sil && !golpeado && desfase === 0) {   // carne arrancada y el hueso a la vista en la canilla
+      detalle(ctx, carne, elipse((kx + px) / 2, (ky + py) / 2, g * 0.32, g * 0.75, b));
+      linea(ctx, hueso, g * 0.18, [[kx + (px - kx) * 0.2, ky + (py - ky) * 0.2], [kx + (px - kx) * 0.8, ky + (py - ky) * 0.8]]);
+    }
+    pieza(ctx, elipse(px + 0.8, py - 0.6, g * 0.45, g * 0.3), col('#1e1a16'), px - g, px + g);
+    if (garras && !sil) for (let k = 0; k < 3; k++) linea(ctx, '#e8e0c8', Math.max(0.35, g * 0.08), [[px + g * 0.2 + k * g * 0.18, py - 0.4], [px + g * 0.55 + k * g * 0.18, py + 0.2]]);
   };
-  pata(-mitad + 4, Math.PI, oscuro, false); pata(mitad - 4, 0, oscuro, true);
-  // Cola
-  const cx = -mitad - 1, cy = yc - E.grosor * 0.2, mece = Math.sin(z.ahora / 260) * 2;
-  if (E.cola === 'corta') pieza(ctx, elipse(cx - 1, cy + 1, 2.4, 3.4, 0.3), piel, cx - 4, cx + 2);
-  else if (E.cola === 'larga') { linea(ctx, sil || oscuro, 1.6, [[cx, cy], [cx - 3 + mece * 0.4, cy + E.grosor * 0.5], [cx - 2 + mece, cy + E.grosor * 0.9]]); pieza(ctx, elipse(cx - 2 + mece, cy + E.grosor * 0.95, 1.6, 2.6), col('#1a1816'), cx - 4, cx + 1); }
-  else if (E.cola === 'levantada') linea(ctx, sil || piel, 2.6, [[cx + 1, cy], [cx - 3, cy - 5 + mece * 0.4], [cx - 2 + mece * 0.5, cy - 9]]);
-  else if (E.cola === 'gato') linea(ctx, sil || piel, 2, [[cx + 1, cy], [cx - 5, cy - 2], [cx - 7 + mece, cy - 8], [cx - 5 + mece, cy - 12]]);
-  // Cuerpo, con la joroba del toro y la ubre de la vaca
-  if (E.joroba) pieza(ctx, elipse(mitad * 0.45, yc - E.grosor * 0.38, mitad * 0.55, E.grosor * 0.32), piel, 0, mitad);
-  pieza(ctx, elipse(0, yc, mitad + 3, E.grosor / 2), piel, -mitad - 3, mitad + 3);
-  if (E.ubre) pieza(ctx, elipse(-mitad * 0.35, yc + E.grosor * 0.5, 4.4, 3), col('#e8b0b0'), -mitad * 0.35 - 4, -mitad * 0.35 + 4);
+  pata(-mitad + 4, Math.PI, oscuro, false, false); pata(mitad - 4, 0, oscuro, true, false);
+  // Cola tiesa
+  const cx = -mitad - 1, cy = yc - G * 0.2, mece = Math.sin(ahora / 140) * 1.4;
+  if (E.cola === 'corta') pieza(ctx, elipse(cx - 1.5, cy - 0.5, 2.4, 3.4, 0.7), piel, cx - 4, cx + 2);
+  else if (E.cola === 'larga') { linea(ctx, sil || oscuro, 1.6, [[cx, cy], [cx - 4 + mece * 0.4, cy + G * 0.35], [cx - 4 + mece, cy + G * 0.8]]); pieza(ctx, elipse(cx - 4 + mece, cy + G * 0.85, 1.6, 2.6), col('#1a1816'), cx - 6, cx - 1); }
+  else if (E.cola === 'levantada') linea(ctx, sil || piel, 2.6, [[cx + 1, cy], [cx - 4, cy - 3 + mece * 0.4], [cx - 6 + mece * 0.5, cy - 7]]);
+  else if (E.cola === 'gato') { linea(ctx, sil || piel, 3, [[cx + 1, cy], [cx - 4, cy - 4], [cx - 5 + mece, cy - 10], [cx - 3 + mece, cy - 14]]); }   // cola esponjada
+  // Cuerpo con la joroba del toro y la ubre de la vaca
+  if (E.joroba) pieza(ctx, elipse(mitad * 0.45, yc - G * 0.38, mitad * 0.55, G * 0.32), piel, 0, mitad);
+  pieza(ctx, elipse(0, yc, mitad + 3, G / 2), piel, -mitad - 3, mitad + 3);
+  if (E.ubre) pieza(ctx, elipse(-mitad * 0.35, yc + G * 0.5, 4.4, 3), col('#a87878'), -mitad * 0.35 - 4, -mitad * 0.35 + 4);
+  // Lomo erizado: pelos parados desde la nuca hasta la cadera (la vaca no)
+  if (!E.ubre) {
+    const pts = [];
+    for (let k = 0; k <= 12; k++) { const u = k / 12, x = -mitad * 0.7 + u * mitad * 1.5, y = yc - G * 0.5 * Math.sqrt(Math.max(0, 1 - (x / (mitad + 3)) ** 2)); pts.push([x, y + 0.6], [x + mitad * (0.04 + 0.05 * Math.abs(Math.sin(k * 1.9))), y - G * (0.1 + 0.1 * Math.sin(u * Math.PI) + 0.06 * Math.abs(Math.sin(k * 2.7))) - (ataca || carga ? G * 0.06 : 0)]); }   // pelos de largo desparejo
+    pts.push([mitad * 0.8, yc - G * 0.2]);
+    pieza(ctx, poli(pts), oscuro, -mitad, mitad);
+  }
   if (!sil) {
-    detalle(ctx, col(E.panza), elipse(0, yc + E.grosor * 0.3, mitad * 0.75, E.grosor * 0.16));
-    if (E.manchas && !golpeado) for (const [mx, my, r] of [[-mitad * 0.5, -0.2, 0.32], [mitad * 0.25, -0.15, 0.26], [-mitad * 0.05, 0.12, 0.18]]) detalle(ctx, E.manchas, elipse(mx, yc + my * E.grosor, E.grosor * r * 1.3, E.grosor * r, 0.3));
-    if (!golpeado) {   // zombie: herida abierta con las costillas a la vista
-      const hx = -mitad * 0.1, hy = yc - E.grosor * 0.05, G = E.grosor;
-      detalle(ctx, 'rgba(95, 10, 10, 0.85)', poli([[hx - G * 0.3, hy - G * 0.08], [hx - G * 0.1, hy - G * 0.2], [hx + G * 0.22, hy - G * 0.14], [hx + G * 0.3, hy + G * 0.06], [hx + G * 0.05, hy + G * 0.18], [hx - G * 0.24, hy + G * 0.12]]));
-      for (let k = 0; k < 3; k++) linea(ctx, '#d8ccb0', G * 0.04, [[hx - G * 0.16 + k * G * 0.14, hy - G * 0.12], [hx - G * 0.12 + k * G * 0.14, hy + G * 0.1]]);
-      detalle(ctx, 'rgba(60, 70, 20, 0.4)', elipse(mitad * 0.55, yc + E.grosor * 0.1, E.grosor * 0.18, E.grosor * 0.12));
+    detalle(ctx, col(podrido(E.panza, 0.3)), elipse(0, yc + G * 0.3, mitad * 0.75, G * 0.16));
+    if (E.manchas && !golpeado) for (const [mx, my, r] of [[-mitad * 0.5, -0.2, 0.32], [mitad * 0.25, -0.15, 0.26], [-mitad * 0.05, 0.12, 0.18]]) detalle(ctx, E.manchas, elipse(mx, yc + my * G, G * r * 1.3, G * r, 0.3));
+    if (!golpeado) {
+      // Calvas de piel podrida, gris verdosa, con bordes oscuros
+      for (const [mx, my, r] of [[mitad * 0.55, 0.05, 0.2], [-mitad * 0.6, 0.12, 0.16], [mitad * 0.15, 0.22, 0.12]]) { detalle(ctx, 'rgba(30,26,20,0.55)', elipse(mx, yc + my * G, G * r + 0.6, G * r * 0.75 + 0.6, 0.4)); detalle(ctx, '#6d7656', elipse(mx, yc + my * G, G * r, G * r * 0.75, 0.4)); }
+      // Herida abierta con las costillas
+      const hx = -mitad * 0.1, hy = yc - G * 0.05;
+      detalle(ctx, '#4a0808', poli([[hx - G * 0.34, hy - G * 0.1], [hx - G * 0.12, hy - G * 0.24], [hx + G * 0.24, hy - G * 0.16], [hx + G * 0.34, hy + G * 0.08], [hx + G * 0.06, hy + G * 0.22], [hx - G * 0.28, hy + G * 0.14]]));
+      detalle(ctx, '#8a1414', elipse(hx, hy, G * 0.2, G * 0.12));
+      for (let k = 0; k < 4; k++) linea(ctx, hueso, G * 0.045, [[hx - G * 0.22 + k * G * 0.14, hy - G * 0.16], [hx - G * 0.17 + k * G * 0.14, hy + G * 0.13]]);
+      linea(ctx, 'rgba(110,10,10,0.8)', G * 0.04, [[hx + G * 0.1, hy + G * 0.2], [hx + G * 0.12, hy + G * 0.38]]);   // chorrea
     }
   }
-  // Cuello y cabeza
-  const ang = E.angCuello + (ataca ? -0.3 + Math.sin(z.ahora / 110) * 0.12 : carga ? -0.35 : Math.sin(f * 0.5) * 0.05) + (z.cabezaAtras || 0) * -0.6;
-  const nx0 = mitad - 2, ny0 = yc - E.grosor * 0.15, nx = nx0 + Math.cos(ang) * E.cuello, ny = ny0 - Math.sin(ang) * E.cuello;
+  // Cuello estirado hacia adelante y la cabeza baja, a la altura de la presa
+  const ang = E.angCuello * 0.7 + (ataca ? -0.35 + Math.sin(ahora / 80) * 0.16 : carga ? -0.4 : Math.sin(f * 0.5) * 0.06 - 0.12) + (z.cabezaAtras || 0) * -0.6;
+  const nx0 = mitad - 2, ny0 = yc - G * 0.15, nx = nx0 + Math.cos(ang) * E.cuello, ny = ny0 - Math.sin(ang) * E.cuello;
   pieza(ctx, poli(segmento(nx0, ny0, nx, ny, E.grosorCuello * 1.5, E.grosorCuello)), piel, Math.min(nx0, nx) - 4, Math.max(nx0, nx) + 4);
-  if (E.barril) {   // barril de coñac colgado del collar
-    pieza(ctx, redondo(nx - 4, ny + E.grosorCuello * 0.3, 8, 6, 1.4), col('#8a5a2a'), nx - 4, nx + 4);
-    if (!sil) { linea(ctx, '#3a2a18', 0.6, [[nx - 2, ny + E.grosorCuello * 0.3], [nx - 2, ny + E.grosorCuello * 0.3 + 6]]); linea(ctx, '#3a2a18', 0.6, [[nx + 2, ny + E.grosorCuello * 0.3], [nx + 2, ny + E.grosorCuello * 0.3 + 6]]); linea(ctx, '#b3261e', 1.4, [[nx - 4, ny + E.grosorCuello * 0.25], [nx + 4, ny + E.grosorCuello * 0.25]]); }
+  if (!sil && !golpeado) detalle(ctx, 'rgba(120,10,10,0.75)', elipse(nx - 1, ny + E.grosorCuello * 0.45, E.grosorCuello * 0.45, E.grosorCuello * 0.6));   // pecho manchado de sangre
+  if (E.barril) {
+    pieza(ctx, redondo(nx - 4, ny + E.grosorCuello * 0.3, 8, 6, 1.4), col('#6a4420'), nx - 4, nx + 4);
+    if (!sil) { linea(ctx, '#2a1e10', 0.6, [[nx - 2, ny + E.grosorCuello * 0.3], [nx - 2, ny + E.grosorCuello * 0.3 + 6]]); linea(ctx, '#2a1e10', 0.6, [[nx + 2, ny + E.grosorCuello * 0.3], [nx + 2, ny + E.grosorCuello * 0.3 + 6]]); linea(ctx, '#7a1a16', 1.4, [[nx - 4, ny + E.grosorCuello * 0.25], [nx + 4, ny + E.grosorCuello * 0.25]]); }
   }
-  const [cw, ch] = E.cabeza, abre = ataca ? 0.25 + Math.abs(Math.sin(z.ahora / 100)) * 0.25 : carga ? 0.15 : 0.06;
-  ctx.save(); ctx.translate(nx, ny); ctx.rotate(0.35 - (ataca ? 0.2 : 0));
-  // Mandíbula (se abre al morder)
-  ctx.save(); ctx.translate(cw * 0.2, ch * 0.35); ctx.rotate(abre);
-  pieza(ctx, elipse(cw * 0.75, ch * 0.2, cw * 0.85, ch * 0.32), oscuro, -1, cw * 1.6);
-  ctx.restore();
-  // Orejas de atrás
-  if (E.orejas === 'largas') pieza(ctx, poli([[-cw * 0.3, -ch * 0.6], [-cw * 0.55, -ch * 1.9], [cw * 0.05, -ch * 0.75]]), piel, -cw * 0.6, cw * 0.1);
-  if (E.orejas === 'gato') pieza(ctx, poli([[-cw * 0.4, -ch * 0.5], [-cw * 0.25, -ch * 1.6], [cw * 0.25, -ch * 0.7]]), piel, -cw * 0.4, cw * 0.3);
-  if (E.cuernos === 'toro') { pieza(ctx, poli([[-cw * 0.1, -ch * 0.6], [cw * 0.6, -ch * 1.1], [cw * 1.3, -ch * 2.1], [cw * 1.2, -ch * 1.3], [cw * 0.55, -ch * 0.4]]), col('#efe6cf'), -cw * 0.1, cw * 1.3); }
-  if (E.cuernos === 'vaca') pieza(ctx, poli([[0, -ch * 0.7], [cw * 0.25, -ch * 1.5], [cw * 0.45, -ch * 1.45], [cw * 0.35, -ch * 0.6]]), col('#d8ceb0'), 0, cw * 0.45);
-  if (E.astas) {   // astas del ciervo colorado, con sus puntas
-    const a = [[0, -ch * 0.7], [-cw * 0.2, -ch * 2.6], [-cw * 0.6, -ch * 3.8], [-cw * 0.2, -ch * 5]];
-    linea(ctx, sil || col('#cdb89a'), 1.6, a);
-    for (const [i, dx2, dy2] of [[1, cw * 0.55, -ch * 0.6], [2, cw * 0.45, -ch * 0.7], [2, -cw * 0.55, -ch * 0.3]]) linea(ctx, sil || col('#cdb89a'), 1.2, [a[i], [a[i][0] + dx2, a[i][1] + dy2]]);
-  }
-  // Cráneo y hocico
-  pieza(ctx, elipse(cw * 0.3, 0, cw * 0.85, ch * 0.75), piel, -cw * 0.6, cw * 1.2);
-  pieza(ctx, elipse(cw * 1.05, ch * 0.2, E.hocico * 0.9, ch * 0.5), col(E.color === '#f0e8da' ? '#e8dcc8' : ajustarColor(E.color, -0.08)), cw * 0.4, cw * 1.05 + E.hocico);
-  if (E.orejas === 'caidas') pieza(ctx, poli([[-cw * 0.15, -ch * 0.6], [-cw * 0.45, ch * 0.9], [cw * 0.15, ch * 0.5], [cw * 0.25, -ch * 0.45]]), col(E.manchas || ajustarColor(E.color, -0.25)), -cw * 0.45, cw * 0.25);
-  if (E.orejas === 'costado') pieza(ctx, elipse(-cw * 0.35, -ch * 0.35, cw * 0.4, ch * 0.22, -0.4), piel, -cw * 0.8, 0);
+  const [cw, ch] = E.cabeza, abre = ataca ? 0.45 + Math.abs(Math.sin(ahora / 70)) * 0.35 : carga ? 0.4 : 0.28 + Math.sin(ahora / 300) * 0.05;
+  ctx.save(); ctx.translate(nx, ny); ctx.rotate(0.45 - (ataca ? 0.25 : 0));
+  // Mandíbula abierta con los colmillos de abajo
+  ctx.save(); ctx.translate(cw * 0.15, ch * 0.35); ctx.rotate(abre);
+  pieza(ctx, elipse(cw * 0.75, ch * 0.2, cw * 0.9, ch * 0.32), oscuro, -1, cw * 1.6);
   if (!sil) {
-    detalle(ctx, '#1a1210', elipse(cw * 1.05 + E.hocico * 0.75, ch * 0.05, 0.9, 0.7));                            // nariz
-    if (E.argolla) { ctx.beginPath(); ctx.arc(cw * 1.1 + E.hocico * 0.75, ch * 0.55, 1.6, 0, Math.PI * 2); ctx.strokeStyle = '#c8b06a'; ctx.lineWidth = 0.6; ctx.stroke(); }
-    if (E.manchas && E.barril) detalle(ctx, col(E.manchas), elipse(cw * 0.1, -ch * 0.25, cw * 0.4, ch * 0.4));        // mancha en la cara del San Bernardo
-    // Dientes y baba de sangre
-    if (!golpeado) { ctx.fillStyle = '#e6dcc0'; for (let k = 0; k < 3; k++) ctx.fillRect(cw * 0.75 + k * 1.3, ch * 0.45, 0.8, 1.3); ctx.fillStyle = '#9a1010'; ctx.fillRect(cw * 1.2, ch * 0.6, 0.8, 2.6 + abre * 4); }
-    // Ojo que brilla (rojo cuando ataca o embiste)
-    const rojo = ataca || carga || z.estado === 'embiste' || z.jefe;
-    const g2 = ctx.createRadialGradient(cw * 0.55, -ch * 0.25, 0, cw * 0.55, -ch * 0.25, 3.2);
-    g2.addColorStop(0, rojo ? 'rgba(255,60,40,0.6)' : 'rgba(250,240,90,0.5)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g2; ctx.fillRect(cw * 0.55 - 3.2, -ch * 0.25 - 3.2, 6.4, 6.4);
-    detalle(ctx, rojo ? '#ff3b2b' : '#f2e84a', circulo(cw * 0.55, -ch * 0.25, Math.max(0.8, ch * 0.16)));
-    detalle(ctx, '#1a0a00', circulo(cw * 0.6, -ch * 0.25, Math.max(0.3, ch * 0.06)));
-    if (E.orejas === 'largas' || E.orejas === 'gato') detalle(ctx, 'rgba(80,10,10,0.7)', elipse(-cw * 0.1, ch * 0.3, cw * 0.18, ch * 0.16));   // mordida
+    detalle(ctx, '#3a0606', elipse(cw * 0.85, ch * 0.02, cw * 0.7, ch * 0.16));
+    if (!golpeado) { ctx.fillStyle = '#e8dcbc'; for (const [x, h] of [[cw * 1.35, ch * 0.55], [cw * 0.7, ch * 0.3], [cw * 1.05, ch * 0.3]]) { ctx.beginPath(); ctx.moveTo(x - 0.5, ch * 0.05); ctx.lineTo(x, ch * 0.05 - h); ctx.lineTo(x + 0.6, ch * 0.05); ctx.fill(); } }
   }
   ctx.restore();
-  pata(-mitad + 6, 0, piel, false); pata(mitad - 2, Math.PI, piel, true);
+  // Orejas aplastadas hacia atrás, cuernos y astas
+  if (E.orejas === 'largas') pieza(ctx, poli([[-cw * 0.2, -ch * 0.55], [-cw * 1.3, -ch * 1.2], [-cw * 0.1, -ch * 0.85]]), piel, -cw * 1.3, 0);
+  if (E.orejas === 'gato') pieza(ctx, poli([[-cw * 0.3, -ch * 0.5], [-cw * 1.0, -ch * 1.25], [cw * 0.15, -ch * 0.75]]), piel, -cw, cw * 0.2);
+  if (E.cuernos === 'toro') pieza(ctx, poli([[-cw * 0.1, -ch * 0.6], [cw * 0.6, -ch * 1.1], [cw * 1.4, -ch * 2.2], [cw * 1.25, -ch * 1.3], [cw * 0.55, -ch * 0.4]]), col('#d8ccb0'), -cw * 0.1, cw * 1.4);
+  if (E.cuernos === 'vaca') pieza(ctx, poli([[0, -ch * 0.7], [cw * 0.35, -ch * 1.6], [cw * 0.55, -ch * 1.5], [cw * 0.35, -ch * 0.6]]), col('#c8bea0'), 0, cw * 0.55);
+  if (E.astas) {
+    const a = [[0, -ch * 0.7], [-cw * 0.1, -ch * 2.6], [-cw * 0.4, -ch * 3.8], [0, -ch * 5]];
+    linea(ctx, sil || col('#b8a688'), 1.7, a);
+    for (const [i, dx2, dy2] of [[1, cw * 0.75, -ch * 0.5], [2, cw * 0.65, -ch * 0.7], [2, -cw * 0.55, -ch * 0.3], [3, cw * 0.4, -ch * 0.3]]) linea(ctx, sil || col('#b8a688'), 1.2, [a[i], [a[i][0] + dx2, a[i][1] + dy2]]);
+    if (!sil && !golpeado) linea(ctx, 'rgba(120,10,10,0.8)', 0.9, [a[2], a[3]]);   // asta ensangrentada
+  }
+  // Cráneo y hocico arrugado (se le ven las encías y los colmillos de arriba)
+  pieza(ctx, elipse(cw * 0.3, 0, cw * 0.85, ch * 0.75), piel, -cw * 0.6, cw * 1.2);
+  pieza(ctx, elipse(cw * 1.05, ch * 0.15, E.hocico * 0.95, ch * 0.48), col(ajustarColor(base, -0.06)), cw * 0.4, cw * 1.05 + E.hocico);
+  if (E.orejas === 'caidas') pieza(ctx, poli([[-cw * 0.1, -ch * 0.6], [-cw * 0.9, -ch * 0.2], [-cw * 0.6, ch * 0.5], [cw * 0.2, -ch * 0.2]]), col(E.manchas ? podrido(E.manchas, 0.25) : ajustarColor(base, -0.25)), -cw * 0.9, cw * 0.2);
+  if (E.orejas === 'costado') pieza(ctx, elipse(-cw * 0.45, -ch * 0.3, cw * 0.45, ch * 0.2, -0.7), piel, -cw * 0.9, 0);
+  if (!sil) {
+    if (E.manchas && E.barril) detalle(ctx, col(podrido(E.manchas, 0.25)), elipse(cw * 0.1, -ch * 0.25, cw * 0.4, ch * 0.4));
+    detalle(ctx, '#140c0a', elipse(cw * 1.05 + E.hocico * 0.8, ch * 0.0, 1.0, 0.8));                                  // nariz
+    if (E.argolla) { ctx.beginPath(); ctx.arc(cw * 1.1 + E.hocico * 0.75, ch * 0.55, 1.6, 0, Math.PI * 2); ctx.strokeStyle = '#a89050'; ctx.lineWidth = 0.6; ctx.stroke(); }
+    for (let k = 0; k < 3; k++) linea(ctx, 'rgba(20,10,8,0.55)', 0.35, [[cw * 0.75 + k * 0.9, -ch * 0.1], [cw * 0.95 + k * 0.9, ch * 0.2]]);   // arrugas del gruñido
+    if (!golpeado) {
+      detalle(ctx, '#7a2a2e', elipse(cw * 1.0, ch * 0.5, cw * 0.55, ch * 0.13));                                        // encía
+      ctx.fillStyle = '#efe4c4';
+      for (const [x, h] of [[cw * 1.35, ch * 0.65], [cw * 0.65, ch * 0.5], [cw * 0.85, ch * 0.22], [cw * 1.05, ch * 0.25], [cw * 1.2, ch * 0.22]]) { ctx.beginPath(); ctx.moveTo(x - 0.55, ch * 0.5); ctx.lineTo(x, ch * 0.5 + h); ctx.lineTo(x + 0.55, ch * 0.5); ctx.fill(); }
+      ctx.fillStyle = '#9a1010'; ctx.fillRect(cw * 1.25, ch * 0.7, 0.8, 3 + abre * 6); ctx.beginPath(); ctx.arc(cw * 1.29, ch * 0.7 + 3 + abre * 6, 0.9, 0, Math.PI * 2); ctx.fill();   // baba de sangre
+      ctx.fillRect(cw * 0.8, ch * 0.62, 0.6, 1.6 + abre * 3);
+    }
+    // Ojos rojos encendidos bajo el ceño
+    const ox = cw * 0.55, oy = -ch * 0.22, r = Math.max(1, ch * 0.2);
+    const g2 = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 4); g2.addColorStop(0, 'rgba(255,40,20,0.75)'); g2.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = g2; ctx.fillRect(ox - r * 4, oy - r * 4, r * 8, r * 8);
+    detalle(ctx, '#ff2a1a', elipse(ox, oy, r * 1.1, r * 0.8));
+    detalle(ctx, '#ffd0a0', circulo(ox + r * 0.2, oy - r * 0.15, r * 0.3));
+    detalle(ctx, '#140404', elipse(ox + r * 0.1, oy, r * 0.18, r * 0.65));                                              // pupila rasgada
+    linea(ctx, 'rgba(15,8,6,0.9)', Math.max(0.6, ch * 0.12), [[ox - r * 1.4, oy - r * 1.6], [ox + r * 1.5, oy - r * 0.4]]);   // ceño
+    detalle(ctx, 'rgba(70,8,8,0.8)', elipse(-cw * 0.1, ch * 0.25, cw * 0.2, ch * 0.18));                                // mordida en la cara
+  }
+  ctx.restore();
+  pata(-mitad + 6, 0, piel, false, true); pata(mitad - 2, Math.PI, piel, true, true);
 }
 
-// Ñandú: ave grande de dos patas, plumaje gris pardo desflecado, cuello largo y pico chato
+// Ñandú: ave grande de dos patas, desplumada a parches, cuello pelado y ensangrentado, pico entreabierto con el
+// borde aserrado y ojos rojos; ataca a picotazos con el cuello estirado
 function dibujarNandu(ctx, z, E, golpeado) {
   const col = c => golpeado ? ajustarColor(c, 0.7) : c, sil = Pincel.silueta;
   const anda = z.estado === 'camina', ataca = z.estado === 'ataca', f = z.fase, R = z.recogido || 0;
-  const piel = col(E.color), oscuro = col(ajustarColor(E.color, -0.3)), patas = col('#9a8a6a');
+  const piel = col(podrido(E.color, 0.25)), oscuro = col(ajustarColor(podrido(E.color, 0.25), -0.3)), patas = col('#7a6e56'), pelado = col('#9a8478');
   const yc = -34 * (1 - R * 0.4) + (anda ? -Math.abs(Math.sin(f)) * 1.6 : 0);
   const pata = (desfase, tono) => {
     const a = anda ? Math.sin(f + desfase) * 0.6 : 0, hx = 0, hy = yc + 6;
     const kx = hx + Math.sin(a) * 13 + 2, ky = hy + 13 * (1 - R * 0.5);
     const px = kx - Math.sin(a) * 4 - 3 - (anda ? Math.max(0, Math.sin(f + desfase + 1)) * 4 : 0), py = Math.min(0, ky + 15);
-    linea(ctx, sil || tono, 2.4, [[hx, hy], [kx, ky], [px, py]]);
-    linea(ctx, sil || tono, 1.4, [[px, py], [px + 5, py], [px + 6.5, py - 0.4]]);
+    linea(ctx, sil || tono, 2.6, [[hx, hy], [kx, ky], [px, py]]);
+    linea(ctx, sil || tono, 1.4, [[px, py], [px + 5, py], [px + 6.5, py + 0.6]]);
+    if (!sil) linea(ctx, '#e8e0c8', 0.6, [[px + 5.6, py], [px + 7.2, py + 1]]);                                         // uña
   };
   pata(Math.PI, oscuro);
-  // Cuerpo emplumado con las alas caídas
   pieza(ctx, elipse(-2, yc, 15, 11, -0.08), piel, -17, 13);
-  pieza(ctx, poli([[-14, yc - 3], [-20, yc + 8], [-15, yc + 12], [-9, yc + 9], [-3, yc + 11], [2, yc + 6]]), oscuro, -20, 2);
+  pieza(ctx, poli([[-14, yc - 3], [-22, yc + 6], [-19, yc + 9], [-17, yc + 13], [-13, yc + 9], [-9, yc + 13], [-5, yc + 9], [-1, yc + 11], [2, yc + 6]]), oscuro, -22, 2);   // alas desflecadas
   if (!sil && !golpeado) {
-    for (let k = 0; k < 7; k++) linea(ctx, 'rgba(40,34,26,0.45)', 0.6, [[-13 + k * 3.5, yc - 6 + (k % 2)], [-15 + k * 3.5, yc + 4]]);
-    detalle(ctx, 'rgba(95,10,10,0.8)', elipse(2, yc + 1, 4, 2.6));                                               // herida
-    for (let k = 0; k < 3; k++) linea(ctx, '#d8ccb0', 0.5, [[0 + k * 1.6, yc - 0.6], [0.6 + k * 1.6, yc + 2.6]]);
+    for (let k = 0; k < 8; k++) linea(ctx, 'rgba(30,26,20,0.5)', 0.6, [[-14 + k * 3.2, yc - 7 + (k % 2)], [-16 + k * 3.2, yc + 4]]);
+    detalle(ctx, pelado, elipse(-6, yc - 4, 4.4, 3));                                                                      // desplumado
+    detalle(ctx, '#4a0808', elipse(3, yc + 1, 4.6, 3));
+    for (let k = 0; k < 3; k++) linea(ctx, '#ddd2b4', 0.55, [[0.6 + k * 1.6, yc - 1], [1.2 + k * 1.6, yc + 2.8]]);
   }
-  // Cuello largo y cabeza
-  const ang = ataca ? Math.sin(z.ahora / 90) * 0.3 : Math.sin(f * 0.5) * 0.08;
-  const cxp = 10 + (ataca ? 8 : 4) + Math.sin(ang) * 4, cyp = yc - 26 + (ataca ? 10 : 0);
-  linea(ctx, sil || col(E.panza), 3.4, [[8, yc - 5], [11, yc - 15], [cxp, cyp]]);
-  pieza(ctx, elipse(cxp + 1, cyp, 3.4, 2.6), col(E.panza), cxp - 3, cxp + 5);
-  pieza(ctx, poli([[cxp + 3.4, cyp - 0.6], [cxp + 8.6, cyp + 0.4], [cxp + 3.6, cyp + 1.6]]), col('#c8b07a'), cxp + 3, cxp + 9);
-  if (!sil) { detalle(ctx, ataca ? '#ff3b2b' : '#f2e84a', circulo(cxp + 1.6, cyp - 0.8, 0.8)); if (!golpeado) detalle(ctx, '#9a1010', c => c.rect(cxp + 6, cyp + 1.2, 0.6, 2.4)); }
+  // Cuello pelado y ensangrentado; al atacar se estira y pica
+  const pica = ataca ? Math.max(0, Math.sin(z.ahora / 70)) : 0;
+  const cxp = 12 + (ataca ? 6 + pica * 7 : 5), cyp = yc - 24 + (ataca ? 8 + pica * 6 : 2);
+  linea(ctx, sil || pelado, 3.6, [[8, yc - 5], [12, yc - 15], [cxp, cyp]]);
+  if (!sil && !golpeado) { linea(ctx, 'rgba(130,10,10,0.85)', 1.4, [[10, yc - 9], [12, yc - 15]]); linea(ctx, 'rgba(130,10,10,0.7)', 0.6, [[10.5, yc - 9], [10.2, yc - 4]]); }
+  pieza(ctx, elipse(cxp + 1, cyp, 3.6, 2.8), pelado, cxp - 3, cxp + 5);
+  const ab = ataca ? 0.5 + pica * 0.4 : 0.25;
+  pieza(ctx, poli([[cxp + 3.4, cyp - 0.8], [cxp + 9, cyp - 0.2 - ab], [cxp + 3.6, cyp + 0.6]]), col('#a89060'), cxp + 3, cxp + 9);
+  pieza(ctx, poli([[cxp + 3.4, cyp + 0.8], [cxp + 8.4, cyp + 1.6 + ab * 2], [cxp + 3.6, cyp + 1.8]]), col('#8a7448'), cxp + 3, cxp + 9);
+  if (!sil) {
+    detalle(ctx, '#3a0606', poli([[cxp + 3.6, cyp + 0.4], [cxp + 8.4, cyp + 0.2 - ab * 0.4], [cxp + 8, cyp + 1.4 + ab * 1.6]]));
+    const g2 = ctx.createRadialGradient(cxp + 1.6, cyp - 0.8, 0, cxp + 1.6, cyp - 0.8, 4); g2.addColorStop(0, 'rgba(255,40,20,0.7)'); g2.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = g2; ctx.fillRect(cxp - 2.4, cyp - 4.8, 8, 8);
+    detalle(ctx, '#ff2a1a', circulo(cxp + 1.6, cyp - 0.8, 1.05)); detalle(ctx, '#140404', circulo(cxp + 1.8, cyp - 0.8, 0.35));
+    linea(ctx, 'rgba(15,8,6,0.9)', 0.6, [[cxp, cyp - 2.4], [cxp + 3, cyp - 1.4]]);
+    if (!golpeado) { ctx.fillStyle = '#9a1010'; ctx.fillRect(cxp + 7, cyp + 1.6 + ab * 2, 0.6, 3); }
+  }
   pata(0, patas);
 }
 
@@ -177,7 +228,24 @@ class ZombieAnimal extends Zombie {
     this.ancho = E.ancho * this.escala; this.alto = E.alto * this.escala;
   }
   caja() { const w = this.ancho, h = Math.max(this.alto, 52); return { x: this.x - w / 2 + this.direccion * 4, y: this.y - this.altura - h, w, h }; }
+  // Agresivo: cuando ve al jugador a menos de 260 px se lanza un 50 % más rápido, muerde cada 0,6 s (no 0,9) y
+  // gruñe en vez de gemir; al morder, ladra o brama
+  actualizar(dt, jugador, juego) {
+    const lejos = Math.abs(jugador.x - this.x), base = this.velocidad;
+    this.gemidoEn = Infinity;                                       // el gemido humano no va
+    if (!this.dormido && lejos < 260 && this.estado !== 'muerto') this.velocidad = base * 1.5;
+    const antes = this.ataqueEn;
+    super.actualizar(dt, jugador, juego);
+    this.velocidad = base;
+    if (this.ataqueEn !== antes) { this.ataqueEn = juego.ahora + 600; Audio_.gruñido(lejos, this.tamañoVoz(), true); }
+    if (this.estado !== 'muerto' && !this.dormido && lejos < 600 && juego.ahora >= (this.gruñeEn || 0)) {
+      this.gruñeEn = juego.ahora + 1800 + Math.random() * 2600;
+      if (this.gruñeEn && Math.random() < 0.75) Audio_.gruñido(lejos, this.tamañoVoz(), false);
+    }
+  }
+  tamañoVoz() { return { gato: 0.45, perro: 0.9, nandu: 0.7, guanaco: 1, ciervo: 1.1, vaca: 1.8, sanbernardo: 1.6, toro: 2.2 }[this.especie] || 1; }
   cuerpo(ctx, golpeado) {
+    if (this.estado === 'ataca') ctx.translate(this.direccion * Math.max(0, Math.sin(this.ahora / 70)) * 3 * this.escala, 0);   // embiste con el cuerpo al morder
     ctx.scale(this.direccion * this.escala, this.escala);
     if (this.E.bipedo) dibujarNandu(ctx, this, this.E, golpeado); else dibujarCuadrupedo(ctx, this, this.E, golpeado);
   }
@@ -260,6 +328,9 @@ function ondaJefe(z, juego, radio) {
   if (!j.muerto && j.enSuelo && Math.abs(j.x - z.x) < radio && Math.abs(j.y - z.y) < 80) { j.recibirDano(Math.round(z.mordida * 1.4), juego); juego.aviso(t('hist.aviso.onda'), 1600); }
 }
 
+// Los jefes animales gruñen y braman (más grave que los comunes); los humanos gimen
+function vozJefe(z, dist, fuerte) { if (z.animal) Audio_.gruñido(dist, z.tamañoVoz() * 1.4, fuerte); else Audio_.gemido(true, dist); }
+
 function actualizarJefe(z, dt, j, juego) {
   const ahora = juego.ahora, paso = dt * 60;
   z.ahora = ahora;
@@ -274,7 +345,7 @@ function actualizarJefe(z, dt, j, juego) {
   if (A) {
     const t2 = ahora - A.desde;
     if (A.tipo === 'embestida') {
-      if (t2 < 800) { z.estado = 'carga'; z.direccion = A.dir; if (!A.bufido && t2 > 300) { A.bufido = true; Audio_.gemido(true, 0); } }
+      if (t2 < 800) { z.estado = 'carga'; z.direccion = A.dir; if (!A.bufido && t2 > 300) { A.bufido = true; vozJefe(z, 0, true); } }
       else if (t2 < 2100 && !A.fin) {
         z.estado = 'embiste'; z.fase += dt * 18;
         if (!moverJefe(z, A.dir * z.velocidad * 4.4 * paso, juego)) A.fin = true;
@@ -313,7 +384,7 @@ function actualizarJefe(z, dt, j, juego) {
   z.estado = 'camina';
   moverJefe(z, z.direccion * z.velocidad * paso, juego);
   z.fase += dt * (z.animal ? 7 : 4.5);
-  if (ahora >= z.gemidoEn) { z.gemidoEn = ahora + 2200 + Math.random() * 2500; Audio_.gemido(true, dist); }
+  if (ahora >= z.gemidoEn) { z.gemidoEn = ahora + 2200 + Math.random() * 2500; vozJefe(z, dist, false); }
 }
 
 /* ---------- Enganche con la partida ---------- */

@@ -125,6 +125,12 @@ corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas d
 | 3 | Perros callejeros, hinchas con la camiseta a rayas (celeste, verde o granate) y colectiveros | El hincha del bombo: golpea el bombo y la onda corre por el piso |
 | 4 | Gatos, perros, abuelas en batón con ruleros y el vecino del asado (musculosa y delantal) | El coloso verde, un zombie gigante y musculoso: salta y cae con una onda expansiva |
 
+Los animales están hechos para dar miedo: pelaje podrido con calvas, lomo erizado, la herida con las costillas,
+el hueso a la vista en una pata, garras, hocico arrugado que muestra encías y colmillos, baba de sangre y ojos
+rojos con pupila rasgada bajo el ceño. Se lanzan un 50 % más rápido cuando el jugador está a menos de 260 px,
+muerden cada 0,6 s (los demás, cada 0,9) empujando con el cuerpo, y gruñen (`Audio_.gruñido`, más grave cuanto
+más grande el animal) en vez de gemir; al morder, ladran o braman.
+
 El jefe aparece a 700 px de la meta, entre el jugador y la casa, con su barra de vida abajo; mientras viva la meta
 queda cerrada. Tiene de 22 a 55 veces la vida de un zombie común (22, 30, 40 y 55) y ningún golpe le saca más
 del 8 % (una explosión o un ataque aéreo no lo matan de una). Las embestidas y las ondas se esquivan saltando.

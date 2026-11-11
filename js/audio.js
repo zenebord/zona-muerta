@@ -398,6 +398,27 @@ const Audio_ = (() => {
     vacio() { asegurar(); if (grabacion('gatillo_en_seco', { rev: 0.05 })) return; metal({ f: 2900, dur: 0.025, vol: 0.15, rev: 0 }); golpe({ f: 500, dur: 0.015, vol: 0.07 }); },
 
     // Gemido de zombie grabado; más bajo y más reverberado cuanto más lejos está
+    // Gruñido de animal zombie: ruido grave y una sierra cortados a 22-34 golpes por segundo (la garganta que
+    // vibra), que crece y termina en un ladrido o un bramido si ataca. tamaño: 0,5 gato … 1 perro … 2 toro.
+    gruñido(distancia = 200, tamaño = 1, ataca = false) {
+      if (!asegurar() || oculto) return;
+      const cerca = Math.max(0.12, 1 - distancia / 650), t = ctx.currentTime, dur = (ataca ? 0.5 : 0.9 + Math.random() * 0.6) * Math.min(1.5, 0.7 + tamaño * 0.3);
+      const vol = (ataca ? 0.5 : 0.32) * cerca, grave = 1 / Math.sqrt(tamaño);
+      const am = ctx.createGain(); am.gain.value = 0;
+      const lfo = ctx.createOscillator(); lfo.type = 'square'; lfo.frequency.value = (22 + Math.random() * 12) * Math.min(1.3, grave);
+      const lfoG = ctx.createGain(); lfoG.gain.value = 0.5; lfo.connect(lfoG); lfoG.connect(am.gain);
+      const base = ctx.createConstantSource(); base.offset.value = 0.5; base.connect(am.gain);
+      const fuente = ctx.createBufferSource(); fuente.buffer = bufferRuido;
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2.2; f.frequency.setValueAtTime(320 * grave, t); f.frequency.linearRampToValueAtTime(420 * grave, t + dur);
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(95 * grave, t); o.frequency.linearRampToValueAtTime(75 * grave, t + dur);
+      const pb = ctx.createBiquadFilter(); pb.type = 'lowpass'; pb.frequency.value = 650 * grave;
+      const mezcla = ctx.createGain(); mezcla.gain.value = 0.6;
+      fuente.connect(f); f.connect(am); o.connect(pb); pb.connect(mezcla); mezcla.connect(am);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.12); g.gain.setValueAtTime(vol, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      saturar(am, 2.5).connect(g); conectar(g, 0.12 + (1 - cerca) * 0.3, 0.05);
+      for (const n of [lfo, base, fuente, o]) { n.start(t); n.stop(t + dur + 0.05); }
+      if (ataca) { ruido({ dur: 0.12, vol: vol * 0.9, filtro: 'bandpass', freq: 700 * grave, freqFin: 300 * grave, q: 1.5, retraso: dur * 0.85, sat: 3, rev: 0.12 }); tono({ tipo: 'sawtooth', desde: 260 * grave, hasta: 140 * grave, dur: 0.12, vol: vol * 0.5, retraso: dur * 0.85, sat: 2 }); }
+    },
     gemido(fuerte = false, distancia = 200) {
       asegurar();
       const cerca = Math.max(0.15, 1 - distancia / 600);
