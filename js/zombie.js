@@ -86,7 +86,7 @@ class Zombie {
   actualizar(dt, jugador, juego) {
     const paso = dt * 60, ahora = juego.ahora;
     this.ahora = ahora;
-    if (this.estado === 'muerto') { this.tiempoMuerto += dt; return; }
+    if (this.estado === 'muerto') { if (this.muerte) this.moverCadaver(dt, juego); else this.tiempoMuerto += dt; return; }
     if (this.maniqui) {   // blanco del campo de pruebas: mira al jugador, acusa los tiros y nada más
       this.direccion = jugador.x >= this.x ? 1 : -1;
       this.fase += dt * 1.5;
@@ -179,14 +179,58 @@ class Zombie {
     if (this.vida <= 0) {
       this.estado = 'muerto';
       juego.salpicar(this.x, this.y - this.altura - 30 * this.escala, this.colorSangre, 18, 5);
-      if (this.sonidoMuerte) this.sonidoMuerte(); else Audio_.zombieMuere();
+      const despedido = !this.toxico && !this.animal;
+      if (this.sonidoMuerte) this.sonidoMuerte(); else Audio_.zombieMuere(!despedido);
+      if (despedido) this.lanzarCadaver(direccion, arma, juego);
       juego.alMorirZombie(this, arma);
     }
   }
 
   // Caja de impacto: el cuerpo más los brazos estirados hacia donde mira
   caja() { const w = this.ancho + 8 * this.escala; return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - this.alto - 4, w, h: this.alto + 4 }; }
-  terminado() { return this.estado === 'muerto' && this.tiempoMuerto > MUERTE.fin; }
+  terminado() { return this.estado === 'muerto' && this.tiempoMuerto > (this.muerte ? 5 : MUERTE.fin); }
+
+  /* Muerte aparatosa: el golpe lo despide de espaldas según el arma (pistola: trastabilla y cae; escopeta o
+   * rifle: vuela hacia atrás; explosión: sale por el aire dando vueltas), pega contra el piso y rebota, queda
+   * tendido pataleando y manoteando con espasmos mientras echa chorros de sangre, se le apagan los ojos y se
+   * desvanece en su charco a los 5 s. (El tóxico de la cloaca conserva su caída de rodillas.) */
+  lanzarCadaver(direccion, arma, juego) {
+    const F = arma && arma.explosivo ? 2.6 : ({ pistola: 1, metralleta: 0.9, rifle: 1.6, escopeta: 1.9, ametralladora: 1.4, laser: 1.3, cuerpo: 1.1 })[arma && arma.categoria] || 1.2;
+    const peso = this.jefe ? 0.35 : this.corredor ? 1.15 : 1, d = direccion || -this.direccion;
+    this.muerte = { d, vx: d * (1.0 + Math.random() * 0.8) * F * peso, vy: -(2.0 + Math.random() * 1.2) * (0.55 + 0.45 * F) * Math.sqrt(peso), altura: 0, giro: 0,
+      vgiro: d * (0.05 + 0.025 * F) * (F > 2 ? 2.2 : 1), vueltas: F > 2 && !this.jefe, botes: 0, chorro: 0.15, quieto: false };
+    this.bocaAbierta = 1;
+  }
+  moverCadaver(dt, juego) {
+    this.tiempoMuerto += dt;
+    const M = this.muerte, paso = dt * 60, e = this.escala;
+    this.fase += dt * 22 * (this.pataleo || 0);
+    if (!M.quieto) {
+      M.vy += 0.4 * paso; M.altura -= M.vy * paso;
+      const nx = this.x + M.vx * paso; if (alturaSuelo(nx) < SUELO_BASE + 100) this.x = nx; else M.vx = 0;
+      if (M.botes === 0) { M.giro += M.vgiro * paso; if (!M.vueltas && Math.abs(M.giro) > Math.PI / 2) M.giro = Math.sign(M.giro) * Math.PI / 2; }
+      if (M.altura <= 0) {
+        M.altura = 0;
+        if (M.vy > 1.2 && M.botes < 2) {   // pega contra el piso y rebota
+          const primero = M.botes === 0; M.vy = -M.vy * 0.28; M.vx *= 0.5; M.botes++;
+          Audio_.cuerpoAnimalCae(this.jefe ? 2 : 1.1, primero ? 1 : 0.5);
+          if (primero) {
+            juego.sacudida = Math.max(juego.sacudida, this.jefe ? 14 : 2.5);
+            juego.salpicar(this.x + M.d * 14 * e, this.y - 8 * e, this.colorSangre, 8, 3);
+            for (let k = 0; k < 8; k++) juego.particulas.push(new Particula(this.x + (Math.random() - 0.3) * 40 * e * M.d, this.y - 2, (Math.random() - 0.5) * 3.5, -Math.random() * 1.8, '#8a7e6a', 0.5 + Math.random() * 0.4, 3 + Math.random() * 4, true));
+          }
+        } else { M.botes = Math.max(M.botes, 1); M.vy = 0; M.vx *= Math.pow(0.78, paso); if (Math.abs(M.vx) < 0.08) M.quieto = true; }
+      }
+    }
+    if (M.botes > 0) { const meta = Math.round((M.giro - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2; M.giro += (meta - M.giro) * Math.min(1, dt * 9); }   // queda tendido
+    this.y = alturaSuelo(this.x);
+    const T = this.tiempoMuerto;
+    if (T < 1.6 && T >= M.chorro) {   // chorros de sangre mientras se retuerce
+      M.chorro = T + 0.2 + Math.random() * 0.15;
+      const lx = this.x + Math.sin(M.giro) * 22 * e, ly = this.y - M.altura - 10 * e;
+      for (let k = 0; k < 4; k++) juego.particulas.push(new Particula(lx + (Math.random() - 0.5) * 6, ly, (Math.random() - 0.5) * 2.2, -(2 + Math.random() * 2.6), k % 2 ? this.colorSangre : '#5a0606', 0.5 + Math.random() * 0.4, 2 + Math.random() * 2.5, true));
+    }
+  }
 
   dibujar(ctx, camaraX, ahora) {
     this.ahora = ahora;
@@ -198,6 +242,21 @@ class Zombie {
       if (this.vyCaida) { const cy = -36 * this.escala; ctx.translate(0, cy); ctx.rotate(-this.direccion * Math.min(0.35, this.vyCaida * 0.04)); ctx.translate(0, -cy); }   // cae hacia atrás
       this.cuerpo(ctx, golpeado);
     };
+    if (this.estado === 'muerto' && this.muerte) {
+      const T = this.tiempoMuerto, e = this.escala, M = this.muerte;
+      this.pataleo = T < 0.5 ? 1 : limitar(1 - (T - 0.6) / 1.5, 0, 1) * (0.25 + 0.75 * Math.abs(Math.sin(T * 7)));
+      this.ojosApagados = T > 1.0;
+      const yc0 = -34 * e, apoyo = -10 * e, k = Math.abs(Math.sin(M.giro));      // gira sobre la cadera; tendido, la cadera queda cerca del piso
+      ctx.save(); ctx.translate(sx, this.y);
+      ctx.globalAlpha = 1 - limitar((T - 3.3) / 1.7, 0, 1);
+      if (M.botes > 0) { const charco = limitar((T - 0.5) / 1.4, 0, 1); ctx.fillStyle = this.colorCharco; ctx.beginPath(); ctx.ellipse(M.d * 16 * e * k, 3, (6 + charco * 22) * e, (2 + charco * 5) * e, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.beginPath(); ctx.rect(-500, -600, 1000, 604); ctx.clip();
+      ctx.translate(0, -M.altura + yc0 + (apoyo - yc0) * k); ctx.rotate(M.giro); ctx.translate(0, -yc0);
+      this.recogido = 0.25 * this.pataleo;
+      this.cuerpo(ctx, false);
+      ctx.restore();
+      return;
+    }
     if (this.estado === 'muerto') {
       // Cae de rodillas, un segundo después se desploma boca abajo y se desvanece en los 3 s siguientes
       const T = this.tiempoMuerto, e = this.escala, d = this.direccion;
@@ -228,7 +287,8 @@ class Zombie {
     const C = this.colores, V = this.variante, R = this.recogido;
     const col = c => golpeado ? ajustarColor(c, 0.7) : c;                 // el impacto lo blanquea un instante
     const piel = col(this.piel), pielOscura = col(ajustarColor(this.piel, -0.3));
-    const camina = this.estado === 'camina', ataca = this.estado === 'ataca';
+    const agonia = this.estado === 'muerto' ? (this.pataleo || 0) : 0;     // muriendo: patalea y manotea
+    const camina = this.estado === 'camina' || agonia > 0.05, ataca = this.estado === 'ataca' || agonia > 0.4;
     const s = camina ? Math.sin(this.fase) : 0;
     const vaiven = Math.sin(this.fase * 0.5);
     const encorvado = (this.corredor ? 0.32 : 0.16) + Math.abs(s) * 0.04;
@@ -246,7 +306,7 @@ class Zombie {
 
     // Brazo de atrás
     const sinManga = est.torso === 'musculosa';
-    this.brazo(ctx, -2, -54, V.brazoColgando || this.dormido ? 'cuelga' : 'estira', 0.4 + vaiven * 0.12, ataca, sinManga ? null : col(ajustarColor(C.camiseta, -0.25)), col(ajustarColor(this.piel, -0.2)), golpeado);
+    this.brazo(ctx, -2, -54, V.brazoColgando || this.dormido || (this.estado === 'muerto' && agonia < 0.4) ? 'cuelga' : 'estira', 0.4 + vaiven * 0.12, ataca, sinManga ? null : col(ajustarColor(C.camiseta, -0.25)), col(ajustarColor(this.piel, -0.2)), golpeado);
 
     // Torso: camiseta azul con el borde de abajo deshilachado
     const hemY = -33;
@@ -298,7 +358,7 @@ class Zombie {
     ctx.restore();
 
     // Brazo de adelante: estirado hacia la presa
-    this.brazo(ctx, 7, -54, this.dormido ? 'cuelga' : 'estira', 0.25 - vaiven * 0.12, ataca, sinManga ? null : col(C.camiseta), piel, golpeado);
+    this.brazo(ctx, 7, -54, this.dormido || (this.estado === 'muerto' && agonia < 0.4) ? 'cuelga' : 'estira', 0.25 - vaiven * 0.12, ataca, sinManga ? null : col(C.camiseta), piel, golpeado);
     ctx.restore();
   }
 
@@ -611,8 +671,8 @@ class Zombie {
       pieza(ctx, poli([[-6, hy + 5], [-3.5, hy + 4.5], [-3, hy + 8], [-4.5, hy + 9], [-5, hy + 7.5], [-6.2, hy + 8]]), pielOscura, -6, -3);
       // Cuenca hundida y ojo que brilla (rojo cuando muerde)
       detalle(ctx, 'rgba(20, 30, 8, 0.75)', elipse(5, hy + 5.2, 2.8, 2.2));
-      const ojo = ataca ? '#ff3b2b' : '#f2e84a';
-      if (!golpeado) {
+      const ojo = this.ojosApagados ? '#3a3420' : ataca ? '#ff3b2b' : '#f2e84a';
+      if (!golpeado && !this.ojosApagados) {
         const brillo = ctx.createRadialGradient(5.4, hy + 5.2, 0, 5.4, hy + 5.2, 4);
         brillo.addColorStop(0, ataca ? 'rgba(255, 60, 40, 0.55)' : 'rgba(250, 240, 90, 0.45)'); brillo.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = brillo; ctx.fillRect(1, hy + 1, 9, 9);

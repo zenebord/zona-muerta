@@ -453,14 +453,14 @@ const Audio_ = (() => {
       variante('cuerpo_cae', 2, { vol: Math.min(0.9, 0.35 + 0.25 * tamaño) * fuerza, vel: Math.max(0.6, 1.15 - tamaño * 0.2), rev: 0.1 });
       golpe({ f: 140 / Math.sqrt(tamaño), dur: 0.1 + 0.05 * tamaño, vol: Math.min(0.5, 0.18 * tamaño) * fuerza });
     },
-    zombieMuere() {
+    // conCaida: false cuando el cuerpo sale despedido y el golpe contra el piso suena recién al caer
+    zombieMuere(conCaida = true) {
       asegurar();
       if (variante('zombie_muerte', 4, { vol: 0.85, vel: 0.9 + Math.random() * 0.15, rev: 0.2 })) {
-        variante('cuerpo_cae', 2, { vol: 0.55, retraso: 0.32, rev: 0.1 });
-        golpe({ f: 95, dur: 0.12, vol: 0.28, retraso: 0.34 });                       // el peso del cuerpo contra el piso
+        if (conCaida) { variante('cuerpo_cae', 2, { vol: 0.55, retraso: 0.32, rev: 0.1 }); golpe({ f: 95, dur: 0.12, vol: 0.28, retraso: 0.34 }); }   // el peso del cuerpo contra el piso
         return;
       }
-      this.gemidoSintetico(true); golpe({ f: 110, dur: 0.12, vol: 0.3, retraso: 0.35 });
+      this.gemidoSintetico(true); if (conCaida) golpe({ f: 110, dur: 0.12, vol: 0.3, retraso: 0.35 });
     },
     zombieGolpea() {
       asegurar();

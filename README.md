@@ -303,6 +303,13 @@ de las montañas, y vuelven a aparecer a los 90 segundos.
 
 ## Gráficos y sonido
 
+**Muerte de los zombies.** El golpe los despide de espaldas según el arma: con pistola o metralleta trastabillan
+y caen; con escopeta, rifle o ametralladora vuelan hacia atrás; con un explosivo salen por el aire dando vueltas.
+Pegan contra el piso y rebotan (con el golpe del cuerpo, polvo y sangre), quedan tendidos pataleando y manoteando
+con espasmos mientras echan chorros de sangre, se les apagan los ojos, los brazos caen flojos y se desvanecen en
+su charco a los 5 s. Los jefes pesan y vuelan menos, y su caída hace temblar la pantalla. El zombie tóxico de la
+cloaca conserva su caída de rodillas.
+
 Si el juego deja de verse (pestaña o app en segundo plano, celular bloqueado, página cerrada o el marco del
 artefacto escondido), el audio se suspende y la partida se pausa. Lo último no avisa con `visibilitychange`:
 `js/audio.js` vigila además que la página siga pintando cuadros y, si se frena más de 0,7 s, silencia todo.
