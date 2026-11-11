@@ -10,14 +10,18 @@
   function mostrar(id) { pantallas.forEach(p => p.classList.toggle('visible', p.id === id)); }
 
   // El lienzo se dibuja a la resolución real de la pantalla (hasta 2× de 960×540) para que los bordes salgan nítidos
+  // Calidad gráfica efectiva: con «auto» arranca en alta y medirRendimiento la baja un escalón si hace falta
+  let calidadAuto = Config.get('calidadAutoNivel') || 'alta';   // lo que midió la última vez en esta computadora
+  const calidadEfectiva = () => { const c = Config.get('calidad'); return c === 'auto' ? calidadAuto : c; };
   function ajustarResolucion(forzar = false) {
     const proporcion = Math.min(21 / 9, Math.max(16 / 9, window.innerWidth / Math.max(1, window.innerHeight)));
     const ancho = Math.round(ALTO * proporcion / 2) * 2;
     if (ancho !== ANCHO) { try { ANCHO = ancho; forzar = true; } catch { /* terreno.js viejo en caché: queda en 16:9 */ } }
     document.documentElement.style.setProperty('--proporcion', String(ANCHO / ALTO));
     const anchoCss = Math.min(window.innerWidth, window.innerHeight * ANCHO / ALTO);
-    const tope = Config.get('calidad') === 'normal' ? 1 : 2;   // calidad normal: sin alta resolución
-    const escala = Math.max(1, Math.min(tope, anchoCss * (window.devicePixelRatio || 1) / ANCHO));
+    const q = calidadEfectiva(), tope = q === 'normal' ? 1 : 2;   // normal: sin alta resolución
+    const escala = q === 'baja' ? 0.75 : Math.max(1, Math.min(tope, anchoCss * (window.devicePixelRatio || 1) / ANCHO));   // baja: menos píxeles que la pantalla
+    Lienzo.liviano = q === 'baja';                                  // baja: además, sin el bisel de las piezas
     if (!forzar && Math.abs(escala - Lienzo.escala) < 0.01 && lienzo.width === Math.round(ANCHO * escala)) return;
     Lienzo.escala = escala;
     lienzo.width = Math.round(ANCHO * escala); lienzo.height = Math.round(ALTO * escala);
@@ -66,8 +70,25 @@
     cuadro = requestAnimationFrame(bucle);
   }
 
+  /* Rendimiento: con la calidad en «auto», si en 3 s de juego el cuadro promedio tarda más de 24 ms (menos de unos
+   * 42 por segundo) baja un escalón (alta → normal → baja) y avisa. Los cuadros de más de 200 ms (pestaña dormida,
+   * pausa del navegador) no cuentan. */
+  const medida = { suma: 0, n: 0 };
+  function medirRendimiento(ms) {
+    if (Config.get('calidad') !== 'auto' || calidadAuto === 'baja' || ms > 200) return;
+    medida.suma += ms; medida.n++;
+    if (medida.suma < 3000) return;
+    const promedio = medida.suma / medida.n; medida.suma = medida.n = 0;
+    if (promedio <= 24) return;
+    calidadAuto = calidadAuto === 'alta' ? 'normal' : 'baja'; Config.set('calidadAutoNivel', calidadAuto);
+    ajustarResolucion(true);
+    if (juego) juego.aviso(t(calidadAuto === 'baja' ? 'aviso.calidadBaja' : 'aviso.calidadNormal'), 3500);
+  }
+  window.ZonaMuertaRendimiento = () => ({ calidad: calidadEfectiva(), escala: Lienzo.escala, liviano: !!Lienzo.liviano });
+
   function bucle(t) {
     const dt = Math.min(0.05, (t - ultimo) / 1000);   // tope: si la pestaña se durmió, no saltar en el tiempo
+    if (!pausado && juego && !juego.terminado) medirRendimiento(t - ultimo);
     ultimo = t;
     if (!pausado && juego) {
       juego.actualizar(dt);
@@ -364,6 +385,7 @@
       case 'config-restablecer': Config.restablecer(); sincronizarConfig(); break;
       case 'config-probar': Audio_.disparo('pistola', 'glock'); break;
       case 'config-completa': alternarPantallaCompleta(); break;
+      case 'descargar-juego': descargarJuego(boton); break;
       case 'asist-abrir': Asistente.abrir(capaConfig); break;   // asistente de construcción (temporal)
       case 'asist-volver': Asistente.cerrar(); break;
     }
@@ -519,6 +541,42 @@
     else Config.set(que, v);
     sincronizarConfig();
   });
+  /* Juego descargable: un solo .html con el CSS y todos los scripts adentro (sonidos incluidos, unos 5 MB), para abrirlo
+   * con el navegador sin pasar por la página de Claude. Se arma con la página tal como llegó (HTML_PAGINA) y los
+   * mismos archivos que cargó; en el artefacto se guarda con la capacidad «downloads», fuera de él con un enlace. */
+  async function armarJuegoSuelto() {
+    // HTML_PAGINA se tomó al cargar config.js: los scripts que venían después todavía no estaban. Se completan con los
+    // que cargó la página, en el mismo orden.
+    let html = HTML_PAGINA;
+    const marca = '<script src="js/config.js"></script>', corte = html.indexOf(marca);
+    if (corte < 0) throw new Error('sin marca');
+    const todos = [...document.scripts].map(s => s.getAttribute('src')).filter(s => s && /^js\//.test(s));
+    const despues = todos.slice(todos.indexOf('js/config.js') + 1).map(s => `<script src="${s}"></script>`).join('\n');
+    html = html.slice(0, corte + marca.length) + '\n' + despues + '\n' + html.slice(html.indexOf('</body>', corte));
+    const css = html.match(/<link rel="stylesheet" href="(css\/[^"]+)">/);
+    if (css) { const txt = await (await fetch(css[1])).text(); html = html.replace(css[0], () => '<style>\n' + txt + '\n</style>'); }
+    for (const [etiqueta, src] of [...html.matchAll(/<script src="(js\/[^"]+)"><\/script>/g)]) {
+      const r = await fetch(src); if (!r.ok) throw new Error(src);
+      const txt = (await r.text()).replace(/<\/script/gi, '<\\/script');
+      html = html.replace(etiqueta, () => '<script>\n' + txt + '\n</script>');
+    }
+    return '<!doctype html>\n' + html;
+  }
+  async function descargarJuego(boton) {
+    const nota = document.getElementById('nota-descarga'), poner = clave => { if (nota) nota.textContent = t(clave); };
+    if (!document.querySelector('script[src^="js/"]')) { poner('config.yaDescargado'); return; }   // ya es el archivo descargado
+    boton.disabled = true; poner('config.descargando');
+    try {
+      const html = await armarJuegoSuelto(), nombre = 'zona-muerta.html';
+      const descargas = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads').catch(() => null) : null;
+      const enlace = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
+      if (descargas) { try { await descargas.save({ filename: nombre, data: html }); } catch { enlace(); } }   // si el visor no lo deja, por enlace
+      else enlace();
+      poner('config.descargado');
+    } catch { poner('config.descargaError'); }
+    boton.disabled = false;
+  }
+
   function alternarPantallaCompleta() {
     try {
       if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
@@ -529,7 +587,7 @@
   const aplicarSonido = () => Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
   Config.alCambiar(clave => {
     if (['general', 'efectos', 'musica', 'silencio'].includes(clave)) aplicarSonido();
-    if (clave === 'calidad') ajustarResolucion(true);
+    if (clave === 'calidad') { if (Config.get('calidad') === 'auto') { calidadAuto = 'alta'; Config.set('calidadAutoNivel', 'alta'); } ajustarResolucion(true); }   // elegir «auto» vuelve a medir desde alta
   });
   aplicarSonido();
   // Cambio de idioma: textos fijos (Idioma.aplicar) y los que arma la interfaz

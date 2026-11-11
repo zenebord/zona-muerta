@@ -305,6 +305,13 @@ de las montañas, y vuelven a aparecer a los 90 segundos.
 
 ## Gráficos y sonido
 
+**Calidad gráfica y juego descargable.** La calidad viene en «Automático»: arranca en alta (hasta 2× de
+resolución) y, si en 3 s de partida el cuadro promedio tarda más de 24 ms (menos de unos 42 por segundo), baja un
+escalón (normal: 1×; baja: 0,75× y sin el bisel de las piezas) y avisa; recuerda lo medido en cada computadora.
+También se puede fijar a mano. En Configuración, «Descargar el juego» arma un solo `zona-muerta.html` (unos
+4,6 MB, con el CSS, los 36 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
+Claude; su progreso y su configuración se guardan aparte.
+
 **Muerte de los zombies.** El golpe los despide de espaldas según el arma: con pistola o metralleta trastabillan
 y caen; con escopeta, rifle o ametralladora vuelan hacia atrás; con un explosivo salen por el aire dando vueltas.
 Pegan contra el piso y rebotan (con el golpe del cuerpo, polvo y sangre), quedan tendidos pataleando y manoteando

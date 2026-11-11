@@ -379,9 +379,9 @@ Object.assign(Juego.prototype, {
     for (const z of this.zombies) cosas.push([z.y, () => z.dibujar(ctx, cam, this.ahora)]);
     cosas.push([j.y + 0.1, () => j.dibujar(ctx, cam, this.ahora)]);
     cosas.sort((a, b) => a[0] - b[0]);
-    Pincel.bisel = this.zombies.length <= 25;
+    Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;
     for (const [, dibujar] of cosas) dibujar();
-    Pincel.bisel = true;
+    Pincel.bisel = !Lienzo.liviano;
   },
   hudUltra() {
     const h = this.hud, tactil = document.body.classList.contains('tactil');

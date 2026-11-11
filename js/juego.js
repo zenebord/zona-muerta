@@ -691,9 +691,9 @@ class Juego {
     else {
       for (const c of this.cajas) c.dibujar(ctx, cam);
       for (const c of this.charcos) c.dibujar(ctx, cam, this.tiempoJugado);
-      Pincel.bisel = this.zombies.length <= 25;   // con hordas grandes se aliviana el dibujo de los zombies
+      Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con hordas grandes (o calidad baja) se aliviana el dibujo de los zombies
       for (const z of this.zombies) z.dibujar(ctx, cam, this.ahora);
-      Pincel.bisel = true;
+      Pincel.bisel = !Lienzo.liviano;
       if (!j.montada) j.dibujar(ctx, cam, this.ahora);
     }
     for (const p of this.proyectiles) p.dibujar(ctx, cam);

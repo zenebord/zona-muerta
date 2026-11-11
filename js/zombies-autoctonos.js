@@ -337,8 +337,10 @@ const AUTOCTONOS = {
  *   bombo      levanta el mazo y golpea el bombo: una onda corre por el piso (saltar la esquiva)
  *   salto      se agazapa, salta hacia el jugador y cae con una onda expansiva */
 const JEFES = {
-  avion:  { animal: 'sanbernardo', escala: 3.1, vida: 22, vel: 1.15, ataque: 'embestida' },
-  ruta:   { animal: 'toro', escala: 2.0, vida: 30, vel: 0.95, ataque: 'embestida' },
+  // Los que embisten (hay que saltarlos por encima): 15 % más chicos y 30 % más rápidos que al principio, así pasan
+  // por debajo del salto en menos tiempo
+  avion:  { animal: 'sanbernardo', escala: 2.64, vida: 22, vel: 1.5, ataque: 'embestida' },
+  ruta:   { animal: 'toro', escala: 1.7, vida: 30, vel: 1.24, ataque: 'embestida' },
   ciudad: { estilo: () => ({ ...varianteHincha(), id: 'hincha-jefe', bombo: true, escala: [2.25, 2.25] }), vida: 40, vel: 0.8, ataque: 'bombo', brazos: 1.4, piernas: 1.2 },
   barrio: { estilo: () => ({ id: 'coloso', torso: 'desnudo', camiseta: '#4fae2e', piernas: 'short', pantalon: '#363a5e', accesorio: 'pelo-revuelto', escala: [2.5, 2.5] }), piel: '#4fae2e', vida: 55, vel: 1.05, ataque: 'salto', brazos: 2.0, piernas: 1.6 },
 };
@@ -407,7 +409,9 @@ function actualizarJefe(z, dt, j, juego) {
       else if (t2 < 2100 && !A.fin) {
         z.estado = 'embiste'; z.fase += dt * 18;
         if (!moverJefe(z, A.dir * z.velocidad * 4.4 * paso, juego)) A.fin = true;
-        if (!A.pego && !j.muerto && Math.abs(j.x - z.x) < alcance + 10 && j.y > z.y - 60 * z.escala * 0.5 && j.y - z.y > -55) {
+        // Pega con la cabeza (cuernos u hocico): una vez que el salto pasó por encima de la cabeza, el lomo ya no lastima
+        const delante = (j.x - z.x) * A.dir;
+        if (!A.pego && !j.muerto && delante > -alcance * 0.15 && delante < alcance + 10 && j.y - z.y > -55) {
           A.pego = true; j.recibirDano(Math.round(z.mordida * 2), juego); j.x += A.dir * 70; juego.sacudida = 12; Audio_.zombieGolpea();
         }
         if (Math.sign(j.x - z.x) !== A.dir && Math.abs(j.x - z.x) > 140) A.fin = true;   // ya lo pasó de largo

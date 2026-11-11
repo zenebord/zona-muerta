@@ -316,10 +316,16 @@
         <h3 data-t="config.pantalla">PANTALLA Y CONTROLES</h3>
         <div class="fila-opcion"><span data-t="config.calidad">Calidad gráfica</span>
           <div class="segmentos" data-config-opciones="calidad">
+            <button type="button" data-valor="auto" data-t="config.auto">Automático</button>
             <button type="button" data-valor="alta" data-t="config.alta">Alta</button>
             <button type="button" data-valor="normal" data-t="config.normal">Normal</button>
+            <button type="button" data-valor="baja" data-t="config.baja">Baja</button>
           </div>
         </div>
+        <div class="fila-opcion"><span data-t="config.descargarTitulo">Jugar sin Claude</span>
+          <button type="button" class="boton mini" data-accion="descargar-juego" data-t="config.descargar">Descargar el juego</button>
+        </div>
+        <p class="nota" id="nota-descarga" data-t="config.descargarNota">Un solo archivo de unos 5 MB que se abre con el navegador: va más fluido. Lo que guardes ahí (progreso, configuración) queda aparte.</p>
         <div class="fila-opcion"><span data-t="config.tactil">Botones en pantalla</span>
           <div class="segmentos" data-config-opciones="tactil">
             <button type="button" data-valor="auto" data-t="config.auto">Automático</button>
