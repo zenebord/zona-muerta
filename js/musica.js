@@ -355,7 +355,17 @@ const Musica = (() => {
       [4, 0, 72, 4], [4, 4, 76, 4], [4, 8, 79, 8], [5, 0, 79, 4], [5, 4, 77, 4], [5, 8, 74, 8],
       [6, 0, 77, 4], [6, 4, 76, 4], [6, 8, 74, 4], [6, 12, 71, 4], [7, 0, 72, 16],
     ] });
-  const TEMAS = { ciudad: CIUDAD, cloaca: CLOACA, retro: RETRO, retroAccion: RETRO_ACCION, retroFinal: RETRO_FINAL };
+  // «Nivel superado»: fanfarria en do mayor que arranca subiendo el acorde y sigue alegre
+  const RETRO_VICTORIA = temaChip({ bpm: 132, arpegio: 1, bajo: 'pulso', bateria: 0, volMelodia: 0.05,
+    acordes: [C_, C_, F, G, C_, Am, F, G],
+    melodia: [
+      [0, 0, 72, 2], [0, 2, 76, 2], [0, 4, 79, 2], [0, 6, 84, 4], [0, 10, 79, 2], [0, 12, 84, 4],
+      [1, 0, 88, 8], [1, 8, 86, 4], [1, 12, 84, 4],
+      [2, 0, 81, 4], [2, 4, 84, 4], [2, 8, 89, 6], [2, 14, 88, 2], [3, 0, 86, 4], [3, 4, 83, 4], [3, 8, 79, 8],
+      [4, 0, 76, 2], [4, 2, 79, 2], [4, 4, 84, 4], [4, 8, 83, 2], [4, 10, 84, 2], [4, 12, 86, 4], [5, 0, 88, 6], [5, 6, 84, 2], [5, 8, 81, 8],
+      [6, 0, 77, 4], [6, 4, 81, 4], [6, 8, 84, 4], [6, 12, 86, 4], [7, 0, 88, 4], [7, 4, 86, 4], [7, 8, 84, 8],
+    ] });
+  const TEMAS = { ciudad: CIUDAD, cloaca: CLOACA, retro: RETRO, retroAccion: RETRO_ACCION, retroFinal: RETRO_FINAL, retroVictoria: RETRO_VICTORIA };
 
   /* ---------- Programador ---------- */
   function tic() {

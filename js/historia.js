@@ -89,6 +89,9 @@ function perfilTerreno(tramos, x0) {
 
 // Textos del modo historia en los tres idiomas (se suman a los de idioma.js)
 Object.assign(TEXTOS.es, {
+  'hist.dato.nivel': 'Zombies del nivel', 'hist.dato.total': 'Zombies en total', 'hist.dato.tiempoNivel': 'Tiempo del nivel', 'hist.dato.tiempoTotal': 'Tiempo total',
+  'hist.dato.km': 'Kilómetros recorridos', 'hist.dato.caidas': 'Caídas', 'hist.dato.disparos': 'Disparos', 'hist.dato.aereos': 'Ataques aéreos', 'hist.dato.encontradas': 'Armas encontradas',
+  'hist.calificacion': 'CALIFICACIÓN',
   'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
   'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
@@ -126,6 +129,9 @@ Object.assign(TEXTOS.es, {
   'hist.muerto': 'CAÍSTE EN EL CAMINO', 'hist.muertoDetalle': v => `Nivel ${v.n}: ${v.nombre}. Quedaban ${v.km} km para llegar a casa. Eliminaste ${v.bajas} zombies. Puedes reintentar el nivel con las armas que tenías al empezarlo.`,
 });
 Object.assign(TEXTOS.pt, {
+  'hist.dato.nivel': 'Zumbis do nível', 'hist.dato.total': 'Zumbis no total', 'hist.dato.tiempoNivel': 'Tempo do nível', 'hist.dato.tiempoTotal': 'Tempo total',
+  'hist.dato.km': 'Quilômetros percorridos', 'hist.dato.caidas': 'Quedas', 'hist.dato.disparos': 'Disparos', 'hist.dato.aereos': 'Ataques aéreos', 'hist.dato.encontradas': 'Armas encontradas',
+  'hist.calificacion': 'AVALIAÇÃO',
   'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
   'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
@@ -163,6 +169,9 @@ Object.assign(TEXTOS.pt, {
   'hist.muerto': 'VOCÊ CAIU NO CAMINHO', 'hist.muertoDetalle': v => `Nível ${v.n}: ${v.nombre}. Faltavam ${v.km} km para chegar em casa. Você eliminou ${v.bajas} zumbis. Pode repetir o nível com as armas que tinha ao começar.`,
 });
 Object.assign(TEXTOS.en, {
+  'hist.dato.nivel': 'Zombies this level', 'hist.dato.total': 'Zombies in total', 'hist.dato.tiempoNivel': 'Level time', 'hist.dato.tiempoTotal': 'Total time',
+  'hist.dato.km': 'Kilometers covered', 'hist.dato.caidas': 'Falls', 'hist.dato.disparos': 'Shots', 'hist.dato.aereos': 'Air strikes', 'hist.dato.encontradas': 'Weapons found',
+  'hist.calificacion': 'RATING',
   'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
   'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
   'menu.historia': 'STORY: THE WAY HOME',
@@ -248,7 +257,7 @@ class RecogibleHistoria {
 Object.assign(Juego.prototype, {
   prepararHistoria(op) {
     const n = op.nivel, def = NIVELES_HISTORIA[n - 1], j = this.jugador;
-    this.historia = { n, def, inicio: INICIO_HISTORIA, meta: INICIO_HISTORIA + def.largo, corazones: 0, radios: 0, aereos: 0, armas: [], bajasTotal: (op.estado && op.estado.bajasTotal) || 0, tiempoTotal: (op.estado && op.estado.tiempoTotal) || 0 };
+    this.historia = { n, def, inicio: INICIO_HISTORIA, meta: INICIO_HISTORIA + def.largo, corazones: 0, radios: 0, aereos: 0, armas: [], caidas: 0, disparos: 0, bajasTotal: (op.estado && op.estado.bajasTotal) || 0, tiempoTotal: (op.estado && op.estado.tiempoTotal) || 0 };
     Mundo.plano = true; Mundo.carriles = false; Mundo.interior = false;
     Mundo.perfil = def.terreno ? perfilTerreno(def.terreno, INICIO_HISTORIA) : null;
     j.aTierra = true;                                       // el ataque aéreo lo pasa cuerpo a tierra
@@ -352,7 +361,7 @@ Object.assign(Juego.prototype, {
     const firme = x => alturaSuelo(x) < SUELO_BASE + 60;
     if (j.enSuelo && !j.trepa && !j.soga && firme(j.x) && firme(j.x - 50) && firme(j.x + 50)) H.seguro = { x: j.x, y: j.y };
     if (j.y > SUELO_BASE + 150) {   // cayó al vacío
-      j.vida = Math.max(0, j.vida - 25); Audio_.jugadorHerido();
+      j.vida = Math.max(0, j.vida - 25); Audio_.jugadorHerido(); H.caidas++;
       if (j.vida <= 0) { j.muerto = true; Audio_.jugadorMuere(); return; }
       j.x = H.seguro.x; j.y = H.seguro.y; j.vy = 0; j.impulso = 0; j.enSuelo = true; j.invulnerableHasta = this.ahora + 1500;
       this.aviso(t('hist.aviso.caida'), 1600); this.sacudida = 8;
@@ -555,13 +564,22 @@ const Historia = (() => {
   function mostrarPaso() {
     const p = pasos[indice];
     // Música de 8 bits: «Camino a casa» en las viñetas y «Estás en casa» en el final
-    const tema = p.escena === 'final' ? 'retroFinal' : 'retro';
+    const tema = p.escena === 'final' ? 'retroFinal' : p.victoria ? 'retroVictoria' : 'retro';   // nivel superado: fanfarria
     if (tema !== musica) { Audio_.activar(); Musica.tocar(tema); musica = tema; }
     inicioEscena = performance.now(); letras = 0; textoActual = p.texto || '';
     $('historia-titulo').textContent = p.titulo || '';
     $('historia-texto').textContent = '';
-    $('historia-datos').innerHTML = p.datos ? p.datos.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('') : '';
+    $('historia-datos').innerHTML = p.datos ? p.datos.map(([k, v]) => `<div><dt>${k}</dt><dd${typeof v === 'number' ? ` data-num="${v}">0` : `>${v}`}</dd></div>`).join('') : '';
     $('historia-datos').classList.toggle('oculta', !p.datos);
+    $('historia-datos').classList.toggle('grande', !!p.victoria);
+    // Los números suben contando y las estrellas aparecen de a una
+    const numeros = [...$('historia-datos').querySelectorAll('[data-num]')], t0 = performance.now();
+    const contar = ahora => { const f = Math.min(1, (ahora - t0) / 1400); for (const el of numeros) el.textContent = Math.round(+el.dataset.num * (1 - Math.pow(1 - f, 3))); if (f < 1 && activa) requestAnimationFrame(contar); };
+    if (numeros.length) requestAnimationFrame(contar);
+    const caja = $('historia-estrellas');
+    caja.innerHTML = p.estrellas ? `<span class="rotulo">${t('hist.calificacion')}</span>` + [1, 2, 3].map(k => `<span class="estrella" data-k="${k}">★</span>`).join('') : '';
+    caja.classList.toggle('oculta', !p.estrellas);
+    if (p.estrellas) [1, 2, 3].forEach(k => setTimeout(() => { const el = caja.querySelector(`[data-k="${k}"]`); if (!el || !activa) return; el.classList.add(k <= p.estrellas ? 'ganada' : 'vacia'); if (k <= p.estrellas) Audio_.recoger(); }, 1500 + k * 380));
     const botones = p.botones || [[t(indice === pasos.length - 1 ? 'hist.boton.jugar' : 'hist.boton.seguir'), 'seguir']];
     $('historia-botones').innerHTML = botones.map(([txt, acc], i) => `<button class="boton chico${i === 0 ? ' principal' : ''}" type="button" data-hist="${acc}">${txt}</button>`).join('') +
       (p.sinSaltar ? '' : `<button class="boton chico tenue" type="button" data-hist="saltar">${t('hist.boton.saltar')}</button>`);
@@ -615,9 +633,13 @@ const Historia = (() => {
     const H = juego.historia, n = H.n, d = H.def, j = juego.jugador, estado = juego.estadoHistoria();
     const armas = H.armas.map(id => ARMAS[id].nombre).join(', ');
     const texto = t('hist.resumen', { que: t('hist.que' + n), km: d.kmDesde - d.kmHasta, tiempo: formatearTiempo(juego.tiempoJugado), bajas: juego.bajas, corazones: H.corazones, aereos: H.aereos, armas });
-    const datos = [[t('hist.dato.bajas'), juego.bajas], [t('hist.dato.tiempo'), formatearTiempo(juego.tiempoJugado)], [t('hist.dato.vida'), Math.ceil(j.vida)],
-      [t('hist.dato.armas'), j.inventario.length], [t('hist.dato.corazones'), H.corazones], [t('hist.dato.radios'), H.radios]];
-    const resumen = { escena: 'mapa', n: Math.min(5, n + 1), titulo: t('hist.superado', { n }) + ' · ' + t('hist.nivel' + n), texto, datos };
+    const datos = [[t('hist.dato.nivel'), juego.bajas], [t('hist.dato.total'), estado.bajasTotal], [t('hist.dato.km'), d.kmDesde - d.kmHasta],
+      [t('hist.dato.tiempoNivel'), formatearTiempo(juego.tiempoJugado)], [t('hist.dato.tiempoTotal'), formatearTiempo(estado.tiempoTotal)], [t('hist.dato.vida'), Math.ceil(j.vida)],
+      [t('hist.dato.corazones'), H.corazones], [t('hist.dato.radios'), H.radios], [t('hist.dato.aereos'), H.aereos],
+      [t('hist.dato.caidas'), H.caidas], [t('hist.dato.disparos'), H.disparos], [t('hist.dato.encontradas'), H.armas.length]];
+    // Calificación: 3 estrellas con mucha vida y sin caídas; 1 si llegó a duras penas
+    const estrellas = j.vida >= 60 && H.caidas === 0 ? 3 : j.vida >= 30 && H.caidas <= 1 ? 2 : 1;
+    const resumen = { escena: 'mapa', n: Math.min(5, n + 1), titulo: t('hist.superado', { n }) + ' · ' + t('hist.nivel' + n), texto, datos, estrellas, victoria: true };
     if (n < 4) {
       guardar(n + 1);
       const sig = NIVELES_HISTORIA[n];

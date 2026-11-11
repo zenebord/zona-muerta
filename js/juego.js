@@ -149,6 +149,7 @@ class Juego {
 
   /* ---------- Armas ---------- */
   dispararArma(arma, x, y, direccion, casquillo) {
+    if (this.historia) this.historia.disparos++;
     const v = arma.velocidad;
     const antes = this.proyectiles.length;
     this.disparoId = (this.disparoId || 0) + 1;

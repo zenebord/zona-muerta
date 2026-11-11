@@ -689,3 +689,12 @@ kbd {
 .historia-botones .boton.tenue { opacity: .6; }
 .historia-pista { margin: 0; font: 11px monospace; opacity: .45; }
 @media (max-height: 480px) { .historia-caja { gap: 6px; } .historia-datos { font-size: 11px; } #historia-texto { min-height: 2.6em; } .historia-pista { display: none; } }
+/* Resumen de nivel superado: datos grandes y estrellas que aparecen de a una */
+.historia-datos.grande { grid-template-columns: repeat(3, 1fr); gap: 6px 18px; font-size: clamp(12px, 1.9vh, 15px); }
+.historia-datos.grande dd { font-size: clamp(15px, 2.6vh, 21px); }
+.historia-estrellas { display: flex; align-items: center; gap: 10px; font-family: monospace; }
+.historia-estrellas .rotulo { font-size: 13px; letter-spacing: .2em; color: #b9ad98; margin-right: 6px; }
+.historia-estrellas .estrella { font-size: clamp(26px, 5vh, 40px); color: #3a3428; transform: scale(.4); opacity: 0; transition: transform .3s cubic-bezier(.3, 1.8, .5, 1), opacity .2s, color .2s; }
+.historia-estrellas .estrella.ganada { color: #ffd27a; text-shadow: 0 0 12px rgba(255, 200, 90, .7); transform: scale(1); opacity: 1; }
+.historia-estrellas .estrella.vacia { transform: scale(.9); opacity: .5; }
+@media (max-width: 700px), (max-height: 480px) { .historia-datos.grande { grid-template-columns: repeat(2, 1fr); } }
