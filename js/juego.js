@@ -550,8 +550,15 @@ class Juego {
       if (Math.abs(c.x - j.x) > 2600 && !c.especial) c.vivo = false;
     }
 
-    // Un zombie que se quedó lejísimos se trae de vuelta cerca para que la ronda no se trabe
-    for (const z of this.zombies) if (z.estado !== 'muerto' && !z.maniqui && Math.abs(z.x - j.x) > 2600) z.x = j.x + Math.sign(z.x - j.x) * (ANCHO / 2 + 150);
+    // Zombies que el jugador dejó atrás (fuera de pantalla, del lado contrario a donde avanza): desaparecen y
+    // reaparecen adelante, así no hay que volver a buscarlos. El que quedó lejísimos de cualquier lado, también.
+    if (Math.abs(j.vx) > 0.5) this.avance = Math.sign(j.vx);
+    const avance = this.avance || j.direccion;
+    if (!this.torreta && !this.ultra) for (const z of this.zombies) {
+      if (z.estado === 'muerto' || z.maniqui) continue;
+      const dx = z.x - j.x, atras = Math.sign(dx) === -avance && Math.abs(dx) > ANCHO / 2 + 160;
+      if (atras || Math.abs(dx) > 2600) { z.x = j.x + avance * (ANCHO / 2 + 80 + Math.random() * 220); z.y = alturaSuelo(z.x); }
+    }
     this.zombies = this.zombies.filter(z => !z.terminado());
     this.proyectiles = this.proyectiles.filter(p => p.vivo);
     this.explosiones = this.explosiones.filter(x => x.vivo);

@@ -40,6 +40,9 @@ function elegirVariante(corredor) {
 }
 const variarColor = c => ajustarColor(c, (Math.random() - 0.5) * 0.18);
 
+// Muerte: segundos hasta quedar de rodillas, hasta desplomarse, lo que tarda en caer y cuándo termina de desvanecerse
+const MUERTE = { rodillas: 0.35, desploma: 1.0, caida: 0.45, fin: 4.45 };
+
 class Zombie {
   constructor(x, corredor, dificultad) {
     this.x = x; this.y = alturaSuelo(x);
@@ -139,7 +142,7 @@ class Zombie {
 
   // Caja de impacto: el cuerpo más los brazos estirados hacia donde mira
   caja() { const w = this.ancho + 8 * this.escala; return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - this.alto - 4, w, h: this.alto + 4 }; }
-  terminado() { return this.estado === 'muerto' && this.tiempoMuerto > 1.6; }
+  terminado() { return this.estado === 'muerto' && this.tiempoMuerto > MUERTE.fin; }
 
   dibujar(ctx, camaraX, ahora) {
     this.ahora = ahora;
@@ -150,17 +153,22 @@ class Zombie {
       this.cuerpo(ctx, golpeado);
     };
     if (this.estado === 'muerto') {
-      const t = Math.min(1, this.tiempoMuerto / 0.45);
-      const desvanece = 1 - Math.max(0, (this.tiempoMuerto - 1.1) / 0.5);
+      // Cae de rodillas, un segundo después se desploma boca abajo y se desvanece en los 3 s siguientes
+      const T = this.tiempoMuerto, e = this.escala, d = this.direccion;
+      const rodillas = suavizar(Math.min(1, T / MUERTE.rodillas));
+      const cae = suavizar(limitar((T - MUERTE.desploma) / MUERTE.caida, 0, 1));
+      const inicioFundido = MUERTE.desploma + MUERTE.caida;
       ctx.save();
       ctx.translate(sx, this.y);
-      ctx.globalAlpha = desvanece;
-      // Charco de sangre que se agranda debajo del cuerpo
-      const charco = Math.min(1, this.tiempoMuerto / 0.9);
-      ctx.fillStyle = this.colorCharco;
-      ctx.beginPath(); ctx.ellipse(-this.direccion * 18, 3, 6 + charco * 22, 2 + charco * 5, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.rotate(-this.direccion * t * Math.PI / 2);
-      ctx.translate(0, t * 6);
+      ctx.globalAlpha = 1 - limitar((T - inicioFundido) / (MUERTE.fin - inicioFundido), 0, 1);
+      // Charco de sangre que se agranda debajo del cuerpo caído
+      const charco = limitar((T - MUERTE.desploma) / 1.2, 0, 1);
+      if (charco > 0) { ctx.fillStyle = this.colorCharco; ctx.beginPath(); ctx.ellipse(d * 26 * e, 3, 6 + charco * 22, 2 + charco * 5, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.beginPath(); ctx.rect(-300, -400, 600, 403); ctx.clip();          // lo que queda debajo del piso no se ve
+      this.recogido = rodillas;                                                // piernas dobladas
+      ctx.translate(0, rodillas * 17 * e - cae * 13 * e);                       // baja hasta apoyar las rodillas
+      const ry = -16 * e;                                                      // gira sobre las rodillas, hacia adelante
+      ctx.translate(0, ry); ctx.rotate(d * (rodillas * 0.18 + cae * (Math.PI / 2 - 0.18))); ctx.translate(0, -ry);
       cuerpo();
       ctx.restore();
       return;

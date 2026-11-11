@@ -100,8 +100,10 @@ function chatarraDeTrozo(i) {
 }
 
 /* ===== Ambiente: periódicos volando, bolas de paja rodando y polvo =====
- * Viven cerca de la cámara; cuando se van lejos reaparecen del lado del viento.
+ * De vez en cuando entra uno del lado del viento: un periódico cada 50 s y una bola de paja cada 90 s.
+ * Cuando se van lejos de la cámara desaparecen. El polvo está siempre.
  */
+const CADA_PERIODICO = 50, CADA_BOLA = 90;   // segundos
 class Ambiente {
   constructor() {
     this.periodicos = [];
@@ -109,18 +111,18 @@ class Ambiente {
     this.polvo = [];
     this.tiempo = 0;
     this.viento = 1.4;
-    for (let k = 0; k < 7; k++) this.periodicos.push(this.nuevoPeriodico(0, true));
-    for (let k = 0; k < 2; k++) this.bolas.push(this.nuevaBola(0, true));
+    this.proximoPeriodico = CADA_PERIODICO;
+    this.proximaBola = CADA_BOLA;
     for (let k = 0; k < 40; k++) this.polvo.push({ x: Math.random() * ANCHO, y: Math.random() * ALTO, v: 0.3 + Math.random() * 0.8, t: Math.random() * 10 });
   }
 
   nuevoPeriodico(camaraX, enPantalla) {
-    const x = enPantalla ? camaraX + Math.random() * ANCHO : camaraX - 120 - Math.random() * 300;
+    const x = enPantalla ? camaraX + Math.random() * ANCHO : camaraX - 40 - Math.random() * 60;
     return { x, y: SUELO_BASE - 40 - Math.random() * 200, vx: 1 + Math.random() * 2, vy: 0, rot: Math.random() * 6.28, vrot: (Math.random() - 0.5) * 0.2, fase: Math.random() * 6.28, w: 16 + Math.random() * 10 };
   }
 
   nuevaBola(camaraX, enPantalla) {
-    const x = enPantalla ? camaraX + Math.random() * ANCHO : camaraX - 80 - Math.random() * 400;
+    const x = enPantalla ? camaraX + Math.random() * ANCHO : camaraX - 40 - Math.random() * 60;
     const radio = 14 + Math.random() * 12;
     return { x, y: alturaSuelo(x) - radio, vx: 1.5 + Math.random() * 1.5, vy: 0, rot: 0, radio };
   }
@@ -129,6 +131,8 @@ class Ambiente {
     this.tiempo += dt;
     this.viento = 1.4 + Math.sin(this.tiempo * 0.35) * 0.9 + Math.sin(this.tiempo * 1.7) * 0.3;
     const paso = dt * 60;
+    if ((this.proximoPeriodico -= dt) <= 0) { this.proximoPeriodico = CADA_PERIODICO; this.periodicos.push(this.nuevoPeriodico(camaraX, false)); }
+    if ((this.proximaBola -= dt) <= 0) { this.proximaBola = CADA_BOLA; this.bolas.push(this.nuevaBola(camaraX, false)); }
 
     for (let k = 0; k < this.periodicos.length; k++) {
       const p = this.periodicos[k];
@@ -141,8 +145,7 @@ class Ambiente {
       const piso = alturaSuelo(p.x) - 4;
       if (p.y > piso) { p.y = piso; p.vy = -Math.abs(p.vy) * 0.6 - 0.8; }
       if (p.y < 60) p.vy += 0.1;
-      if (p.x > camaraX + ANCHO + 200) this.periodicos[k] = this.nuevoPeriodico(camaraX, false);
-      if (p.x < camaraX - 600) this.periodicos[k] = this.nuevoPeriodico(camaraX, false);
+      if (p.x > camaraX + ANCHO + 200 || p.x < camaraX - 600) p.fuera = true;
     }
 
     for (let k = 0; k < this.bolas.length; k++) {
@@ -153,8 +156,10 @@ class Ambiente {
       b.rot += (b.vx + this.viento) / b.radio * paso;
       const piso = alturaSuelo(b.x) - b.radio;
       if (b.y >= piso) { b.y = piso; b.vy = Math.random() < 0.1 ? -4 - Math.random() * 3 : -Math.abs(b.vy) * 0.3; }
-      if (b.x > camaraX + ANCHO + 300 || b.x < camaraX - 800) this.bolas[k] = this.nuevaBola(camaraX, false);
+      if (b.x > camaraX + ANCHO + 300 || b.x < camaraX - 800) b.fuera = true;
     }
+    this.periodicos = this.periodicos.filter(p => !p.fuera);
+    this.bolas = this.bolas.filter(b => !b.fuera);
 
     for (const g of this.polvo) {
       g.x += (g.v + this.viento * 0.5) * paso;
