@@ -75,10 +75,31 @@ html, body {
 .boton.peligro { border-color: var(--sangre); }
 .boton.peligro:hover { background: var(--sangre); color: var(--texto); }
 
-.pie { position: absolute; bottom: 30px; opacity: .55; font-size: 13px; }
-.creditos { position: absolute; bottom: 8px; margin: 0; opacity: .7; font-size: 12px; letter-spacing: .06em; color: #c9a96e; }   /* créditos, abajo de todo en la portada */
-/* Pantalla baja (celular apaisado): el menú se desplaza y el pie y los créditos van al final, sin tapar botones */
-@media (max-height: 720px) { .pie, .creditos { position: static; flex-shrink: 0; } .pie { margin: 14px 0 4px; } .creditos { margin: 0 0 10px; } }
+.pie { opacity: .55; font-size: 13px; }
+.creditos { opacity: .7; font-size: 12px; letter-spacing: .06em; color: #c9a96e; }
+
+/* Portada: todo se achica con el alto de la ventana para entrar en una sola pantalla; si igual no entra, se
+   desplaza sin cortar el título. El pie y los créditos van en el flujo, debajo del último botón: nunca tapan nada. */
+#menu-principal { justify-content: safe center; overflow-y: auto; overflow-x: hidden; padding: clamp(10px, 2.4vh, 24px) 16px; }
+#menu-principal > * { flex-shrink: 0; }
+#menu-principal .titulo { font-size: clamp(36px, min(10vw, 10.5vh), 112px); line-height: 1.05; }
+#menu-principal .subtitulo { margin: 2px 0 clamp(10px, 2.8vh, 36px); font-size: clamp(11px, 1.6vh, 14px); }
+#menu-principal .selector-dificultad { margin-bottom: clamp(8px, 2vh, 22px); }
+#menu-principal .opciones { gap: clamp(6px, 1.3vh, 14px); width: min(520px, 100%); }
+#menu-principal .boton.grande { font-size: clamp(15px, 2.5vh, 24px); padding: clamp(7px, 1.45vh, 16px) 16px; min-width: 0; width: 100%; }
+#menu-principal .fila-chica { display: flex; gap: clamp(6px, 1.3vh, 14px); }
+#menu-principal .fila-chica .boton { flex: 1 1 0; min-width: 0; padding: clamp(7px, 1.1vh, 10px) 4px; font-size: clamp(10.5px, 1.5vh, 12.5px); letter-spacing: .06em; white-space: nowrap; }
+#menu-principal .pie { margin: clamp(10px, 2vh, 20px) 0 3px; font-size: clamp(11px, 1.5vh, 13px); }
+#menu-principal .creditos { margin: 0; font-size: clamp(11px, 1.4vh, 12px); }
+/* Pantalla muy baja (celular apaisado): los modos en dos columnas, Entrenamiento a lo ancho, y sin la línea
+   de teclas (en el celular no hay teclado) */
+@media (max-height: 480px) {
+  #menu-principal .opciones { display: grid; grid-template-columns: 1fr 1fr; width: min(640px, 100%); }
+  #menu-principal .opciones > .boton:nth-of-type(5), #menu-principal .fila-chica { grid-column: 1 / -1; }
+  #menu-principal .boton.grande { font-size: clamp(13px, 3.6vh, 17px); letter-spacing: .1em; }
+  #menu-principal .pie { display: none; }
+  #menu-principal .creditos { margin-top: 8px; }
+}
 
 /* ---- Panel de misiones ---- */
 #panel-misiones, #panel-controles { background: linear-gradient(#1a1420, #0d0a10); }
