@@ -1,10 +1,10 @@
 /* ===== Modo historia: «Camino a casa» =====
- * El avión del protagonista cae a 100 km de su casa cuando aparecen los zombies. Tiene que cruzar cuatro niveles,
+ * El avión del protagonista cae cerca de Bariloche, a 1600 km de su casa en Padua (Merlo), cuando aparecen los zombies. Tiene que cruzar cuatro niveles,
  * de izquierda a derecha como en los juegos de plataformas de antes, para volver con su hija:
- *   1. Los restos del vuelo 214 (km 100 → 75): el bosque donde cayó el avión, al amanecer.
- *   2. La ruta 9 (km 75 → 45): la carretera trabada de autos abandonados, a la tarde.
- *   3. La ciudad (km 45 → 15): el centro en ruinas, de noche.
- *   4. Tu barrio (km 15 → 0): las casas de su calle, al amanecer; termina en la puerta de su casa.
+ *   1. Bariloche (km 1600 → 1550): la montaña donde cayó el avión, al amanecer.
+ *   2. La Pampa (km 1550 → 60): la ruta destruida, a la tarde.
+ *   3. Zona sur (km 60 → 15): las calles del conurbano sur de Buenos Aires, al atardecer.
+ *   4. Padua, Merlo (km 15 → 0): su barrio, de noche; termina en la puerta de su casa.
  * En el camino hay corazones (curan) y radios (cada una es un ataque aéreo para pedir con la A). Al terminar
  * cada nivel se muestra un resumen de lo que hizo; entre niveles, viñetas al estilo de los juegos de 8 bits.
  * Las armas y la munición pasan de un nivel al siguiente; si muere, reintenta el nivel con lo que tenía al empezarlo.
@@ -13,7 +13,7 @@
 const NIVELES_HISTORIA = [
   // Nivel 1: terreno caótico con desniveles. Tramos [desde, hasta, altura al empezar, altura al terminar, tipo]
   // (px sobre el piso; negativa = cráter). Hay zombies dormidos que se despiertan al ver al jugador.
-  { clave: 'avion',  kmDesde: 100, kmHasta: 75, largo: 4600, intervalo: [4.5, 6.5], maxVivos: 4,  corredores: 0,    grupo: 1,
+  { clave: 'avion',  kmDesde: 1600, kmHasta: 1550, largo: 4600, intervalo: [4.5, 6.5], maxVivos: 4,  corredores: 0,    grupo: 1,
     cajas: [[1440, 'mossberg'], [3100, 'uzi']], corazones: [1520, 2200, 3730, 4250], radios: [1050],
     terreno: [
       [0, 300, 0, 0, 'suelo'], [300, 420, 40, 40, 'escombro'], [420, 520, 0, 0, 'suelo'], [520, 700, -40, -40, 'pozo'],
@@ -27,7 +27,7 @@ const NIVELES_HISTORIA = [
     dormidos: [360, 610, 950, 1120, 1450, 1760, 2200, 2500, 3050, 3200, 3650, 3735, 4000, 4300] },
   // Nivel 2: la ruta destruida: autos atravesados y un colectivo para saltar, un camión con escalera, baches gigantes
   // (dos se cruzan con una soga colgada de un pórtico de carteles), un auto en llamas y la horda al final
-  { clave: 'ruta',   kmDesde: 75,  kmHasta: 45, largo: 5600, intervalo: [3.2, 4.5], maxVivos: 5,  corredores: 0.15, grupo: 2, horda: [1200, 5],
+  { clave: 'ruta',   kmDesde: 1550, kmHasta: 60, largo: 5600, intervalo: [3.2, 4.5], maxVivos: 5,  corredores: 0.15, grupo: 2, horda: [1200, 5],
     cajas: [[1100, 'ak47'], [2600, 'rem870'], [3680, 'm16']], corazones: [1650, 2850, 4550, 5200], radios: [2550, 4800],
     terreno: [
       [0, 350, 0, 0, 'suelo'], [350, 470, 45, 45, 'auto'], [470, 650, 0, 0, 'suelo'], [650, 780, 45, 45, 'auto'], [780, 1010, 90, 90, 'colectivo'],
@@ -41,7 +41,7 @@ const NIVELES_HISTORIA = [
     dormidos: [400, 850, 1150, 1950, 2550, 2950, 3560, 3680, 3800, 4700, 5000, 5300] },
   // Nivel 3: techos a los que se llega por andamios y escaleras, huecos entre edificios con sogas colgadas de grúas,
   // un salto largo de techo a techo, contenedores, fuego y una horda más grande
-  { clave: 'ciudad', kmDesde: 45,  kmHasta: 15, largo: 6400, intervalo: [2.6, 3.6], maxVivos: 7,  corredores: 0.25, grupo: 2, horda: [1400, 7],
+  { clave: 'ciudad', kmDesde: 60,  kmHasta: 15, largo: 6400, intervalo: [2.6, 3.6], maxVivos: 7,  corredores: 0.25, grupo: 2, horda: [1400, 7],
     cajas: [[950, 'spas12'], [2700, 'm79', true], [4320, 'mp5']], corazones: [1450, 2300, 3650, 4800, 5800], radios: [1600, 3300, 5500],
     terreno: [
       [0, 300, 0, 0, 'suelo'], [300, 400, 45, 45, 'contenedor'], [400, 600, 0, 0, 'suelo'], [600, 700, 70, 70, 'andamio'], [700, 800, 140, 140, 'andamio'],
@@ -95,16 +95,16 @@ Object.assign(TEXTOS.es, {
   'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
   'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
-  'hist.nivel1': 'Los restos del vuelo 214', 'hist.nivel2': 'La ruta destruida', 'hist.nivel3': 'La ciudad', 'hist.nivel4': 'Tu barrio',
+  'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sur', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'Una noche de noviembre, un virus convirtió a millones de personas en zombies. Tú volvías a casa en el último vuelo que salió de la capital.',
   'hist.intro2': 'A mitad del viaje, un pasajero infectado atacó a la tripulación. El avión perdió el control y se estrelló en la cordillera, cerca de Bariloche.',
-  'hist.intro3': 'Despiertas entre los restos, en la nieve. De milagro, estás vivo. El teléfono marca 100 kilómetros hasta tu casa.',
+  'hist.intro3': 'Despiertas entre los restos, en la nieve. De milagro, estás vivo. El teléfono marca 1.600 kilómetros hasta tu casa, en Padua.',
   'hist.intro4': 'Allá te espera tu hija, escondida en su cuarto. Le prometiste que volverías. Tienes que cumplirlo.',
   'hist.antes1': 'Baja de la montaña entre los restos del avión: turbinas, valijas abiertas y pasajeros que ya no son pasajeros.',
-  'hist.antes2': 'La ruta está destruida: baches gigantes, autos atravesados y pedazos de autos por todas partes.',
-  'hist.antes3': 'Las calles de la ciudad están llenas de destrozos. Saquearon los negocios y los semáforos ya no funcionan.',
-  'hist.antes4': 'Llegas a tu barrio de noche. No hay luz y todo está en penumbras. En tu casa, la ventana de tu hija sigue prendida.',
-  'hist.final': v => `Abres la puerta. Tu hija corre a abrazarte. Recorriste 100 kilómetros y venciste a ${v.bajas} zombies para cumplir tu promesa. Estás en casa.`,
+  'hist.antes2': 'Cruzar La Pampa por la ruta destruida: baches gigantes, autos atravesados y pedazos de autos por todas partes.',
+  'hist.antes3': 'Llegas a la zona sur del conurbano. Las calles están llenas de destrozos, saquearon los negocios y los semáforos ya no funcionan.',
+  'hist.antes4': 'Llegas a Padua de noche. No hay luz y todo está en penumbras. En tu casa, la ventana de tu hija sigue prendida.',
+  'hist.final': v => `Abres la puerta. Tu hija corre a abrazarte. Recorriste 1.600 kilómetros, de Bariloche a Padua, y venciste a ${v.bajas} zombies para cumplir tu promesa. Estás en casa.`,
   'hist.fin': 'FIN', 'hist.gracias': '¡Gracias por jugar!',
   'hist.nivelN': v => `NIVEL ${v.n} DE 4`, 'hist.km': v => `KM ${v.desde} → ${v.hasta}`,
   'hist.superado': v => `¡NIVEL ${v.n} SUPERADO!`,
@@ -113,9 +113,9 @@ Object.assign(TEXTOS.es, {
     (v.aereos ? ` Pediste ${v.aereos} ${v.aereos === 1 ? 'ataque aéreo' : 'ataques aéreos'}.` : '') +
     (v.armas ? ` Encontraste: ${v.armas}.` : ''),
   'hist.que1': 'Bajaste de la montaña y dejaste atrás los restos del avión.',
-  'hist.que2': 'Cruzaste la ruta destruida, entre baches gigantes y autos atravesados.',
-  'hist.que3': 'Atravesaste las calles destruidas de la ciudad.',
-  'hist.que4': 'Cruzaste tu barrio a oscuras y llegaste a la puerta de tu casa.',
+  'hist.que2': 'Cruzaste La Pampa por la ruta destruida, entre baches gigantes y autos atravesados.',
+  'hist.que3': 'Atravesaste las calles destruidas de la zona sur.',
+  'hist.que4': 'Cruzaste Padua a oscuras y llegaste a la puerta de tu casa.',
   'hist.siguiente': v => `Siguiente: ${v.nombre} (km ${v.km})`,
   'hist.dato.bajas': 'Zombies', 'hist.dato.tiempo': 'Tiempo', 'hist.dato.vida': 'Vida', 'hist.dato.armas': 'Armas', 'hist.dato.corazones': 'Corazones', 'hist.dato.radios': 'Radios',
   'hist.boton.seguir': 'SIGUIENTE ▶', 'hist.boton.saltar': 'SALTAR', 'hist.boton.jugar': 'JUGAR ▶', 'hist.boton.menu': 'MENÚ',
@@ -135,16 +135,16 @@ Object.assign(TEXTOS.pt, {
   'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
   'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
-  'hist.nivel1': 'Os destroços do voo 214', 'hist.nivel2': 'A rodovia destruída', 'hist.nivel3': 'A cidade', 'hist.nivel4': 'Seu bairro',
+  'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sul', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'Numa noite de novembro, um vírus transformou milhões de pessoas em zumbis. Você voltava para casa no último voo que saiu da capital.',
   'hist.intro2': 'No meio da viagem, um passageiro infectado atacou a tripulação. O avião perdeu o controle e caiu na cordilheira, perto de Bariloche.',
-  'hist.intro3': 'Você acorda entre os destroços, na neve. Por milagre, está vivo. O celular marca 100 quilômetros até a sua casa.',
+  'hist.intro3': 'Você acorda entre os destroços, na neve. Por milagre, está vivo. O celular marca 1.600 quilômetros até a sua casa, em Padua.',
   'hist.intro4': 'Lá a sua filha espera, escondida no quarto. Você prometeu que voltaria. Precisa cumprir.',
   'hist.antes1': 'Desça a montanha entre os destroços do avião: turbinas, malas abertas e passageiros que já não são passageiros.',
-  'hist.antes2': 'A rodovia está destruída: buracos gigantes, carros atravessados e pedaços de carros por toda parte.',
-  'hist.antes3': 'As ruas da cidade estão cheias de destroços. As lojas foram saqueadas e os semáforos não funcionam mais.',
-  'hist.antes4': 'Você chega ao seu bairro de noite. Não há luz e tudo está na penumbra. Na sua casa, a janela da sua filha continua acesa.',
-  'hist.final': v => `Você abre a porta. Sua filha corre para abraçar você. Você percorreu 100 quilômetros e venceu ${v.bajas} zumbis para cumprir a promessa. Está em casa.`,
+  'hist.antes2': 'Cruzar La Pampa pela rodovia destruída: buracos gigantes, carros atravessados e pedaços de carros por toda parte.',
+  'hist.antes3': 'Você chega à zona sul da Grande Buenos Aires. As ruas estão cheias de destroços, as lojas foram saqueadas e os semáforos não funcionam mais.',
+  'hist.antes4': 'Você chega a Padua de noite. Não há luz e tudo está na penumbra. Na sua casa, a janela da sua filha continua acesa.',
+  'hist.final': v => `Você abre a porta. Sua filha corre para abraçar você. Você percorreu 1.600 quilômetros, de Bariloche a Padua, e venceu ${v.bajas} zumbis para cumprir a promessa. Está em casa.`,
   'hist.fin': 'FIM', 'hist.gracias': 'Obrigado por jogar!',
   'hist.nivelN': v => `NÍVEL ${v.n} DE 4`, 'hist.km': v => `KM ${v.desde} → ${v.hasta}`,
   'hist.superado': v => `NÍVEL ${v.n} CONCLUÍDO!`,
@@ -153,9 +153,9 @@ Object.assign(TEXTOS.pt, {
     (v.aereos ? ` Pediu ${v.aereos} ${v.aereos === 1 ? 'ataque aéreo' : 'ataques aéreos'}.` : '') +
     (v.armas ? ` Encontrou: ${v.armas}.` : ''),
   'hist.que1': 'Você desceu a montanha e deixou para trás os destroços do avião.',
-  'hist.que2': 'Você cruzou a rodovia destruída, entre buracos gigantes e carros atravessados.',
-  'hist.que3': 'Você atravessou as ruas destruídas da cidade.',
-  'hist.que4': 'Você cruzou o seu bairro no escuro e chegou à porta da sua casa.',
+  'hist.que2': 'Você cruzou La Pampa pela rodovia destruída, entre buracos gigantes e carros atravessados.',
+  'hist.que3': 'Você atravessou as ruas destruídas da zona sul.',
+  'hist.que4': 'Você cruzou Padua no escuro e chegou à porta da sua casa.',
   'hist.siguiente': v => `Próximo: ${v.nombre} (km ${v.km})`,
   'hist.dato.bajas': 'Zumbis', 'hist.dato.tiempo': 'Tempo', 'hist.dato.vida': 'Vida', 'hist.dato.armas': 'Armas', 'hist.dato.corazones': 'Corações', 'hist.dato.radios': 'Rádios',
   'hist.boton.seguir': 'SEGUIR ▶', 'hist.boton.saltar': 'PULAR', 'hist.boton.jugar': 'JOGAR ▶', 'hist.boton.menu': 'MENU',
@@ -175,16 +175,16 @@ Object.assign(TEXTOS.en, {
   'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
   'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
   'menu.historia': 'STORY: THE WAY HOME',
-  'hist.nivel1': 'The wreck of flight 214', 'hist.nivel2': 'The broken highway', 'hist.nivel3': 'The city', 'hist.nivel4': 'Your neighborhood',
+  'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'The south side', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'One November night, a virus turned millions of people into zombies. You were flying home on the last plane out of the capital.',
   'hist.intro2': 'Halfway there, an infected passenger attacked the crew. The plane lost control and crashed in the Andes, near Bariloche.',
-  'hist.intro3': 'You wake up among the wreckage, in the snow. Somehow, you are alive. Your phone says home is 100 kilometers away.',
+  'hist.intro3': 'You wake up among the wreckage, in the snow. Somehow, you are alive. Your phone says home is 1,600 kilometers away, in Padua.',
   'hist.intro4': 'Your daughter is waiting there, hiding in her room. You promised her you would come back. You have to keep that promise.',
   'hist.antes1': 'Get down the mountain through the wreckage: engines, open suitcases and passengers who are not passengers anymore.',
-  'hist.antes2': 'The highway is wrecked: giant potholes, cars blocking the way and car parts everywhere.',
-  'hist.antes3': 'The city streets are full of wreckage. The shops were looted and the traffic lights are dead.',
-  'hist.antes4': 'You reach your neighborhood at night. The power is out and everything is in the dark. At home, your daughter\'s window is still lit.',
-  'hist.final': v => `You open the door. Your daughter runs into your arms. You crossed 100 kilometers and beat ${v.bajas} zombies to keep your promise. You are home.`,
+  'hist.antes2': 'Cross La Pampa on the wrecked highway: giant potholes, cars blocking the way and car parts everywhere.',
+  'hist.antes3': 'You reach the south side of Greater Buenos Aires. The streets are full of wreckage, the shops were looted and the traffic lights are dead.',
+  'hist.antes4': 'You reach Padua at night. The power is out and everything is in the dark. At home, your daughter\'s window is still lit.',
+  'hist.final': v => `You open the door. Your daughter runs into your arms. You crossed 1,600 kilometers, from Bariloche to Padua, and beat ${v.bajas} zombies to keep your promise. You are home.`,
   'hist.fin': 'THE END', 'hist.gracias': 'Thanks for playing!',
   'hist.nivelN': v => `LEVEL ${v.n} OF 4`, 'hist.km': v => `KM ${v.desde} → ${v.hasta}`,
   'hist.superado': v => `LEVEL ${v.n} CLEARED!`,
@@ -193,9 +193,9 @@ Object.assign(TEXTOS.en, {
     (v.aereos ? ` You called ${v.aereos} ${v.aereos === 1 ? 'air strike' : 'air strikes'}.` : '') +
     (v.armas ? ` You found: ${v.armas}.` : ''),
   'hist.que1': 'You came down the mountain and left the wreckage behind.',
-  'hist.que2': 'You crossed the broken highway, between giant potholes and wrecked cars.',
-  'hist.que3': 'You crossed the ruined city streets.',
-  'hist.que4': 'You crossed your dark neighborhood and reached your front door.',
+  'hist.que2': 'You crossed La Pampa on the wrecked highway, between giant potholes and wrecked cars.',
+  'hist.que3': 'You crossed the ruined streets of the south side.',
+  'hist.que4': 'You crossed dark Padua and reached your front door.',
   'hist.siguiente': v => `Next: ${v.nombre} (km ${v.km})`,
   'hist.dato.bajas': 'Zombies', 'hist.dato.tiempo': 'Time', 'hist.dato.vida': 'Health', 'hist.dato.armas': 'Weapons', 'hist.dato.corazones': 'Hearts', 'hist.dato.radios': 'Radios',
   'hist.boton.seguir': 'NEXT ▶', 'hist.boton.saltar': 'SKIP', 'hist.boton.jugar': 'PLAY ▶', 'hist.boton.menu': 'MENU',
@@ -506,7 +506,7 @@ const Vinetas = (() => {
       R(c, 208, 112, 4, 24, '#6b7280'); R(c, 230, 124, 40, 6, '#a7adb6'); R(c, 262, 102, 10, 22, '#c9ced6'); R(c, 264, 104, 6, 8, '#c0392b');   // ala y cola
       fuego(c, 212, 128, t, 1.6); humo(c, 212, 110, t, 8); fuego(c, 238, 126, t, 1);
       c.save(); c.translate(110, 152); c.scale(2, 2); padre(c, 0, 0, t); c.restore();
-      R(c, 40, 132, 3, 22, '#5a3a1a'); R(c, 26, 126, 36, 12, '#7a5a2a'); R(c, 27, 127, 34, 10, '#9a7a3a'); texto(c, 'CASA 100 KM', 44, 135, '#2a1a08', 6);
+      R(c, 40, 132, 3, 22, '#5a3a1a'); R(c, 26, 126, 36, 12, '#7a5a2a'); R(c, 27, 127, 34, 10, '#9a7a3a'); texto(c, 'PADUA 1600 KM', 44, 135, '#2a1a08', 5);
     },
     // 4. La hija espera en la ventana de su cuarto; afuera rondan los zombies
     intro4(c, t) {
@@ -522,7 +522,7 @@ const Vinetas = (() => {
     mapa(c, t, n) {
       R(c, 0, 0, W, H, '#d8c79c'); for (let x = 0; x < W; x += 16) R(c, x, 0, 1, H, '#c9b78a'); for (let y = 0; y < H; y += 16) R(c, 0, y, W, 1, '#c9b78a');
       R(c, 6, 6, W - 12, 2, '#8a7650'); R(c, 6, H - 8, W - 12, 2, '#8a7650'); R(c, 6, 6, 2, H - 12, '#8a7650'); R(c, W - 8, 6, 2, H - 12, '#8a7650');
-      const nodos = [[34, 120], [104, 70], [174, 112], [240, 64], [292, 100]], kms = [100, 75, 45, 15, 0];
+      const nodos = [[34, 120], [104, 70], [174, 112], [240, 64], [292, 100]], kms = [1600, 1550, 60, 15, 0];
       for (let i = 0; i < 4; i++) {
         const [x0, y0] = nodos[i], [x1, y1] = nodos[i + 1];
         for (let s = 0; s <= 20; s++) { if (s % 2) continue; const f = s / 20; R(c, x0 + (x1 - x0) * f - 1, y0 + (y1 - y0) * f - 1, 3, 3, i < n - 1 ? '#c0392b' : '#6a5a3a'); }

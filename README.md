@@ -95,17 +95,17 @@ y entrá a <http://127.0.0.1:8791/>.
 ## Historia: «Camino a casa»
 
 Modo por niveles, de izquierda a derecha como los juegos de plataformas de antes (`js/historia.js`,
-`js/escenario-historia.js`). El avión del protagonista cae a 100 km de su casa cuando aparecen los zombies y
-tiene que volver con su hija. La historia se cuenta con viñetas de 8 bits (lienzo de 320×180 agrandado sin
+`js/escenario-historia.js`). El avión del protagonista cae en la cordillera, cerca de Bariloche, cuando aparecen los zombies, y tiene que
+volver con su hija a su casa en Padua (Merlo), a 1600 km. La historia se cuenta con viñetas de 8 bits (lienzo de 320×180 agrandado sin
 suavizar, con líneas de barrido) y música de consola de los 80 hecha en vivo (temas «Camino a casa», «Cien
 kilómetros» y «Estás en casa» en `js/musica.js`).
 
 | Nivel | Lugar | Km |
 |---|---|---|
-| 1 | Los restos del vuelo 214: la montaña cerca de Bariloche al amanecer (cordillera nevada, el lago, cipreses, nieve), con escombros, cráteres, contenedores de carga, fuselajes para caminar por arriba, escalerillas, el ala como rampa, turbinas y valijas tiradas; zombies dormidos que se despiertan al ver al jugador | 100 → 75 |
-| 2 | La ruta destruida: baches gigantes (dos se cruzan con una soga colgada de un pórtico de carteles), autos atravesados y un colectivo para saltar, un camión al que se sube por escalera, partes de autos tiradas, un auto en llamas y una horda de 5 al final | 75 → 45 |
-| 3 | La ciudad al atardecer con humo: negocios saqueados de fondo, semáforos (algunos caídos), basura y escombros en la calle, andamios y escalera hasta los techos, socavones con sogas colgadas de los cables, contenedores, fuego y una horda de 7 | 45 → 15 |
-| 4 | Tu barrio, destruido y de noche: casas en penumbras; solo se ve alrededor del personaje, del fuego, de los faroles que quedan y de la ventana de la hija. Cercas, techos con escaleras, zanjas inundadas de soga en soga y una horda de 10 antes de la puerta de casa | 15 → 0 |
+| 1 | Bariloche: la montaña donde cayó el avión, al amanecer (cordillera nevada, el lago, cipreses, nieve), con escombros, cráteres, contenedores de carga, fuselajes para caminar por arriba, escalerillas, el ala como rampa, turbinas y valijas tiradas; zombies dormidos que se despiertan al ver al jugador | 1600 → 1550 |
+| 2 | La Pampa: la ruta destruida, con baches gigantes (dos se cruzan con una soga colgada de un pórtico de carteles), autos atravesados y un colectivo para saltar, un camión al que se sube por escalera, partes de autos tiradas, un auto en llamas y una horda de 5 al final | 1550 → 60 |
+| 3 | Zona sur (conurbano de Buenos Aires) al atardecer con humo: negocios saqueados de fondo, semáforos caídos, carteles de calle (Av. Calchaquí, Quilmes, Lomas de Zamora), basura y escombros, andamios y escalera hasta los techos, socavones con sogas colgadas de los cables, contenedores, fuego, bocinas y alarmas de autos, y una horda de 7 | 60 → 15 |
+| 4 | Padua, Merlo, de noche: casas en penumbras; solo se ve alrededor del personaje, del fuego, de los faroles que quedan y de la ventana de la hija. Cercas, techos con escaleras, zanjas inundadas de soga en soga y una horda de 10 antes de la puerta de casa | 15 → 0 |
 
 La dificultad sube con cada nivel: más zombies dormidos (14, 12, 15 y 17), zombies sueltos más seguidos, más
 corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas de plataformas:
@@ -123,7 +123,10 @@ corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas d
 - Si muere, reintenta el nivel con lo que tenía al empezarlo. El progreso queda guardado en el navegador
   (`zonaMuerta.historia.nivel`) y desde el menú se puede continuar o empezar de nuevo.
 - Desniveles: `Mundo.perfil` da la altura del piso por tramos; un escalón de más de 14 px no se sube caminando
-  (`ESCALON_MAX` en `js/jugador.js`), hay que saltarlo (el salto llega a unos 120 px).
+  (`ESCALON_MAX` en `js/jugador.js`), hay que saltarlo (el salto llega a unos 120 px). Trepando una escalera o
+  colgado de una soga, el personaje guarda el arma en la espalda y usa las dos manos.
+- Los zombies también respetan los desniveles: trepan de a poco los escalones de hasta 75 px, caen con gravedad
+  al bajar, esperan al pie de las paredes más altas y en el borde de los precipicios.
 
 ## Música, configuración e idioma
 

@@ -96,17 +96,25 @@ class Zombie {
     }
 
     if (this.cabezaAtras < 0) this.cabezaAtras = Math.min(0, this.cabezaAtras + dt * 1.8);   // levanta la cabeza al despertar
+    // Trepando un escalón: el cuerpo sube de a poco hasta quedar arriba; mientras tanto no muerde
+    if (this.trepa) {
+      const T = this.trepa; T.t += dt; const f = Math.min(1, T.t / T.dur), s = f * f * (3 - 2 * f);
+      this.x = T.x0 + (T.x1 - T.x0) * Math.max(0, (f - 0.55) / 0.45); this.y = T.y0 + (T.y1 - T.y0) * s; this.recogido = 0.8 * Math.sin(f * Math.PI);
+      this.fase += dt * 3;
+      if (f >= 1) { this.trepa = null; this.recogido = 0; this.y = alturaSuelo(this.x); }
+      return;
+    }
     if (this.dormido) {
-      this.fase += dt * 0.6; this.y = alturaSuelo(this.x);
+      this.fase += dt * 0.6; this.apoyar(dt);
       if (!jugador.muerto && Math.abs(jugador.x - this.x) < 300 && Math.abs(jugador.y - this.y) < 170) this.despertar(juego, jugador);
       return;
     }
-    if (ahora < (this.despiertaHasta || 0)) { this.y = alturaSuelo(this.x); return; }   // se está incorporando
+    if (ahora < (this.despiertaHasta || 0)) { this.apoyar(dt); return; }   // se está incorporando
     const dx = jugador.x - this.x;
     this.direccion = dx >= 0 ? 1 : -1;
     const distancia = Math.abs(dx);
     const dy = Math.abs(jugador.y - this.y);
-    const alcanza = distancia < 34 && dy < 70 && !jugador.muerto;
+    const alcanza = distancia < 34 && dy < (Mundo.perfil ? 40 : 70) && !jugador.muerto && !this.vyCaida;   // con desniveles, no muerde desde abajo de una plataforma
 
     if (alcanza) {
       this.estado = 'ataca';
@@ -121,16 +129,34 @@ class Zombie {
       // Andar a tirones: avanza más cuando apoya la pierna buena
       const tiron = this.corredor ? 1 : 0.55 + Math.max(0, Math.sin(this.fase)) * 0.9;
       const nx = this.x + this.direccion * this.velocidad * tiron * paso;
-      if (!(Mundo.perfil && alturaSuelo(nx) > SUELO_BASE + 100)) this.x = nx;   // no se tira a un precipicio: espera en el borde
+      if (!Mundo.perfil) this.x = nx;
+      else {
+        const sueloN = alturaSuelo(nx), sube = this.y - sueloN;
+        if (sueloN > SUELO_BASE + 100) { /* precipicio: no se tira, espera en el borde */ }
+        else if (sube > 14 && !this.vyCaida) {
+          // Escalón alto: si no pasa de 75 px lo trepa de a poco (apoya las manos, sube el cuerpo); más alto, no puede
+          if (sube <= 75) this.trepa = { x0: this.x, x1: nx + this.direccion * 8, y0: this.y, y1: sueloN, t: 0, dur: 0.5 + sube / 60 };
+        } else this.x = nx;
+      }
       this.fase += dt * (this.corredor ? 14 : 6);
     }
     if (Math.abs(this.empuje) > 0.05) { this.x += this.empuje * paso; this.empuje *= Math.pow(0.8, paso); }
-    this.y = alturaSuelo(this.x);
+    this.apoyar(dt);
 
     if (distancia < 500 && ahora >= this.gemidoEn) {
       this.gemidoEn = ahora + 2500 + Math.random() * 5000;
       if (Math.random() < 0.6) Audio_.gemido(false, distancia);
     }
+  }
+
+  // Pies en el piso: en los niveles con desniveles, si el piso quedó más abajo cae con gravedad (no aparece abajo de golpe)
+  apoyar(dt) {
+    const suelo = alturaSuelo(this.x);
+    if (!Mundo.perfil) { this.y = suelo; return; }
+    if (this.y < suelo - 2 || this.vyCaida) {
+      this.vyCaida = (this.vyCaida || 0) + 0.5 * dt * 60; this.y += this.vyCaida * dt * 60;
+      if (this.y >= suelo) { this.y = suelo; this.vyCaida = 0; this.golpeadoHasta = Math.max(this.golpeadoHasta, 0); this.aterrizoEn = this.ahora; }
+    } else this.y = suelo;
   }
 
   // Zombie dormido (modo historia): queda quieto, encorvado, hasta que ve al jugador
@@ -168,6 +194,8 @@ class Zombie {
     const golpeado = ahora < this.golpeadoHasta;
     const cuerpo = () => {
       if (this.giro) { const cy = -36 * this.escala; ctx.translate(0, cy); ctx.rotate(this.giro); ctx.translate(0, -cy); }   // voltereta
+      if (this.trepa) { const f = Math.min(1, this.trepa.t / this.trepa.dur); ctx.rotate(this.direccion * 0.45 * Math.sin(f * Math.PI)); }   // se tira contra el escalón para subir
+      if (this.vyCaida) { const cy = -36 * this.escala; ctx.translate(0, cy); ctx.rotate(-this.direccion * Math.min(0.35, this.vyCaida * 0.04)); ctx.translate(0, -cy); }   // cae hacia atrás
       this.cuerpo(ctx, golpeado);
     };
     if (this.estado === 'muerto') {

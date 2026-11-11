@@ -103,7 +103,7 @@ const EscenarioHistoria = {
     }
   },
 
-  /* ---------- Nivel 1: la montaña cerca de Bariloche, al amanecer ----------
+  /* ---------- Nivel 1: Bariloche, la montaña donde cayó el avión, al amanecer ----------
    * Cordillera nevada, el lago abajo, bosque de cipreses, piso de roca con manchones de nieve y los restos del
    * avión: fuselaje, ala, cola, turbinas humeando y valijas abiertas por todos lados. */
   fondoAvion(ctx, cam, t, H) {
@@ -433,7 +433,7 @@ const EscenarioHistoria = {
       if (!caido) { ctx.beginPath(); ctx.moveTo(x + 20, 262); ctx.quadraticCurveTo(x + paso / 2, 296, x + paso + 20, 262); ctx.stroke(); }
     }
     for (let k = 0; k < 3; k++) this.humo(ctx, ((k * 410 - cam * 0.3) % 1300 + 1300) % 1300 - 100, 380, t + k, 1.4);
-    for (const [dx, txt] of [[300, 'RUTA 40'], [2200, 'CIUDAD 50 KM'], [3300, 'PELIGRO: CALZADA ROTA'], [4700, 'NO SE DETENGA']]) {
+    for (const [dx, txt] of [[300, 'RUTA 5'], [1600, 'SANTA ROSA 80 KM'], [2200, 'BUENOS AIRES 600 KM'], [3300, 'PELIGRO: CALZADA ROTA'], [4700, 'NO SE DETENGA']]) {
       const sx = H.inicio + dx - cam; if (sx < -160 || sx > ANCHO + 160) continue;
       const base = SUELO_BASE - FONDO_CALLE - 10, tuerto = azar(dx, 813) < 0.5 ? 0.12 : -0.08;
       ctx.save(); ctx.translate(sx, base); ctx.rotate(tuerto);
@@ -498,13 +498,14 @@ const EscenarioHistoria = {
     Escenario.dibujarSuelo(ctx, cam);
     this.asfaltoRoto(ctx, cam);
     this.semaforos(ctx, cam, t);
+    this.cartelesCalle(ctx, cam, H, [[420, 'AV. CALCHAQUÍ'], [2600, 'QUILMES'], [4500, 'LOMAS DE ZAMORA']]);
     Escenario.dibujarFondoDelMundo(ctx, cam, t);
     this.basura(ctx, cam);
     if (H.def.terreno) this.terreno(ctx, cam, t, H);
     ctx.fillStyle = 'rgba(40, 20, 30, 0.12)'; ctx.fillRect(0, 0, ANCHO, ALTO);   // humo del atardecer
   },
   negocios(ctx, cam, t) {
-    const NOMBRES = ['FARMACIA', 'KIOSCO', 'PANADERÍA', 'FERRETERÍA', 'BAR', 'ROPA', 'CELULARES', 'ALMACÉN', 'PIZZERÍA', 'LIBRERÍA'];
+    const NOMBRES = ['FARMACIA', 'KIOSCO', 'PANADERÍA', 'FERRETERÍA', 'PARRILLA', 'VERDULERÍA', 'CELULARES', 'ALMACÉN', 'PIZZERÍA', 'REMISERÍA', 'CARNICERÍA', 'LOTERÍA'];
     const COLORES = ['#8a5a4a', '#5a6a7a', '#7a6a4a', '#6a4a5a', '#4a6a5a', '#7a7a6a'];
     const ancho = 210, base = SUELO_BASE - FONDO_CALLE - 14, desde = Math.floor((cam - ancho) / ancho), hasta = Math.floor((cam + ANCHO) / ancho);
     for (let k = desde; k <= hasta; k++) {
@@ -523,6 +524,17 @@ const EscenarioHistoria = {
       ctx.fillStyle = '#2a2018'; ctx.fillRect(x + ancho - 58, base - 42, 30, 42);
       if (azar(k, 845) < 0.25) { ctx.fillStyle = 'rgba(30, 30, 30, 0.8)'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(['SALVENSE', 'NO ENTRAR', 'AYUDA'][k % 3], x + ancho / 2, base - 100); }   // pintadas
       if (azar(k, 846) < 0.15) this.fuego(ctx, x + 40, base - 4, t, 0.9);
+    }
+  },
+  // Carteles de calle en un poste, en la esquina: letras blancas sobre fondo azul
+  cartelesCalle(ctx, cam, H, lista) {
+    for (const [dx, nombre] of lista) {
+      const sx = H.inicio + dx - cam; if (sx < -120 || sx > ANCHO + 120) continue;
+      const base = SUELO_BASE - FONDO_CALLE - 10;
+      ctx.fillStyle = '#4a4e56'; ctx.fillRect(sx - 2, base - 120, 4, 120);
+      ctx.font = 'bold 12px sans-serif'; const w = ctx.measureText(nombre).width + 16;
+      ctx.fillStyle = '#1d3e7a'; ctx.fillRect(sx - w / 2, base - 132, w, 20); ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 1.5; ctx.strokeRect(sx - w / 2 + 2, base - 130, w - 4, 16);
+      ctx.fillStyle = '#f2f2f2'; ctx.textAlign = 'center'; ctx.fillText(nombre, sx, base - 118);
     }
   },
   semaforos(ctx, cam, t) {
@@ -553,7 +565,7 @@ const EscenarioHistoria = {
     }
   },
 
-  /* ---------- Nivel 4: tu barrio, destruido y de noche ----------
+  /* ---------- Nivel 4: Padua (Merlo), el barrio de la casa, destruido y de noche ----------
    * Casas en penumbras con pocas ventanas prendidas, árboles negros, faroles apagados (alguno titila) y, encima de
    * todo, la oscuridad: solo se ve alrededor del personaje, del fuego, de los faroles y de la casa de la hija. */
   fondoBarrio(ctx, cam, t, H) {
@@ -572,6 +584,7 @@ const EscenarioHistoria = {
     }
     this.casaFinal(ctx, H.meta - cam, horizonte, t);
     Escenario.dibujarSuelo(ctx, cam);
+    this.cartelesCalle(ctx, cam, H, [[260, 'PADUA'], [3000, 'MERLO'], [6300, 'B° PADUA']]);
     this.asfaltoRoto(ctx, cam);
     this.partesDeAutos(ctx, cam, SUELO_BASE - 6, 0.3, 870);
     if (H.def.terreno) this.terreno(ctx, cam, t, H);

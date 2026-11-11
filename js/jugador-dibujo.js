@@ -130,6 +130,9 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
     pieza(ctx, redondo(-21, -46 + ty, 7, 8, 1.5), ajustarColor(C.mochila, -0.12), -21, -14);
   }
 
+  // Trepando una escalera o colgado de una soga: pose propia, con el arma colgada a la espalda
+  if ((this.trepa || this.soga) && !this.muerto) { dibujarColgado(ctx, this, S, C); return; }
+
   // Piernas: la de atrás más oscura. En el aire van recogidas
   if (enAire) {
     piernaArticulada(ctx, -4, -34, 0.15, 0.8, ajustarColor(C.pantalon, -0.18), C);
@@ -296,4 +299,36 @@ function dibujarPeineEnArma(ctx, peine) {
     const by = peine.y - 12 + (5 - n + k) * 2.4;
     parte(ctx, peine.x, by, 6, 2, '#c9a227'); ctx.fillStyle = tinta('#b87333'); ctx.fillRect(peine.x + 6, by + 0.4, 1.5, 1.2);
   }
+}
+
+/* Trepando una escalera de mano: de perfil contra la escalera, las manos se turnan en los barrotes de arriba y las
+ * piernas suben de a un escalón (una rodilla arriba mientras la otra estira). Colgado de una soga: las dos manos
+ * arriba, una sobre la otra, y las piernas juntas, balanceándose un poco. El arma va colgada a la espalda. */
+function dibujarColgado(ctx, j, S, C) {
+  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05) });
+  const pantalonLejos = ajustarColor(C.pantalon, -0.18);
+  // Arma a la espalda, en diagonal
+  ctx.save(); ctx.translate(-14, -50); ctx.rotate(-1.05);
+  pieza(ctx, redondo(-20, -2.5, 40, 5, 2), '#26272b', -20, 20); detalle(ctx, '#3a3c42', c => c.rect(-6, -2.5, 10, 2));
+  ctx.restore();
+  if (j.trepa) {
+    const T = j.trepa, peldanos = Math.abs(T.y1 - T.y0) / 12, c = Math.sin(T.f * peldanos * Math.PI);   // un ciclo cada dos barrotes
+    const sube = Math.max(0, c), baja = Math.max(0, -c);
+    piernaArticulada(ctx, -2, -34, 0.35 + 0.75 * baja, 0.45 + 1.1 * baja, pantalonLejos, C);
+    brazoDetallado(ctx, -3, -53, 7, -74 - 9 * baja, Clejos); manoConGuante(ctx, 7, -74 - 9 * baja, Clejos);
+    dibujarTorso(ctx, S, C, 0);
+    ctx.save(); ctx.translate(2, -62); ctx.rotate(-0.18); ctx.translate(0, 62);   // mira hacia arriba
+    dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
+    piernaArticulada(ctx, 3, -34, 0.35 + 0.75 * sube, 0.45 + 1.1 * sube, C.pantalon, C);
+    brazoDetallado(ctx, 4, -52, 8, -74 - 9 * sube, C); manoConGuante(ctx, 8, -74 - 9 * sube, C);
+    return;
+  }
+  // Colgado de la soga
+  const vaiven = Math.sin(j.ahora / 260) * 0.12;
+  piernaArticulada(ctx, -2, -34, 0.1 + vaiven, 0.35, pantalonLejos, C);
+  brazoDetallado(ctx, -3, -53, 0, -78, Clejos); manoConGuante(ctx, 0, -78, Clejos);
+  dibujarTorso(ctx, S, C, 0);
+  ctx.save(); ctx.translate(1, -62); ctx.rotate(-0.12); ctx.translate(0, 62); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
+  piernaArticulada(ctx, 3, -34, 0.25 + vaiven, 0.5, C.pantalon, C);
+  brazoDetallado(ctx, 4, -52, 1, -70, C); manoConGuante(ctx, 1, -70, C);
 }
