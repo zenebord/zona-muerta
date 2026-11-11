@@ -116,6 +116,8 @@ class Jugador {
       if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; this.direccion = 1; }
       if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; this.direccion = -1; }
       if (agachandose) this.vx = 0;
+      // Impulso al soltarse de una soga: lo lleva por el aire hasta que toca el piso (las flechas lo corrigen un poco)
+      if (this.impulso && !this.enSuelo) { this.vx = this.impulso + this.vx * 0.3; this.direccion = Math.sign(this.impulso) || this.direccion; }
       this.caminando = this.vx !== 0 && this.enSuelo;
       if (entrada.saltarPulsado && this.enSuelo && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; }
       const nx = this.x + this.vx * paso;
@@ -127,7 +129,7 @@ class Jugador {
       if (!this.enSuelo) {
         this.vy += GRAVEDAD * paso;
         this.y += this.vy * paso;
-        if (this.y >= suelo) { if (this.vy > 4) Audio_.aterrizar(this.superficie()); this.y = suelo; this.vy = 0; this.enSuelo = true; }
+        if (this.y >= suelo) { if (this.vy > 4) Audio_.aterrizar(this.superficie()); this.y = suelo; this.vy = 0; this.enSuelo = true; this.impulso = 0; }
       }
     }
     entrada.saltarPulsado = false;

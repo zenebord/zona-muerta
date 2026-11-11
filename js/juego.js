@@ -536,9 +536,9 @@ class Juego {
     const j = this.jugador, e = this.entrada;
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
-    else if (this.historia && j.protegido) j.actualizar(dt, { ...e, derecha: false, izquierda: false, saltarPulsado: false }, this);   // cuerpo a tierra: no se mueve
+    else if (this.historia) this.moverJugadorHistoria(dt, e);   // escaleras, sogas y cuerpo a tierra (js/historia.js)
     else j.actualizar(dt, e, this);
-    if (!j.muerto && !(j.aTierra && j.protegido) && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);   // cuerpo a tierra no dispara
+    if (!j.muerto && !(j.aTierra && j.protegido) && !j.trepa && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);   // cuerpo a tierra no dispara
     e.dispararPulsado = false;
 
     this.prepararMontanas();
@@ -578,7 +578,11 @@ class Juego {
     if (!this.torreta && !this.ultra) for (const z of this.zombies) {
       if (z.estado === 'muerto' || z.maniqui || z.dormido) continue;
       const dx = z.x - j.x, atras = Math.sign(dx) === -avance && Math.abs(dx) > ANCHO / 2 + 160;
-      if (atras || Math.abs(dx) > 2600) { z.x = j.x + avance * (ANCHO / 2 + 80 + Math.random() * 220); z.y = alturaSuelo(z.x); }
+      if (atras || Math.abs(dx) > 2600) {
+        let nx = j.x + avance * (ANCHO / 2 + 80 + Math.random() * 220);
+        if (Mundo.perfil && alturaSuelo(nx) > SUELO_BASE + 100) nx += avance * 340;   // nunca dentro de un precipicio
+        z.x = nx; z.y = alturaSuelo(z.x);
+      }
     }
     this.zombies = this.zombies.filter(z => !z.terminado());
     this.proyectiles = this.proyectiles.filter(p => p.vivo);
@@ -669,7 +673,7 @@ class Juego {
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
     else if (this.pruebas) Escenario.dibujarCampo(ctx, cam);
-    else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
+    else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); EscenarioHistoria.sogas(ctx, cam, this); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);
       if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam);

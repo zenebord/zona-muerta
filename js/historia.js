@@ -25,12 +25,49 @@ const NIVELES_HISTORIA = [
       [3700, 3760, 80, 80, 'escombro'], [3760, 3900, 0, 0, 'suelo'], [3900, 4100, -40, -40, 'pozo'], [4100, 4800, 0, 0, 'suelo'],
     ],
     dormidos: [360, 610, 950, 1120, 1450, 1760, 2200, 2500, 3050, 3200, 3650, 3735, 4000, 4300] },
-  { clave: 'ruta',   kmDesde: 75,  kmHasta: 45, largo: 5400, intervalo: [2.0, 3.0], maxVivos: 7,  corredores: 0.15, grupo: 2,
-    cajas: [[1200, 'ak47'], [2900, 'rem870'], [4300, 'm16']], corazones: [1500, 3300, 4800], radios: [2500] },
-  { clave: 'ciudad', kmDesde: 45,  kmHasta: 15, largo: 6200, intervalo: [1.6, 2.4], maxVivos: 9,  corredores: 0.25, grupo: 3,
-    cajas: [[1000, 'spas12'], [2600, 'm79', true], [4100, 'mp5']], corazones: [1800, 3500, 5300], radios: [1400, 4600] },
-  { clave: 'barrio', kmDesde: 15,  kmHasta: 0,  largo: 6800, intervalo: [1.3, 2.0], maxVivos: 11, corredores: 0.35, grupo: 3,
-    cajas: [[1200, 'thompson'], [3000, 'aa12'], [4800, 'mgl', true]], corazones: [1600, 3300, 5000, 6200], radios: [2200, 5600] },
+  // Nivel 2: autos y un colectivo para saltar, un camión con escalera, el puente roto sobre el río con dos sogas,
+  // un auto en llamas y la horda al final
+  { clave: 'ruta',   kmDesde: 75,  kmHasta: 45, largo: 5600, intervalo: [3.2, 4.5], maxVivos: 5,  corredores: 0.15, grupo: 2, horda: [1200, 5],
+    cajas: [[1100, 'ak47'], [2600, 'rem870'], [3680, 'm16']], corazones: [1650, 2850, 4550, 5200], radios: [2550, 4800],
+    terreno: [
+      [0, 350, 0, 0, 'suelo'], [350, 470, 45, 45, 'auto'], [470, 650, 0, 0, 'suelo'], [650, 780, 45, 45, 'auto'], [780, 1010, 90, 90, 'colectivo'],
+      [1010, 1200, 0, 0, 'suelo'], [1200, 1320, 0, 0, 'puente'], [1320, 1560, -300, -300, 'abismo'], [1560, 1700, 0, 0, 'puente'],
+      [1700, 1900, 0, 0, 'suelo'], [1900, 2020, 45, 45, 'auto'], [2020, 2400, 0, 0, 'suelo'], [2400, 2700, 130, 130, 'camion'],
+      [2700, 2900, 0, 0, 'suelo'], [2900, 3000, 0, 0, 'puente'], [3000, 3110, -300, -300, 'abismo'], [3110, 3300, 0, 0, 'puente'],
+      [3300, 3500, 0, 0, 'suelo'], [3500, 3620, 45, 45, 'auto'], [3620, 3740, 90, 90, 'auto'], [3740, 3860, 45, 45, 'auto'],
+      [3860, 4100, 0, 0, 'suelo'], [4100, 4200, 0, 0, 'puente'], [4200, 4480, -300, -300, 'abismo'], [4480, 4600, 0, 0, 'puente'], [4600, 5800, 0, 0, 'suelo'],
+    ],
+    escaleras: [[2400, 130]], sogas: [[1440, 230, 170], [4340, 230, 170]], fuegos: [[2200, 2290]],
+    dormidos: [400, 850, 1150, 1950, 2550, 2950, 3560, 3680, 3800, 4700, 5000, 5300] },
+  // Nivel 3: techos a los que se llega por andamios y escaleras, huecos entre edificios con sogas colgadas de grúas,
+  // un salto largo de techo a techo, contenedores, fuego y una horda más grande
+  { clave: 'ciudad', kmDesde: 45,  kmHasta: 15, largo: 6400, intervalo: [2.6, 3.6], maxVivos: 7,  corredores: 0.25, grupo: 2, horda: [1400, 7],
+    cajas: [[950, 'spas12'], [2700, 'm79', true], [4320, 'mp5']], corazones: [1450, 2300, 3650, 4800, 5800], radios: [1600, 3300, 5500],
+    terreno: [
+      [0, 300, 0, 0, 'suelo'], [300, 400, 45, 45, 'contenedor'], [400, 600, 0, 0, 'suelo'], [600, 700, 70, 70, 'andamio'], [700, 800, 140, 140, 'andamio'],
+      [800, 1100, 140, 140, 'techo'], [1100, 1340, -300, -300, 'abismo'], [1340, 1700, 140, 140, 'techo'], [1700, 1800, 70, 70, 'andamio'],
+      [1800, 2120, 0, 0, 'suelo'], [2120, 2240, 45, 45, 'contenedor'], [2240, 2500, 0, 0, 'suelo'], [2500, 2900, 150, 150, 'techo'],
+      [2900, 3150, -300, -300, 'abismo'], [3150, 3400, 150, 150, 'techo'], [3400, 3530, -300, -300, 'abismo'], [3530, 3800, 150, 150, 'techo'],
+      [3800, 3900, 80, 80, 'andamio'], [3900, 4150, 0, 0, 'suelo'], [4150, 4270, 45, 45, 'contenedor'], [4270, 4380, 90, 90, 'andamio'],
+      [4380, 5000, 0, 0, 'suelo'], [5000, 5200, -300, -300, 'abismo'], [5200, 6600, 0, 0, 'suelo'],
+    ],
+    escaleras: [[2500, 150]], sogas: [[1220, 330, 180], [3025, 340, 190], [5100, 230, 170]], fuegos: [[2050, 2120], [4620, 4700]],
+    dormidos: [350, 900, 1000, 1500, 1600, 2180, 2700, 2800, 3300, 3700, 4200, 4500, 4900, 5600, 5900] },
+  // Nivel 4: cercas, techos con escaleras, canales inundados que se cruzan de soga en soga, jardines en llamas y la
+  // horda más grande antes de llegar a la puerta de casa
+  { clave: 'barrio', kmDesde: 15,  kmHasta: 0,  largo: 7000, intervalo: [2.0, 2.8], maxVivos: 9,  corredores: 0.35, grupo: 3, horda: [1600, 10],
+    cajas: [[1100, 'thompson'], [2400, 'aa12'], [4600, 'mgl', true]], corazones: [1900, 2900, 3650, 4700, 5950, 6400], radios: [1150, 3700, 5100, 6200],
+    terreno: [
+      [0, 300, 0, 0, 'suelo'], [300, 330, 40, 40, 'cerca'], [330, 600, 0, 0, 'suelo'], [600, 630, 40, 40, 'cerca'], [630, 900, 0, 0, 'suelo'],
+      [900, 1300, 140, 140, 'techo'], [1300, 1700, -300, -300, 'abismo'], [1700, 2100, 140, 140, 'techo'], [2100, 2200, 70, 70, 'escombro'],
+      [2200, 2500, 0, 0, 'suelo'], [2500, 2530, 50, 50, 'cerca'], [2530, 2800, 0, 0, 'suelo'], [2800, 2830, 50, 50, 'cerca'], [2830, 3100, 0, 0, 'suelo'],
+      [3100, 3500, -300, -300, 'abismo'], [3500, 3800, 0, 0, 'suelo'], [3800, 4200, 150, 150, 'techo'], [4200, 4450, -300, -300, 'abismo'],
+      [4450, 4800, 150, 150, 'techo'], [4800, 4900, 75, 75, 'escombro'], [4900, 5300, 0, 0, 'suelo'], [5300, 5330, 40, 40, 'cerca'],
+      [5330, 5600, 0, 0, 'suelo'], [5600, 5900, -300, -300, 'abismo'], [5900, 7300, 0, 0, 'suelo'],
+    ],
+    escaleras: [[900, 140], [3800, 150]], sogas: [[1400, 330, 190], [1600, 330, 190], [3200, 300, 200], [3400, 300, 200], [4325, 340, 200], [5750, 240, 170]],
+    fuegos: [[2650, 2760], [5450, 5540]],
+    dormidos: [450, 1000, 1200, 1800, 2000, 2350, 2950, 3600, 3900, 4100, 4600, 5000, 5450, 6000, 6300, 6500, 6700] },
 ];
 const INICIO_HISTORIA = 600;   // x donde arranca cada nivel
 
@@ -52,6 +89,8 @@ function perfilTerreno(tramos, x0) {
 
 // Textos del modo historia en los tres idiomas (se suman a los de idioma.js)
 Object.assign(TEXTOS.es, {
+  'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
+  'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
   'hist.nivel1': 'Los restos del vuelo 214', 'hist.nivel2': 'La ruta 9', 'hist.nivel3': 'La ciudad', 'hist.nivel4': 'Tu barrio',
   'hist.intro1': 'Una noche de noviembre, un virus convirtió a millones de personas en zombies. Tú volvías a casa en el último vuelo que salió de la capital.',
@@ -87,6 +126,8 @@ Object.assign(TEXTOS.es, {
   'hist.muerto': 'CAÍSTE EN EL CAMINO', 'hist.muertoDetalle': v => `Nivel ${v.n}: ${v.nombre}. Quedaban ${v.km} km para llegar a casa. Eliminaste ${v.bajas} zombies. Puedes reintentar el nivel con las armas que tenías al empezarlo.`,
 });
 Object.assign(TEXTOS.pt, {
+  'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
+  'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
   'hist.nivel1': 'Os destroços do voo 214', 'hist.nivel2': 'A rodovia 9', 'hist.nivel3': 'A cidade', 'hist.nivel4': 'Seu bairro',
   'hist.intro1': 'Numa noite de novembro, um vírus transformou milhões de pessoas em zumbis. Você voltava para casa no último voo que saiu da capital.',
@@ -122,6 +163,8 @@ Object.assign(TEXTOS.pt, {
   'hist.muerto': 'VOCÊ CAIU NO CAMINHO', 'hist.muertoDetalle': v => `Nível ${v.n}: ${v.nombre}. Faltavam ${v.km} km para chegar em casa. Você eliminou ${v.bajas} zumbis. Pode repetir o nível com as armas que tinha ao começar.`,
 });
 Object.assign(TEXTOS.en, {
+  'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
+  'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
   'menu.historia': 'STORY: THE WAY HOME',
   'hist.nivel1': 'The wreck of flight 214', 'hist.nivel2': 'Route 9', 'hist.nivel3': 'The city', 'hist.nivel4': 'Your neighborhood',
   'hist.intro1': 'One November night, a virus turned millions of people into zombies. You were flying home on the last plane out of the capital.',
@@ -209,6 +252,8 @@ Object.assign(Juego.prototype, {
     Mundo.plano = true; Mundo.carriles = false; Mundo.interior = false;
     Mundo.perfil = def.terreno ? perfilTerreno(def.terreno, INICIO_HISTORIA) : null;
     j.aTierra = true;                                       // el ataque aéreo lo pasa cuerpo a tierra
+    j.soga = null; j.trepa = null; j.impulso = 0;
+    this.historia.seguro = { x: j.x, y: j.y }; this.historia.proximoFuego = 0;
     // Armas y munición que trae del nivel anterior
     const e = op.estado;
     if (e && e.inventario) {
@@ -245,14 +290,89 @@ Object.assign(Juego.prototype, {
     for (let k = 0; k < grupo; k++) {
       const atras = Math.random() < 0.15 && j.x > H.inicio + ANCHO;
       const x = atras ? this.camaraX - 60 - Math.random() * 160 : this.camaraX + ANCHO + 60 + Math.random() * 260;
-      if (x > H.meta - 120) continue;
+      if (x > H.meta - 120 || alturaSuelo(x) > SUELO_BASE + 100) continue;   // ni después de la meta ni en un precipicio
       this.zombies.push(new Zombie(x, Math.random() < d.corredores, this.dificultad));
+    }
+  },
+  // Horda final: al acercarse a la meta entra un grupo grande de golpe, con corredores
+  hordaHistoria() {
+    const H = this.historia, d = H.def, j = this.jugador;
+    if (H.horda || !d.horda || j.x < H.meta - d.horda[0]) return;
+    H.horda = true;
+    for (let k = 0; k < d.horda[1]; k++) {
+      let x = this.camaraX + ANCHO + 40 + k * 70 + Math.random() * 40;
+      if (alturaSuelo(x) > SUELO_BASE + 100) x += 320;
+      this.zombies.push(new Zombie(Math.min(x, H.meta - 140), Math.random() < d.corredores + 0.2, this.dificultad));
+    }
+    this.avisoRonda(t('hist.aviso.horda'), '☠ × ' + d.horda[1]); Audio_.sirena();
+  },
+
+  /* Movimiento del jugador en la historia: escaleras de mano, sogas que se balancean y precipicios */
+  extremoSoga(s) {
+    const [dx, hPivote, largo] = s, P = 2.6, A = 0.78, w = 2 * Math.PI / P, f = this.tiempoJugado * w + dx * 0.01;
+    const ang = A * Math.sin(f), dAng = A * w * Math.cos(f);
+    const px = this.historia.inicio + dx, py = SUELO_BASE - hPivote;
+    return { x: px + Math.sin(ang) * largo, y: py + Math.cos(ang) * largo, vx: Math.cos(ang) * largo * dAng / 60, vy: -Math.sin(ang) * largo * dAng / 60, px, py };
+  },
+  moverJugadorHistoria(dt, e) {
+    const j = this.jugador, H = this.historia, d = H.def, neutral = { ...e, derecha: false, izquierda: false, saltarPulsado: false, abajo: false };
+    if (j.protegido || j.muerto) { j.actualizar(dt, neutral, this); return; }
+    // Colgado de una soga: sigue el extremo; saltando se suelta con el impulso del balanceo
+    if (j.soga) {
+      j.actualizar(dt, neutral, this);
+      const p = this.extremoSoga(j.soga);
+      j.x = p.x; j.y = p.y + 70; j.vy = 0; j.enSuelo = false;
+      if (e.saltarPulsado) { j.impulso = p.vx * 1.15; j.vy = Math.min(-5, p.vy - 6); j.soga = null; j.sogaLibreHasta = this.ahora + 450; Audio_.recoger && Audio_.recoger(); }
+      e.saltarPulsado = false; return;
+    }
+    // Trepando una escalera de mano: sube o baja sola hasta el otro extremo
+    if (j.trepa) {
+      j.actualizar(dt, neutral, this);
+      const T = j.trepa; T.f = Math.min(1, T.f + dt * 110 / Math.abs(T.y1 - T.y0));
+      j.x = T.x; j.y = T.y0 + (T.y1 - T.y0) * T.f; j.vy = 0; j.enSuelo = true;
+      if (T.f >= 1) { j.x = T.xFin; j.y = alturaSuelo(T.xFin); j.trepa = null; }
+      return;
+    }
+    for (const [dx, h] of d.escaleras || []) {
+      const lx = H.inicio + dx, base = alturaSuelo(lx - 12), arriba = SUELO_BASE - h;
+      if (e.saltarPulsado && j.enSuelo && Math.abs(j.x - (lx - 14)) < 28 && Math.abs(j.y - base) < 10) { j.trepa = { x: lx - 10, y0: base, y1: arriba, f: 0, xFin: lx + 22 }; e.saltarPulsado = false; j.direccion = 1; return j.actualizar(dt, neutral, this); }
+      if (e.abajo && j.enSuelo && Math.abs(j.x - (lx + 22)) < 26 && Math.abs(j.y - arriba) < 10) { j.trepa = { x: lx - 10, y0: arriba, y1: base, f: 0, xFin: lx - 34 }; return j.actualizar(dt, neutral, this); }
+    }
+    j.actualizar(dt, e, this);
+    // En el aire, cerca del extremo de una soga: se agarra
+    if (!j.enSuelo && this.ahora > (j.sogaLibreHasta || 0)) for (const s of d.sogas || []) {
+      const p = this.extremoSoga(s);
+      if (Math.hypot(j.x - p.x, j.y - 70 - p.y) < 36) { j.soga = s; j.impulso = 0; j.vy = 0; this.aviso(t('hist.pista.soga'), 1400); break; }
+    }
+  },
+  // Precipicios, fuego y punto seguro para volver después de una caída
+  peligrosHistoria() {
+    const H = this.historia, d = H.def, j = this.jugador;
+    if (j.muerto) return;
+    const firme = x => alturaSuelo(x) < SUELO_BASE + 60;
+    if (j.enSuelo && !j.trepa && !j.soga && firme(j.x) && firme(j.x - 50) && firme(j.x + 50)) H.seguro = { x: j.x, y: j.y };
+    if (j.y > SUELO_BASE + 150) {   // cayó al vacío
+      j.vida = Math.max(0, j.vida - 25); Audio_.jugadorHerido();
+      if (j.vida <= 0) { j.muerto = true; Audio_.jugadorMuere(); return; }
+      j.x = H.seguro.x; j.y = H.seguro.y; j.vy = 0; j.impulso = 0; j.enSuelo = true; j.invulnerableHasta = this.ahora + 1500;
+      this.aviso(t('hist.aviso.caida'), 1600); this.sacudida = 8;
+    }
+    for (const [a, b] of d.fuegos || []) {
+      if (j.enSuelo && j.x > H.inicio + a && j.x < H.inicio + b && j.y > SUELO_BASE - 4 && this.ahora >= H.proximoFuego) {
+        H.proximoFuego = this.ahora + 450; j.recibirDano(8, this); this.aviso(t('hist.aviso.fuego'), 900);
+      }
+    }
+    // Pistas: cerca de una escalera
+    for (const [dx, h] of d.escaleras || []) {
+      const lx = H.inicio + dx;
+      if (j.enSuelo && !j.trepa && Math.abs(j.x - (lx - 14)) < 40 && Math.abs(j.y - alturaSuelo(lx - 12)) < 10 && this.ahora > (H.pistaHasta || 0)) { this.aviso(t('hist.pista.escalera'), 1500); H.pistaHasta = this.ahora + 4000; }
     }
   },
 
   // Bordes del nivel, cámara y llegada a la meta
   actualizarHistoria() {
     const H = this.historia, j = this.jugador;
+    this.peligrosHistoria(); this.hordaHistoria();
     if (j.x < H.inicio - 80) j.x = H.inicio - 80;
     if (j.x > H.meta + 30) j.x = H.meta + 30;
     this.camaraX = Math.max(this.camaraX, H.inicio - ANCHO * 0.35);

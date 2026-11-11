@@ -120,7 +120,8 @@ class Zombie {
       this.estado = 'camina';
       // Andar a tirones: avanza más cuando apoya la pierna buena
       const tiron = this.corredor ? 1 : 0.55 + Math.max(0, Math.sin(this.fase)) * 0.9;
-      this.x += this.direccion * this.velocidad * tiron * paso;
+      const nx = this.x + this.direccion * this.velocidad * tiron * paso;
+      if (!(Mundo.perfil && alturaSuelo(nx) > SUELO_BASE + 100)) this.x = nx;   // no se tira a un precipicio: espera en el borde
       this.fase += dt * (this.corredor ? 14 : 6);
     }
     if (Math.abs(this.empuje) > 0.05) { this.x += this.empuje * paso; this.empuje *= Math.pow(0.8, paso); }

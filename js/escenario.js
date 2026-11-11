@@ -82,7 +82,7 @@ const Escenario = {
     const paso = 8;
     const inicio = Math.floor(camaraX / paso) * paso;
     for (let wx = inicio; wx < camaraX + ANCHO + paso; wx += paso) {
-      const y = alturaSuelo(wx), sx = wx - camaraX;
+      const y = Mundo.perfil ? SUELO_BASE : alturaSuelo(wx), sx = wx - camaraX;   // con desniveles de la historia, la calle de fondo queda pareja
       const fondo = y - FONDO_CALLE, frente = y + FRENTE_CALLE;
       const esCalle = y >= SUELO_BASE - 0.5;
       if (esCalle) {

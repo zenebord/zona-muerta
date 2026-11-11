@@ -127,7 +127,103 @@ const EscenarioHistoria = {
       else if (tipo === 'fuselaje') this.fuselajePiso(ctx, sa, sb, SUELO_BASE - h0, frente, t, k);
       else if (tipo === 'escalera') this.escalerilla(ctx, sa, sb, h0, h1, frente);
       else if (tipo === 'ala') this.alaRampa(ctx, sa, sb, h0, h1, frente);
+      else if (tipo === 'abismo') this.abismo(ctx, sa, sb, H.def.clave, t, k);
+      else if (tipo === 'puente') this.puente(ctx, sa, sb);
+      else if (tipo === 'auto') this.autoPiso(ctx, sa, sb, SUELO_BASE - h0, frente, k);
+      else if (tipo === 'colectivo' || tipo === 'camion') this.vehiculoGrande(ctx, sa, sb, SUELO_BASE - h0, frente, tipo, k);
+      else if (tipo === 'contenedor') this.contenedor(ctx, sa, sb, SUELO_BASE - h0, frente, k);
+      else if (tipo === 'andamio') this.andamio(ctx, sa, sb, SUELO_BASE - h0, frente);
+      else if (tipo === 'techo') this.techo(ctx, sa, sb, SUELO_BASE - h0, frente, H.def.clave, k);
+      else if (tipo === 'cerca') this.cercaPiso(ctx, sa, sb, SUELO_BASE - h0, frente);
     }
+    for (const [a, b] of H.def.fuegos || []) { const sa = x0 + a - cam; if (sa > -120 && sa < ANCHO + 40) for (let x = sa + 12; x < x0 + b - cam; x += 26) this.fuego(ctx, x, SUELO_BASE + 6, t, 1.1); }
+    for (const [dx, h] of H.def.escaleras || []) this.escaleraMano(ctx, x0 + dx - cam, alturaSuelo(x0 + dx - 12), SUELO_BASE - h);
+  },
+  // Sogas: se dibujan después del suelo, colgadas de su soporte, en la posición del balanceo
+  sogas(ctx, cam, juego) {
+    const H = juego.historia;
+    for (const s of H.def.sogas || []) {
+      const p = juego.extremoSoga(s), px = p.px - cam, ex = p.x - cam;
+      if (px < -300 || px > ANCHO + 300) continue;
+      ctx.fillStyle = '#3a3f46'; ctx.fillRect(px - 60, p.py - 6, 120, 8); ctx.fillRect(px - 64, p.py - 6, 6, 40); ctx.fillRect(px + 58, p.py - 6, 6, 40);   // viga o rama
+      if (H.def.clave === 'barrio') { ctx.fillStyle = '#4a3a24'; ctx.fillRect(px - 64, p.py - 8, 128, 12); ctx.fillStyle = '#3d6a2a'; ctx.beginPath(); ctx.ellipse(px, p.py - 30, 90, 34, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = '#c9a46a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px, p.py); ctx.lineTo(ex, p.y); ctx.stroke();
+      ctx.strokeStyle = 'rgba(80,50,20,0.6)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(px, p.py); ctx.lineTo(ex, p.y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#8a6a3a'; ctx.beginPath(); ctx.arc(ex, p.y, 5, 0, Math.PI * 2); ctx.fill();   // nudo para agarrarse
+    }
+  },
+  escaleraMano(ctx, sx, base, arriba) {
+    if (sx < -60 || sx > ANCHO + 60) return;
+    const x0 = sx - 22, x1 = sx - 4;
+    ctx.fillStyle = '#7a8088'; ctx.fillRect(x0, arriba - 10, 3, base - arriba + 10); ctx.fillRect(x1, arriba - 10, 3, base - arriba + 10);
+    ctx.fillStyle = '#9aa0a8'; for (let y = base - 8; y > arriba - 6; y -= 12) ctx.fillRect(x0, y, x1 - x0 + 3, 3);
+  },
+  abismo(ctx, sa, sb, tema, t, k) {
+    const arriba = SUELO_BASE - FONDO_CALLE - 14;
+    if (tema === 'ciudad') {   // hueco entre edificios: la calle se ve muy abajo, de noche
+      const g = ctx.createLinearGradient(0, 250, 0, ALTO); g.addColorStop(0, 'rgba(10,12,24,0.7)'); g.addColorStop(0.4, '#0a0c18'); g.addColorStop(1, '#020206');
+      ctx.fillStyle = g; ctx.fillRect(sa, 250, sb - sa, ALTO - 250);
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = `rgba(255, 200, 110, ${0.25 + 0.2 * Math.sin(t * 2 + i)})`; ctx.fillRect(sa + 14 + azar(k + i, 780) * (sb - sa - 28), 470 + azar(k + i, 781) * 50, 3, 3); }
+      return;
+    }
+    // Río (ruta) o canal inundado (barrio): agua oscura con brillo, bordes de tierra y escombros flotando
+    ctx.fillStyle = '#2a1e14'; ctx.fillRect(sa, arriba, sb - sa, ALTO - arriba);
+    const agua = SUELO_BASE + 30, g = ctx.createLinearGradient(0, agua, 0, ALTO); g.addColorStop(0, tema === 'barrio' ? '#4a5a4a' : '#3a5a6a'); g.addColorStop(1, '#14202a');
+    ctx.fillStyle = g; ctx.fillRect(sa + 6, agua, sb - sa - 12, ALTO - agua);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; for (let i = 0; i < 5; i++) ctx.fillRect(sa + 10 + ((i * 53 + t * 30) % (sb - sa - 30)), agua + 8 + i * 9, 18, 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(sa, arriba, 8, ALTO - arriba); ctx.fillRect(sb - 8, arriba, 8, ALTO - arriba);
+    if (tema === 'barrio') for (let i = 0; i < 3; i++) { ctx.fillStyle = '#6a4a2a'; ctx.fillRect(sa + 20 + azar(k + i, 782) * (sb - sa - 60), agua + 4 + Math.sin(t + i) * 2, 34, 6); }
+  },
+  puente(ctx, sa, sb) {
+    const y = SUELO_BASE - FONDO_CALLE - 14;
+    ctx.fillStyle = '#7a7470'; ctx.fillRect(sa, y - 18, sb - sa, 6); for (let x = sa; x < sb; x += 24) ctx.fillRect(x, y - 18, 4, 18);   // baranda de atrás
+    ctx.fillStyle = '#5a5450'; ctx.fillRect(sa, SUELO_BASE + 96, sb - sa, 14);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sa, SUELO_BASE + 110, sb - sa, ALTO);
+  },
+  autoPiso(ctx, sa, sb, arriba, frente, k) {
+    const colores = ['#7a2a24', '#2c4a6e', '#6a6a48', '#3e5a3e', '#5a3a5a'], c = colores[Math.floor(azar(k, 790) * colores.length)];
+    const w = sb - sa, base = frente - 10;
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(sa, base); ctx.lineTo(sa + 4, arriba + 22); ctx.lineTo(sa + w * 0.22, arriba + 18); ctx.lineTo(sa + w * 0.3, arriba); ctx.lineTo(sb - w * 0.28, arriba); ctx.lineTo(sb - w * 0.18, arriba + 18); ctx.lineTo(sb - 4, arriba + 22); ctx.lineTo(sb, base); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1a2230'; ctx.fillRect(sa + w * 0.33, arriba + 4, w * 0.15, 14); ctx.fillRect(sa + w * 0.52, arriba + 4, w * 0.15, 14);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(sa, arriba + 30, w, 4);
+    ctx.fillStyle = '#141414'; for (const x of [sa + w * 0.2, sb - w * 0.2]) { ctx.beginPath(); ctx.arc(x, base, 12, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(sa + w * 0.3, arriba, w * 0.42, 2);
+  },
+  vehiculoGrande(ctx, sa, sb, arriba, frente, tipo, k) {
+    const w = sb - sa, base = frente - 8, col = tipo === 'colectivo' ? '#c8a23a' : '#8a8f96';
+    ctx.fillStyle = col; ctx.fillRect(sa, arriba, w, base - arriba - 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(sa, arriba, w, 3);
+    if (tipo === 'colectivo') { ctx.fillStyle = '#1a2230'; for (let x = sa + 12; x < sb - 30; x += 34) ctx.fillRect(x, arriba + 12, 26, 22); ctx.fillStyle = '#7a2a24'; ctx.fillRect(sa, arriba + 44, w, 6); }
+    else { ctx.fillStyle = 'rgba(0,0,0,0.15)'; for (let x = sa + 14; x < sb - 6; x += 16) ctx.fillRect(x, arriba + 6, 3, base - arriba - 20); ctx.fillStyle = '#c0392b'; ctx.fillRect(sa + 20, arriba + 30, 70, 16); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('CARGA', sa + 30, arriba + 42); }
+    ctx.fillStyle = '#141414'; for (const x of [sa + 30, sb - 30]) { ctx.beginPath(); ctx.arc(x, base, 15, 0, Math.PI * 2); ctx.fill(); }
+  },
+  contenedor(ctx, sa, sb, arriba, frente, k) {
+    ctx.fillStyle = azar(k, 791) < 0.5 ? '#2e5a3a' : '#3a4a6a'; ctx.fillRect(sa, arriba, sb - sa, frente - arriba - 4);
+    ctx.fillStyle = '#1d2a22'; ctx.fillRect(sa - 3, arriba - 4, sb - sa + 6, 6);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let x = sa + 10; x < sb - 4; x += 14) ctx.fillRect(x, arriba + 6, 3, frente - arriba - 14);
+  },
+  andamio(ctx, sa, sb, arriba, frente) {
+    ctx.fillStyle = '#9a7a4a'; ctx.fillRect(sa, arriba, sb - sa, 7);   // tablones
+    ctx.strokeStyle = '#8a9098'; ctx.lineWidth = 3;
+    for (let x = sa + 4; x <= sb - 2; x += Math.max(30, (sb - sa - 8) / 2)) { ctx.beginPath(); ctx.moveTo(x, arriba + 7); ctx.lineTo(x, frente); ctx.stroke(); }
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sa + 4, arriba + 7); ctx.lineTo(sb - 4, frente - 4); ctx.moveTo(sb - 4, arriba + 7); ctx.lineTo(sa + 4, frente - 4); ctx.stroke();
+  },
+  techo(ctx, sa, sb, arriba, frente, tema, k) {
+    // Edificio (ciudad) o casa con terraza (barrio): se camina por la terraza; ventanas en el frente
+    const ciudad = tema === 'ciudad', pared = ciudad ? '#3a3448' : ['#c9b08a', '#a8c0d0', '#d8a88a'][Math.floor(azar(k, 792) * 3)];
+    ctx.fillStyle = pared; ctx.fillRect(sa, arriba, sb - sa, frente - arriba);
+    ctx.fillStyle = ciudad ? '#25202e' : '#6a4a3a'; ctx.fillRect(sa - 4, arriba - 6, sb - sa + 8, 8);   // cornisa
+    for (let y = arriba + 18; y < frente - 24; y += 34) for (let x = sa + 14; x < sb - 30; x += 40) {
+      const luz = ciudad && azar(k + x + y, 793) < 0.3;
+      ctx.fillStyle = luz ? 'rgba(255, 210, 120, 0.8)' : ciudad ? '#15131c' : '#2a3048'; ctx.fillRect(x, y, 22, 18);
+    }
+    if (ciudad) { ctx.fillStyle = '#4a4458'; ctx.fillRect(sb - 50, arriba - 28, 28, 22); ctx.fillRect(sb - 46, arriba - 6, 4, 6); ctx.fillRect(sb - 30, arriba - 6, 4, 6); }   // tanque de agua
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(sb - 8, arriba, 8, frente - arriba);
+  },
+  cercaPiso(ctx, sa, sb, arriba, frente) {
+    ctx.fillStyle = '#eeeeee';
+    for (let x = sa; x < sb; x += 10) { ctx.beginPath(); ctx.moveTo(x, frente - 8); ctx.lineTo(x, arriba + 4); ctx.lineTo(x + 4, arriba - 2); ctx.lineTo(x + 8, arriba + 4); ctx.lineTo(x + 8, frente - 8); ctx.fill(); }
+    ctx.fillRect(sa - 2, arriba + 12, sb - sa + 4, 4); ctx.fillRect(sa - 2, frente - 26, sb - sa + 4, 4);
   },
   crater(ctx, sa, sb, piso, t, k) {
     const borde = SUELO_BASE - 18;
@@ -271,6 +367,7 @@ const EscenarioHistoria = {
     Escenario.dibujarSuelo(ctx, cam);
     this.guardarrail(ctx, cam);
     Escenario.dibujarFondoDelMundo(ctx, cam, t);
+    if (H.def.terreno) this.terreno(ctx, cam, t, H);
   },
   guardarrail(ctx, cam) {
     const y = SUELO_BASE - FONDO_CALLE - 12;
@@ -298,6 +395,7 @@ const EscenarioHistoria = {
     ctx.fillStyle = 'rgba(8, 10, 34, 0.42)'; ctx.fillRect(0, 0, ANCHO, ALTO);   // de noche
     Escenario.dibujarSuelo(ctx, cam);
     Escenario.dibujarFondoDelMundo(ctx, cam, t);
+    if (H.def.terreno) this.terreno(ctx, cam, t, H);
     ctx.fillStyle = 'rgba(8, 10, 34, 0.3)'; ctx.fillRect(0, SUELO_BASE - FONDO_CALLE - 20, ANCHO, ALTO);
   },
 
@@ -318,6 +416,7 @@ const EscenarioHistoria = {
     }
     this.casaFinal(ctx, H.meta - cam, horizonte, t);
     Escenario.dibujarSuelo(ctx, cam);
+    if (H.def.terreno) this.terreno(ctx, cam, t, H);
   },
   casa(ctx, sx, base, k, t) {
     const paredes = ['#c9b08a', '#a8c0d0', '#d8a88a', '#b0c4a0', '#d0c0d8'], techos = ['#6a2a1a', '#3a3a4a', '#5a3a2a', '#2a4a3a'];

@@ -103,9 +103,17 @@ kilómetros» y «Estás en casa» en `js/musica.js`).
 | Nivel | Lugar | Km |
 |---|---|---|
 | 1 | Los restos del vuelo 214: bosque al amanecer, terreno caótico con escombros, cráteres, contenedores de carga, fuselajes para caminar por arriba, escalerillas y el ala como rampa; zombies dormidos que se despiertan al ver al jugador | 100 → 75 |
-| 2 | La ruta 9: carretera a la tarde con autos abandonados | 75 → 45 |
-| 3 | La ciudad en ruinas, de noche | 45 → 15 |
-| 4 | Tu barrio al amanecer; termina en la puerta de la casa | 15 → 0 |
+| 2 | La ruta 9: autos y un colectivo para saltar, un camión al que se sube por escalera, el puente roto sobre el río (dos tramos con soga), un auto en llamas y una horda de 5 al final | 75 → 45 |
+| 3 | La ciudad de noche: andamios y escalera hasta los techos, huecos entre edificios con sogas colgadas, un salto largo de techo a techo, contenedores, fuego y una horda de 7 | 45 → 15 |
+| 4 | Tu barrio: cercas, techos con escaleras, canales inundados que se cruzan de soga en soga, jardines en llamas y una horda de 10 antes de la puerta de casa | 15 → 0 |
+
+La dificultad sube con cada nivel: más zombies dormidos (14, 12, 15 y 17), zombies sueltos más seguidos, más
+corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas de plataformas:
+- **Escaleras de mano**: al pie, ↑ (o saltar) trepa sola hasta arriba; arriba, ↓ baja.
+- **Sogas**: se balancean solas; saltando cerca del nudo te agarras, y saltando otra vez te sueltas con el
+  impulso del balanceo (hay que soltarse cuando va hacia adelante).
+- **Precipicios** (río, canal, hueco entre edificios): caer quita 25 de vida y te devuelve al último lugar firme.
+- **Fuego en el piso**: quema mientras lo pisas. Los zombies no se tiran a los precipicios: esperan en el borde.
 
 - En el camino hay **corazones** (+30 de vida) y **radios**: cada radio es un ataque aéreo para pedir con la A
   (el personaje se tira cuerpo a tierra mientras caen los misiles).
