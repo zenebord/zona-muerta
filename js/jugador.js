@@ -1,5 +1,6 @@
 /* ===== Jugador: movimiento, inventario, disparo, acción manual y recarga por fases ===== */
-const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;
+const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;   // el salto llega a unos 120 px de alto
+const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay que saltar
 const ORIGEN_ARMA = { x: 12, y: -47 };   // mano del gatillo, respecto de los pies
 const CADERA = { x: -4, y: -30 };        // de ahí saca cargadores, balas y cartuchos
 const DETRAS_M2 = 20;                    // a cuánto detrás de la M2 se para el tirador
@@ -117,7 +118,8 @@ class Jugador {
       if (agachandose) this.vx = 0;
       this.caminando = this.vx !== 0 && this.enSuelo;
       if (entrada.saltarPulsado && this.enSuelo && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; }
-      this.x += this.vx * paso;
+      const nx = this.x + this.vx * paso;
+      if (!(this.vx !== 0 && alturaSuelo(nx) < this.y - ESCALON_MAX)) this.x = nx;   // contra una pared alta: no avanza
       const suelo = alturaSuelo(this.x);
       if (this.enSuelo) {
         if (suelo > this.y + 6) { this.enSuelo = false; this.vy = 0; } else this.y = suelo;   // pegado al terreno

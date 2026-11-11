@@ -58,9 +58,9 @@
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
-    juego.aviso(opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
+    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
-    Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : juego.cloaca ? 'cloaca' : 'ciudad');
+    Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
     ultimo = performance.now();
     cancelAnimationFrame(cuadro);
     cuadro = requestAnimationFrame(bucle);
@@ -80,6 +80,7 @@
   const tituloPruebas = () => { document.getElementById('titulo-pruebas').textContent = t(opcionesActuales.entrenamiento ? 'pruebas.armas' : 'pruebas.titulo'); };
 
   function mostrarFin() {
+    if (juego.historia && juego.resultado === 'nivel-superado') { Audio_.ambiente(0); document.getElementById('hud-aereo').classList.add('oculta'); Historia.nivelSuperado(juego); return; }
     Audio_.ambiente(0);
     Musica.detener(2.5);
     const dif = juego.dificultad.nombre.toLowerCase(), tiempo = formatearTiempo(juego.tiempoJugado);
@@ -105,6 +106,11 @@
       if (nuevo) { try { localStorage.setItem(clave, String(juego.ronda)); } catch { /* ídem */ } }
       titulo.textContent = t('fin.ola', { ola: juego.ronda }); titulo.style.color = '';
       detalle.textContent = t('fin.torreta', { olas: Math.max(0, juego.ronda - 1), dificultad: dif, bajas: juego.bajas, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
+    }
+    else if (juego.historia) {
+      const H = juego.historia;
+      titulo.textContent = t('hist.muerto'); titulo.style.color = '';
+      detalle.textContent = t('hist.muertoDetalle', { n: H.n, nombre: Historia.nombre(H.n), km: juego.kmRestantes(), bajas: juego.bajas });
     }
     else { titulo.textContent = t('fin.devoraron'); titulo.style.color = ''; detalle.textContent = resumen; }
     capaFin.classList.remove('oculta');
@@ -318,6 +324,7 @@
     Audio_.activar();
     switch (boton.dataset.accion) {
       case 'infinita':  mostrar('panel-mapas'); break;
+      case 'historia':  Historia.abrir(); break;
       case 'mapa-ciudad': iniciar(null); break;
       case 'mapa-cloaca': iniciar(null, { mapa: 'cloaca' }); break;
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
@@ -440,7 +447,7 @@
   });
 
   // Gancho para depurar desde la consola: ZonaMuerta.juego() devuelve la partida en curso
-  window.ZonaMuerta = { juego: () => juego, iniciar, pausar: () => { if (juego && !pausado && !juego.terminado) alternarPausa(); } };
+  window.ZonaMuerta = { juego: () => juego, iniciar, salir: () => salirAlMenu(), pausar: () => { if (juego && !pausado && !juego.terminado) alternarPausa(); } };
 
   /* ---- Configuración ---- */
   const capaConfig = document.getElementById('capa-config');

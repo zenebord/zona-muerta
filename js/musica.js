@@ -282,7 +282,80 @@ const Musica = (() => {
       },
     };
   })();
-  const TEMAS = { ciudad: CIUDAD, cloaca: CLOACA };
+  /* ---------- Temas de 8 bits del modo historia (estilo consola de los 80) ----------
+   * Solo ondas cuadradas y triangulares y ruido, como el chip de sonido de una consola de los 80: melodía en
+   * cuadrada, arpegio rápido del acorde en otra cuadrada, bajo en triangular y batería de ruido.
+   *  - «Camino a casa» (viñetas): la menor, melancólico y con esperanza.
+   *  - «Cien kilómetros» (niveles): la menor, rápido, para avanzar peleando; la batería entra con los zombies.
+   *  - «Estás en casa» (final): do mayor, tranquilo y feliz. */
+  const CHIP = 0.6;   // volumen general de los temas de 8 bits, parejo con los otros temas
+  const cuadrada = (m, t, dur, vol, eco = 0.12) => nota(m, t, dur, { tipo: 'square', vol: vol * CHIP, ataque: 0.003, caida: 0.07, filtro: 5200, rev: 0.12, eco });
+  const triangulo = (m, t, dur, vol) => nota(m, t, dur, { tipo: 'triangle', vol: vol * CHIP, ataque: 0.003, caida: 0.05, filtro: 5000, rev: 0.04 });
+  const platillo = (t, vol) => soplo(t, 0.03, vol * CHIP, 'highpass', 7000, 0.7, 0.03);
+  const redoblante = (t, vol) => soplo(t, 0.1, vol * CHIP, 'bandpass', 1800, 0.9, 0.08, 900);
+  const bombo = (t, vol) => tambor(t, 160, 48, 0.18, vol * CHIP * 0.8, 0.04);
+  // Arma un tema: acordes por compás [raíz, tercera, quinta], melodía [compás, semicorchea, nota, largo]
+  function temaChip({ bpm, acordes, melodia, arpegio = 1, bajo = 'pulso', bateria = 0.25, volMelodia = 0.05, contra = null }) {
+    const M = new Map(); for (const n of melodia) M.set(n[0] * 16 + n[1], n);
+    const C = contra ? new Map(contra.map(n => [n[0] * 16 + n[1], n])) : null;
+    const compases = acordes.length;
+    return {
+      bpm, largo: compases * 16,
+      paso(i, t, s, I) {
+        const compas = Math.floor(i / 16) % compases, sc = i % 16, [r, te, q] = acordes[compas];
+        const n = M.get(compas * 16 + sc); if (n) cuadrada(n[2], t, s * n[3] * 0.82, volMelodia, 0.18);
+        if (C && I > 0.6) { const c = C.get(compas * 16 + sc); if (c) cuadrada(c[2], t, s * c[3] * 0.8, volMelodia * 0.55, 0.08); }
+        // Arpegio del acorde, una nota por semicorchea (o por corchea en el tema lento)
+        if (arpegio && sc % arpegio === 0) { const tonos = [r + 12, te + 12, q + 12, r + 24]; cuadrada(tonos[(sc / arpegio) % 4], t, s * arpegio * 0.6, 0.016, 0.05); }
+        // Bajo en triangular: pulsando en corcheas o largo en blancas
+        if (bajo === 'pulso' && sc % 2 === 0) triangulo(r - 12 + (sc % 4 === 2 ? 12 : 0), t, s * 1.6, 0.11);
+        if (bajo === 'largo' && sc % 8 === 0) triangulo(r - 12, t, s * 7, 0.1);
+        // Batería de ruido: entra con la intensidad
+        if (I > bateria) {
+          if (sc === 0 || sc === 8 || (sc === 10 && I > 0.6)) bombo(t, 0.22);
+          if (sc === 4 || sc === 12) redoblante(t, 0.08);
+          if (sc % 2 === 0) platillo(t, 0.022);
+        }
+      },
+    };
+  }
+  const Am = [57, 60, 64], F = [53, 57, 60], C_ = [48, 52, 55], G = [55, 59, 62], E = [52, 56, 59];
+  const RETRO = temaChip({ bpm: 100, arpegio: 1, bajo: 'largo', bateria: 0.05, volMelodia: 0.045,
+    acordes: [Am, F, C_, G, Am, F, G, E, Am, F, C_, G, Am, F, E, Am],
+    melodia: [
+      [0, 0, 76, 6], [0, 6, 74, 2], [0, 8, 72, 4], [0, 12, 71, 4], [1, 0, 69, 8], [1, 8, 72, 4], [1, 12, 74, 4],
+      [2, 0, 76, 6], [2, 6, 79, 2], [2, 8, 77, 4], [2, 12, 76, 4], [3, 0, 74, 12], [3, 12, 71, 4],
+      [4, 0, 72, 4], [4, 4, 74, 4], [4, 8, 76, 6], [4, 14, 79, 2], [5, 0, 77, 8], [5, 8, 76, 4], [5, 12, 72, 4],
+      [6, 0, 74, 6], [6, 6, 72, 2], [6, 8, 71, 4], [6, 12, 74, 4], [7, 0, 68, 8], [7, 8, 71, 4], [7, 12, 76, 4],
+      [8, 0, 81, 6], [8, 6, 79, 2], [8, 8, 76, 4], [8, 12, 72, 4], [9, 0, 77, 8], [9, 8, 76, 4], [9, 12, 74, 4],
+      [10, 0, 76, 6], [10, 6, 79, 2], [10, 8, 84, 4], [10, 12, 83, 4], [11, 0, 79, 12], [11, 12, 74, 4],
+      [12, 0, 72, 4], [12, 4, 76, 4], [12, 8, 81, 6], [12, 14, 79, 2], [13, 0, 77, 6], [13, 6, 76, 2], [13, 8, 74, 8],
+      [14, 0, 71, 4], [14, 4, 74, 4], [14, 8, 80, 8], [15, 0, 81, 16],
+    ] });
+  const RETRO_ACCION = temaChip({ bpm: 150, arpegio: 1, bajo: 'pulso', bateria: 0.2, volMelodia: 0.05,
+    acordes: [Am, Am, F, G, C_, G, Am, E],
+    melodia: [
+      [0, 0, 69, 2], [0, 2, 72, 2], [0, 4, 76, 4], [0, 8, 74, 2], [0, 10, 72, 2], [0, 12, 74, 4],
+      [1, 0, 76, 6], [1, 6, 72, 2], [1, 8, 69, 8],
+      [2, 0, 77, 2], [2, 2, 76, 2], [2, 4, 74, 2], [2, 6, 72, 2], [2, 8, 74, 4], [2, 12, 77, 4],
+      [3, 0, 79, 8], [3, 8, 74, 4], [3, 12, 71, 4],
+      [4, 0, 72, 2], [4, 2, 76, 2], [4, 4, 79, 4], [4, 8, 77, 2], [4, 10, 76, 2], [4, 12, 74, 4],
+      [5, 0, 74, 6], [5, 6, 71, 2], [5, 8, 67, 8],
+      [6, 0, 69, 2], [6, 2, 72, 2], [6, 4, 76, 2], [6, 6, 81, 2], [6, 8, 79, 4], [6, 12, 76, 4],
+      [7, 0, 80, 8], [7, 8, 76, 4], [7, 12, 71, 4],
+    ],
+    // Con muchos zombies, una segunda voz responde abajo
+    contra: [[0, 8, 64, 4], [1, 8, 60, 8], [2, 8, 65, 8], [3, 0, 67, 8], [4, 8, 64, 8], [5, 8, 62, 8], [6, 8, 64, 8], [7, 0, 68, 8]] });
+  const Cm = [48, 52, 55], Gm = [55, 59, 62], Amn = [57, 60, 64], Fm = [53, 57, 60];
+  const RETRO_FINAL = temaChip({ bpm: 88, arpegio: 2, bajo: 'largo', bateria: 0.5, volMelodia: 0.05,
+    acordes: [Cm, Gm, Amn, Fm, Cm, Gm, Fm, Cm],
+    melodia: [
+      [0, 0, 76, 4], [0, 4, 79, 4], [0, 8, 84, 8], [1, 0, 83, 4], [1, 4, 79, 4], [1, 8, 74, 8],
+      [2, 0, 76, 4], [2, 4, 72, 4], [2, 8, 81, 8], [3, 0, 79, 6], [3, 6, 77, 2], [3, 8, 76, 8],
+      [4, 0, 72, 4], [4, 4, 76, 4], [4, 8, 79, 8], [5, 0, 79, 4], [5, 4, 77, 4], [5, 8, 74, 8],
+      [6, 0, 77, 4], [6, 4, 76, 4], [6, 8, 74, 4], [6, 12, 71, 4], [7, 0, 72, 16],
+    ] });
+  const TEMAS = { ciudad: CIUDAD, cloaca: CLOACA, retro: RETRO, retroAccion: RETRO_ACCION, retroFinal: RETRO_FINAL };
 
   /* ---------- Programador ---------- */
   function tic() {

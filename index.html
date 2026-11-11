@@ -27,6 +27,7 @@
       <p id="descripcion-dificultad" class="descripcion-dificultad"></p>
     </div>
     <nav class="opciones">
+      <button class="boton grande historia" data-accion="historia" data-t="menu.historia">HISTORIA: CAMINO A CASA</button>
       <button class="boton grande" data-accion="infinita" data-t="menu.infinita">PELEA INFINITA</button>
       <button class="boton grande" data-accion="misiones" data-t="menu.misiones">MISIONES</button>
       <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
@@ -201,6 +202,18 @@
     </div>
   </section>
 
+  <!-- ===== HISTORIA: viñetas de 8 bits, resumen de cada nivel y final (js/historia.js) ===== -->
+  <div id="capa-historia" class="capa-historia oculta" role="dialog" aria-live="polite">
+    <div class="historia-caja">
+      <h2 id="historia-titulo"></h2>
+      <canvas id="historia-vineta" width="960" height="540" aria-hidden="true"></canvas>
+      <p id="historia-texto"></p>
+      <dl id="historia-datos" class="historia-datos oculta"></dl>
+      <div id="historia-botones" class="historia-botones"></div>
+      <p id="historia-pista" class="historia-pista"></p>
+    </div>
+  </div>
+
   <!-- ===== CONFIGURACIÓN: engranaje arriba a la izquierda, en todas las pantallas ===== -->
   <button id="boton-config" class="boton-config" type="button" data-accion="config-abrir" data-t-aria="boton.config" data-t-title="boton.config" aria-label="Configuración">
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -360,6 +373,8 @@
   <script src="js/juego.js"></script>
   <script src="js/poderes.js"></script>
   <script src="js/defensa-ultra.js"></script>
+  <script src="js/escenario-historia.js"></script>
+  <script src="js/historia.js"></script>
   <script src="js/rama.js"></script>
   <script src="js/asistente.js"></script>
   <script src="js/interfaz.js"></script>

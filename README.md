@@ -92,6 +92,31 @@ y entrá a <http://127.0.0.1:8791/>.
 | Velocidad | ×0,75 | ×1 | ×1,3 |
 | Mordida | 8 | 10 | 15 |
 
+## Historia: «Camino a casa»
+
+Modo por niveles, de izquierda a derecha como los juegos de plataformas de antes (`js/historia.js`,
+`js/escenario-historia.js`). El avión del protagonista cae a 100 km de su casa cuando aparecen los zombies y
+tiene que volver con su hija. La historia se cuenta con viñetas de 8 bits (lienzo de 320×180 agrandado sin
+suavizar, con líneas de barrido) y música de consola de los 80 hecha en vivo (temas «Camino a casa», «Cien
+kilómetros» y «Estás en casa» en `js/musica.js`).
+
+| Nivel | Lugar | Km |
+|---|---|---|
+| 1 | Los restos del vuelo 214: bosque al amanecer, terreno caótico con escombros, cráteres, contenedores de carga, fuselajes para caminar por arriba, escalerillas y el ala como rampa; zombies dormidos que se despiertan al ver al jugador | 100 → 75 |
+| 2 | La ruta 9: carretera a la tarde con autos abandonados | 75 → 45 |
+| 3 | La ciudad en ruinas, de noche | 45 → 15 |
+| 4 | Tu barrio al amanecer; termina en la puerta de la casa | 15 → 0 |
+
+- En el camino hay **corazones** (+30 de vida) y **radios**: cada radio es un ataque aéreo para pedir con la A
+  (el personaje se tira cuerpo a tierra mientras caen los misiles).
+- Las armas y la munición pasan de un nivel al siguiente; las cajas de cada nivel suman armas nuevas.
+- Al terminar cada nivel aparece un resumen (zombies, tiempo, vida, corazones, radios y armas encontradas) y el
+  mapa del camino; al terminar el cuarto, el reencuentro con la hija y el fin.
+- Si muere, reintenta el nivel con lo que tenía al empezarlo. El progreso queda guardado en el navegador
+  (`zonaMuerta.historia.nivel`) y desde el menú se puede continuar o empezar de nuevo.
+- Desniveles: `Mundo.perfil` da la altura del piso por tramos; un escalón de más de 14 px no se sube caminando
+  (`ESCALON_MAX` en `js/jugador.js`), hay que saltarlo (el salto llega a unos 120 px).
+
 ## Música, configuración e idioma
 
 - **Música**: cada escenario tiene su tema, original y tocado en vivo con WebAudio (no hay archivos de

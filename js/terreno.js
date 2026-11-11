@@ -47,6 +47,7 @@ function perfilMontana(local) {
 
 // Coordenada y del suelo en cualquier x del mundo: lo usan jugador, zombies, cajas y bolas de paja
 function alturaSuelo(x) {
+  if (Mundo.perfil) return SUELO_BASE - Mundo.perfil(x);   // nivel de la historia con desniveles propios
   const i = indiceTrozo(x);
   if (!esMontana(i)) return SUELO_BASE;
   return SUELO_BASE - ALTURA_MONTANA * perfilMontana(x - i * TAMANO_TROZO);

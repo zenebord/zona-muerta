@@ -95,6 +95,13 @@ class Zombie {
       return;
     }
 
+    if (this.cabezaAtras < 0) this.cabezaAtras = Math.min(0, this.cabezaAtras + dt * 1.8);   // levanta la cabeza al despertar
+    if (this.dormido) {
+      this.fase += dt * 0.6; this.y = alturaSuelo(this.x);
+      if (!jugador.muerto && Math.abs(jugador.x - this.x) < 300 && Math.abs(jugador.y - this.y) < 170) this.despertar(juego, jugador);
+      return;
+    }
+    if (ahora < (this.despiertaHasta || 0)) { this.y = alturaSuelo(this.x); return; }   // se está incorporando
     const dx = jugador.x - this.x;
     this.direccion = dx >= 0 ? 1 : -1;
     const distancia = Math.abs(dx);
@@ -125,8 +132,18 @@ class Zombie {
     }
   }
 
+  // Zombie dormido (modo historia): queda quieto, encorvado, hasta que ve al jugador
+  dormir() { this.dormido = true; this.cabezaAtras = -0.9; this.recogido = 0.2; return this; }
+  despertar(juego, jugador) {
+    if (!this.dormido) return;
+    this.dormido = false; this.recogido = 0; this.despiertaHasta = juego.ahora + 550;
+    if (jugador) this.direccion = jugador.x >= this.x ? 1 : -1;
+    Audio_.gemido(true, jugador ? Math.abs(jugador.x - this.x) : 200);
+  }
+
   recibirDano(cantidad, direccion, arma, juego) {
     if (this.estado === 'muerto') return;
+    if (this.dormido) this.despertar(juego, juego.jugador);
     this.vida -= cantidad;
     this.golpeadoHasta = juego.ahora + 90;
     if (!arma || !arma.explosivo) Audio_.impactoCarne();
@@ -200,7 +217,7 @@ class Zombie {
 
     // Brazo de atrás
     const sinManga = est.torso === 'musculosa';
-    this.brazo(ctx, -2, -54, V.brazoColgando ? 'cuelga' : 'estira', 0.4 + vaiven * 0.12, ataca, sinManga ? null : col(ajustarColor(C.camiseta, -0.25)), col(ajustarColor(this.piel, -0.2)), golpeado);
+    this.brazo(ctx, -2, -54, V.brazoColgando || this.dormido ? 'cuelga' : 'estira', 0.4 + vaiven * 0.12, ataca, sinManga ? null : col(ajustarColor(C.camiseta, -0.25)), col(ajustarColor(this.piel, -0.2)), golpeado);
 
     // Torso: camiseta azul con el borde de abajo deshilachado
     const hemY = -33;
@@ -250,7 +267,7 @@ class Zombie {
     ctx.restore();
 
     // Brazo de adelante: estirado hacia la presa
-    this.brazo(ctx, 7, -54, 'estira', 0.25 - vaiven * 0.12, ataca, sinManga ? null : col(C.camiseta), piel, golpeado);
+    this.brazo(ctx, 7, -54, this.dormido ? 'cuelga' : 'estira', 0.25 - vaiven * 0.12, ataca, sinManga ? null : col(C.camiseta), piel, golpeado);
     ctx.restore();
   }
 

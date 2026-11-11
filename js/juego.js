@@ -12,6 +12,7 @@ class Juego {
     this.cloaca = this.mapa === 'cloaca';
     Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra;
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
+    Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
     Mundo.interior = this.entrenamiento || this.cloaca;   // el polígono y la cloaca son lugares cerrados
     Audio_.lugar(this.entrenamiento ? 'galpon' : this.cloaca ? 'cloaca' : 'aire');
     this.mision = mision ? new SeguimientoMision(mision) : null;
@@ -64,6 +65,7 @@ class Juego {
         reacciones: [], record, serieActual: null, disparosAcertados: new Set(), alturaTiro: {} };
     }
     if (this.ultra) this.prepararUltra();
+    if (opciones.historia) this.prepararHistoria(opciones.historia);
     if (this.pruebas || this.entrenamiento) {
       for (const id of ORDEN_INVENTARIO) this.jugador.recoger(id);
       for (const id of ARMAS_ESPECIALES) this.jugador.reserva[id] = 999;
@@ -285,8 +287,13 @@ class Juego {
     if (!this.aereo || this.terminado || this.jugador.muerto) return;
     const a = this.aereo;
     if (a.activo) return;
-    if (this.tiempoJugado < a.listoEn) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
-    a.listoEn = this.tiempoJugado + a.recarga;
+    if (this.historia) {   // en la historia, cada radio es un pedido
+      if (a.cargas <= 0) { this.aviso(t('hist.aviso.sinRadio'), 1800); return; }
+      a.cargas--; this.historia.aereos++;
+    } else {
+      if (this.tiempoJugado < a.listoEn) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
+      a.listoEn = this.tiempoJugado + a.recarga;
+    }
     a.activo = { t: 0, duracion: 3.4 };
     this.jugador.protegido = true;
     Audio_.radioAereo();
@@ -328,6 +335,16 @@ class Juego {
     const el = this.hud.aereo; if (!el) return;
     el.classList.remove('oculta');
     const a = this.aereo, falta = Math.max(0, a.listoEn - this.tiempoJugado);
+    if (this.historia) {   // radios juntadas: cuántos pedidos le quedan
+      const estado = a.activo ? 'en-curso' : a.cargas > 0 ? 'listo' : 'sin-radio', clave = estado + a.cargas;
+      if (el.dataset.estado === clave) return;
+      el.dataset.estado = clave;
+      el.classList.toggle('listo', estado === 'listo'); el.classList.toggle('en-curso', estado === 'en-curso');
+      const tecla = t(document.body.classList.contains('tactil') ? 'aereo.tocar' : 'aereo.tecla');
+      const texto = estado === 'en-curso' ? t('aereo.curso') : estado === 'listo' ? t('hist.aereo.cargas', { n: a.cargas, tecla }) : t('hist.aereo.busca');
+      el.innerHTML = `<span class="nombre">${t('aereo.nombre')}</span><span class="estado">${texto}</span><span class="barra" style="width:${a.cargas > 0 ? 100 : 0}%"></span>`;
+      return;
+    }
     const estado = a.activo ? 'en-curso' : falta <= 0 ? 'listo' : 'recargando';
     if (el.dataset.estado !== estado || estado === 'recargando') {
       el.dataset.estado = estado;
@@ -476,6 +493,7 @@ class Juego {
     const d = this.dificultad;
     if (this.pruebas || this.entrenamiento) return;
     if (this.aereo && this.aereo.activo) return;   // mientras caen los misiles no entra nadie: la pantalla queda limpia
+    if (this.historia) return this.aparecerZombiesHistoria(dt);
     if (this.ultra && !this.enDescanso && this.porAparecer > 0) return this.aparecerOlaUltra(dt);
     if (this.torreta && !this.enDescanso && this.porAparecer > 0) return this.aparecerOla(dt);
     if (this.enDescanso) { if (this.tiempoJugado >= this.descansoHasta) this.iniciarRonda(); return; }
@@ -497,7 +515,7 @@ class Juego {
 
   aparecerCajas(dt) {
     if (this.ultra) return this.cajasUltra(dt);
-    if (this.pruebas || this.torreta || this.entrenamiento) return;
+    if (this.pruebas || this.torreta || this.entrenamiento || this.historia) return;
     this.proximaCaja -= dt;
     if (this.proximaCaja > 0) return;
     this.proximaCaja = (10 + Math.random() * 6) / AJUSTE.cajas;
@@ -517,7 +535,9 @@ class Juego {
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
 
-    if (this.ultra) this.actualizarJugadorUltra(dt, e); else j.actualizar(dt, e, this);
+    if (this.ultra) this.actualizarJugadorUltra(dt, e);
+    else if (this.historia && j.protegido) j.actualizar(dt, { ...e, derecha: false, izquierda: false, saltarPulsado: false }, this);   // cuerpo a tierra: no se mueve
+    else j.actualizar(dt, e, this);
     if (!j.muerto && !(j.aTierra && j.protegido) && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);   // cuerpo a tierra no dispara
     e.dispararPulsado = false;
 
@@ -545,9 +565,10 @@ class Juego {
         Audio_.recoger();
         if (this.mision) this.mision.alRecoger(a);
         if (c.especial) this.especialesTomadas.set(c.indiceMontana, this.tiempoJugado);
+        if (this.historia && c.historia && nueva) this.historia.armas.push(c.armaId);
         c.vivo = false;
       }
-      if (Math.abs(c.x - j.x) > 2600 && !c.especial) c.vivo = false;
+      if (Math.abs(c.x - j.x) > 2600 && !c.especial && !c.historia) c.vivo = false;   // las cajas de la historia esperan en su lugar
     }
 
     // Zombies que el jugador dejó atrás (fuera de pantalla, del lado contrario a donde avanza): desaparecen y
@@ -555,7 +576,7 @@ class Juego {
     if (Math.abs(j.vx) > 0.5) this.avance = Math.sign(j.vx);
     const avance = this.avance || j.direccion;
     if (!this.torreta && !this.ultra) for (const z of this.zombies) {
-      if (z.estado === 'muerto' || z.maniqui) continue;
+      if (z.estado === 'muerto' || z.maniqui || z.dormido) continue;
       const dx = z.x - j.x, atras = Math.sign(dx) === -avance && Math.abs(dx) > ANCHO / 2 + 160;
       if (atras || Math.abs(dx) > 2600) { z.x = j.x + avance * (ANCHO / 2 + 80 + Math.random() * 220); z.y = alturaSuelo(z.x); }
     }
@@ -570,6 +591,7 @@ class Juego {
 
     const objetivo = this.ultra ? j.x - ULTRA.tiradorX : this.torreta || this.entrenamiento ? j.x - ANCHO / 2 : j.x - ANCHO / 2 + j.direccion * 110;   // centrada: se ven los dos lados
     this.camaraX += (objetivo - this.camaraX) * Math.min(1, dt * 4);
+    if (this.historia) this.actualizarHistoria();
     this.sacudida = Math.max(0, this.sacudida - dt * 40);
     this.destello = Math.max(0, (this.destello || 0) - dt);
     this.ambiente.actualizar(dt, this.camaraX);
@@ -604,7 +626,7 @@ class Juego {
     const tiros = disparosParaMatar(arma, vidaActual);
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
-    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : '') + this.dificultad.nombre.toUpperCase();
+    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : '') + this.dificultad.nombre.toUpperCase();
     if (modo !== this.textoModo) { this.textoModo = modo; h.dificultad.textContent = modo; }
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +
@@ -620,6 +642,7 @@ class Juego {
     else if (this.enDescanso) h.ronda.innerHTML = `${palabra} ${this.ronda + 1}<small>${t('hud.en', { s: Math.max(0, Math.ceil(this.descansoHasta - this.tiempoJugado)) })}</small>`;
     else h.ronda.innerHTML = `${palabra} ${this.ronda}<small>${t('hud.quedan', { n: this.porAparecer + this.zombiesVivos() })}</small>`;
     if (this.ultra) this.hudUltra();
+    else if (this.historia) this.hudHistoria();
     else if (this.mision) {
       const m = this.mision, resto = m.tiempoRestante();
       h.mision.classList.add('activa');
@@ -646,6 +669,7 @@ class Juego {
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
     else if (this.pruebas) Escenario.dibujarCampo(ctx, cam);
+    else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);
       if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam);
@@ -674,6 +698,7 @@ class Juego {
     for (const x of this.explosiones) x.dibujar(ctx, cam);
     for (const p of this.particulas) p.dibujar(ctx, cam);
     if (this.cloaca) Escenario.dibujarCloacaFrente(ctx, cam, this.tiempoJugado);
+    else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia); }
     else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ALTO * 0.95);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
