@@ -546,19 +546,24 @@
    * mismos archivos que cargó; en el artefacto se guarda con la capacidad «downloads», fuera de él con un enlace. */
   async function armarJuegoSuelto() {
     // HTML_PAGINA se tomó al cargar config.js: los scripts que venían después todavía no estaban. Se completan con los
-    // que cargó la página, en el mismo orden.
-    let html = HTML_PAGINA;
-    const marca = '<script src="js/config.js"></script>', corte = html.indexOf(marca);
-    if (corte < 0) throw new Error('sin marca');
-    const todos = [...document.scripts].map(s => s.getAttribute('src')).filter(s => s && /^js\//.test(s));
-    const despues = todos.slice(todos.indexOf('js/config.js') + 1).map(s => `<script src="${s}"></script>`).join('\n');
-    html = html.slice(0, corte + marca.length) + '\n' + despues + '\n' + html.slice(html.indexOf('</body>', corte));
-    const css = html.match(/<link rel="stylesheet" href="(css\/[^"]+)">/);
+    // que cargó la página, en el mismo orden. Las rutas pueden venir reescritas por el visor: vale cualquiera que
+    // termine en js/<archivo>.js; los scripts ajenos al juego (del visor) se sacan.
+    const esDelJuego = src => /(^|\/)js\/[\w-]+\.js(\?|#|$)/.test(src || '');
+    const etiqueta = /<script\b[^>]*\bsrc="([^"]*)"[^>]*><\/script>/g;
+    let html = HTML_PAGINA, config = null;
+    for (const m of html.matchAll(etiqueta)) if (/(^|\/)js\/config\.js/.test(m[1])) config = m;
+    if (!config) throw new Error('sin config.js');
+    const todos = [...document.scripts].map(s => s.getAttribute('src')).filter(esDelJuego);
+    const despues = todos.slice(todos.findIndex(s => /(^|\/)js\/config\.js/.test(s)) + 1).map(s => `<script src="${s}"></script>`).join('\n');
+    const fin = config.index + config[0].length;
+    html = html.slice(0, fin) + '\n' + despues + '\n' + html.slice(html.indexOf('</body>', fin));
+    const css = html.match(/<link rel="stylesheet" href="([^"]*css\/[^"]+)">/);
     if (css) { const txt = await (await fetch(css[1])).text(); html = html.replace(css[0], () => '<style>\n' + txt + '\n</style>'); }
-    for (const [etiqueta, src] of [...html.matchAll(/<script src="(js\/[^"]+)"><\/script>/g)]) {
+    for (const [tag, src] of [...html.matchAll(etiqueta)]) {
+      if (!esDelJuego(src)) { html = html.replace(tag, ''); continue; }
       const r = await fetch(src); if (!r.ok) throw new Error(src);
       const txt = (await r.text()).replace(/<\/script/gi, '<\\/script');
-      html = html.replace(etiqueta, () => '<script>\n' + txt + '\n</script>');
+      html = html.replace(tag, () => '<script>\n' + txt + '\n</script>');
     }
     return '<!doctype html>\n' + html;
   }
