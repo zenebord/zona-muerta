@@ -360,6 +360,7 @@ const Audio_ = (() => {
         case 'escopeta':  sono = grabacion('cartucho_cae', op(0.36, 0.95 + Math.random() * 0.12)); break;
         case 'granada40': sono = grabacion('casquillo_rebote_1', op(0.36, 0.62)); break;
         case 'cargador':  sono = grabacion('cargador_al_piso', op(1, 0.9)); break;
+        case 'cargadorPistola': sono = grabacion('cargador_al_piso', op(0.75, 1.2)); break;
         case 'tambor':    sono = grabacion('cargador_al_piso', op(1.1, 0.7)); break;
         case 'speedloader': sono = grabacion('cargador_al_piso', op(0.5, 1.35)); break;
         case 'peine':     sono = grabacion('cargador_al_piso', op(0.4, 1.5)); break;

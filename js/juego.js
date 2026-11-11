@@ -196,9 +196,9 @@ class Juego {
   }
 
   // Cargador vacío que el jugador tira al piso a mitad de la recarga
-  soltarCargador(jugador, tipo = 'cargador') {
+  soltarCargador(jugador, tipo = 'cargador', desde = null) {   // desde: dónde cae (la mano); si no, el pozo del cargador
     if (!tipo) return;
-    const p = jugador.puntoArma('cargador');
+    const p = desde || jugador.puntoArma('cargador');
     this.casquillos.push(new Casquillo(p.x, p.y, jugador.direccion, tipo));
   }
 
