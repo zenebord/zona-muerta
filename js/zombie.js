@@ -179,7 +179,7 @@ class Zombie {
     if (this.vida <= 0) {
       this.estado = 'muerto';
       juego.salpicar(this.x, this.y - this.altura - 30 * this.escala, this.colorSangre, 18, 5);
-      Audio_.zombieMuere();
+      if (this.sonidoMuerte) this.sonidoMuerte(); else Audio_.zombieMuere();
       juego.alMorirZombie(this, arma);
     }
   }

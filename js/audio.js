@@ -438,6 +438,21 @@ const Audio_ = (() => {
       o.start(t); vib.start(t); o.stop(t + dur + 0.2); vib.stop(t + dur + 0.2);
       ruido({ dur: dur * 0.7, vol: fuerte ? 0.05 : 0.02, filtro: 'bandpass', freq: 700, q: 2, ataque: 0.1 });   // aire y gorgoteo
     },
+    // Animal zombie que muere: chillido que se quiebra hacia abajo (más grave cuanto más grande) y un estertor
+    animalMuere(tamaño = 1) {
+      if (!asegurar()) return;
+      const g = 1 / Math.sqrt(tamaño);
+      tono({ tipo: 'sawtooth', desde: 900 * g, hasta: 260 * g, dur: 0.38, vol: 0.22, sat: 2.5, rev: 0.25 });
+      tono({ tipo: 'square', desde: 640 * g, hasta: 200 * g, dur: 0.3, vol: 0.06, retraso: 0.02, rev: 0.2 });
+      ruido({ dur: 0.35, vol: 0.12, filtro: 'bandpass', freq: 1200 * g, freqFin: 400 * g, q: 2, rev: 0.2 });
+      ruido({ dur: 0.5, vol: 0.06, filtro: 'bandpass', freq: 300 * g, q: 3, ataque: 0.05, retraso: 0.45, rev: 0.15 });   // estertor
+    },
+    // El cuerpo del animal que cae al piso (y rebota); los grandes retumban
+    cuerpoAnimalCae(tamaño = 1, fuerza = 1) {
+      if (!asegurar()) return;
+      variante('cuerpo_cae', 2, { vol: Math.min(0.9, 0.35 + 0.25 * tamaño) * fuerza, vel: Math.max(0.6, 1.15 - tamaño * 0.2), rev: 0.1 });
+      golpe({ f: 140 / Math.sqrt(tamaño), dur: 0.1 + 0.05 * tamaño, vol: Math.min(0.5, 0.18 * tamaño) * fuerza });
+    },
     zombieMuere() {
       asegurar();
       if (variante('zombie_muerte', 4, { vol: 0.85, vel: 0.9 + Math.random() * 0.15, rev: 0.2 })) {

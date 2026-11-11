@@ -58,18 +58,20 @@ function podrido(hex, k = 0.3) {
 function dibujarCuadrupedo(ctx, z, E, golpeado) {
   const col = c => golpeado ? ajustarColor(c, 0.7) : c, sil = Pincel.silueta;
   const anda = z.estado === 'camina' || z.estado === 'embiste', ataca = z.estado === 'ataca', carga = z.estado === 'carga';
-  const f = z.fase, R = z.recogido || 0, mitad = E.largo / 2, G = E.grosor, ahora = z.ahora;
+  const f = z.fase, R = z.recogido || 0, mitad = E.largo / 2, G = E.grosor, ahora = z.ahora, muerto = z.estado === 'muerto';
+  const apagado = muerto && z.tiempoMuerto > 0.9;                       // se le apagan los ojos
   const bob = anda ? -Math.abs(Math.sin(f)) * 1.4 : carga ? Math.sin(ahora / 40) * 0.8 : 0;
   const yc = -E.pata * (1 - R * 0.55) - G * 0.42 + bob;
   const base = podrido(E.color, E.color === '#f0ece2' || E.color === '#f0e8da' ? 0.22 : 0.3);
   const piel = col(base), oscuro = col(ajustarColor(base, -0.32)), carne = col('#6a1414'), hueso = col('#ddd2b4');
   const garras = E.orejas === 'caidas' || E.orejas === 'gato';
   const pata = (x0, desfase, tono, adelante, cerca) => {
-    const a = anda ? Math.sin(f + desfase) * 0.55 : carga && adelante ? Math.sin(ahora / 70) * 0.5 : ataca ? Math.sin(ahora / 90 + desfase) * 0.25 : 0;
+    const P = muerto ? z.pataleo : 0;   // muerto: patea con espasmos
+    const a = muerto ? Math.sin(ahora / 38 + desfase * 2.3 + x0) * 0.75 * P + (adelante ? 0.25 : -0.25) : anda ? Math.sin(f + desfase) * 0.55 : carga && adelante ? Math.sin(ahora / 70) * 0.5 : ataca ? Math.sin(ahora / 90 + desfase) * 0.25 : 0;
     const L1 = E.pata * 0.54, L2 = E.pata * 0.52, y0 = yc + G * 0.25;
-    const dobla = (adelante ? -1 : 1) * (0.25 + (anda ? Math.max(0, Math.sin(f + desfase + 1.2)) * 0.7 : 0) + R * 1.7);
+    const dobla = (adelante ? -1 : 1) * (muerto ? 0.15 + Math.abs(Math.sin(ahora / 50 + desfase)) * 0.6 * P : 0.25 + (anda ? Math.max(0, Math.sin(f + desfase + 1.2)) * 0.7 : 0) + R * 1.7);
     const kx = x0 + Math.sin(a) * L1, ky = y0 + Math.cos(a) * L1;
-    const b = a + dobla, px = kx + Math.sin(b) * L2, py = Math.min(0, ky + Math.cos(b) * L2);
+    const b = a + dobla, px = kx + Math.sin(b) * L2, py = muerto ? ky + Math.cos(b) * L2 : Math.min(0, ky + Math.cos(b) * L2);
     const g = G * 0.36;
     pieza(ctx, poli(segmento(x0, y0, kx, ky, g, g * 0.75)), tono, Math.min(x0, kx) - g, Math.max(x0, kx) + g);
     pieza(ctx, poli(segmento(kx, ky, px, py, g * 0.7, g * 0.5)), tono, Math.min(kx, px) - g, Math.max(kx, px) + g);
@@ -113,7 +115,7 @@ function dibujarCuadrupedo(ctx, z, E, golpeado) {
     }
   }
   // Cuello estirado hacia adelante y la cabeza baja, a la altura de la presa
-  const ang = E.angCuello * 0.7 + (ataca ? -0.35 + Math.sin(ahora / 80) * 0.16 : carga ? -0.4 : Math.sin(f * 0.5) * 0.06 - 0.12) + (z.cabezaAtras || 0) * -0.6;
+  const ang = muerto ? E.angCuello * 0.3 - 0.5 + Math.sin(ahora / 45) * 0.25 * z.pataleo : E.angCuello * 0.7 + (ataca ? -0.35 + Math.sin(ahora / 80) * 0.16 : carga ? -0.4 : Math.sin(f * 0.5) * 0.06 - 0.12) + (z.cabezaAtras || 0) * -0.6;
   const nx0 = mitad - 2, ny0 = yc - G * 0.15, nx = nx0 + Math.cos(ang) * E.cuello, ny = ny0 - Math.sin(ang) * E.cuello;
   pieza(ctx, poli(segmento(nx0, ny0, nx, ny, E.grosorCuello * 1.5, E.grosorCuello)), piel, Math.min(nx0, nx) - 4, Math.max(nx0, nx) + 4);
   if (!sil && !golpeado) detalle(ctx, 'rgba(120,10,10,0.75)', elipse(nx - 1, ny + E.grosorCuello * 0.45, E.grosorCuello * 0.45, E.grosorCuello * 0.6));   // pecho manchado de sangre
@@ -121,11 +123,12 @@ function dibujarCuadrupedo(ctx, z, E, golpeado) {
     pieza(ctx, redondo(nx - 4, ny + E.grosorCuello * 0.3, 8, 6, 1.4), col('#6a4420'), nx - 4, nx + 4);
     if (!sil) { linea(ctx, '#2a1e10', 0.6, [[nx - 2, ny + E.grosorCuello * 0.3], [nx - 2, ny + E.grosorCuello * 0.3 + 6]]); linea(ctx, '#2a1e10', 0.6, [[nx + 2, ny + E.grosorCuello * 0.3], [nx + 2, ny + E.grosorCuello * 0.3 + 6]]); linea(ctx, '#7a1a16', 1.4, [[nx - 4, ny + E.grosorCuello * 0.25], [nx + 4, ny + E.grosorCuello * 0.25]]); }
   }
-  const [cw, ch] = E.cabeza, abre = ataca ? 0.45 + Math.abs(Math.sin(ahora / 70)) * 0.35 : carga ? 0.4 : 0.28 + Math.sin(ahora / 300) * 0.05;
+  const [cw, ch] = E.cabeza, abre = muerto ? 0.8 : ataca ? 0.45 + Math.abs(Math.sin(ahora / 70)) * 0.35 : carga ? 0.4 : 0.28 + Math.sin(ahora / 300) * 0.05;
   ctx.save(); ctx.translate(nx, ny); ctx.rotate(0.45 - (ataca ? 0.25 : 0));
   // Mandíbula abierta con los colmillos de abajo
   ctx.save(); ctx.translate(cw * 0.15, ch * 0.35); ctx.rotate(abre);
   pieza(ctx, elipse(cw * 0.75, ch * 0.2, cw * 0.9, ch * 0.32), oscuro, -1, cw * 1.6);
+  if (muerto) pieza(ctx, elipse(cw * 1.5, ch * 0.45, cw * 0.55, ch * 0.2, 0.5), col('#b0566a'), cw, cw * 2.1);   // lengua afuera
   if (!sil) {
     detalle(ctx, '#3a0606', elipse(cw * 0.85, ch * 0.02, cw * 0.7, ch * 0.16));
     if (!golpeado) { ctx.fillStyle = '#e8dcbc'; for (const [x, h] of [[cw * 1.35, ch * 0.55], [cw * 0.7, ch * 0.3], [cw * 1.05, ch * 0.3]]) { ctx.beginPath(); ctx.moveTo(x - 0.5, ch * 0.05); ctx.lineTo(x, ch * 0.05 - h); ctx.lineTo(x + 0.6, ch * 0.05); ctx.fill(); } }
@@ -161,10 +164,10 @@ function dibujarCuadrupedo(ctx, z, E, golpeado) {
     }
     // Ojos rojos encendidos bajo el ceño
     const ox = cw * 0.55, oy = -ch * 0.22, r = Math.max(1, ch * 0.2);
-    const g2 = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 4); g2.addColorStop(0, 'rgba(255,40,20,0.75)'); g2.addColorStop(1, 'rgba(255,0,0,0)');
-    ctx.fillStyle = g2; ctx.fillRect(ox - r * 4, oy - r * 4, r * 8, r * 8);
-    detalle(ctx, '#ff2a1a', elipse(ox, oy, r * 1.1, r * 0.8));
-    detalle(ctx, '#ffd0a0', circulo(ox + r * 0.2, oy - r * 0.15, r * 0.3));
+    if (!apagado) { const g2 = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 4); g2.addColorStop(0, 'rgba(255,40,20,0.75)'); g2.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = g2; ctx.fillRect(ox - r * 4, oy - r * 4, r * 8, r * 8); }
+    detalle(ctx, apagado ? '#4a1a16' : '#ff2a1a', elipse(ox, oy, r * 1.1, r * 0.8));
+    if (!apagado) detalle(ctx, '#ffd0a0', circulo(ox + r * 0.2, oy - r * 0.15, r * 0.3));
     detalle(ctx, '#140404', elipse(ox + r * 0.1, oy, r * 0.18, r * 0.65));                                              // pupila rasgada
     linea(ctx, 'rgba(15,8,6,0.9)', Math.max(0.6, ch * 0.12), [[ox - r * 1.4, oy - r * 1.6], [ox + r * 1.5, oy - r * 0.4]]);   // ceño
     detalle(ctx, 'rgba(70,8,8,0.8)', elipse(-cw * 0.1, ch * 0.25, cw * 0.2, ch * 0.18));                                // mordida en la cara
@@ -177,11 +180,11 @@ function dibujarCuadrupedo(ctx, z, E, golpeado) {
 // borde aserrado y ojos rojos; ataca a picotazos con el cuello estirado
 function dibujarNandu(ctx, z, E, golpeado) {
   const col = c => golpeado ? ajustarColor(c, 0.7) : c, sil = Pincel.silueta;
-  const anda = z.estado === 'camina', ataca = z.estado === 'ataca', f = z.fase, R = z.recogido || 0;
+  const anda = z.estado === 'camina', ataca = z.estado === 'ataca', f = z.fase, R = z.recogido || 0, muerto = z.estado === 'muerto', P = muerto ? z.pataleo : 0;
   const piel = col(podrido(E.color, 0.25)), oscuro = col(ajustarColor(podrido(E.color, 0.25), -0.3)), patas = col('#7a6e56'), pelado = col('#9a8478');
   const yc = -34 * (1 - R * 0.4) + (anda ? -Math.abs(Math.sin(f)) * 1.6 : 0);
   const pata = (desfase, tono) => {
-    const a = anda ? Math.sin(f + desfase) * 0.6 : 0, hx = 0, hy = yc + 6;
+    const a = muerto ? Math.sin(z.ahora / 40 + desfase * 2) * 0.8 * P : anda ? Math.sin(f + desfase) * 0.6 : 0, hx = 0, hy = yc + 6;
     const kx = hx + Math.sin(a) * 13 + 2, ky = hy + 13 * (1 - R * 0.5);
     const px = kx - Math.sin(a) * 4 - 3 - (anda ? Math.max(0, Math.sin(f + desfase + 1)) * 4 : 0), py = Math.min(0, ky + 15);
     linea(ctx, sil || tono, 2.6, [[hx, hy], [kx, ky], [px, py]]);
@@ -199,7 +202,7 @@ function dibujarNandu(ctx, z, E, golpeado) {
   }
   // Cuello pelado y ensangrentado; al atacar se estira y pica
   const pica = ataca ? Math.max(0, Math.sin(z.ahora / 70)) : 0;
-  const cxp = 12 + (ataca ? 6 + pica * 7 : 5), cyp = yc - 24 + (ataca ? 8 + pica * 6 : 2);
+  const cxp = muerto ? 22 + Math.sin(z.ahora / 50) * 2 * P : 12 + (ataca ? 6 + pica * 7 : 5), cyp = muerto ? yc - 4 : yc - 24 + (ataca ? 8 + pica * 6 : 2);   // muerto: el cuello cae flojo
   linea(ctx, sil || pelado, 3.6, [[8, yc - 5], [12, yc - 15], [cxp, cyp]]);
   if (!sil && !golpeado) { linea(ctx, 'rgba(130,10,10,0.85)', 1.4, [[10, yc - 9], [12, yc - 15]]); linea(ctx, 'rgba(130,10,10,0.7)', 0.6, [[10.5, yc - 9], [10.2, yc - 4]]); }
   pieza(ctx, elipse(cxp + 1, cyp, 3.6, 2.8), pelado, cxp - 3, cxp + 5);
@@ -231,6 +234,7 @@ class ZombieAnimal extends Zombie {
   // Agresivo: cuando ve al jugador a menos de 260 px se lanza un 50 % más rápido, muerde cada 0,6 s (no 0,9) y
   // gruñe en vez de gemir; al morder, ladra o brama
   actualizar(dt, jugador, juego) {
+    if (this.estado === 'muerto') { this.moverCadaver(dt, juego); return; }
     const lejos = Math.abs(jugador.x - this.x), base = this.velocidad;
     this.gemidoEn = Infinity;                                       // el gemido humano no va
     if (!this.dormido && lejos < 260 && this.estado !== 'muerto') this.velocidad = base * 1.5;
@@ -249,17 +253,70 @@ class ZombieAnimal extends Zombie {
     ctx.scale(this.direccion * this.escala, this.escala);
     if (this.E.bipedo) dibujarNandu(ctx, this, this.E, golpeado); else dibujarCuadrupedo(ctx, this, this.E, golpeado);
   }
-  // Muerto: se le doblan las patas, se desploma de costado y se desvanece
+  // Muerte aparatosa: el golpe lo despide hacia donde lo empujó (más fuerte si fue una explosión; los grandes
+  // pesan y vuelan menos), da una vuelta en el aire, cae panza arriba, rebota, patalea con espasmos echando
+  // chorros de sangre, saca la lengua, se le apagan los ojos y se desvanece en su charco
+  sonidoMuerte() { Audio_.animalMuere(this.tamañoVoz()); }
+  recibirDano(cantidad, direccion, arma, juego) {
+    const vivo = this.estado !== 'muerto';
+    super.recibirDano(cantidad, direccion, arma, juego);
+    if (!vivo || this.estado !== 'muerto') return;
+    const fuerza = arma && arma.explosivo ? 1.8 : 1, peso = this.jefe ? 0.35 : { vaca: 0.55, ciervo: 0.85, guanaco: 0.85 }[this.especie] || 1;
+    const d = direccion || -this.direccion;
+    this.muerte = { vx: d * (1.6 + Math.random() * 1.6) * fuerza * peso, vy: -(3.6 + Math.random() * 1.8) * fuerza * Math.sqrt(peso), altura: 0, giro: 0,
+      vgiro: d * (0.15 + Math.random() * 0.07) * (fuerza > 1 ? 1.5 : 1), botes: 0, chorro: 0, quieto: false };
+    juego.salpicar(this.x, this.y - this.alto * 0.5, this.colorSangre, 14, 6);
+  }
+  moverCadaver(dt, juego) {
+    this.tiempoMuerto += dt;
+    const M = this.muerte; if (!M) return;
+    const paso = dt * 60, E = this.E, e = this.escala, apoyo = (E.bipedo ? 11 : E.grosor * 0.5) * e;
+    if (!M.quieto) {
+      M.vy += 0.45 * paso; M.altura -= M.vy * paso;
+      const nx = this.x + M.vx * paso; if (alturaSuelo(nx) < SUELO_BASE + 100) this.x = nx; else M.vx = 0;
+      if (M.altura <= 0) {
+        M.altura = 0;
+        if (M.vy > 1.4 && M.botes < 2) {   // rebota contra el piso
+          const fuerte = M.botes === 0; M.vy = -M.vy * 0.3; M.vx *= 0.45; M.botes++;
+          Audio_.cuerpoAnimalCae(this.tamañoVoz(), fuerte ? 1 : 0.5);
+          if (fuerte) {
+            juego.sacudida = Math.max(juego.sacudida, this.jefe ? 14 : 3 + this.tamañoVoz() * 2);
+            juego.salpicar(this.x, this.y - apoyo, this.colorSangre, 10, 4);
+            for (let k = 0; k < 10; k++) juego.particulas.push(new Particula(this.x + (Math.random() - 0.5) * this.ancho, this.y - 2, (Math.random() - 0.5) * 4, -Math.random() * 2, '#8a7e6a', 0.5 + Math.random() * 0.4, 3 + Math.random() * 4, true));
+          }
+        } else { M.vy = 0; M.vx *= Math.pow(0.8, paso); if (Math.abs(M.vx) < 0.08) M.quieto = true; }
+      }
+      if (M.botes === 0) M.giro += M.vgiro * paso;
+    }
+    if (M.botes > 0) {   // en el piso se acomoda panza arriba
+      const meta = Math.round((M.giro - Math.PI) / (2 * Math.PI)) * 2 * Math.PI + Math.PI;
+      M.giro += (meta - M.giro) * Math.min(1, dt * 9);
+    }
+    this.y = alturaSuelo(this.x);
+    // Chorros de sangre mientras patalea
+    const T = this.tiempoMuerto;
+    if (T < 1.9 && T >= M.chorro) {
+      M.chorro = T + 0.18 + Math.random() * 0.12;
+      const cy = this.y - M.altura - apoyo;
+      for (let k = 0; k < 5; k++) juego.particulas.push(new Particula(this.x + (Math.random() - 0.5) * 6, cy, (Math.random() - 0.5) * 2.4, -(2.5 + Math.random() * 3), k % 2 ? this.colorSangre : '#5a0606', 0.5 + Math.random() * 0.4, 2 + Math.random() * 2.5, true));
+    }
+  }
+  terminado() { return this.estado === 'muerto' && this.tiempoMuerto > 5; }
   dibujar(ctx, camaraX, ahora) {
     if (this.estado !== 'muerto') return super.dibujar(ctx, camaraX, ahora);
     this.ahora = ahora;
-    const T = this.tiempoMuerto, cae = suavizar(limitar(T / 0.6, 0, 1)), e = this.escala;
+    const T = this.tiempoMuerto, e = this.escala, E = this.E, M = this.muerte || { altura: 0, giro: Math.PI, botes: 1 };
+    this.pataleo = T < 0.4 ? 1 : limitar(1 - (T - 0.6) / 1.8, 0, 1) * (0.3 + 0.7 * Math.abs(Math.sin(T * 6.5)));
+    const yc0 = (E.bipedo ? -34 : -(E.pata + E.grosor * 0.42)) * e, apoyo = (E.bipedo ? -11 : -E.grosor * 0.5) * e;
+    const k = (1 - Math.cos(M.giro)) / 2;                                   // 0 parado, 1 panza arriba
     ctx.save(); ctx.translate(this.x - camaraX, this.y);
-    ctx.globalAlpha = 1 - limitar((T - 1.45) / (MUERTE.fin - 1.45), 0, 1);
-    const charco = limitar((T - 0.4) / 1.2, 0, 1);
-    if (charco > 0) { ctx.fillStyle = this.colorCharco; ctx.beginPath(); ctx.ellipse(0, 3, (6 + charco * 18) * e * (this.jefe ? 2 : 1), (2 + charco * 4) * e, 0, 0, Math.PI * 2); ctx.fill(); }
-    this.recogido = cae; this.estado = 'muerto';
-    ctx.rotate(this.direccion * 0.1 * cae); ctx.scale(1, 1 - 0.22 * cae);
+    ctx.globalAlpha = 1 - limitar((T - 3.3) / 1.7, 0, 1);
+    if (M.botes > 0) {   // charco que crece debajo
+      const charco = limitar((T - 0.5) / 1.4, 0, 1);
+      ctx.fillStyle = this.colorCharco; ctx.beginPath(); ctx.ellipse(0, 3, (6 + charco * 20) * e * (this.jefe ? 1.6 : 1), (2 + charco * 4.5) * e, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.translate(0, -M.altura + yc0 + (apoyo - yc0) * k); ctx.rotate(M.giro); ctx.translate(0, -yc0);
+    this.recogido = 0;
     this.cuerpo(ctx, false);
     ctx.restore();
   }
@@ -335,6 +392,7 @@ function actualizarJefe(z, dt, j, juego) {
   const ahora = juego.ahora, paso = dt * 60;
   z.ahora = ahora;
   if (z.estado === 'muerto') {
+    if (z.moverCadaver) { z.moverCadaver(dt, juego); return; }
     z.tiempoMuerto += dt;
     if (z.altura > 0) { z.altura = Math.max(0, z.altura - 6 * paso); }
     return;

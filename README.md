@@ -130,6 +130,10 @@ el hueso a la vista en una pata, garras, hocico arrugado que muestra encías y c
 rojos con pupila rasgada bajo el ceño. Se lanzan un 50 % más rápido cuando el jugador está a menos de 260 px,
 muerden cada 0,6 s (los demás, cada 0,9) empujando con el cuerpo, y gruñen (`Audio_.gruñido`, más grave cuanto
 más grande el animal) en vez de gemir; al morder, ladran o braman.
+Al morir, el golpe los despide hacia donde los empujó (con una explosión, el doble; vacas, ciervos, guanacos y
+jefes pesan más y vuelan menos), dan una vuelta en el aire con un chillido, caen panza arriba, rebotan (con
+polvo, sangre y temblor de cámara según el tamaño), patalean con espasmos 2 s echando chorros de sangre, sacan
+la lengua, se les apagan los ojos y se desvanecen en su charco a los 5 s.
 
 El jefe aparece a 700 px de la meta, entre el jugador y la casa, con su barra de vida abajo; mientras viva la meta
 queda cerrada. Tiene de 22 a 55 veces la vida de un zombie común (22, 30, 40 y 55) y ningún golpe le saca más
