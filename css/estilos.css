@@ -75,7 +75,10 @@ html, body {
 .boton.peligro { border-color: var(--sangre); }
 .boton.peligro:hover { background: var(--sangre); color: var(--texto); }
 
-.pie { position: absolute; bottom: 18px; opacity: .55; font-size: 13px; }
+.pie { position: absolute; bottom: 30px; opacity: .55; font-size: 13px; }
+.creditos { position: absolute; bottom: 8px; margin: 0; opacity: .7; font-size: 12px; letter-spacing: .06em; color: #c9a96e; }   /* créditos, abajo de todo en la portada */
+/* Pantalla baja (celular apaisado): el menú se desplaza y el pie y los créditos van al final, sin tapar botones */
+@media (max-height: 720px) { .pie, .creditos { position: static; flex-shrink: 0; } .pie { margin: 14px 0 4px; } .creditos { margin: 0 0 10px; } }
 
 /* ---- Panel de misiones ---- */
 #panel-misiones, #panel-controles { background: linear-gradient(#1a1420, #0d0a10); }
