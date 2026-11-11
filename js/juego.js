@@ -702,7 +702,7 @@ class Juego {
     for (const x of this.explosiones) x.dibujar(ctx, cam);
     for (const p of this.particulas) p.dibujar(ctx, cam);
     if (this.cloaca) Escenario.dibujarCloacaFrente(ctx, cam, this.tiempoJugado);
-    else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia); }
+    else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia, this); }
     else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ALTO * 0.95);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');

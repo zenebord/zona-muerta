@@ -102,10 +102,10 @@ kilómetros» y «Estás en casa» en `js/musica.js`).
 
 | Nivel | Lugar | Km |
 |---|---|---|
-| 1 | Los restos del vuelo 214: bosque al amanecer, terreno caótico con escombros, cráteres, contenedores de carga, fuselajes para caminar por arriba, escalerillas y el ala como rampa; zombies dormidos que se despiertan al ver al jugador | 100 → 75 |
-| 2 | La ruta 9: autos y un colectivo para saltar, un camión al que se sube por escalera, el puente roto sobre el río (dos tramos con soga), un auto en llamas y una horda de 5 al final | 75 → 45 |
-| 3 | La ciudad de noche: andamios y escalera hasta los techos, huecos entre edificios con sogas colgadas, un salto largo de techo a techo, contenedores, fuego y una horda de 7 | 45 → 15 |
-| 4 | Tu barrio: cercas, techos con escaleras, canales inundados que se cruzan de soga en soga, jardines en llamas y una horda de 10 antes de la puerta de casa | 15 → 0 |
+| 1 | Los restos del vuelo 214: la montaña cerca de Bariloche al amanecer (cordillera nevada, el lago, cipreses, nieve), con escombros, cráteres, contenedores de carga, fuselajes para caminar por arriba, escalerillas, el ala como rampa, turbinas y valijas tiradas; zombies dormidos que se despiertan al ver al jugador | 100 → 75 |
+| 2 | La ruta destruida: baches gigantes (dos se cruzan con una soga colgada de un pórtico de carteles), autos atravesados y un colectivo para saltar, un camión al que se sube por escalera, partes de autos tiradas, un auto en llamas y una horda de 5 al final | 75 → 45 |
+| 3 | La ciudad al atardecer con humo: negocios saqueados de fondo, semáforos (algunos caídos), basura y escombros en la calle, andamios y escalera hasta los techos, socavones con sogas colgadas de los cables, contenedores, fuego y una horda de 7 | 45 → 15 |
+| 4 | Tu barrio, destruido y de noche: casas en penumbras; solo se ve alrededor del personaje, del fuego, de los faroles que quedan y de la ventana de la hija. Cercas, techos con escaleras, zanjas inundadas de soga en soga y una horda de 10 antes de la puerta de casa | 15 → 0 |
 
 La dificultad sube con cada nivel: más zombies dormidos (14, 12, 15 y 17), zombies sueltos más seguidos, más
 corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas de plataformas:

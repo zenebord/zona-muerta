@@ -25,17 +25,17 @@ const NIVELES_HISTORIA = [
       [3700, 3760, 80, 80, 'escombro'], [3760, 3900, 0, 0, 'suelo'], [3900, 4100, -40, -40, 'pozo'], [4100, 4800, 0, 0, 'suelo'],
     ],
     dormidos: [360, 610, 950, 1120, 1450, 1760, 2200, 2500, 3050, 3200, 3650, 3735, 4000, 4300] },
-  // Nivel 2: autos y un colectivo para saltar, un camión con escalera, el puente roto sobre el río con dos sogas,
-  // un auto en llamas y la horda al final
+  // Nivel 2: la ruta destruida: autos atravesados y un colectivo para saltar, un camión con escalera, baches gigantes
+  // (dos se cruzan con una soga colgada de un pórtico de carteles), un auto en llamas y la horda al final
   { clave: 'ruta',   kmDesde: 75,  kmHasta: 45, largo: 5600, intervalo: [3.2, 4.5], maxVivos: 5,  corredores: 0.15, grupo: 2, horda: [1200, 5],
     cajas: [[1100, 'ak47'], [2600, 'rem870'], [3680, 'm16']], corazones: [1650, 2850, 4550, 5200], radios: [2550, 4800],
     terreno: [
       [0, 350, 0, 0, 'suelo'], [350, 470, 45, 45, 'auto'], [470, 650, 0, 0, 'suelo'], [650, 780, 45, 45, 'auto'], [780, 1010, 90, 90, 'colectivo'],
-      [1010, 1200, 0, 0, 'suelo'], [1200, 1320, 0, 0, 'puente'], [1320, 1560, -300, -300, 'abismo'], [1560, 1700, 0, 0, 'puente'],
+      [1010, 1200, 0, 0, 'suelo'], [1200, 1320, 0, 0, 'suelo'], [1320, 1560, -300, -300, 'abismo'], [1560, 1700, 0, 0, 'suelo'],
       [1700, 1900, 0, 0, 'suelo'], [1900, 2020, 45, 45, 'auto'], [2020, 2400, 0, 0, 'suelo'], [2400, 2700, 130, 130, 'camion'],
-      [2700, 2900, 0, 0, 'suelo'], [2900, 3000, 0, 0, 'puente'], [3000, 3110, -300, -300, 'abismo'], [3110, 3300, 0, 0, 'puente'],
+      [2700, 2900, 0, 0, 'suelo'], [2900, 3000, 0, 0, 'suelo'], [3000, 3110, -300, -300, 'abismo'], [3110, 3300, 0, 0, 'suelo'],
       [3300, 3500, 0, 0, 'suelo'], [3500, 3620, 45, 45, 'auto'], [3620, 3740, 90, 90, 'auto'], [3740, 3860, 45, 45, 'auto'],
-      [3860, 4100, 0, 0, 'suelo'], [4100, 4200, 0, 0, 'puente'], [4200, 4480, -300, -300, 'abismo'], [4480, 4600, 0, 0, 'puente'], [4600, 5800, 0, 0, 'suelo'],
+      [3860, 4100, 0, 0, 'suelo'], [4100, 4200, 0, 0, 'suelo'], [4200, 4480, -300, -300, 'abismo'], [4480, 4600, 0, 0, 'suelo'], [4600, 5800, 0, 0, 'suelo'],
     ],
     escaleras: [[2400, 130]], sogas: [[1440, 230, 170], [4340, 230, 170]], fuegos: [[2200, 2290]],
     dormidos: [400, 850, 1150, 1950, 2550, 2950, 3560, 3680, 3800, 4700, 5000, 5300] },
@@ -92,15 +92,15 @@ Object.assign(TEXTOS.es, {
   'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
   'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
-  'hist.nivel1': 'Los restos del vuelo 214', 'hist.nivel2': 'La ruta 9', 'hist.nivel3': 'La ciudad', 'hist.nivel4': 'Tu barrio',
+  'hist.nivel1': 'Los restos del vuelo 214', 'hist.nivel2': 'La ruta destruida', 'hist.nivel3': 'La ciudad', 'hist.nivel4': 'Tu barrio',
   'hist.intro1': 'Una noche de noviembre, un virus convirtió a millones de personas en zombies. Tú volvías a casa en el último vuelo que salió de la capital.',
-  'hist.intro2': 'A mitad del viaje, un pasajero infectado atacó a la tripulación. El avión perdió el control y cayó en medio del bosque.',
-  'hist.intro3': 'Despiertas entre los restos. De milagro, estás vivo. El teléfono marca 100 kilómetros hasta tu casa.',
+  'hist.intro2': 'A mitad del viaje, un pasajero infectado atacó a la tripulación. El avión perdió el control y se estrelló en la cordillera, cerca de Bariloche.',
+  'hist.intro3': 'Despiertas entre los restos, en la nieve. De milagro, estás vivo. El teléfono marca 100 kilómetros hasta tu casa.',
   'hist.intro4': 'Allá te espera tu hija, escondida en su cuarto. Le prometiste que volverías. Tienes que cumplirlo.',
-  'hist.antes1': 'Abre camino entre los restos del avión. Los pasajeros ya no son pasajeros.',
-  'hist.antes2': 'La carretera está trabada de autos abandonados. Los que intentaron huir no llegaron lejos.',
-  'hist.antes3': 'Hay que cruzar la ciudad de noche. Es el camino más corto... y el más peligroso.',
-  'hist.antes4': 'Ya ves tu calle. En tu casa, la luz del cuarto de tu hija sigue prendida. Un último esfuerzo.',
+  'hist.antes1': 'Baja de la montaña entre los restos del avión: turbinas, valijas abiertas y pasajeros que ya no son pasajeros.',
+  'hist.antes2': 'La ruta está destruida: baches gigantes, autos atravesados y pedazos de autos por todas partes.',
+  'hist.antes3': 'Las calles de la ciudad están llenas de destrozos. Saquearon los negocios y los semáforos ya no funcionan.',
+  'hist.antes4': 'Llegas a tu barrio de noche. No hay luz y todo está en penumbras. En tu casa, la ventana de tu hija sigue prendida.',
   'hist.final': v => `Abres la puerta. Tu hija corre a abrazarte. Recorriste 100 kilómetros y venciste a ${v.bajas} zombies para cumplir tu promesa. Estás en casa.`,
   'hist.fin': 'FIN', 'hist.gracias': '¡Gracias por jugar!',
   'hist.nivelN': v => `NIVEL ${v.n} DE 4`, 'hist.km': v => `KM ${v.desde} → ${v.hasta}`,
@@ -109,10 +109,10 @@ Object.assign(TEXTOS.es, {
     (v.corazones ? ` Recogiste ${v.corazones} ${v.corazones === 1 ? 'corazón' : 'corazones'}.` : '') +
     (v.aereos ? ` Pediste ${v.aereos} ${v.aereos === 1 ? 'ataque aéreo' : 'ataques aéreos'}.` : '') +
     (v.armas ? ` Encontraste: ${v.armas}.` : ''),
-  'hist.que1': 'Saliste de entre los restos del avión y dejaste atrás el bosque.',
-  'hist.que2': 'Cruzaste la ruta 9 esquivando autos y zombies hasta la entrada de la ciudad.',
-  'hist.que3': 'Atravesaste la ciudad en ruinas en plena noche.',
-  'hist.que4': 'Llegaste a tu calle y a la puerta de tu casa.',
+  'hist.que1': 'Bajaste de la montaña y dejaste atrás los restos del avión.',
+  'hist.que2': 'Cruzaste la ruta destruida, entre baches gigantes y autos atravesados.',
+  'hist.que3': 'Atravesaste las calles destruidas de la ciudad.',
+  'hist.que4': 'Cruzaste tu barrio a oscuras y llegaste a la puerta de tu casa.',
   'hist.siguiente': v => `Siguiente: ${v.nombre} (km ${v.km})`,
   'hist.dato.bajas': 'Zombies', 'hist.dato.tiempo': 'Tiempo', 'hist.dato.vida': 'Vida', 'hist.dato.armas': 'Armas', 'hist.dato.corazones': 'Corazones', 'hist.dato.radios': 'Radios',
   'hist.boton.seguir': 'SIGUIENTE ▶', 'hist.boton.saltar': 'SALTAR', 'hist.boton.jugar': 'JUGAR ▶', 'hist.boton.menu': 'MENÚ',
@@ -129,15 +129,15 @@ Object.assign(TEXTOS.pt, {
   'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
   'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
-  'hist.nivel1': 'Os destroços do voo 214', 'hist.nivel2': 'A rodovia 9', 'hist.nivel3': 'A cidade', 'hist.nivel4': 'Seu bairro',
+  'hist.nivel1': 'Os destroços do voo 214', 'hist.nivel2': 'A rodovia destruída', 'hist.nivel3': 'A cidade', 'hist.nivel4': 'Seu bairro',
   'hist.intro1': 'Numa noite de novembro, um vírus transformou milhões de pessoas em zumbis. Você voltava para casa no último voo que saiu da capital.',
-  'hist.intro2': 'No meio da viagem, um passageiro infectado atacou a tripulação. O avião perdeu o controle e caiu no meio da floresta.',
-  'hist.intro3': 'Você acorda entre os destroços. Por milagre, está vivo. O celular marca 100 quilômetros até a sua casa.',
+  'hist.intro2': 'No meio da viagem, um passageiro infectado atacou a tripulação. O avião perdeu o controle e caiu na cordilheira, perto de Bariloche.',
+  'hist.intro3': 'Você acorda entre os destroços, na neve. Por milagre, está vivo. O celular marca 100 quilômetros até a sua casa.',
   'hist.intro4': 'Lá a sua filha espera, escondida no quarto. Você prometeu que voltaria. Precisa cumprir.',
-  'hist.antes1': 'Abra caminho entre os destroços do avião. Os passageiros já não são passageiros.',
-  'hist.antes2': 'A rodovia está travada de carros abandonados. Quem tentou fugir não foi longe.',
-  'hist.antes3': 'É preciso cruzar a cidade de noite. É o caminho mais curto... e o mais perigoso.',
-  'hist.antes4': 'Você já vê a sua rua. Na sua casa, a luz do quarto da sua filha continua acesa. Um último esforço.',
+  'hist.antes1': 'Desça a montanha entre os destroços do avião: turbinas, malas abertas e passageiros que já não são passageiros.',
+  'hist.antes2': 'A rodovia está destruída: buracos gigantes, carros atravessados e pedaços de carros por toda parte.',
+  'hist.antes3': 'As ruas da cidade estão cheias de destroços. As lojas foram saqueadas e os semáforos não funcionam mais.',
+  'hist.antes4': 'Você chega ao seu bairro de noite. Não há luz e tudo está na penumbra. Na sua casa, a janela da sua filha continua acesa.',
   'hist.final': v => `Você abre a porta. Sua filha corre para abraçar você. Você percorreu 100 quilômetros e venceu ${v.bajas} zumbis para cumprir a promessa. Está em casa.`,
   'hist.fin': 'FIM', 'hist.gracias': 'Obrigado por jogar!',
   'hist.nivelN': v => `NÍVEL ${v.n} DE 4`, 'hist.km': v => `KM ${v.desde} → ${v.hasta}`,
@@ -146,10 +146,10 @@ Object.assign(TEXTOS.pt, {
     (v.corazones ? ` Pegou ${v.corazones} ${v.corazones === 1 ? 'coração' : 'corações'}.` : '') +
     (v.aereos ? ` Pediu ${v.aereos} ${v.aereos === 1 ? 'ataque aéreo' : 'ataques aéreos'}.` : '') +
     (v.armas ? ` Encontrou: ${v.armas}.` : ''),
-  'hist.que1': 'Você saiu dos destroços do avião e deixou a floresta para trás.',
-  'hist.que2': 'Você cruzou a rodovia 9 desviando de carros e zumbis até a entrada da cidade.',
-  'hist.que3': 'Você atravessou a cidade em ruínas no meio da noite.',
-  'hist.que4': 'Você chegou à sua rua e à porta da sua casa.',
+  'hist.que1': 'Você desceu a montanha e deixou para trás os destroços do avião.',
+  'hist.que2': 'Você cruzou a rodovia destruída, entre buracos gigantes e carros atravessados.',
+  'hist.que3': 'Você atravessou as ruas destruídas da cidade.',
+  'hist.que4': 'Você cruzou o seu bairro no escuro e chegou à porta da sua casa.',
   'hist.siguiente': v => `Próximo: ${v.nombre} (km ${v.km})`,
   'hist.dato.bajas': 'Zumbis', 'hist.dato.tiempo': 'Tempo', 'hist.dato.vida': 'Vida', 'hist.dato.armas': 'Armas', 'hist.dato.corazones': 'Corações', 'hist.dato.radios': 'Rádios',
   'hist.boton.seguir': 'SEGUIR ▶', 'hist.boton.saltar': 'PULAR', 'hist.boton.jugar': 'JOGAR ▶', 'hist.boton.menu': 'MENU',
@@ -166,15 +166,15 @@ Object.assign(TEXTOS.en, {
   'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
   'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
   'menu.historia': 'STORY: THE WAY HOME',
-  'hist.nivel1': 'The wreck of flight 214', 'hist.nivel2': 'Route 9', 'hist.nivel3': 'The city', 'hist.nivel4': 'Your neighborhood',
+  'hist.nivel1': 'The wreck of flight 214', 'hist.nivel2': 'The broken highway', 'hist.nivel3': 'The city', 'hist.nivel4': 'Your neighborhood',
   'hist.intro1': 'One November night, a virus turned millions of people into zombies. You were flying home on the last plane out of the capital.',
-  'hist.intro2': 'Halfway there, an infected passenger attacked the crew. The plane lost control and went down in the middle of the forest.',
-  'hist.intro3': 'You wake up among the wreckage. Somehow, you are alive. Your phone says home is 100 kilometers away.',
+  'hist.intro2': 'Halfway there, an infected passenger attacked the crew. The plane lost control and crashed in the Andes, near Bariloche.',
+  'hist.intro3': 'You wake up among the wreckage, in the snow. Somehow, you are alive. Your phone says home is 100 kilometers away.',
   'hist.intro4': 'Your daughter is waiting there, hiding in her room. You promised her you would come back. You have to keep that promise.',
-  'hist.antes1': 'Fight your way through the wreckage of the plane. The passengers are not passengers anymore.',
-  'hist.antes2': 'The highway is jammed with abandoned cars. The ones who tried to run did not get far.',
-  'hist.antes3': 'You have to cross the city at night. It is the shortest way... and the most dangerous.',
-  'hist.antes4': 'You can see your street. At home, the light in your daughter\'s room is still on. One last push.',
+  'hist.antes1': 'Get down the mountain through the wreckage: engines, open suitcases and passengers who are not passengers anymore.',
+  'hist.antes2': 'The highway is wrecked: giant potholes, cars blocking the way and car parts everywhere.',
+  'hist.antes3': 'The city streets are full of wreckage. The shops were looted and the traffic lights are dead.',
+  'hist.antes4': 'You reach your neighborhood at night. The power is out and everything is in the dark. At home, your daughter\'s window is still lit.',
   'hist.final': v => `You open the door. Your daughter runs into your arms. You crossed 100 kilometers and beat ${v.bajas} zombies to keep your promise. You are home.`,
   'hist.fin': 'THE END', 'hist.gracias': 'Thanks for playing!',
   'hist.nivelN': v => `LEVEL ${v.n} OF 4`, 'hist.km': v => `KM ${v.desde} → ${v.hasta}`,
@@ -183,10 +183,10 @@ Object.assign(TEXTOS.en, {
     (v.corazones ? ` You picked up ${v.corazones} ${v.corazones === 1 ? 'heart' : 'hearts'}.` : '') +
     (v.aereos ? ` You called ${v.aereos} ${v.aereos === 1 ? 'air strike' : 'air strikes'}.` : '') +
     (v.armas ? ` You found: ${v.armas}.` : ''),
-  'hist.que1': 'You climbed out of the wreckage and left the forest behind.',
-  'hist.que2': 'You crossed route 9, dodging cars and zombies, up to the edge of the city.',
-  'hist.que3': 'You crossed the ruined city in the middle of the night.',
-  'hist.que4': 'You reached your street and the door of your house.',
+  'hist.que1': 'You came down the mountain and left the wreckage behind.',
+  'hist.que2': 'You crossed the broken highway, between giant potholes and wrecked cars.',
+  'hist.que3': 'You crossed the ruined city streets.',
+  'hist.que4': 'You crossed your dark neighborhood and reached your front door.',
   'hist.siguiente': v => `Next: ${v.nombre} (km ${v.km})`,
   'hist.dato.bajas': 'Zombies', 'hist.dato.tiempo': 'Time', 'hist.dato.vida': 'Health', 'hist.dato.armas': 'Weapons', 'hist.dato.corazones': 'Hearts', 'hist.dato.radios': 'Radios',
   'hist.boton.seguir': 'NEXT ▶', 'hist.boton.saltar': 'SKIP', 'hist.boton.jugar': 'PLAY ▶', 'hist.boton.menu': 'MENU',
@@ -413,6 +413,13 @@ const Vinetas = (() => {
   const estrellas = (c, n, alto, t) => { for (let k = 0; k < n; k++) { const x = azar(k, 501) * W, y = azar(k, 502) * alto; if (Math.sin(t * 3 + k) > -0.6) R(c, x, y, 1, 1, k % 5 ? '#d8d8f0' : '#fff6c0'); } };
   const luna = (c, x, y, r) => { for (let dy = -r; dy <= r; dy++) { const w = Math.round(Math.sqrt(r * r - dy * dy)); R(c, x - w, y + dy, w * 2, 1, '#f2ecc8'); } R(c, x + 2, y - 2, 3, 2, '#d8d0a6'); R(c, x - 4, y + 3, 2, 2, '#d8d0a6'); };
   const sol = (c, x, y, r, col) => { for (let dy = -r; dy <= r; dy++) { const w = Math.round(Math.sqrt(r * r - dy * dy)); R(c, x - w, y + dy, w * 2, 1, col); } };
+  // Cerros en píxeles con la cumbre nevada
+  const cerros = (c, base, alto, luz, sombra, sal) => {
+    for (let k = -1; k < 8; k++) {
+      const cx = k * 48 + azar(k, sal) * 20, h = alto * (0.6 + azar(k, sal + 1) * 0.4);
+      for (let y = 0; y < h; y += 2) { const w = (y / h) * h * 0.9; R(c, cx - w, base - h + y, w, 2, luz); R(c, cx, base - h + y, w, 2, sombra); if (y < h * 0.28) { R(c, cx - w, base - h + y, w * 2, 2, y < h * 0.15 ? '#f2f4fa' : '#c8d0e0'); } }
+    }
+  };
   const pino = (c, x, base, h, col) => { for (let k = 0; k < h; k += 2) { const w = Math.round((k / h) * h * 0.45) + 1; R(c, x - w, base - h + k, w * 2 + 1, 2, col); } R(c, x - 1, base, 3, 3, '#2a1a10'); };
   const fuego = (c, x, y, t, s = 1) => { for (let k = 0; k < 6; k++) { const f = Math.sin(t * 9 + k * 1.7); R(c, x + (k - 3) * 2 * s, y - (4 + f * 2 + (k % 3) * 2) * s, 2 * s, (4 + f * 2 + (k % 3) * 2) * s, k % 2 ? '#ffb02e' : '#ff5a1f'); } R(c, x - 3 * s, y - 2 * s, 6 * s, 2 * s, '#fff07a'); };
   const humo = (c, x, y, t, n = 6) => { for (let k = 0; k < n; k++) { const f = ((t * 0.4 + k / n) % 1); const r = 2 + f * 6; R(c, x + Math.sin(k + t) * 3 + f * 10 - r, y - f * 50 - r, r * 2, r * 2, f < 0.5 ? 'rgba(70,64,70,0.85)' : 'rgba(110,104,110,0.6)'); } };
@@ -457,18 +464,21 @@ const Vinetas = (() => {
     // 2. El avión cae en el bosque con un motor en llamas
     intro2(c, t) {
       bandas(c, ['#0d0b1e', '#1a1430', '#2b1d3a', '#43263e', '#5c2f3a'], 0, 150); estrellas(c, 30, 70, t);
+      cerros(c, 160, 80, '#2a3048', '#1c2238', 3);   // la cordillera nevada, de noche
       const k = Math.min(1, (t % 6) / 4.5), x = 40 + k * 170, y = 30 + k * 90;
       for (let s = 0; s < 14; s++) { const f = s / 14; R(c, x - 6 - f * 70 + Math.sin(t * 5 + s) * 2, y - 2 - f * 38, 6 - f * 2, 6 - f * 2, `rgba(${80 + s * 4},${70 + s * 3},${80 + s * 3},${0.9 - f * 0.6})`); }
       c.save(); c.translate(x, y); c.rotate(0.5); avion(c, -20, -3, 1); c.restore();
       fuego(c, x + 2, y + 6, t, 1);
-      for (let p = 0; p < 30; p++) pino(c, p * 11 + (p % 3) * 3, 180 - 8, 18 + (p % 4) * 6, p % 2 ? '#0f2a1a' : '#12331f');
+      for (let p = 0; p < 30; p++) pino(c, p * 11 + (p % 3) * 3, 180 - 8, 12 + (p % 4) * 4, p % 2 ? '#0f2a1a' : '#12331f');
       R(c, 0, 172, W, 8, '#081a10');
     },
     // 3. Amanecer en el lugar del choque: el sobreviviente se levanta entre los restos
     intro3(c, t) {
       bandas(c, ['#2a2340', '#4a2f55', '#7d4a5e', '#b8625c', '#e0895a', '#f2c27a'], 0, 120); sol(c, 70, 112, 16, '#ffe29a');
-      for (let p = 0; p < 20; p++) pino(c, p * 17 + 5, 124, 22 + (p % 3) * 8, '#2f3b2a');
-      R(c, 0, 120, W, 60, '#4d5a30'); R(c, 0, 140, W, 40, '#3b4626'); R(c, 0, 160, W, 20, '#2c351c');
+      cerros(c, 112, 80, '#6a6a92', '#4a4a72', 5);
+      for (let p = 0; p < 20; p++) pino(c, p * 17 + 5, 124, 18 + (p % 3) * 6, '#2a3530');
+      R(c, 0, 120, W, 60, '#6a6e66'); R(c, 0, 140, W, 40, '#545850'); R(c, 0, 160, W, 20, '#3e423c');
+      for (let k = 0; k < 14; k++) R(c, azar(k, 520) * W, 124 + azar(k, 521) * 50, 14 + azar(k, 522) * 20, 2, '#eef2f8');   // nieve
       R(c, 150, 116, 60, 18, '#b9bec6'); R(c, 150, 116, 60, 3, '#e6e9ee'); for (let k = 0; k < 7; k++) R(c, 156 + k * 7, 121, 3, 3, '#2b3e55');   // fuselaje partido
       R(c, 208, 112, 4, 24, '#6b7280'); R(c, 230, 124, 40, 6, '#a7adb6'); R(c, 262, 102, 10, 22, '#c9ced6'); R(c, 264, 104, 6, 8, '#c0392b');   // ala y cola
       fuego(c, 212, 128, t, 1.6); humo(c, 212, 110, t, 8); fuego(c, 238, 126, t, 1);
