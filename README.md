@@ -110,8 +110,10 @@ kilómetros» y «Estás en casa» en `js/musica.js`).
 La dificultad sube con cada nivel: más zombies dormidos (14, 12, 15 y 17), zombies sueltos más seguidos, más
 corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas de plataformas:
 - **Escaleras de mano**: al pie, ↑ (o saltar) trepa sola hasta arriba; arriba, ↓ baja.
-- **Sogas**: se balancean solas; saltando cerca del nudo te agarras, y saltando otra vez te sueltas con el
-  impulso del balanceo (hay que soltarse cuando va hacia adelante).
+- **Sogas**: se balancean solas; te agarras si cualquier parte del cuerpo toca los tres cuartos de abajo de la
+  soga (quedas colgado de la punta), y saltando otra vez te sueltas con el impulso del balanceo (hay que soltarse
+  cuando va hacia adelante). En el nivel 4, los dos huecos de dos sogas tienen un apoyo en el medio: un andamio
+  entre los techos y un montón de escombros en la zanja.
 - **Precipicios** (río, canal, hueco entre edificios): caer quita 25 de vida y te devuelve al último lugar firme.
 - **Fuego en el piso**: quema mientras lo pisas. Los zombies no se tiran a los precipicios: esperan en el borde.
 

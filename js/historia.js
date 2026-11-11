@@ -54,14 +54,15 @@ const NIVELES_HISTORIA = [
     escaleras: [[2500, 150]], sogas: [[1220, 330, 180], [3025, 340, 190], [5100, 230, 170]], fuegos: [[2050, 2120], [4620, 4700]],
     dormidos: [350, 900, 1000, 1500, 1600, 2180, 2700, 2800, 3300, 3700, 4200, 4500, 4900, 5600, 5900] },
   // Nivel 4: cercas, techos con escaleras, canales inundados que se cruzan de soga en soga, jardines en llamas y la
-  // horda más grande antes de llegar a la puerta de casa
+  // horda más grande antes de llegar a la puerta de casa. Los dos huecos con dos sogas tienen un apoyo en el medio
+  // (un andamio entre los techos, un montón de escombros en la zanja): soga, apoyo, soga
   { clave: 'barrio', kmDesde: 15,  kmHasta: 0,  largo: 7000, intervalo: [2.0, 2.8], maxVivos: 9,  corredores: 0.35, grupo: 3, horda: [1600, 10],
     cajas: [[1100, 'thompson'], [2400, 'aa12'], [4600, 'mgl', true]], corazones: [1900, 2900, 3650, 4700, 5950, 6400], radios: [1150, 3700, 5100, 6200],
     terreno: [
       [0, 300, 0, 0, 'suelo'], [300, 330, 40, 40, 'cerca'], [330, 600, 0, 0, 'suelo'], [600, 630, 40, 40, 'cerca'], [630, 900, 0, 0, 'suelo'],
-      [900, 1300, 140, 140, 'techo'], [1300, 1700, -300, -300, 'abismo'], [1700, 2100, 140, 140, 'techo'], [2100, 2200, 70, 70, 'escombro'],
+      [900, 1300, 140, 140, 'techo'], [1300, 1450, -300, -300, 'abismo'], [1450, 1550, 140, 140, 'andamio'], [1550, 1700, -300, -300, 'abismo'], [1700, 2100, 140, 140, 'techo'], [2100, 2200, 70, 70, 'escombro'],
       [2200, 2500, 0, 0, 'suelo'], [2500, 2530, 50, 50, 'cerca'], [2530, 2800, 0, 0, 'suelo'], [2800, 2830, 50, 50, 'cerca'], [2830, 3100, 0, 0, 'suelo'],
-      [3100, 3500, -300, -300, 'abismo'], [3500, 3800, 0, 0, 'suelo'], [3800, 4200, 150, 150, 'techo'], [4200, 4450, -300, -300, 'abismo'],
+      [3100, 3230, -300, -300, 'abismo'], [3230, 3380, 25, 25, 'escombro'], [3380, 3500, -300, -300, 'abismo'], [3500, 3800, 0, 0, 'suelo'], [3800, 4200, 150, 150, 'techo'], [4200, 4450, -300, -300, 'abismo'],
       [4450, 4800, 150, 150, 'techo'], [4800, 4900, 75, 75, 'escombro'], [4900, 5300, 0, 0, 'suelo'], [5300, 5330, 40, 40, 'cerca'],
       [5330, 5600, 0, 0, 'suelo'], [5600, 5900, -300, -300, 'abismo'], [5900, 7300, 0, 0, 'suelo'],
     ],
@@ -366,10 +367,16 @@ Object.assign(Juego.prototype, {
       if (e.abajo && j.enSuelo && Math.abs(j.x - (lx + 22)) < 26 && Math.abs(j.y - arriba) < 10) { j.trepa = { x: lx - 10, y0: arriba, y1: base, f: 0, xFin: lx - 34 }; return j.actualizar(dt, neutral, this); }
     }
     j.actualizar(dt, e, this);
-    // En el aire, cerca del extremo de una soga: se agarra
+    // En el aire, si cualquier parte del cuerpo (manos, pecho, cintura, rodillas) toca los tres cuartos de abajo de
+    // una soga, se agarra y queda colgado de la punta. Antes había que pasar las manos a menos de 36 px de la punta:
+    // desde un techo la punta cuelga a la altura de los pies, el salto pasa por encima y casi nunca se lograba.
     if (!j.enSuelo && this.ahora > (j.sogaLibreHasta || 0)) for (const s of d.sogas || []) {
       const p = this.extremoSoga(s);
-      if (Math.hypot(j.x - p.x, j.y - 70 - p.y) < 36) { j.soga = s; j.impulso = 0; j.vy = 0; this.aviso(t('hist.pista.soga'), 1400); break; }
+      const toca = [70, 50, 30, 10].some(alto => {
+        const cy = j.y - alto, u = (cy - p.py) / (p.y - p.py);
+        return u >= 0.25 && u <= 1.08 && Math.abs(j.x - (p.px + (p.x - p.px) * Math.min(1, u))) < 22;
+      });
+      if (toca) { j.soga = s; j.impulso = 0; j.vy = 0; this.aviso(t('hist.pista.soga'), 1400); break; }
     }
   },
   // Precipicios, fuego y punto seguro para volver después de una caída
