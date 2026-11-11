@@ -45,6 +45,22 @@ const Audio_ = (() => {
     pasoBajo.frequency.setTargetAtTime(brillo, t, 0.05);
   }
 
+  // Silencio cuando el juego no se ve: pestaña o app en segundo plano, celular bloqueado, página cerrada o el
+  // marco del artefacto escondido. Lo último no avisa con «visibilitychange», así que además se vigila que
+  // la página siga pintando cuadros: si requestAnimationFrame se frena más de 0,7 s, el juego no está a la vista.
+  let oculto = document.hidden, porLatido = false, ultimoCuadro = performance.now();
+  function silenciar(si, latido = false) {
+    oculto = si; porLatido = si && latido;
+    if (!ctx) return;
+    if (si && ctx.state === 'running') ctx.suspend().catch(() => {});
+    else if (!si && ctx.state === 'suspended') ctx.resume().catch(() => {});
+  }
+  document.addEventListener('visibilitychange', () => silenciar(document.hidden));
+  window.addEventListener('pagehide', () => silenciar(true));
+  window.addEventListener('pageshow', () => silenciar(document.hidden));
+  (function latido() { ultimoCuadro = performance.now(); if (porLatido && !document.hidden) silenciar(false); requestAnimationFrame(latido); })();
+  setInterval(() => { if (!oculto && performance.now() - ultimoCuadro > 700) silenciar(true, true); }, 250);
+
   function asegurar() {
     if (!ctx) {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -72,7 +88,7 @@ const Audio_ = (() => {
       curvaSaturacion = new Float32Array(1024);
       for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curvaSaturacion[i] = Math.tanh(x * 3) / Math.tanh(3); }
     }
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state === 'suspended' && !oculto) ctx.resume();
     cargarGrabaciones();
     return ctx;
   }
@@ -340,6 +356,8 @@ const Audio_ = (() => {
         case 'speedloader':    friccion({ desde: 1000, hasta: 1800, dur: 0.06, vol: 0.1 }); for (let k = 0; k < 6; k++) metal({ f: 3000 - k * 90, dur: 0.035, vol: 0.07, retraso: 0.04 + k * 0.012 }); metal({ f: 1400, dur: 0.08, vol: 0.18, retraso: 0.13 }); break;
         case 'cinta':          for (let k = 0; k < 7; k++) metal({ f: 2700 + Math.random() * 400, dur: 0.04, vol: 0.07, retraso: k * 0.022 }); golpe({ f: 200, dur: 0.05, vol: 0.2, retraso: 0.16 }); break;
         case 'tapa':           golpe({ f: 120, dur: 0.08, vol: 0.42 }); metal({ f: 880, dur: 0.2, vol: 0.3, retraso: 0.005 }); break;
+        case 'pasador':        metal({ f: 3400, dur: 0.05, vol: 0.14 }); friccion({ desde: 2600, hasta: 4000, dur: 0.13, vol: 0.13, retraso: 0.02 }); metal({ f: 5200, dur: 0.05, vol: 0.12, retraso: 0.15 }); metal({ f: 3900, dur: 0.07, vol: 0.1, retraso: 0.17 }); break;   // tirón: el pasador sale raspando y la anilla tintinea
+        case 'cuchara':        metal({ f: 2300, dur: 0.2, vol: 0.16 }); metal({ f: 3300, dur: 0.12, vol: 0.09, retraso: 0.008 }); golpe({ f: 600, dur: 0.02, vol: 0.08 }); break;   // la cuchara salta con el resorte
         case 'granada':        metal({ f: 2600, dur: 0.05, vol: 0.12 }); friccion({ desde: 1500, hasta: 2500, dur: 0.06, vol: 0.06, retraso: 0.03 }); break;
         case 'celda':          tono({ desde: 300, hasta: 1500, dur: 0.28, vol: 0.14, rev: 0.4 }); tono({ desde: 1800, hasta: 2600, dur: 0.18, vol: 0.05, retraso: 0.22, rev: 0.4 }); golpe({ f: 200, dur: 0.04, vol: 0.15 }); break;
         default:               metal({ f: 1500, dur: 0.06, vol: 0.2 });
@@ -370,6 +388,7 @@ const Audio_ = (() => {
         case 'tambor':    sono = grabacion('cargador_al_piso', op(1.1, 0.7)); break;
         case 'speedloader': sono = grabacion('cargador_al_piso', op(0.5, 1.35)); break;
         case 'peine':     sono = grabacion('cargador_al_piso', op(0.4, 1.5)); break;
+        case 'pasador':   metal({ f: 4800, dur: 0.06, vol: 0.09 * nivel }); metal({ f: 3600, dur: 0.08, vol: 0.07 * nivel, retraso: 0.05 }); sono = true; break;
       }
       if (sono) return;
       if (tipo === 'escopeta') { golpe({ f: 520, dur: 0.025, vol: 0.05 }); metal({ f: 2100, dur: 0.05, vol: 0.03 }); }

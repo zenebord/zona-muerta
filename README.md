@@ -268,10 +268,18 @@ Las de acción manual (Remington, Mosin, Mossberg y las dos Winchester) accionan
 bomba o la palanca después de cada tiro, y el casquillo sale recién ahí. Los revólveres y la
 recortada no tiran casquillos al disparar: los sueltan cuando se abren para recargar.
 
+La granada M67 no sale de golpe: la mano de apoyo engancha la anilla y saca el pasador (se oye el tirón),
+el brazo va atrás, lanza (salta la cuchara) y la mano suelta el pasador, que cae al piso. La granada se
+gasta recién al soltarla.
+
 Las armas comunes (incluidas las de cuerpo a cuerpo) aparecen en cajas por el camino. Las especiales, en una caja brillante arriba
 de las montañas, y vuelven a aparecer a los 90 segundos.
 
 ## Gráficos y sonido
+
+Si el juego deja de verse (pestaña o app en segundo plano, celular bloqueado, página cerrada o el marco del
+artefacto escondido), el audio se suspende y la partida se pausa. Lo último no avisa con `visibilitychange`:
+`js/audio.js` vigila además que la página siga pintando cuadros y, si se frena más de 0,7 s, silencia todo.
 
 - El lienzo se dibuja a la resolución real de la pantalla (hasta 1920×1080) sobre una escena lógica de 960×540.
 - Personajes y armas se ilustran por piezas con degradado, bisel de luz y sombra en el borde y contorno fino.

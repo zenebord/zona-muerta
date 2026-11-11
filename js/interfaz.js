@@ -446,6 +446,11 @@
     juego.entrada.derecha = juego.entrada.izquierda = juego.entrada.disparar = juego.entrada.abajo = false;
   });
 
+  // Si la pestaña o la app pasan a segundo plano en plena partida, pausar (el audio lo silencia audio.js)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && juego && !pausado && !juego.terminado && !configAbierta) alternarPausa();
+  });
+
   // Gancho para depurar desde la consola: ZonaMuerta.juego() devuelve la partida en curso
   window.ZonaMuerta = { juego: () => juego, iniciar, salir: () => salirAlMenu(), pausar: () => { if (juego && !pausado && !juego.terminado) alternarPausa(); } };
 

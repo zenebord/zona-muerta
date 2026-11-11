@@ -42,7 +42,7 @@ class LineaTiempo {
   constructor(t0, inicial, tipo) { this.t = t0; this.inicio = t0; this.fases = []; this.inicial = inicial; this.tipo = tipo; }
   fase(nombre, dur, o = {}) {
     const prev = this.fases[this.fases.length - 1] || this.inicial;
-    this.fases.push(Object.assign({ nombre, a: 'arma', ab: prev.ab, co: prev.co, incl: prev.incl }, o, { desde: this.t, hasta: this.t + dur }));
+    this.fases.push(Object.assign({ nombre, a: 'arma', ab: prev.ab, co: prev.co, incl: prev.incl, org: prev.org }, o, { desde: this.t, hasta: this.t + dur }));
     this.t += dur;
     return this;
   }
@@ -155,7 +155,7 @@ class Jugador {
 
     for (const linea of [this.recarga, this.ciclo]) if (linea) this.procesarEventos(linea);
     if (this.recarga && this.ahora >= this.recarga.fin) { this.recarga = null; this.sinCargador = false; }
-    if (this.ciclo && this.ahora >= this.ciclo.fin) this.ciclo = null;
+    if (this.ciclo && this.ahora >= this.ciclo.fin) { this.ciclo = null; this.granadaFuera = this.pasadorFuera = false; }
   }
 
   // Dispara los efectos de cada fase en su momento: sonidos, casquillos, munición
@@ -199,6 +199,7 @@ class Jugador {
     if (this.ciclo) return false;
     if (ahora - this.ultimoDisparo < arma.cadencia) return false;
     if (this.municionActual() <= 0) { Audio_.vacio(); this.ultimoDisparo = ahora; return false; }
+    if (!this.montada && arma.categoria === 'granada') { this.ultimoDisparo = ahora; this.iniciarLanzamiento(juego, arma); return true; }
     if (this.montada) this.montada.municion--; else this.municion[arma.id]--;
     this.ultimoDisparo = ahora;
     this.retroceso = 1;
@@ -227,6 +228,32 @@ class Jugador {
     this.ciclo.accion = accion;
   }
 
+  // Granada M67: la mano de apoyo engancha la anilla y saca el pasador (se oye), el brazo va atrás, lanza (la
+  // cuchara salta) y la mano abre los dedos: el pasador con su anilla cae al piso. La granada se gasta recién al
+  // soltarla, así que cambiar de arma a mitad del gesto no la pierde.
+  iniciarLanzamiento(juego, arma) {
+    const soltar = () => {
+      if (this.municionActual() <= 0) return;
+      this.municion[arma.id]--; this.granadaFuera = true; this.retroceso = 1;
+      const boca = this.puntoArma('boca');
+      juego.dispararArma(arma, boca.x, boca.y, this.direccion, null);
+      Audio_.disparo(arma.categoria, arma.id); Audio_.recarga('cuchara', arma.id);
+    };
+    const tirarPasador = () => {
+      const m = this.estadoArma().mano;
+      juego.casquillos.push(new Casquillo(this.x + this.direccion * m.x, this.y + m.y + this.agachado * BAJA_AGACHADO, this.direccion, 'pasador', true));
+    };
+    this.ciclo = new LineaTiempo(juego.ahora, { ab: 0, co: 0, incl: 0, org: { x: 0, y: 0 } }, 'ciclo')
+      .fase('tomar', 170, { a: 'anilla' })
+      .fase('tirar', 180, { a: 'anilla', offset: { x: -9, y: 3 }, llegada: 0.2, mano: [['pasador', 0.2, 1]], eventos: [[0.2, () => { this.pasadorFuera = true; Audio_.recarga('pasador', arma.id); }]] })
+      .fase('atras', 280, { a: 'frente', incl: -1.6, org: { x: -22, y: -20 }, mano: [['pasador', 0, 1]] })
+      .fase('lanzar', 130, { a: 'frente', incl: 0.6, org: { x: 12, y: -10 }, mano: [['pasador', 0, 1]], eventos: [[0.45, soltar]] })
+      .fase('soltar', 230, { a: 'frente', offset: { x: 0, y: 4 }, incl: 0.3, org: { x: 6, y: -2 }, mano: [['pasador', 0, 0.3]], eventos: [[0.3, tirarPasador]] })
+      .fase('volver', 260, { a: 'arma', incl: 0, org: { x: 0, y: 0 }, alInicio: () => { this.granadaFuera = this.pasadorFuera = false; } })
+      .terminar();
+    this.ciclo.accion = 'granada';
+  }
+
   llenarCargador() {
     const a = this.arma();
     if (this.montada) { this.montada.municion = ARMA_FIJA.cargador; return; }
@@ -238,7 +265,7 @@ class Jugador {
 
   // Arma la línea de tiempo de la recarga según el mecanismo de cada arma
   recargar(juego) {
-    if (this.muerto || this.recarga) return;
+    if (this.muerto || this.recarga || (this.ciclo && this.ciclo.accion === 'granada')) return;
     const arma = this.arma();
     if (arma.cuerpo && !this.montada) return;   // no se recargan
     if (this.municionActual() >= arma.cargador) return;
@@ -401,7 +428,7 @@ class Jugador {
     this.recarga = l.terminar();
   }
 
-  cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; }
+  cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; this.granadaFuera = this.pasadorFuera = false; }
 
   // Agarra un arma: si es nueva se suma al inventario; si ya la tenía, le repone munición
   recoger(armaId) {
@@ -492,7 +519,8 @@ class Jugador {
       const t = ahora - this.ultimoDisparo;
       if (t >= 0 && t < CICLO_PISTOLA) e.corredera = Math.max(e.corredera, t < 20 ? t / 20 : 1 - (t - 20) / (CICLO_PISTOLA - 20));
     }
-    if (!this.montada && arma.recargaTipo === 'granada' && municion === 0) e.sinCargador = true;
+    if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
+    e.sinPasador = !!this.pasadorFuera;
     if (!this.montada && arma.recargaTipo === 'cohete' && municion === 0) e.sinCargador = true;     // ya salió el cohete: el tubo queda vacío hasta recargar
     e.origen.y += 2 * Math.max(0, 1 - (ahora - this.golpeEn) / 120);                                    // rebote al encastrar
 
@@ -509,6 +537,10 @@ class Jugador {
       pAccion = llegada >= 1 ? p : (p - llegada) / (1 - llegada);
       q = suavizar(limitar(pAccion, 0, 1));
       e.incl = previo.incl + (f.incl - previo.incl) * suavizar(p);
+      if (previo.org || f.org) {                                         // el brazo entero se mueve (lanzar la granada)
+        const a = previo.org || { x: 0, y: 0 }, b = f.org || a, k = suavizar(p);
+        e.origen.x += a.x + (b.x - a.x) * k; e.origen.y += a.y + (b.y - a.y) * k;
+      }
       const valor = clave => f.snap !== undefined ? (pAccion >= f.snap ? f[clave] : previo[clave]) : previo[clave] + (f[clave] - previo[clave]) * q;
       e.abierto = valor('ab');
       e.corredera = valor('co');
@@ -531,6 +563,8 @@ class Jugador {
     const CLAVES = { arma: 'manoDelantera', cargador: 'cargador', corredera: 'corredera' };
     const punto = nombre => {
       if (nombre === 'cadera') return { x: CADERA.x, y: CADERA.y };
+      if (nombre === 'frente') return { x: 19, y: -58 };                 // brazo de apoyo estirado adelante, para el lanzamiento
+      if (nombre === 'anilla') return enArma({ x: 0.3 * CM, y: -5.6 * CM });
       const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave];
       if (!movil) return enArma(ancla);
       const [dx, dy] = movil(e);

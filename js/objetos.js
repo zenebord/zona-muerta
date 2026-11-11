@@ -279,7 +279,7 @@ class Casquillo {
     }
     this.rot = esCargador ? (Math.random() - 0.5) * 0.4 : Math.random() * Math.PI * 2;   // el cargador cae parado y se va acostando
     this.vrot = (Math.random() - 0.5) * (esCargador ? 0.2 : 0.7);
-    this.vida = esCargador ? 2.2 : 1.0; this.vidaMax = this.vida;
+    this.vida = esCargador || tipo === 'pasador' ? 2.4 : 1.0; this.vidaMax = this.vida;
     this.profundidad = 2 + Math.random() * 14;   // dónde cae dentro de la banda de la calle
     this.rebotes = 0; this.vivo = true;
   }
@@ -303,7 +303,7 @@ class Casquillo {
     ctx.save();
     ctx.globalAlpha = Math.min(1, this.vida / 0.3);   // se desvanece en los últimos 0,3 s
     ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot);
-    if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
+    if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
       ctx.fillStyle = 'rgba(255, 236, 160, 0.55)'; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.fill();
     }
     switch (this.tipo) {
@@ -315,6 +315,7 @@ class Casquillo {
       case 'cargadorPistola': bloque(ctx, -0.8, -3.4, 1.6, 6.8, '#222'); ctx.fillStyle = '#444'; ctx.fillRect(-1.0, 2.8, 2.0, 0.7); break;
       case 'granada40': bloque(ctx, -4, -2.5, 8, 5, '#c9a227'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-4, -2.5, 2, 5); break;
       case 'peine':    bloque(ctx, -5, -1, 10, 2, '#777'); break;
+      case 'pasador':  ctx.beginPath(); ctx.arc(-1.4, 0, 2.0, 0, Math.PI * 2); ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 0.7; ctx.stroke(); bloque(ctx, 0.4, -0.3, 3.8, 0.6, '#9a9a9a'); break;   // anilla y pasador
       case 'tambor':   esfera(ctx, 0, 0, 6.5, '#1e2226'); bloque(ctx, -2, -8, 4, 3, '#2b2f33'); break;
       case 'speedloader': esfera(ctx, 0, 0, 4.5, '#2a2a2e'); bloque(ctx, -1.5, -6, 3, 3, '#4a4a52'); break;
       default:         bloque(ctx, -1.8, -0.5, 3.6, 1.0, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-1.8, -0.5, 0.4, 1.0); ctx.fillRect(1.0, -0.32, 0.8, 0.64);   // vaina de fusil con cuello
