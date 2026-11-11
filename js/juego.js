@@ -209,7 +209,11 @@ class Juego {
       if (z.estado === 'muerto') continue;
       if (Math.hypot(z.x - x, (z.y - z.alto / 2) - y) < arma.radio) z.recibirDano(z.vidaMax, Math.sign(z.x - x) || 1, arma, this);
     }
-    if (Math.hypot(this.jugador.x - x, (this.jugador.y - 30) - y) < arma.radio * 0.8) this.jugador.recibirDano(15, this);
+    // Al jugador lo lastima solo si explota a menos de 1 m del cuerpo (60 px): de 10 (pegado) a 5 (a 1 m);
+    // si cae justo encima, la mitad de la vida
+    const j = this.jugador, dx = Math.max(0, Math.abs(j.x - x) - 8), dy = Math.max(0, (j.y - 56) - y, y - j.y), d = Math.hypot(dx, dy);
+    if (d < 6) j.recibirDano(j.vidaMax / 2, this);
+    else if (d < 60) j.recibirDano(Math.round(10 - 5 * (d - 6) / 54), this);
     this.sacudida = 12;
     Audio_.explosion();
   }

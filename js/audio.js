@@ -303,11 +303,17 @@ const Audio_ = (() => {
       }
     },
 
+    // Explosión de granada o proyectil: sin chasquido agudo, sin tonos ni eco de videojuego. Un frente de presión
+    // ancho y corto, el cuerpo grave que se apaga, una presión sorda casi sin tono, el retumbo que rueda y la
+    // tierra que cae (ruido apagado, no golpecitos con nota). Volumen moderado.
     explosion() {
       asegurar();
-      detonacion({ crack: 0.9, boom: 1.3, boomHz: 260, golpeVol: 1.1, golpeHz: 75, golpeDur: 0.8, cola: 0.6, colaDur: 1.8, rev: 0.9, eco: 0.9 });
-      ruido({ dur: 1.4, vol: 0.45, filtro: 'lowpass', freq: 400, freqFin: 60, ataque: 0.05, retraso: 0.05, sat: 1.5, rev: 0.12 });
-      for (let k = 0; k < 6; k++) golpe({ f: 200 + Math.random() * 300, dur: 0.04, vol: 0.06 + Math.random() * 0.06, retraso: 0.25 + Math.random() * 0.7 });   // cascotes cayendo
+      const v = 0.9 + Math.random() * 0.2, rev = interior ? 0.35 : 0.12;
+      ruido({ dur: 0.12, vol: 0.5, filtro: 'lowpass', freq: 3200 * v, freqFin: 400, q: 0.5, ataque: 0.002, sat: 0.8 });
+      ruido({ dur: 1.5, vol: 0.58, filtro: 'lowpass', freq: 700 * v, freqFin: 70, q: 0.6, ataque: 0.008, rev });
+      tono({ desde: 62 * v, hasta: 28, dur: 0.7, vol: 0.45, ataque: 0.004 });
+      ruido({ dur: 2.6, vol: 0.2, filtro: 'lowpass', freq: 220, freqFin: 45, q: 0.5, ataque: 0.25, retraso: 0.08, rev: rev * 1.5 });
+      for (let k = 0; k < 7; k++) ruido({ dur: 0.03 + Math.random() * 0.05, vol: 0.025 + Math.random() * 0.035, filtro: 'bandpass', freq: 900 + Math.random() * 1800, q: 1.2, ataque: 0.003, retraso: 0.35 + Math.random() * 1.1 });
     },
 
     // Sonidos de cada fase de las recargas y del accionamiento: grabaciones reales con respaldo sintético
