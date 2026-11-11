@@ -142,7 +142,8 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
 
 - En el camino hay **corazones** (+30 de vida) y **radios**: cada radio es un ataque aéreo para pedir con la A
   (el personaje se tira cuerpo a tierra mientras caen los misiles).
-- Las armas y la munición pasan de un nivel al siguiente; las cajas de cada nivel suman armas nuevas.
+- Las armas y la munición pasan de un nivel al siguiente; las cajas de cada nivel suman armas nuevas. Siempre
+  lleva el cuchillo, y cada nivel empieza con 3 granadas más que se suman a las que traía.
 - Al terminar cada nivel aparece un resumen (zombies, tiempo, vida, corazones, radios y armas encontradas) y el
   mapa del camino; al terminar el cuarto, el reencuentro con la hija y el fin.
 - Si muere, reintenta el nivel con lo que tenía al empezarlo. El progreso queda guardado en el navegador
@@ -223,8 +224,8 @@ recarga a la derecha, y abajo cambio de arma, M2, cajas (en el campo de pruebas)
 | `→` / `←` | Avanzar / retroceder |
 | `↑` | Saltar |
 | `↓` (mantener) | Agacharse con rodilla en tierra: el arma baja 13 unidades (blancos bajos) y se esquiva el chorro de ácido. Junto a una M2, la monta o la suelta |
-| `F` | Disparar (mantener presionada con las metralletas) |
-| `S` | Recargar (las escopetas cargan cartucho por cartucho; disparar interrumpe la carga) |
+| `F` o clic izquierdo | Disparar (mantener presionado con las metralletas) |
+| `S` o clic derecho | Recargar (las escopetas cargan cartucho por cartucho; disparar interrumpe la carga). El clic derecho no abre el menú del navegador |
 | `1` … `5` | Grupo de armas: 1 pistolas, 2 metralletas, 3 rifles, 4 escopetas, 5 especiales (otra vez: la siguiente del grupo) |
 | `Q` / `E`, `G` / `H` o rueda del mouse | Arma anterior / siguiente |
 | `A` | Defensa zombie: pedir un ataque aéreo (cada 20 s) |

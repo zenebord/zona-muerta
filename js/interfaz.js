@@ -440,6 +440,22 @@
     juego.jugador.cambiarArma(e.deltaY > 0 ? 1 : -1); mostrarSelectorArmas();
   }, { passive: true });
 
+  // Mouse sobre la pantalla del juego: clic izquierdo dispara (mantenido, ráfaga, como la F) y clic derecho
+  // recarga (como la S), sin abrir el menú del navegador. Solo con mouse: los toques los maneja tactil.js; y no
+  // sobre los botones del HUD (ataque aéreo, controles táctiles).
+  const pantallaJuego = document.getElementById('pantalla-juego');
+  const sobreControl = e => e.target.closest('button, a, input, select, label, [data-accion], [data-arma], [data-tecla], [data-lado]');
+  let mouseDispara = false;
+  pantallaJuego.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || sobreControl(e)) return;
+    if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
+    else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }
+  });
+  window.addEventListener('pointerup', e => {
+    if (e.pointerType === 'mouse' && e.button === 0 && mouseDispara) { mouseDispara = false; if (juego) juego.entrada.disparar = false; }
+  });
+  pantallaJuego.addEventListener('contextmenu', e => { if (juego && !sobreControl(e)) e.preventDefault(); });
+
   // Si la ventana pierde el foco, soltar todas las teclas para que no quede corriendo solo
   window.addEventListener('blur', () => {
     if (!juego) return;

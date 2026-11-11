@@ -275,6 +275,17 @@ Object.assign(Juego.prototype, {
       j.inventario = e.inventario.slice(); j.municion = { ...j.municion, ...e.municion }; j.reserva = { ...j.reserva, ...e.reserva };
       j.indiceArma = Math.min(e.indice || 0, j.inventario.length - 1);
     }
+    // Siempre lleva el cuchillo, y cada nivel empieza con 3 granadas más (se suman a las que traía)
+    const enMano = j.inventario[j.indiceArma];
+    if (!j.inventario.includes('cuchillo')) { j.inventario.unshift('cuchillo'); j.municion.cuchillo = 1; }
+    if (!j.inventario.includes('granadas')) {
+      j.inventario.push('granadas'); j.municion.granadas = 0; j.reserva.granadas = 0;
+      j.inventario.sort((a, b) => ORDEN_INVENTARIO.indexOf(a) - ORDEN_INVENTARIO.indexOf(b));   // el cuchillo (fuera de la lista) queda primero
+    }
+    j.reserva.granadas = (j.reserva.granadas || 0) + 3;
+    const faltan = Math.min(ARMAS.granadas.cargador - (j.municion.granadas || 0), j.reserva.granadas);
+    j.municion.granadas = (j.municion.granadas || 0) + faltan; j.reserva.granadas -= faltan;
+    j.indiceArma = Math.max(0, j.inventario.indexOf(enMano));
     // Ataque aéreo: solo con radios (cada una es un pedido)
     this.aereo = { listoEn: 0, activo: null, recarga: 0, cargas: 0 };
     this.misiles = []; this.aviones = []; this.hud.aereo = document.getElementById('hud-aereo');
