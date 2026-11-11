@@ -93,6 +93,8 @@ Object.assign(TEXTOS.es, {
   'hist.dato.km': 'Kilómetros recorridos', 'hist.dato.caidas': 'Caídas', 'hist.dato.disparos': 'Disparos', 'hist.dato.aereos': 'Ataques aéreos', 'hist.dato.encontradas': 'Armas encontradas',
   'hist.calificacion': 'CALIFICACIÓN',
   'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
+  'hist.aviso.jefe': '¡JEFE FINAL!', 'hist.aviso.jefeBloquea': '¡DERROTA AL JEFE PARA SEGUIR!', 'hist.aviso.jefeVencido': '¡JEFE DERROTADO!', 'hist.aviso.onda': '¡LA ONDA! SALTA PARA ESQUIVARLA',
+  'hist.jefe.avion': 'EL SAN BERNARDO DEL CENTRO CÍVICO', 'hist.jefe.ruta': 'EL TORO DE LA PAMPA', 'hist.jefe.ciudad': 'EL HINCHA DEL BOMBO', 'hist.jefe.barrio': 'EL COLOSO VERDE',
   'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sur', 'hist.nivel4': 'Padua, Merlo',
@@ -133,6 +135,8 @@ Object.assign(TEXTOS.pt, {
   'hist.dato.km': 'Quilômetros percorridos', 'hist.dato.caidas': 'Quedas', 'hist.dato.disparos': 'Disparos', 'hist.dato.aereos': 'Ataques aéreos', 'hist.dato.encontradas': 'Armas encontradas',
   'hist.calificacion': 'AVALIAÇÃO',
   'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
+  'hist.aviso.jefe': 'CHEFÃO FINAL!', 'hist.aviso.jefeBloquea': 'DERROTE O CHEFÃO PARA SEGUIR!', 'hist.aviso.jefeVencido': 'CHEFÃO DERROTADO!', 'hist.aviso.onda': 'A ONDA! PULE PARA DESVIAR',
+  'hist.jefe.avion': 'O SÃO BERNARDO DO CENTRO CÍVICO', 'hist.jefe.ruta': 'O TOURO DOS PAMPAS', 'hist.jefe.ciudad': 'O TORCEDOR DO BUMBO', 'hist.jefe.barrio': 'O COLOSSO VERDE',
   'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sul', 'hist.nivel4': 'Padua, Merlo',
@@ -173,6 +177,8 @@ Object.assign(TEXTOS.en, {
   'hist.dato.km': 'Kilometers covered', 'hist.dato.caidas': 'Falls', 'hist.dato.disparos': 'Shots', 'hist.dato.aereos': 'Air strikes', 'hist.dato.encontradas': 'Weapons found',
   'hist.calificacion': 'RATING',
   'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
+  'hist.aviso.jefe': 'FINAL BOSS!', 'hist.aviso.jefeBloquea': 'DEFEAT THE BOSS TO GO ON!', 'hist.aviso.jefeVencido': 'BOSS DEFEATED!', 'hist.aviso.onda': 'SHOCKWAVE! JUMP TO DODGE IT',
+  'hist.jefe.avion': 'THE CIVIC CENTER SAINT BERNARD', 'hist.jefe.ruta': 'THE BULL OF THE PAMPAS', 'hist.jefe.ciudad': 'THE BASS DRUM FAN', 'hist.jefe.barrio': 'THE GREEN COLOSSUS',
   'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
   'menu.historia': 'STORY: THE WAY HOME',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'The south side', 'hist.nivel4': 'Padua, Merlo',
@@ -280,8 +286,9 @@ Object.assign(Juego.prototype, {
     for (const dx of def.corazones) this.cajas.push(new RecogibleHistoria(x0 + dx, 'corazon'));
     for (const dx of def.radios) this.cajas.push(new RecogibleHistoria(x0 + dx, 'radio'));
     // Zombies dormidos donde dice el nivel; si no tiene, dos esperando adelante para arrancar
-    if (def.dormidos) for (const dx of def.dormidos) this.zombies.push(new Zombie(x0 + dx, false, this.dificultad).dormir());
-    else for (const dx of [700, 1000]) this.zombies.push(new Zombie(x0 + dx, false, this.dificultad));
+    // (la mitad, del lugar: animales o personajes típicos; ver zombies-autoctonos.js)
+    if (def.dormidos) for (const dx of def.dormidos) this.zombies.push(this.zombieHistoria(x0 + dx, false).dormir());
+    else for (const dx of [700, 1000]) this.zombies.push(this.zombieHistoria(x0 + dx, false));
     this.camaraX = j.x - ANCHO / 2;
   },
 
@@ -292,7 +299,7 @@ Object.assign(Juego.prototype, {
     const H = this.historia, d = H.def, j = this.jugador;
     this.proximoZombie -= dt;
     const despiertos = this.zombies.filter(z => z.estado !== 'muerto' && !z.dormido).length;   // los dormidos no cuentan
-    if (this.proximoZombie > 0 || despiertos >= d.maxVivos) return;
+    if (this.proximoZombie > 0 || despiertos >= (this.jefeVivo() ? Math.ceil(d.maxVivos / 2) : d.maxVivos)) return;   // con el jefe, menos
     const avance = limitar((j.x - H.inicio) / d.largo, 0, 1);
     this.proximoZombie = (d.intervalo[0] + Math.random() * (d.intervalo[1] - d.intervalo[0])) * (1 - avance * 0.25);
     const grupo = 1 + Math.floor(Math.random() * d.grupo);
@@ -300,7 +307,7 @@ Object.assign(Juego.prototype, {
       const atras = Math.random() < 0.15 && j.x > H.inicio + ANCHO;
       const x = atras ? this.camaraX - 60 - Math.random() * 160 : this.camaraX + ANCHO + 60 + Math.random() * 260;
       if (x > H.meta - 120 || alturaSuelo(x) > SUELO_BASE + 100) continue;   // ni después de la meta ni en un precipicio
-      this.zombies.push(new Zombie(x, Math.random() < d.corredores, this.dificultad));
+      this.zombies.push(this.zombieHistoria(x, Math.random() < d.corredores));
     }
   },
   // Horda final: al acercarse a la meta entra un grupo grande de golpe, con corredores
@@ -311,7 +318,7 @@ Object.assign(Juego.prototype, {
     for (let k = 0; k < d.horda[1]; k++) {
       let x = this.camaraX + ANCHO + 40 + k * 70 + Math.random() * 40;
       if (alturaSuelo(x) > SUELO_BASE + 100) x += 320;
-      this.zombies.push(new Zombie(Math.min(x, H.meta - 140), Math.random() < d.corredores + 0.2, this.dificultad));
+      this.zombies.push(this.zombieHistoria(Math.min(x, H.meta - 140), Math.random() < d.corredores + 0.2));
     }
     this.avisoRonda(t('hist.aviso.horda'), '☠ × ' + d.horda[1]); Audio_.sirena();
   },
@@ -384,6 +391,7 @@ Object.assign(Juego.prototype, {
     this.peligrosHistoria(); this.hordaHistoria(); this.ambienteHistoria();
     if (j.x < H.inicio - 80) j.x = H.inicio - 80;
     if (j.x > H.meta + 30) j.x = H.meta + 30;
+    this.jefeHistoria();                                   // el jefe cierra el paso a la meta mientras viva
     this.camaraX = Math.max(this.camaraX, H.inicio - ANCHO * 0.35);
     if (!this.terminado && !j.muerto && j.x >= H.meta - 6) {
       this.terminado = true; this.resultado = 'nivel-superado';

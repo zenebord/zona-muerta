@@ -259,8 +259,9 @@ class Zombie {
       c.quadraticCurveTo(11.5, -44, 9, hemY);              // panza hinchada
       [[7, hemY + 2.5], [4.5, hemY - 0.5], [1, hemY + 3], [-2.5, hemY - 0.3], [-6, hemY + 2.2]].forEach(([x, y]) => c.lineTo(x, y));   // ruedo deshilachado
     };
-    const cerrado = est.torso !== 'abierta' && est.torso !== 'musculosa';
-    if (est.torso === 'abierta') this.torsoCamisaAbierta(ctx, torso, hemY, C, col, piel, pielOscura, golpeado, vaiven);
+    const cerrado = est.torso !== 'abierta' && est.torso !== 'musculosa' && est.torso !== 'desnudo';
+    if (est.torso === 'desnudo') this.torsoDesnudo(ctx, torso, hemY, piel, pielOscura, golpeado);
+    else if (est.torso === 'abierta') this.torsoCamisaAbierta(ctx, torso, hemY, C, col, piel, pielOscura, golpeado, vaiven);
     else if (est.torso === 'musculosa') this.torsoMusculosa(ctx, torso, hemY, C, col, piel, golpeado);
     else pieza(ctx, torso, col(C.camiseta), -11.5, 11.5);
     if (cerrado && !Pincel.silueta && !golpeado) {
@@ -283,6 +284,7 @@ class Zombie {
       linea(ctx, 'rgba(10, 20, 60, 0.6)', 1, [[-4, -57.8], [0.5, -55], [4.5, -57.8]]);
     }
     if (cerrado && this.ropa !== 'toxico') this.prendaEncima(ctx, hemY, col, golpeado, est);
+    if (est.rayas || est.lunares || est.faja || est.delantal || est.panuelo || est.bombo) this.extrasRopa(ctx, torso, hemY, col, golpeado, est);
 
     // Cuello flaco, con la mordida que lo convirtió
     pieza(ctx, poli(segmento(1, -56, 4, -63, 5.5, 4.8)), pielOscura, -2, 7);
@@ -416,10 +418,72 @@ class Zombie {
         pieza(ctx, poli([[0.6, hy + 13.2], [8.4, hy + 12.6], [8.8, hy + 15.8], [1.2, hy + 16.4]]), c('#9ec9d6'), 0.6, 8.8);
         if (!Pincel.silueta) linea(ctx, '#d8e8ee', 0.4, [[0.8, hy + 14], [-4.6, hy + 7]]);
         break;
+      case 'gorro-pompon':   // gorro de lana de esquiador, con pompón y las antiparras en la frente
+        pieza(ctx, k => { k.moveTo(-9, hy + 3); k.quadraticCurveTo(-9.4, hy - 8, 1, hy - 8.4); k.quadraticCurveTo(10, hy - 8, 10.4, hy + 3); }, c(est.gorro || '#2a5fb0'), -9.4, 10.4);
+        pieza(ctx, redondo(-9.6, hy + 0.6, 20.4, 3, 1), c(ajustarColor(est.gorro || '#2a5fb0', 0.25)), -9.6, 10.8);
+        pieza(ctx, circulo(0, hy - 9.4, 3), c('#f2f2ea'), -3, 3);
+        if (est.antiparras) { pieza(ctx, redondo(1, hy + 2.6, 10, 3.6, 1.6), c('#26282c'), 1, 11); detalle(ctx, golpeado ? '#fff' : '#f0a020', redondo(2, hy + 3.2, 8, 2.4, 1.1)); }
+        break;
+      case 'boina':   // boina de paisano, chata y caída hacia adelante
+        pieza(ctx, k => { k.moveTo(-9.6, hy + 1.6); k.quadraticCurveTo(-9, hy - 5.6, 2, hy - 5.4); k.quadraticCurveTo(12.6, hy - 5, 12.4, hy + 0.6); k.quadraticCurveTo(2, hy + 3.2, -9.6, hy + 1.6); }, c('#1e1f24'), -9.6, 12.6);
+        detalle(ctx, golpeado ? '#fff' : '#2c2e34', circulo(1, hy - 5.6, 0.8));
+        break;
+      case 'ruleros':   // ruleros de colores con la redecilla
+        for (const [x, y, k2] of [[-6, hy - 1, '#e86aa8'], [-1.5, hy - 3, '#6ac0e8'], [3, hy - 3, '#e8d86a'], [7.2, hy - 1, '#e86aa8'], [-8, hy + 3, '#6ac0e8']]) pieza(ctx, redondo(x - 2.4, y - 1.8, 4.8, 3.6, 1.6), c(k2), x - 2.4, x + 2.4);
+        if (!Pincel.silueta && !golpeado) for (let k = 0; k < 5; k++) linea(ctx, 'rgba(240,240,240,0.4)', 0.3, [[-9 + k * 4, hy + 4], [-7 + k * 4, hy - 5]]);
+        break;
+      case 'pelo-revuelto':   // mata de pelo negro parado (el jefe del barrio)
+        pieza(ctx, poli([[-9, hy + 4], [-10.5, hy - 2], [-7, hy - 1], [-6.6, hy - 6.6], [-3, hy - 3], [-1, hy - 8], [2, hy - 3.4], [5, hy - 7.4], [6.4, hy - 2.4], [10.4, hy - 4], [9.6, hy + 2], [3, hy + 1], [-4, hy + 1.4]]), c('#15161a'), -10.5, 10.4);
+        break;
       case 'gorra-atras':
         pieza(ctx, poli([[-8.6, hy + 3], [-8.4, hy - 3.4], [9, hy - 4.4], [9.6, hy + 3]]), c('#b3261e'), -8.6, 9.6);
         pieza(ctx, poli([[-5, hy + 2], [-15, hy + 2.6], [-13, hy + 4.2], [-5, hy + 4]]), c('#8a1c16'), -15, -5);
         break;
+    }
+  }
+
+  // Torso desnudo y musculoso (el jefe del barrio): pectorales, abdominales y hombros enormes
+  torsoDesnudo(ctx, torso, hemY, piel, pielOscura, golpeado) {
+    const k = 1 + ((this.grosorBrazos || 1) - 1) * 0.35;                                                        // más ancho cuanto más grueso
+    pieza(ctx, elipse(0, -45, 11 * k, 13), piel, -11 * k, 11 * k);                                             // tórax ancho
+    pieza(ctx, torso, piel, -11.5, 11.5);
+    pieza(ctx, elipse(-6, -53, 6.4 * k, 5.2 * k), piel, -6 - 6.4 * k, -6 + 6.4 * k);                           // espalda
+    pieza(ctx, elipse(5, -51, 6.6 * k, 5.4 * k), piel, 5 - 6.6 * k, 5 + 6.6 * k);                              // pectoral
+    if (Pincel.silueta || golpeado) return;
+    linea(ctx, 'rgba(20, 50, 10, 0.55)', 0.8, [[0, -47], [6, -46.4], [10.4, -48.6]]);                           // borde del pectoral
+    for (const y of [-43, -39.4, -36]) { linea(ctx, 'rgba(20, 50, 10, 0.45)', 0.6, [[1.6, y], [8.4, y + 0.4]]); }
+    linea(ctx, 'rgba(20, 50, 10, 0.45)', 0.6, [[5, -46], [5.4, -34]]);
+    for (let k = 0; k < 3; k++) linea(ctx, 'rgba(20, 50, 10, 0.4)', 0.5, [[-9.6, -46 + k * 3], [-6, -45 + k * 3]]);   // dorsales
+    detalle(ctx, 'rgba(90, 8, 8, 0.7)', elipse(-2, -42, 2.6, 1.4, 0.3));                                       // mordida
+    linea(ctx, 'rgba(30, 60, 20, 0.6)', 0.5, [[8, -54], [9.6, -50], [9, -46]]);                                 // vena
+  }
+
+  // Ropa típica encima del torso: camiseta a rayas, batón a lunares, faja con rastra, delantal de asador,
+  // pañuelo al cuello y el bombo del hincha
+  extrasRopa(ctx, torso, hemY, col, golpeado, est) {
+    if (Pincel.silueta) { if (est.bombo) pieza(ctx, elipse(13, -40, 6, 9), '#000', 7, 19); return; }
+    if ((est.rayas || est.lunares) && !golpeado) {
+      ctx.save(); ctx.beginPath(); torso(ctx); ctx.clip();
+      if (est.rayas) { ctx.fillStyle = est.rayas; for (let x = -12; x < 12; x += 5) ctx.fillRect(x, -60, 2.5, 30); }
+      if (est.lunares) { ctx.fillStyle = est.lunares; for (let y = -56; y < hemY; y += 4) for (let x = -11 + ((y / 4) % 2 ? 2 : 0); x < 11; x += 4) { ctx.beginPath(); ctx.arc(x, y, 0.9, 0, Math.PI * 2); ctx.fill(); } }
+      ctx.restore();
+    }
+    if (est.delantal) {
+      pieza(ctx, poli([[0.4, -52], [8.6, -52], [10.6, -44], [10.4, hemY + 5], [-1.6, hemY + 5], [-0.6, -44]]), col(est.delantal), -1.6, 10.6);
+      if (!golpeado) { linea(ctx, est.delantal, 0.7, [[1, -52], [2.4, -58]]); linea(ctx, est.delantal, 0.7, [[8, -52], [6.6, -58]]); detalle(ctx, 'rgba(110,11,11,0.6)', elipse(5, -42, 2, 1.4)); detalle(ctx, 'rgba(255,255,255,0.15)', c2 => c2.rect(1, -40, 8.6, 0.8)); }
+    }
+    if (est.faja) {
+      pieza(ctx, poli([[-10.4, hemY - 4], [10.4, hemY - 4.4], [10.2, hemY + 0.4], [-10, hemY + 0.6]]), col(est.faja), -10.4, 10.4);
+      if (!golpeado) for (let x = -8; x < 10; x += 3.2) detalle(ctx, '#d8d8d0', circulo(x, hemY - 1.8, 0.9));   // rastra de monedas
+    }
+    if (est.panuelo) pieza(ctx, poli([[-3.6, -58.6], [7, -58.4], [3.6, -51.4], [1.6, -52.4]]), col(est.panuelo), -3.6, 7);
+    if (est.bombo) {   // bombo colgado adelante, con los parches y las cuerdas
+      pieza(ctx, elipse(13, -40, 6, 9.4), col('#e8e2d0'), 7, 19);
+      if (!golpeado) {
+        detalle(ctx, est.rayas || '#2a5fb0', c2 => { c2.rect(7.4, -44.6, 11.2, 2.4); c2.rect(7.4, -37.6, 11.2, 2.4); });
+        for (let k = 0; k < 5; k++) linea(ctx, '#7a5a2a', 0.4, [[7.6 + k * 2.4, -48.6], [8.8 + k * 2.4, -31.6]]);
+        linea(ctx, '#3a2a1a', 0.6, [[4, -56], [10, -49]]);
+      }
     }
   }
 
@@ -438,7 +502,7 @@ class Zombie {
     if (this.estilo.numero) {   // camiseta de básquet: número grande con borde
       ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 1.2; ctx.strokeStyle = '#f2f2ea'; ctx.fillStyle = this.estilo.numero;
       const n = String(this.variante.dorsal % 100); ctx.strokeText(n, 4.6, -42); ctx.fillText(n, 4.6, -42);
-    } else {
+    } else if (!this.estilo.sinDorsal) {
       // Dorsal de la carrera, abrochado con alfileres y salpicado
       pieza(ctx, poli([[1.2, -50.5], [8.6, -50], [8.4, -42.6], [1.4, -43]]), '#ece6d6', 1, 9, { bisel: false });
       ctx.fillStyle = '#1b1b1b'; ctx.font = 'bold 4px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(String(this.variante.dorsal), 4.9, -45);
@@ -453,7 +517,8 @@ class Zombie {
     const L1 = 13, L2 = 12.5;
     const kx = hx + Math.sin(a) * L1, ky = hy + Math.cos(a) * L1;
     const b = a - doblez, px = kx + Math.sin(b) * L2, py = ky + Math.cos(b) * L2;
-    pieza(ctx, poli(segmento(kx, ky, px, py, 6.5, 5.5)), piel, Math.min(kx, px) - 3, Math.max(kx, px) + 3);     // canilla flaca
+    const g = this.grosorPiernas || 1;
+    pieza(ctx, poli(segmento(kx, ky, px, py, 6.5 * g, 5.5 * g)), piel, Math.min(kx, px) - 3 * g, Math.max(kx, px) + 3 * g);     // canilla flaca
     let cx, cy;                                                                                                // donde termina la tela
     if (muslo < 1) {   // short corto: muslo de piel, la tela tapa solo la parte de arriba
       pieza(ctx, poli(segmento(hx, hy, kx, ky, 8, 6.8)), piel, Math.min(hx, kx) - 5, Math.max(hx, kx) + 5);
@@ -463,9 +528,9 @@ class Zombie {
       if (!Pincel.silueta && !golpeado) linea(ctx, 'rgba(255,255,255,0.4)', 0.7, [[hx + 3.5, hy], [cx + 3.5, cy]]);           // franja del short
     } else {
       cx = kx + (px - kx) * corte; cy = ky + (py - ky) * corte;
-      pieza(ctx, poli(segmento(hx, hy, kx, ky, 9.5, 8.5)), tela, Math.min(hx, kx) - 5, Math.max(hx, kx) + 5);   // muslo
-      if (corte > 0.02) pieza(ctx, poli(segmento(kx, ky, cx, cy, 8.5, 8)), tela, Math.min(kx, cx) - 4, Math.max(kx, cx) + 4, { bisel: false });
-      pieza(ctx, circulo(kx, ky, 4.5), tela, kx - 4, kx + 4, { contorno: false });
+      pieza(ctx, poli(segmento(hx, hy, kx, ky, 9.5 * g, 8.5 * g)), tela, Math.min(hx, kx) - 5 * g, Math.max(hx, kx) + 5 * g);   // muslo
+      if (corte > 0.02) pieza(ctx, poli(segmento(kx, ky, cx, cy, 8.5 * g, 8 * g)), tela, Math.min(kx, cx) - 4, Math.max(kx, cx) + 4, { bisel: false });
+      pieza(ctx, circulo(kx, ky, 4.5 * g), tela, kx - 4 * g, kx + 4 * g, { contorno: false });
     }
     // Borde deshilachado de la tela
     detalle(ctx, tela, poli([[cx - 4, cy - 1], [cx - 3, cy + 2.5], [cx - 1.5, cy + 0.5], [cx, cy + 3.5], [cx + 1.5, cy + 0.5], [cx + 3, cy + 2], [cx + 4, cy - 1]]));
@@ -495,8 +560,9 @@ class Zombie {
       ex = hx + 10 + estocada * 0.4; ey = hy + 4 + ang * 6;
       mx = ex + 12 + estocada; my = ey + ang * 10 - 2;
     }
-    pieza(ctx, poli(segmento(ex, ey, mx, my, 5.6, 4.6)), piel, Math.min(ex, mx) - 3, Math.max(ex, mx) + 3);     // antebrazo
-    pieza(ctx, poli(segmento(hx, hy, ex, ey, 7, 6)), piel, Math.min(hx, ex) - 4, Math.max(hx, ex) + 4);         // brazo
+    const g = this.grosorBrazos || 1;                                                                          // los jefes, más gruesos
+    pieza(ctx, poli(segmento(ex, ey, mx, my, 5.6 * g, 4.6 * g)), piel, Math.min(ex, mx) - 3 * g, Math.max(ex, mx) + 3 * g);     // antebrazo
+    pieza(ctx, poli(segmento(hx, hy, ex, ey, 7 * g, 6 * g)), piel, Math.min(hx, ex) - 4 * g, Math.max(hx, ex) + 4 * g);         // brazo
     if (!Pincel.silueta && !golpeado) {
       linea(ctx, 'rgba(35, 55, 20, 0.55)', 0.5, [[ex + 2, ey - 0.5], [ex + 5, ey + 0.8], [ex + 8, ey]]);     // venas
       detalle(ctx, 'rgba(70, 50, 20, 0.45)', elipse(ex + 6, ey + 0.5, 2.2, 1.2));                              // parche podrido
@@ -504,13 +570,14 @@ class Zombie {
     // Manga corta deshilachada sobre el hombro
     const mgx = hx + (ex - hx) * 0.55, mgy = hy + (ey - hy) * 0.55;
     if (manga) {
-      pieza(ctx, poli([...segmento(hx, hy, mgx, mgy, 9.5, 8.5).slice(0, 2), [mgx + 1, mgy + 2], [mgx - 1, mgy + 1], [mgx - 2, mgy + 4], ...segmento(hx, hy, mgx, mgy, 9.5, 8.5).slice(2)]), manga, hx - 5, mgx + 5);
-      pieza(ctx, circulo(hx, hy, 5), manga, hx - 5, hx + 5, { contorno: false });
-    } else pieza(ctx, circulo(hx, hy, 4.4), piel, hx - 4, hx + 4, { contorno: false });   // musculosa: hombro desnudo
+      pieza(ctx, poli([...segmento(hx, hy, mgx, mgy, 9.5 * g, 8.5 * g).slice(0, 2), [mgx + 1, mgy + 2], [mgx - 1, mgy + 1], [mgx - 2, mgy + 4], ...segmento(hx, hy, mgx, mgy, 9.5 * g, 8.5 * g).slice(2)]), manga, hx - 5 * g, mgx + 5 * g);
+      const gh = 1 + (g - 1) * 0.45;                                                                         // hombro: crece menos que el brazo
+      pieza(ctx, circulo(hx, hy, 5 * gh), manga, hx - 5 * gh, hx + 5 * gh, { contorno: false });
+    } else { const gh = 1 + (g - 1) * 0.45; pieza(ctx, circulo(hx, hy, 4.4 * gh), piel, hx - 4 * gh, hx + 4 * gh, { contorno: false }); }   // musculosa: hombro desnudo
     // Mano con cuatro dedos huesudos y uñas oscuras
     const dir = Math.atan2(my - ey, mx - ex);
     ctx.save(); ctx.translate(mx, my); ctx.rotate(dir);
-    pieza(ctx, elipse(1.5, 0, 3.2, 2.6), piel, -2, 5);
+    pieza(ctx, elipse(1.5, 0, 3.2 * g, 2.6 * g), piel, -2 * g, 5 * g);
     for (let k = 0; k < 4; k++) {
       const abre = (k - 1.5) * 0.32 + (ataca ? Math.sin(this.ahora / 90) * 0.15 : 0);
       const fx = 4 + Math.cos(abre) * 4.5, fy = Math.sin(abre) * 4.5;

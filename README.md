@@ -115,6 +115,21 @@ corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas d
 - **Precipicios** (río, canal, hueco entre edificios): caer quita 25 de vida y te devuelve al último lugar firme.
 - **Fuego en el piso**: quema mientras lo pisas. Los zombies no se tiran a los precipicios: esperan en el borde.
 
+**Zombies del lugar y jefes** (`js/zombies-autoctonos.js`). En cada nivel, uno de cada dos zombies es del lugar
+(van por pares: uno común y uno del lugar, en orden al azar), con su propio dibujo y su vida y velocidad:
+
+| Nivel | Del lugar | Jefe (antes de la meta) |
+|---|---|---|
+| 1 | Guanacos, ciervos colorados y esquiadores (campera, gorro con pompón, antiparras) | El San Bernardo del Centro Cívico, con su barril: embiste |
+| 2 | Vacas (lentas y con mucha vida), ñandúes (rápidos) y paisanos de boina, faja con rastra y pañuelo | El toro de la pampa: escarba y embiste |
+| 3 | Perros callejeros, hinchas con la camiseta a rayas (celeste, verde o granate) y colectiveros | El hincha del bombo: golpea el bombo y la onda corre por el piso |
+| 4 | Gatos, perros, abuelas en batón con ruleros y el vecino del asado (musculosa y delantal) | El coloso verde, un zombie gigante y musculoso: salta y cae con una onda expansiva |
+
+El jefe aparece a 700 px de la meta, entre el jugador y la casa, con su barra de vida abajo; mientras viva la meta
+queda cerrada. Tiene de 22 a 55 veces la vida de un zombie común (22, 30, 40 y 55) y ningún golpe le saca más
+del 8 % (una explosión o un ataque aéreo no lo matan de una). Las embestidas y las ondas se esquivan saltando.
+Mientras está el jefe, salen la mitad de zombies sueltos.
+
 - En el camino hay **corazones** (+30 de vida) y **radios**: cada radio es un ataque aéreo para pedir con la A
   (el personaje se tira cuerpo a tierra mientras caen los misiles).
 - Las armas y la munición pasan de un nivel al siguiente; las cajas de cada nivel suman armas nuevas.

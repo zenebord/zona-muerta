@@ -577,7 +577,7 @@ class Juego {
     if (Math.abs(j.vx) > 0.5) this.avance = Math.sign(j.vx);
     const avance = this.avance || j.direccion;
     if (!this.torreta && !this.ultra) for (const z of this.zombies) {
-      if (z.estado === 'muerto' || z.maniqui || z.dormido) continue;
+      if (z.estado === 'muerto' || z.maniqui || z.dormido || z.jefe) continue;
       const dx = z.x - j.x, atras = Math.sign(dx) === -avance && Math.abs(dx) > ANCHO / 2 + 160;
       if (atras || Math.abs(dx) > 2600) {
         let nx = j.x + avance * (ANCHO / 2 + 80 + Math.random() * 220);
@@ -708,6 +708,7 @@ class Juego {
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ALTO * 0.95);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, ANCHO, ALTO);
+    if (this.historia) this.barraJefe(ctx);
     if (this.destello > 0) { ctx.fillStyle = `rgba(225,240,255,${this.destello * 2.2})`; ctx.fillRect(0, 0, ANCHO, ALTO); }   // rayo de Mjölnir
     if (j.vida < 35) { ctx.fillStyle = `rgba(140,0,0,${(35 - j.vida) / 35 * 0.35})`; ctx.fillRect(0, 0, ANCHO, ALTO); }
     if (j.veneno > 0) {   // envenenado: bordes verdes que laten
