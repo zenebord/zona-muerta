@@ -11,7 +11,7 @@
  */
 const Musica = (() => {
   let ctx = null, salida = null, envRev = null, envEco = null, ruido = null, curva = null;
-  let tema = null, paso = 0, proximo = 0, reloj = 0, intensidad = 0, objetivo = 0, pausada = false;
+  let tema = null, paso = 0, proximo = 0, reloj = 0, intensidad = 0, objetivo = 0, pausada = false, generacion = 0;
 
   const frec = m => 440 * Math.pow(2, (m - 69) / 12);
   const hash = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -384,7 +384,7 @@ const Musica = (() => {
     tocar(nombre) {
       if (!ctx) { const m = Audio_.mezclaMusica(); if (!m.ctx) return; preparar(m.ctx, m.bus); }
       const nuevo = TEMAS[nombre] || null;
-      tema = nuevo; paso = 0; pausada = false; intensidad = objetivo = 0.15;
+      tema = nuevo; paso = 0; pausada = false; intensidad = objetivo = 0.15; generacion++;   // cada arranque invalida los «detener» pendientes
       const t = ctx.currentTime;
       salida.gain.cancelScheduledValues(t); salida.gain.setValueAtTime(0.0001, t);
       if (!nuevo) { clearInterval(reloj); reloj = 0; return; }
@@ -397,8 +397,9 @@ const Musica = (() => {
       if (!ctx || !tema) return;
       const t = ctx.currentTime;
       salida.gain.cancelScheduledValues(t); salida.gain.setValueAtTime(salida.gain.value, t); salida.gain.linearRampToValueAtTime(0.0001, t + fundido);
-      const actual = tema;
-      setTimeout(() => { if (tema === actual) { tema = null; clearInterval(reloj); reloj = 0; } }, fundido * 1000);
+      // Se calla solo si nadie volvió a arrancar música mientras bajaba (al reintentar se toca el mismo tema)
+      const cual = generacion;
+      setTimeout(() => { if (generacion === cual) { tema = null; clearInterval(reloj); reloj = 0; } }, fundido * 1000);
     },
     pausar(si) {
       if (!ctx || !tema || pausada === si) return;

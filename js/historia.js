@@ -381,7 +381,7 @@ Object.assign(Juego.prototype, {
   // Bordes del nivel, cámara y llegada a la meta
   actualizarHistoria() {
     const H = this.historia, j = this.jugador;
-    this.peligrosHistoria(); this.hordaHistoria();
+    this.peligrosHistoria(); this.hordaHistoria(); this.ambienteHistoria();
     if (j.x < H.inicio - 80) j.x = H.inicio - 80;
     if (j.x > H.meta + 30) j.x = H.meta + 30;
     this.camaraX = Math.max(this.camaraX, H.inicio - ANCHO * 0.35);
@@ -390,6 +390,20 @@ Object.assign(Juego.prototype, {
       H.bajasTotal += this.bajas; H.tiempoTotal += this.tiempoJugado;
       Audio_.rondaSuperada(); Musica.detener(0.6);
     }
+  },
+
+  // Ambiente de la ciudad: cada 3 a 8 s suena algo a lo lejos (bocinas y alarmas de autos, más alguna sirena o
+  // un helicóptero); en el barrio, de vez en cuando, una alarma lejana
+  ambienteHistoria() {
+    const H = this.historia, tema = H.def.clave;
+    if (tema !== 'ciudad' && tema !== 'barrio') return;
+    if (H.proximoSonido === undefined) H.proximoSonido = this.ahora + 1500;
+    if (this.ahora < H.proximoSonido) return;
+    const lejos = 0.3 + Math.random() * 0.6, r = Math.random();
+    if (tema === 'ciudad') {
+      if (r < 0.4) Audio_.bocina(lejos); else if (r < 0.75) Audio_.alarmaAuto(lejos); else if (r < 0.9) Audio_.sirenaLejana(); else Audio_.helicoptero();
+      H.proximoSonido = this.ahora + 3000 + Math.random() * 5000;
+    } else { Audio_.alarmaAuto(0.85); H.proximoSonido = this.ahora + 14000 + Math.random() * 10000; }
   },
 
   // Lo que se lleva al nivel siguiente (o con lo que reintenta)

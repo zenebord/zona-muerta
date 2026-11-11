@@ -529,6 +529,30 @@ const Audio_ = (() => {
       filtro.connect(salida); conectar(salida, 1.2, 0.8);
     },
     // Fin de ronda: golpe grave lejano, como un portazo de acero
+    // Ambiente de ciudad (modo historia): bocinas, alarmas de autos, sirenas y un helicóptero, a lo lejos.
+    // `lejos` (0…1) baja el volumen y suma reverberación
+    bocina(lejos = 0.5) {
+      asegurar(); const v = 0.06 * (1 - lejos * 0.6), rev = 0.3 + lejos * 0.5, veces = 1 + Math.floor(Math.random() * 3), tono0 = 0.9 + Math.random() * 0.25;
+      for (let k = 0; k < veces; k++) {
+        const r = k * 0.3, d = k === veces - 1 ? 0.45 + Math.random() * 0.6 : 0.16;
+        tono({ tipo: 'sawtooth', desde: 415 * tono0, hasta: 410 * tono0, dur: d, vol: v, ataque: 0.01, retraso: r, rev });
+        tono({ tipo: 'sawtooth', desde: 523 * tono0, hasta: 518 * tono0, dur: d, vol: v * 0.8, ataque: 0.01, retraso: r, rev });
+      }
+    },
+    alarmaAuto(lejos = 0.5) {
+      asegurar(); const v = 0.045 * (1 - lejos * 0.6), rev = 0.35 + lejos * 0.5; let r = 0;
+      for (let k = 0; k < 6; k++, r += 0.28) tono({ tipo: 'triangle', desde: 700, hasta: 1500, dur: 0.26, vol: v, ataque: 0.005, retraso: r, rev });      // uiu-uiu
+      for (let k = 0; k < 8; k++, r += 0.16) tono({ tipo: 'square', desde: 1250, hasta: 1250, dur: 0.07, vol: v * 0.55, ataque: 0.002, retraso: r, rev }); // bip-bip
+      for (let k = 0; k < 4; k++, r += 0.5) { tono({ tipo: 'triangle', desde: 900, hasta: 900, dur: 0.22, vol: v, retraso: r, rev }); tono({ tipo: 'triangle', desde: 650, hasta: 650, dur: 0.22, vol: v, retraso: r + 0.25, rev }); }   // tuu-tii
+    },
+    sirenaLejana() {
+      asegurar();
+      for (let k = 0; k < 3; k++) { tono({ tipo: 'sine', desde: 620, hasta: 1100, dur: 0.85, vol: 0.022, ataque: 0.2, retraso: k * 1.7, rev: 0.8 }); tono({ tipo: 'sine', desde: 1100, hasta: 620, dur: 0.85, vol: 0.022, ataque: 0.05, retraso: k * 1.7 + 0.85, rev: 0.8 }); }
+    },
+    helicoptero() {
+      asegurar();
+      for (let k = 0; k < 56; k++) { const f = k / 56; ruido({ dur: 0.04, vol: 0.06 * Math.sin(f * Math.PI), filtro: 'lowpass', freq: 360, ataque: 0.004, retraso: k * 0.085, rev: 0.2 }); }
+    },
     rondaSuperada() { asegurar(); tono({ desde: 70, hasta: 40, dur: 1.6, vol: 0.35, ataque: 0.01, rev: 0.9 }); metal({ f: 220, dur: 0.9, vol: 0.08, rev: 0.7 }); },
     // Ataque aéreo: pedido por radio (dos pitidos y estática), cazas que pasan y misiles que silban al caer
     radioAereo() {
