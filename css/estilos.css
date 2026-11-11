@@ -564,6 +564,15 @@ kbd {
 .vista-detalle { position: relative; margin: 10px 0 6px; background: radial-gradient(ellipse at center, #3b3442, #1c1720 75%); border: 1px solid rgba(255,255,255,.08); }
 .vista-detalle canvas { display: block; width: 100%; height: auto; }
 .vista-detalle .largo { position: absolute; right: 10px; bottom: 6px; font-size: 12px; opacity: .7; }
+/* Flechas para pasar a la ficha del arma anterior o siguiente (también con ← → del teclado) */
+.flecha-arma {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; padding: 0 0 4px;
+  border: 1px solid rgba(201,169,110,.55); background: rgba(14,11,17,.72); color: var(--arena);
+  font-size: 40px; line-height: 1; cursor: pointer; transition: background .15s, color .15s;
+}
+.flecha-arma:hover, .flecha-arma:focus-visible { background: var(--arena); color: var(--noche); }
+.flecha-arma.izq { left: 8px; } .flecha-arma.der { right: 8px; }
+.vista-detalle .pista-flechas { position: absolute; left: 10px; bottom: 6px; font-size: 12px; opacity: .7; letter-spacing: .08em; }
 .detalle-desc { margin: 4px 0 10px !important; max-width: none !important; font-size: 14px; opacity: .9; }
 .detalle-datos { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 18px; margin: 0 0 12px; }
 .detalle-datos div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid rgba(255,255,255,.07); padding: 4px 0; }

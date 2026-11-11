@@ -174,7 +174,10 @@
       <!-- Ficha del arma elegida: imagen, descripción, datos y USAR -->
       <div id="detalle-arma" class="detalle-arma oculta" aria-live="polite">
         <div class="cabecera-detalle"><h3 id="detalle-nombre"></h3><span id="detalle-grupo" class="chip-grupo"></span></div>
-        <div class="vista-detalle"><canvas id="detalle-vista" width="1120" height="380" aria-hidden="true"></canvas><span id="detalle-largo" class="largo"></span></div>
+        <div class="vista-detalle"><canvas id="detalle-vista" width="1120" height="380" aria-hidden="true"></canvas><span id="detalle-largo" class="largo"></span>
+          <button class="flecha-arma izq" type="button" data-accion="arma-anterior" aria-label="Arma anterior">‹</button>
+          <button class="flecha-arma der" type="button" data-accion="arma-siguiente" aria-label="Arma siguiente">›</button>
+          <span class="pista-flechas" data-t="detalle.flechas">← → otra arma</span></div>
         <p id="detalle-desc" class="detalle-desc"></p>
         <dl id="detalle-datos" class="detalle-datos"></dl>
         <div class="fila-botones botones-detalle">

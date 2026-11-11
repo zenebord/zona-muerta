@@ -241,6 +241,12 @@
     document.querySelector('#detalle-arma .boton-usar').focus({ preventScroll: true });   // la ficha abre desde arriba (nombre y dibujo)
     document.getElementById('detalle-arma').scrollTop = 0;
   }
+  // Arma anterior o siguiente en el orden de la lista (da la vuelta al llegar al final)
+  function armaVecina(id, paso) {
+    const lista = [...document.querySelectorAll('#lista-armas-prueba [data-arma]')].map(b => b.dataset.arma);
+    const i = lista.indexOf(id);
+    return lista[((i < 0 ? 0 : i) + paso + lista.length) % lista.length];
+  }
   function ocultarDetalleArma() {
     if (!armaEnDetalle) return;
     const id = armaEnDetalle; armaEnDetalle = null;
@@ -325,6 +331,8 @@
       case 'cerrar-pruebas': alternarMenuPruebas(); break;
       case 'usar-arma': usarArmaDetalle(); break;
       case 'volver-armas': ocultarDetalleArma(); break;
+      case 'arma-anterior': if (armaEnDetalle) mostrarDetalleArma(armaVecina(armaEnDetalle, -1)); break;
+      case 'arma-siguiente': if (armaEnDetalle) mostrarDetalleArma(armaVecina(armaEnDetalle, 1)); break;
       case 'misiones':  renderizarMisiones(); mostrar('panel-misiones'); break;
       case 'controles': mostrar('panel-controles'); break;
       case 'volver':    mostrar('menu-principal'); break;
@@ -368,6 +376,15 @@
         if (e.code === 'Escape' || e.code === 'Backspace') ocultarDetalleArma();
         else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); usarArmaDetalle(); }
         else if (e.code === 'KeyC' && !e.repeat) alternarMenuPruebas();
+        else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { e.preventDefault(); mostrarDetalleArma(armaVecina(armaEnDetalle, e.code === 'ArrowRight' ? 1 : -1)); }
+        return;
+      }
+      // En la lista: ← → pasan a la ficha del arma de al lado de la marcada (o de la que está en la mano)
+      if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') {
+        e.preventDefault();
+        const marcada = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.arma;
+        const base = marcada || (juego.jugador.montada ? null : juego.jugador.arma().id);
+        mostrarDetalleArma(base ? armaVecina(base, e.code === 'ArrowRight' ? 1 : -1) : armaVecina(null, 0));
         return;
       }
       if (e.code === 'KeyX' && !e.repeat) juego.borrarGenerado();
