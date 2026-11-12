@@ -315,7 +315,7 @@
       document.getElementById('fv-grupo').textContent = g >= 0 ? GRUPOS_ARMAS[g].nombre.toUpperCase() : '';
       document.getElementById('fv-nombre').textContent = a.nombre;
       document.getElementById('fv-desc').textContent = f ? enIdioma(f[3]) : '';
-      dibujarFicha(id, document.getElementById('fv-vista'), document.getElementById('fv-largo'), 16);   // el arma entera, de perfil
+      dibujarFicha(id, document.getElementById('fv-vista'), document.getElementById('fv-largo'), 6);   // el arma entera, de perfil
       document.getElementById('fv-datos').innerHTML = filasFicha(id).filter(([k]) => k !== t('detalle.toxico')).map(([k, v, dest, ancha]) => `<div class="${dest ? 'destacado' : ''}${ancha ? ' ancha' : ''}"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
     }
     const carga = j.municionActual(), reserva = a.cuerpo ? '' : (j.reserva[id] === undefined || j.reserva[id] >= 999 ? '∞' : j.reserva[id]);
