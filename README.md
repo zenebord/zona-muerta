@@ -170,6 +170,24 @@ Con bots en Node (3 partidas por caso, dificultad media): sin construir no se ga
 siempre y la autopista 2 de 3; un laberinto armado para cada escenario gana los cinco (el desierto, 2 de 3). En difícil
 la montaña no la gana ningún bot.
 
+### Arte
+
+Todo lo del modo se dibuja en `js/bastion-dibujo.js`, con el mismo estilo de ilustración que el jugador (`pintura`:
+dos tonos, brillo de borde y contorno del color de cada pieza). Soldado con casco con funda, chaleco, mochila y fusil
+con mira; nido de ametralladora pesada en trípode con el tirador agachado tras bolsas de arena; búnker de hormigón con
+red de camuflaje, tronera con los cascos de los de adentro y antena; tanque con orugas, ruedas, faldones, torre con
+escotilla, ametralladora, lanzahumos y cañón con evacuador y freno de boca; muro de cestones de malla con concertina
+(se abolla y pierde arena con el daño); obra con andamio y tablón de seguridad. El campamento es una base de avanzada:
+muro de cestones con portón y barrera, torre de guardia con reflector que barre el campo, bandera, carpas, cuartel
+prefabricado y taller de chapa en arco. Cada escenario tiene fondo en capas con bruma (granja con granero, silo y
+molino; ciudad con incendios y autopista cortada; bosque de noche con luciérnagas; desierto con mesetas y buitres;
+montaña nevando) y terreno con bordes redondeados, orillas, juncos, carriles y surcos.
+
+Rendimiento: cada pose de cada unidad y cada obstáculo se dibuja una sola vez y queda en una caché de imágenes
+(`conSprite`, a la resolución en que se ve); el fondo quieto, el suelo y el terreno van en una capa por nivel; por cuadro
+solo se pintan fogonazos, humo, bandera, reflector, nubes, nieve y brillos del agua. Con 43 unidades en pantalla el
+dibujo pasó de 26 ms a 3,4 ms por cuadro (sin la caché, el arte nuevo era inviable).
+
 ## Historia: «Camino a casa»
 
 Modo por niveles, de izquierda a derecha como los juegos de plataformas de antes (`js/historia.js`,

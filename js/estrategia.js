@@ -38,79 +38,8 @@ const BASTION = {
 const ARMA_BASTION = { categoria: 'rifle', explosivo: false };
 const ARMA_BASTION_TANQUE = { categoria: 'bazuca', explosivo: true };
 
-/* ---------- Dibujos chicos (vista de estratega), mirando a la derecha con los pies en (0, 0) ---------- */
-const DibujoBastion = {
-  soldado(ctx, s, t) {   // s: { fuego, apunta, muerto, caminando, fase }
-    const col = (c) => c;
-    const paso = s.caminando ? Math.sin(s.fase) * 3 : 0;
-    pieza(ctx, poli(segmento(-2, -14, -3 - paso, 0, 4.2, 3.6)), col('#3f4a2e'), -6, 2);
-    pieza(ctx, poli(segmento(2, -14, 3 + paso, 0, 4.2, 3.6)), col('#4b5636'), -1, 6);
-    pieza(ctx, elipse(-3 - paso, 0, 2.8, 1.4), '#1d1a16', -6, 0); pieza(ctx, elipse(3 + paso, 0, 2.8, 1.4), '#1d1a16', 0, 6);
-    pieza(ctx, redondo(-5, -27, 10, 14, 3), col('#55613d'), -5, 5);                                       // chaleco
-    detalle(ctx, '#3a4228', c => c.rect(-4, -22, 8, 2));
-    pieza(ctx, circulo(1, -31, 4.2), '#d9a67a', -3, 5);                                                   // cara
-    pieza(ctx, k => { k.moveTo(-4.6, -31); k.quadraticCurveTo(-4.4, -37.5, 1.4, -37.6); k.quadraticCurveTo(6.6, -37.4, 6, -31); k.lineTo(-4.6, -31); }, '#4a5634', -5, 6);   // casco
-    // Fusil apuntando (sube un poco si el blanco está más arriba)
-    ctx.save(); ctx.translate(2, -22); ctx.rotate(s.apunta || 0);
-    pieza(ctx, redondo(-4, -1.6, 18, 3.2, 1), '#22231f', -4, 14);
-    pieza(ctx, redondo(-6, -1, 4, 4, 1), '#5a3a22', -6, -2);
-    if (s.fuego > 0) { ctx.fillStyle = `rgba(255,220,120,${s.fuego})`; ctx.beginPath(); ctx.moveTo(14, -2.4); ctx.lineTo(21, 0); ctx.lineTo(14, 2.4); ctx.fill(); }
-    ctx.restore();
-    pieza(ctx, circulo(5, -21, 2), '#d9a67a', 3, 7);                                                      // mano
-  },
-  bolsas(ctx, x0, x1, y, filas) {   // bolsas de arena apiladas
-    for (let f = 0; f < filas; f++) for (let x = x0 + (f % 2) * 4; x < x1 - 2; x += 8) pieza(ctx, redondo(x, y - 5 * (f + 1), 8.4, 5.4, 2.4), f % 2 ? '#a08a5c' : '#b29a68', x, x + 8);
-  },
-  torreta(ctx, u, t) {
-    DibujoBastion.soldado(ctx, { fuego: 0, apunta: u.apunta * 0.5 }, t);
-    ctx.save(); ctx.translate(6, -12); ctx.rotate(u.apunta || 0);
-    pieza(ctx, redondo(-8, -3, 22, 6, 2), '#2a2c2e', -8, 14);                                             // cajón de la ametralladora
-    pieza(ctx, redondo(13, -1.3, 14, 2.6, 1), '#1c1d1f', 13, 27);                                         // caño
-    if (u.fuego > 0) { ctx.fillStyle = `rgba(255,220,120,${u.fuego})`; ctx.beginPath(); ctx.moveTo(27, -3.4); ctx.lineTo(36, 0); ctx.lineTo(27, 3.4); ctx.fill(); }
-    ctx.restore();
-    linea(ctx, '#3a3c40', 1.4, [[6, -12], [0, 0]]); linea(ctx, '#3a3c40', 1.4, [[6, -12], [12, 0]]);   // trípode
-    DibujoBastion.bolsas(ctx, -14, 22, 2, 2);
-  },
-  bunker(ctx, u, t) {
-    pieza(ctx, k => { k.moveTo(-22, 0); k.lineTo(-20, -22); k.quadraticCurveTo(0, -32, 20, -22); k.lineTo(22, 0); k.closePath(); }, '#8e8c86', -22, 22);
-    if (!Pincel.silueta) {
-      detalle(ctx, '#151517', c => c.rect(-12, -18, 24, 4));                                               // tronera
-      for (let k = 0; k < Math.min(u.adentro || 0, 4); k++) detalle(ctx, u.fuegoK && u.fuegoK[k] > 0 ? '#ffdd88' : '#4a5634', c => c.rect(-10 + k * 6, -17.4, 3.6, 2.8));
-      linea(ctx, 'rgba(0,0,0,0.25)', 0.6, [[-14, -8], [-6, -6]]); linea(ctx, 'rgba(0,0,0,0.25)', 0.6, [[8, -12], [14, -6]]);
-    }
-    DibujoBastion.bolsas(ctx, -24, 24, 2, 1);
-    linea(ctx, '#3a3226', 1, [[14, -26], [14, -38]]); pieza(ctx, poli([[14, -38], [24, -35], [14, -32]]), '#b3261e', 14, 24);   // banderín
-  },
-  tanque(ctx, u, t) {
-    const r = u.retroceso || 0;
-    pieza(ctx, redondo(-24, -10, 48, 10, 4), '#2c2e26', -24, 24);                                         // orugas
-    if (!Pincel.silueta) for (let k = 0; k < 6; k++) detalle(ctx, '#55574c', circulo(-19 + k * 7.6, -5, 2.6));
-    pieza(ctx, poli([[-22, -10], [-18, -17], [20, -17], [25, -10]]), '#5d6640', -22, 25);                 // casco
-    ctx.save(); ctx.translate(-2 - r * 2, -20);
-    pieza(ctx, redondo(-10, -5, 20, 9, 3), '#6a744a', -10, 10);                                            // torreta
-    ctx.save(); ctx.rotate(u.apunta || 0);
-    pieza(ctx, redondo(8, -1.6, 28 - r * 4, 3.2, 1), '#3a3f2a', 8, 36);                                   // cañón largo
-    if (u.fuego > 0) { ctx.fillStyle = `rgba(255,200,90,${u.fuego})`; ctx.beginPath(); ctx.moveTo(36, -5); ctx.lineTo(50, 0); ctx.lineTo(36, 5); ctx.fill(); }
-    ctx.restore(); ctx.restore();
-    if (!Pincel.silueta) detalle(ctx, '#e8e2c8', c => c.rect(-14, -15, 6, 3));                           // número
-  },
-  muro(ctx, u, t) {
-    const dano = 1 - u.vida / u.vidaMax;
-    pieza(ctx, poli([[-20, 0], [-17, -16], [-9, -18], [9, -18], [17, -16], [20, 0]]), '#a9a69e', -20, 20);
-    if (!Pincel.silueta) {
-      linea(ctx, 'rgba(0,0,0,0.2)', 0.8, [[0, -18], [0, 0]]);
-      if (dano > 0.3) linea(ctx, '#3a3834', 0.7, [[-8, -16], [-5, -9], [-9, -3]]);
-      if (dano > 0.6) linea(ctx, '#3a3834', 0.7, [[6, -17], [9, -10], [5, -5], [8, -1]]);
-      for (let x = -18; x < 18; x += 5) linea(ctx, '#5a5650', 0.5, [[x, -20], [x + 2.5, -22], [x + 5, -20]]);   // alambre de púas
-    }
-  },
-  obra(ctx, f, t) {   // andamio mientras se construye, con la barra de avance
-    linea(ctx, '#c9a25a', 1, [[-16, 0], [-16, -26]]); linea(ctx, '#c9a25a', 1, [[16, 0], [16, -26]]);
-    linea(ctx, '#c9a25a', 1, [[-16, -13], [16, -13]]); linea(ctx, '#c9a25a', 1, [[-16, -26], [16, -26]]);
-    linea(ctx, '#c9a25a', 0.8, [[-16, 0], [16, -26]]);
-    if (!Pincel.silueta && Math.sin(t / 60) > 0.6) { ctx.fillStyle = '#ffe28a'; ctx.fillRect(-2 + Math.sin(t / 37) * 8, -12, 2, 2); }   // chispas
-  },
-};
+// Dibujos de soldado, torreta, búnker, tanque, muro y obra: js/bastion-dibujo.js (se completa ahí)
+const DibujoBastion = {};
 
 /* ---------- La partida ---------- */
 Object.assign(Juego.prototype, {
@@ -588,30 +517,7 @@ Object.assign(Juego.prototype, {
     }
     if (u.tipo === 'soldado') DibujoBastion.soldado(ctx, u, ms); else DibujoBastion[u.tipo](ctx, u, ms);
   },
-  dibujarCampamento(ctx) {
-    const B = BASTION, alto = this.filas * B.celda[1], y0 = B.arriba, x = B.baseX;
-    // Patio del campamento
-    ctx.fillStyle = '#3d3a30'; ctx.fillRect(0, y0 - 20, x - 6, alto + 40);
-    // Carpas, el cuartel y el taller
-    const carpa = (cx, cy, col) => { pieza(ctx, poli([[cx - 18, cy], [cx, cy - 20], [cx + 18, cy]]), col, cx - 18, cx + 18); detalle(ctx, '#1a1814', poli([[cx - 4, cy], [cx, cy - 9], [cx + 4, cy]])); };
-    carpa(36, y0 + 40, '#5a6040'); carpa(70, y0 + 74, '#4e5638');
-    pieza(ctx, redondo(14, y0 + alto - 120, 70, 40, 4), '#6e6a5e', 14, 84); detalle(ctx, '#2a2824', c => c.rect(38, y0 + alto - 100, 22, 20));
-    ctx.fillStyle = '#e8dcc0'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t('bastion.cuartel'), 49, y0 + alto - 106);
-    pieza(ctx, redondo(10, y0 + alto - 60, 80, 44, 4), '#5c5a50', 10, 90); detalle(ctx, '#262420', c => c.rect(30, y0 + alto - 44, 40, 28));
-    ctx.fillStyle = '#e8dcc0'; ctx.fillText(t('bastion.taller'), 50, y0 + alto - 48);
-    // Avance de lo que se forma (sobre el cuartel y el taller)
-    for (const [cola, yb] of [[this.colaCuartel, y0 + alto - 126], [this.colaTaller, y0 + alto - 66]]) {
-      const o = cola[0]; if (!o) continue;
-      const f = Math.min(1, (o.hecho || 0) / B.unidades[o.tipo].tiempo);
-      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(16, yb, 66, 5); ctx.fillStyle = '#ffd27a'; ctx.fillRect(17, yb + 1, 64 * f, 3);
-      if (cola.length > 1) { ctx.fillStyle = '#ffd27a'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('+' + (cola.length - 1), 90, yb + 5); }
-    }
-    // Bandera y empalizada con la puerta
-    linea(ctx, '#3a3226', 1.6, [[20, y0 + 10], [20, y0 - 30]]); pieza(ctx, poli([[20, y0 - 30], [44, y0 - 24 + Math.sin(this.ahora / 300) * 2], [20, y0 - 18]]), '#3a6fb0', 20, 44);
-    for (let y = y0 - 14; y < y0 + alto + 14; y += 9) pieza(ctx, redondo(x - 12, y, 10, 10, 3), (y / 9) % 2 > 1 ? '#7a5a36' : '#6a4e2e', x - 12, x - 2);
-    const golpe = 1 - this.vidaBase / BASTION.vidaBase;
-    if (golpe > 0) { ctx.fillStyle = `rgba(160,20,20,${golpe * 0.25})`; ctx.fillRect(0, y0 - 20, x, alto + 40); }
-  },
+  // dibujarCampamento: js/bastion-dibujo.js
 
   /* ---------- Panel de abajo (botones) y arriba (dinero, oleada, base) ---------- */
   panelBastion() {
