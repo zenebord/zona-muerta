@@ -19,7 +19,10 @@
     if (ancho !== ANCHO) { try { ANCHO = ancho; forzar = true; } catch { /* terreno.js viejo en caché: queda en 16:9 */ } }
     document.documentElement.style.setProperty('--proporcion', String(ANCHO / ALTO));
     const anchoCss = Math.min(window.innerWidth, window.innerHeight * ANCHO / ALTO);
-    const q = calidadEfectiva(), tope = q === 'normal' ? 1 : 2;   // normal: sin alta resolución
+    // Campo de pruebas: la cámara se acerca hasta 3,3 veces, así que se dibuja siempre con todos los píxeles que tenga
+    // la pantalla (hasta 3×), sin importar la calidad elegida; es una escena liviana (un personaje y un maniquí)
+    const vitrina = !!(juego && juego.pruebas);
+    const q = vitrina ? 'alta' : calidadEfectiva(), tope = vitrina ? 3 : q === 'normal' ? 1 : 2;   // normal: sin alta resolución
     const escala = q === 'baja' ? 0.75 : Math.max(1, Math.min(tope, anchoCss * (window.devicePixelRatio || 1) / ANCHO));   // baja: menos píxeles que la pantalla
     Lienzo.liviano = q === 'baja';                                  // baja: además, sin el bisel de las piezas
     if (!forzar && Math.abs(escala - Lienzo.escala) < 0.01 && lienzo.width === Math.round(ANCHO * escala)) return;
@@ -79,7 +82,7 @@
    * pausa del navegador) no cuentan. */
   const medida = { suma: 0, n: 0 };
   function medirRendimiento(ms) {
-    if (Config.get('calidad') !== 'auto' || calidadAuto === 'baja' || ms > 200) return;
+    if (Config.get('calidad') !== 'auto' || calidadAuto === 'baja' || ms > 200 || (juego && juego.pruebas)) return;   // la vitrina no cuenta
     medida.suma += ms; medida.n++;
     if (medida.suma < 3000) return;
     const promedio = medida.suma / medida.n; medida.suma = medida.n = 0;

@@ -97,7 +97,7 @@ y entrá a <http://127.0.0.1:8791/>.
 El personaje queda quieto y la cámara se acerca (3,3× con pistolas, 2,9× con metralletas y cuerpo a cuerpo, 2,6×
 con el resto) para ver de cerca el arma, el fogonazo, los casquillos y la recarga. ← y → cambian de arma (lista para
 tirar, sin heredar la espera de la anterior), `F` o clic dispara, `S` o clic derecho recarga y `L` pone cámara lenta
-(un cuarto de la velocidad; el sonido sigue normal). La ficha del arma en la mano: su dibujo entero de perfil con el largo, grupo, origen, año,
+(un cuarto de la velocidad; el sonido sigue normal). Se dibuja siempre con todos los píxeles de la pantalla (hasta 3×), sin importar la calidad elegida, para que de cerca no se vea pixelado. La ficha del arma en la mano: su dibujo entero de perfil con el largo, grupo, origen, año,
 munición, descripción, daño, tiros para matar, cargador, cadencia, funcionamiento, recarga, alcance y retroceso, con
 la munición en vivo; va arriba a la izquierda, el personaje un poco a la izquierda del centro y el maniquí a 150 px, dentro del cuadro. `C` sigue abriendo la lista de todas las armas.
 
