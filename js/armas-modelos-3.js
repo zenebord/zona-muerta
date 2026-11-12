@@ -1372,7 +1372,7 @@ const RP_FORMAS = {
   ojiva: suave(RPF([[499, 273], [512, 266], [530, 263], [580, 263], [600, 268], [615, 274], [624, 277], [624, 286], [615, 289], [600, 295], [580, 300], [530, 300], [512, 297], [499, 290]]), 1.0, 4),
   espoleta: suave(RPF([[622, 277], [636, 278], [643, 279], [643, 284], [636, 285], [622, 286]]), 0.3, 2),
 };
-reemplazar('rpg7', { casquillo: null,
+reemplazar('rpg7', { casquillo: null, culataCm: 30,   // el hombro apoya sobre la madera, 30 cm detrás del pistolete
   anclas: { manoDelantera: RP(440, 293), cargador: RP(470, 281), corredera: RP(470, 281), expulsion: RP(27, 281), boca: RP(643, 281) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = RP_FORMAS, P = RP, AZUL = '#3a4457', MAD = '#5c3426', OSC = '#2f3644';

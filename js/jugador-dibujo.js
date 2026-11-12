@@ -35,6 +35,9 @@ function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
   const dx = mx - hx, dy = my - hy, d = Math.hypot(dx, dy) || 0.001;
   let l1 = L1, l2 = L2;
   if (d > (L1 + L2) * 0.995) { const k = d / ((L1 + L2) * 0.995); l1 *= k; l2 *= k; }   // si no llega, se estira apenas
+  // Mano cerca del hombro (P90, Uzi, tubos al hombro): el brazo viene hacia el que mira y se ve más corto (escorzo).
+  // Sin esto, el único modo de que entre es doblar el codo hasta el cinturón
+  else if (d < (L1 + L2) * 0.8) { const k = Math.max(0.5, d / ((L1 + L2) * 0.8)); l1 *= k; l2 *= k; }
   const a = Math.acos(limitar((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1)), base = Math.atan2(dy, dx);
   const cx = hx + Math.cos(base + a) * l1, cy = hy + Math.sin(base + a) * l1;                // codo hacia abajo
   pieza(ctx, poli(segmento(hx, hy, cx, cy, 8.5)), C.chaqueta, Math.min(hx, cx) - 4, Math.max(hx, cx) + 4);
