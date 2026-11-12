@@ -18,13 +18,15 @@
 const BASTION = {
   celda: [44, 34], arriba: 178, abajo: 490, baseX: 120, margenDer: 26,
   // Economía ajustada: se arranca con un ejército mínimo ya armado y poca plata; cada zombie paga poco y la vida crece 11 % por oleada
-  dineroInicial: 150, vidaBase: 15, descanso: 25, primerDescanso: 40, crecimientoVida: 1.2, adelantoPorSegundo: 1,
+  dineroInicial: 150, vidaBase: 15, descanso: 25, primerDescanso: 40, crecimientoVida: 1.21, adelantoPorSegundo: 1,
+  // Reparar cuesta 75 % de lo que vale la parte rota; 60 % de los comunes son impacientes y rompen muros del laberinto
+  reparacion: 0.75, impacientes: 0.6,
   unidades: {
     soldado: { costo: 50,  tiempo: 4,  vida: 30,  alcance: 175, dano: 3,  cadencia: 0.65, donde: 'cuartel', tecla: 1 },
     torreta: { costo: 150, tiempo: 8,  vida: 90,  alcance: 195, dano: 2,  cadencia: 0.13, donde: 'obra', bloquea: true, tecla: 2 },
     bunker:  { costo: 150, tiempo: 12, vida: 280, alcance: 210, dano: 3,  cadencia: 0.65, donde: 'obra', bloquea: true, capacidad: 4, tecla: 3 },
-    tanque:  { costo: 375, tiempo: 15, vida: 170, alcance: 420, minimo: 70, dano: 18, radio: 48, cadencia: 2.6, donde: 'taller', bloquea: true, tecla: 4 },
-    muro:    { costo: 25,  tiempo: 2,  vida: 150, donde: 'obra', bloquea: true, tecla: 5 },
+    tanque:  { costo: 375, tiempo: 15, vida: 170, alcance: 420, minimo: 70, dano: 18, radio: 32, cadencia: 2.6, donde: 'taller', bloquea: true, tecla: 4 },
+    muro:    { costo: 35,  tiempo: 2,  vida: 150, donde: 'obra', bloquea: true, tecla: 5 },
   },
   zombies: {
     caminante: { vida: 1,   vel: 24, paga: 6,   dano: 1,  escala: 0.58 },
@@ -171,7 +173,7 @@ Object.assign(Juego.prototype, {
 
   /* ---------- Colocar, vender, formar ---------- */
   elegirUnidad(tipo) {
-    if (tipo === 'vender') { this.colocando = this.colocando === 'vender' ? null : 'vender'; this.panelBastion(); return; }
+    if (tipo === 'vender' || tipo === 'reparar') { this.colocando = this.colocando === tipo ? null : tipo; this.panelBastion(); return; }
     const U = BASTION.unidades[tipo]; if (!U) return;
     this.colocando = this.colocando === tipo ? null : tipo;
     if (this.colocando && this.dinero < U.costo) this.aviso(t('bastion.sinDinero'), 1200);
@@ -221,6 +223,21 @@ Object.assign(Juego.prototype, {
     const devuelve = u.listo ? Math.round(u.costo / 2) : u.costo;
     this.quitarUnidad(u); this.dinero += devuelve;
     this.aviso(t('bastion.vendido', { d: devuelve }), 1200); Audio_.recarga('tapa');
+    return true;
+  },
+  // Reparar: lo construido y dañado vuelve a vida completa; cuesta el 75 % de lo que vale la parte rota
+  // (un muro a media vida, $14). Si no alcanza, se arregla lo que se pueda pagar
+  aReparar(c, f) { return this.unidades.find(u => u.c === c && u.f === f && !u.invisible && u.listo && u.vida < u.vidaMax - 0.5 && BASTION.unidades[u.tipo] && u.tipo !== 'soldado') || null; },
+  costoReparar(u) { return Math.max(1, Math.ceil(BASTION.unidades[u.tipo].costo * (1 - u.vida / u.vidaMax) * BASTION.reparacion)); },
+  reparar(c, f) {
+    const u = this.aReparar(c, f);
+    if (!u) { this.aviso(t('bastion.nadaQueReparar'), 1100); Audio_.vacio(); return false; }
+    const costo = this.costoReparar(u), paga = Math.min(costo, this.dinero);
+    if (paga <= 0) { this.aviso(t('bastion.sinDinero'), 1200); Audio_.vacio(); return false; }
+    u.vida = paga >= costo ? u.vidaMax : u.vida + (u.vidaMax - u.vida) * paga / costo;
+    this.dinero -= paga; this.reparaciones = (this.reparaciones || 0) + 1;
+    this.aviso(t('bastion.reparado', { d: paga }), 1000); Audio_.recarga('cerrar');
+    this.panelBastion();
     return true;
   },
   quitarUnidad(u, destruida) {
@@ -309,6 +326,7 @@ Object.assign(Juego.prototype, {
     z.x = B.baseX + this.cols * B.celda[0] + 14 + Math.random() * 20; z.y = z.ySuelo = p.y + (Math.random() - 0.5) * 10;
     z.vidaMax = z.vida = Math.max(1, Math.round(this.dificultad.vidaZombie * Z.vida * AJUSTE.vidaZombie * Math.pow(B.crecimientoVida, this.ronda - 1)));
     z.vel = Z.vel * this.dificultad.velocidad * AJUSTE.velocidadZombie * (0.9 + Math.random() * 0.2);
+    z.impaciente = tipo !== 'caminante' && tipo !== 'corredor' || Math.random() < B.impacientes;
     z.desvio = (Math.random() - 0.5) * 12; z.direccion = -1; z.mordiscoEn = 0; z.trabado = 0; z.ultimaX = z.x;
     this.zombies.push(z);
   },
@@ -326,9 +344,19 @@ Object.assign(Juego.prototype, {
         if (this.ahora >= z.mordiscoEn) { z.mordiscoEn = this.ahora + 900; presa.vida -= this.dificultad.danoMordida * AJUSTE.mordida * (z.tipoBastion === 'jefe' ? 3 : z.tipoBastion === 'gordo' ? 1.5 : 1); Audio_.zombieGolpea(); if (presa.vida <= 0) this.quitarUnidad(presa, true); }
         continue;
       }
+      // Impacientes (un tercio de los comunes, todos los gordos y el coloso): si el laberinto los hace dar una vuelta
+      // larga y tienen una construcción justo del lado del campamento, la rompen para acortar en vez de rodear
+      const { c, f } = this.celdaDe(z.x, z.y);
+      if (z.impaciente && this.dentro(c, f) && this.distBastion[f][c] > c + 4) {
+        const atajo = this.unidades.find(u => u.bloquea && !u.invisible && u.c === c - 1 && u.f === f);
+        if (atajo && Math.abs(atajo.y - z.y) < 16 && z.x - atajo.x < 34) {
+          z.estado = 'ataca'; z.direccion = -1; z.fase += dt * 4;
+          if (this.ahora >= z.mordiscoEn) { z.mordiscoEn = this.ahora + 900; atajo.vida -= this.dificultad.danoMordida * AJUSTE.mordida * (z.tipoBastion === 'jefe' ? 3 : z.tipoBastion === 'gordo' ? 1.5 : 1); Audio_.zombieGolpea(); if (atajo.vida <= 0) this.quitarUnidad(atajo, true); }
+          continue;
+        }
+      }
       z.estado = 'camina'; z.direccion = -1;
       // Hacia la celda vecina más cerca del campamento
-      const { c, f } = this.celdaDe(z.x, z.y);
       let tx = B.baseX - 40, ty = z.y;
       if (c >= 0) {
         const cc = Math.min(c, this.cols - 1), ff = limitar(f, 0, this.filas - 1);
@@ -495,10 +523,15 @@ Object.assign(Juego.prototype, {
     if (this.colocando && this.puntero) {
       const { c, f } = this.celdaDe(this.puntero.x, this.puntero.y);
       if (this.dentro(c, f)) {
-        const ok = this.colocando === 'vender' ? !!this.unidades.find(u => u.c === c && u.f === f && !u.invisible) : !this.motivoNoColocar(this.colocando, c, f);
-        ctx.fillStyle = this.colocando === 'vender' ? 'rgba(255,190,80,0.25)' : ok ? 'rgba(120,230,120,0.25)' : 'rgba(240,80,70,0.28)';
+        const herr = this.colocando === 'vender' || this.colocando === 'reparar';
+        const ok = this.colocando === 'vender' ? !!this.unidades.find(u => u.c === c && u.f === f && !u.invisible) : this.colocando === 'reparar' ? !!this.aReparar(c, f) : !this.motivoNoColocar(this.colocando, c, f);
+        ctx.fillStyle = this.colocando === 'vender' ? 'rgba(255,190,80,0.25)' : this.colocando === 'reparar' ? (ok ? 'rgba(110,190,255,0.3)' : 'rgba(255,255,255,0.08)') : ok ? 'rgba(120,230,120,0.25)' : 'rgba(240,80,70,0.28)';
         ctx.fillRect(B.baseX + c * B.celda[0] + 1, B.arriba + f * B.celda[1] + 1, B.celda[0] - 2, B.celda[1] - 2);
-        if (this.colocando !== 'vender') {
+        if (herr && this.colocando === 'reparar' && ok) {   // cuánto cuesta arreglar lo que está abajo del puntero
+          const u = this.aReparar(c, f), p = this.centroCelda(c, f);
+          ctx.fillStyle = this.dinero >= this.costoReparar(u) ? '#bfe3ff' : '#ff9a8a'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + this.costoReparar(u), p.x, p.y - 30);
+        }
+        if (!herr) {
           const p = this.centroCelda(c, f), U = BASTION.unidades[this.colocando];
           if (U.alcance) { ctx.strokeStyle = 'rgba(255,230,170,0.35)'; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.ellipse(p.x, p.y - 10, U.alcance, U.alcance / 1.3, 0, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
           ctx.save(); ctx.globalAlpha = 0.5; ctx.translate(p.x, p.y); this.dibujarUnidad(ctx, { tipo: this.colocando, listo: true, vida: 1, vidaMax: 1, apunta: 0, adentro: 0 }); ctx.restore();
@@ -611,11 +644,12 @@ Object.assign(Juego.prototype, {
     const { c, f } = this.celdaDe(x, y);
     if (!this.dentro(c, f)) return;
     if (this.colocando === 'vender') { this.vender(x, y); return; }
+    if (this.colocando === 'reparar') { this.reparar(c, f); return; }
     this.colocar(c, f);
   },
   teclaBastion(codigo) {
-    const n = /^(Digit|Numpad)([1-6])$/.exec(codigo);
-    if (n) { const tipo = n[2] === '6' ? 'vender' : Object.keys(BASTION.unidades).find(k => BASTION.unidades[k].tecla === +n[2]); if (tipo) this.elegirUnidad(tipo); return true; }
+    const n = /^(Digit|Numpad)([1-7])$/.exec(codigo);
+    if (n) { const tipo = n[2] === '6' ? 'vender' : n[2] === '7' ? 'reparar' : Object.keys(BASTION.unidades).find(k => BASTION.unidades[k].tecla === +n[2]); if (tipo) this.elegirUnidad(tipo); return true; }
     if (codigo === 'Space' || codigo === 'Enter') { this.oleadaYa(); return true; }
     if (codigo === 'KeyV') { const v = [1, 2, 5, 10]; this.cambiarVelocidad(v[(v.indexOf(this.velocidad) + 1) % v.length]); return true; }   // V: siguiente velocidad
     return false;

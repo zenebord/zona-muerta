@@ -76,7 +76,7 @@ y entrá a <http://127.0.0.1:8791/>.
   daño por impacto, tiros o golpes para matar un zombie en cada dificultad y uno tóxico, cargador, cadencia,
   funcionamiento, tipo y tiempo de recarga, alcance, perdigones, radio de explosión, retroceso y, en las
   legendarias, su poder. **USAR** (o `Enter`) se la da al personaje; **VOLVER** (o `Esc`) regresa a la lista.
-- **Campo de pruebas**: una planicie de tierra sin zombies ni rondas, con las 24 armas en el
+- **Campo de pruebas**: un puesto de tiro techado, sin zombies ni rondas, con las 24 armas en el
   inventario, para probar armas y recargas. `1`-`5` eligen el grupo de armas. `C` abre un menú
   donde se elige cualquier arma para tenerla directo en la mano (granadas y especiales incluidas), se pone o quita
   una M2 Browning y plantar un zombie maniquí que no se mueve ni muerde. Con el menú abierto, `X`
@@ -101,6 +101,18 @@ tirar, sin heredar la espera de la anterior), `F` o clic dispara, `S` o clic der
 munición, descripción, daño, tiros para matar, cargador, cadencia, funcionamiento, recarga, alcance y retroceso, con
 la munición en vivo; va arriba a la izquierda, el personaje un poco a la izquierda del centro y el maniquí a 150 px, dentro del cuadro. `C` sigue abriendo la lista de todas las armas.
 
+El escenario es un galpón enorme (`Escenario.dibujarCampo`). Como la cámara acercada sólo muestra unos tres metros, el
+tamaño se lee por la profundidad: el piso sigue hasta la pared del fondo, dos hileras de columnas de acero cada vez más
+chicas y lavadas por la neblina, estanterías lejanas, un ventanal alto, haces de luz en diagonal, lámparas colgadas y
+las juntas del piso que convergen. Detrás del arma queda lo más claro (la neblina del fondo), así el acero negro
+recorta; el piso de adelante es claro para ver casquillos, peines y cargadores; la línea de tiro amarilla está en la
+punta de las botas y, a la derecha, la trampa de balas. Suena como galpón (eco) y apenas entra el viento de afuera.
+
+**Luz del fogonazo** (`LuzFogonazo` en `js/objetos.js`, en todos los modos salvo la defensa ultra): cada disparo
+ilumina el piso debajo de la boca (una mancha anaranjada, más ancha y tenue cuanto más alto el arma) y al tirador,
+cuerpo y arma, más fuerte cerca de la boca. Dura 90 ms (un poco más que la llama) y se apaga en curva. Lo del tirador
+se hace con su silueta en un lienzo aparte, sin la sombra; con la calidad liviana se omite.
+
 ## Último bastión (defensa con estrategia)
 
 Modo aparte de las defensas (`js/estrategia.js`): no se dispara, se manda. Vista de estratega sobre un campo con
@@ -112,23 +124,28 @@ camino más corto (un mapa de distancias por celda que se rehace cada vez que al
 | Soldado | $50 | 4 s | Cuartel, de a uno | Camina a su lugar y dispara (alcance medio). Si su lugar es un búnker, entra (hasta 4) |
 | Torreta | $150 | 8 s | En el lugar, con andamio | Ametralladora con su tirador detrás de bolsas de arena: mucho fuego, poco daño |
 | Búnker | $150 | 12 s | En el lugar | Mucha vida; disparan los soldados que tenga adentro, con más alcance. Si cae, salen |
-| Tanque | $375 | 15 s | Taller, de a uno | Maneja hasta su lugar; dispara muy lejos con daño en área, pero no a los que tiene pegados |
-| Muro | $25 | 2 s | En el lugar | Obliga a rodear: en los huecos angostos los zombies se amontonan y van más lento. No se puede cerrar el paso del todo |
+| Tanque | $375 | 15 s | Taller, de a uno | Maneja hasta su lugar; dispara muy lejos con daño en área (radio 32), pero no a los que tiene pegados |
+| Muro | $35 | 2 s | En el lugar | Obliga a rodear: en los huecos angostos los zombies se amontonan y van más lento. No se puede cerrar el paso del todo |
 
 Torretas, búnkeres, tanques y muros ocupan su celda; los soldados no. Los zombies muerden lo que tienen adelante y,
 si se trancan, rompen lo que los traba. La economía está ajustada para que haya que administrar: se empieza con
 $150 y un ejército mínimo (3 soldados y 4 muros que dejan un pasillo), que solo no aguanta más de 4 oleadas. Cada
 muerto paga poco (caminante $6, corredor $7, gordo $15, el coloso de cada 5 oleadas $90), cada oleada superada da
-$30 + $5 por oleada, la vida de los zombies crece 20 % por oleada y la cantidad es 8 + 4·(n−1) + n^1,4. Entre
+$30 + $5 por oleada, la vida de los zombies crece 21 % por oleada y la cantidad es 8 + 4·(n−1) + n^1,4. Entre
 oleadas hay 25 s para construir (la primera, 40); se puede adelantar con Espacio o el botón, y cobra $1 por segundo
 ahorrado. El que llega al campamento le saca vida (1, 3 el gordo, 8 el coloso); con 15 entradas se pierde.
 Velocidad 1×, 2×, 5× o 10× con los botones de arriba a la derecha o `V` (el bucle da varios pasos normales por
 cuadro, no uno grande). Teclas: `1` a `5` eligen, `6` vende, clic derecho vende a mitad de precio (o cancela entero
-lo que no estaba listo), `Esc` suelta lo elegido.
+lo que no estaba listo), `7` (o REPARAR) arregla lo dañado pagando ¾ de lo roto, `Esc` suelta lo elegido.
 
-Balance medido con bots que juegan solos (3 corridas por caso, oleada en la que pierden; dificultad media):
-no construir nada 4; solo torretas con muros 4–5; solo soldados 7–8; solo tanques 10–15; mezcla de búnkeres con
-soldados, torretas, tanques y muros 6–15. En fácil la mezcla llega a 19–20 y en difícil a 6–7.
+Laberintos: los muros obligan a dar vueltas, pero el 60 % de los zombies comunes (y todos los gordos y el coloso)
+son impacientes: si el camino es más de 4 celdas más largo que ir derecho y tienen una construcción justo del lado
+del campamento, la muerden para abrirse paso. Mantener un laberinto cuesta reparaciones.
+
+Balance medido con bots que juegan solos con el código real en Node (4 corridas por caso, oleada en la que
+pierden; dificultad media): no construir nada 4–5; solo torretas con muros 4–5; solo soldados 7–8; solo tanques
+6–9; mezcla sin laberinto 6–10; laberinto en serpentina con torretas, tanques atrás y reparaciones 10–16.
+Antes de este ajuste el laberinto llegaba a la 20 sin recibir un golpe.
 
 ## Historia: «Camino a casa»
 
