@@ -175,10 +175,28 @@ la montaña no la gana ningún bot.
 
 ### Arte
 
-Vista en 3/4, como los juegos de estrategia: la cámara mira desde arriba y en diagonal, así que de cada cosa se ve el
-techo y el frente (`caja34`) y las sombras caen abajo a la derecha (`sombraCaja`). No hay cielo: arriba del campo está el
-borde del mapa con la misma cámara (parcelas, granero y silo; azoteas y fachadas; copas de pinos; la meseta con su
-paredón y un cañón; el paredón nevado). La grilla, el movimiento y la colocación no cambiaron.
+Vista en 3/4, como StarCraft: la cámara mira al norte desde arriba y de costado (unos 50°), así que de cada cosa se ve
+el techo y el frente (`caja34`). La luz viene del noroeste: los techos con luz, los frentes que miran al sur en sombra
+(los muros de cestones tienen el techo de arena claro y la malla del frente más oscura), y las sombras caen abajo a la
+derecha (`sombraCaja`). No hay cielo.
+
+- **Borde del mapa** (`PaisajeBastion.fondo`): una meseta más alta que el campo, separada por un escalón del que se ve el
+  frente (`escalon34`). El escalón va en tramos diagonales, como las barrancas de StarCraft: los que miran al suroeste,
+  más claros; los que miran al sureste, más oscuros. Cada escenario tiene el suyo: barranca de tierra con piedras, raíces
+  y alambrado en la granja (con una rampa por donde baja el camino); muro de contención de paneles con baranda en la
+  autopista; barranca con raíces en el bosque; paredón de estratos con el cañón como rampa en el desierto; paredón de roca
+  con vetas de nieve en la montaña. Arriba, con la misma cámara: casas y granero con el techo a dos aguas a la vista,
+  silo, molino y campos sembrados con la altura de las plantas (`parcela34`); dos filas de edificios con las azoteas a
+  la vista (pretil, máquinas, tanques de agua, agujeros quemados e incendios), la calle con autos y faroles; el bosque
+  cerrado de pinos; la meseta con piedras y cactus; los pinos nevados.
+- **Terreno hundido** (`pozo34`): del agua, el barro, el hielo y la ruta entre los cordones se ve la pared de enfrente
+  (la del norte) y el fondo corrido hacia abajo; contra la orilla oeste, la sombra. El agua refleja la barranca y tiene
+  la línea del agua; la tierra arada, surcos con el lomo con luz; el puente de tablones queda levantado sobre el agua, con
+  su canto, pilotes y barandas.
+- **Muro del campamento**: como está sobre el borde izquierdo de la pantalla, la cámara lo ve un poco de costado
+  (`prisma34`): además del techo de arena se ve la cara que mira al campo, con la malla y los parantes.
+
+La grilla, el movimiento, la colocación y el guardado no cambiaron.
 
 Todo lo del modo se dibuja en `js/bastion-dibujo.js`, con el mismo estilo de ilustración que el jugador (`pintura`:
 dos tonos, brillo de borde y contorno del color de cada pieza). Soldado con casco con funda, chaleco, mochila y fusil
