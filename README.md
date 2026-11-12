@@ -147,6 +147,29 @@ pierden; dificultad media): no construir nada 4–5; solo torretas con muros 4�
 6–9; mezcla sin laberinto 6–10; laberinto en serpentina con torretas, tanques atrás y reparaciones 10–16.
 Antes de este ajuste el laberinto llegaba a la 20 sin recibir un golpe.
 
+### Niveles
+
+Cada nivel son 10 oleadas fijas (`OLAS_POR_NIVEL`, `js/bastion-niveles.js`): se gana llegando al final con el
+campamento en pie, y ganar abre el siguiente. Cada escenario tiene su fondo, su suelo, obstáculos que bloquean (no se
+construye encima y los zombies los rodean; no se rompen) y terreno que no bloquea pero cambia el paso: el agua frena a
+la mitad y ahí no se construye, el barro frena un cuarto y el hielo acelera 35 %.
+
+| Nivel | Escenario | Obstáculos | Terreno | Dinero | Vida |
+|---|---|---|---|---|---|
+| 1 | La granja, de día (molino y granero) | 4 árboles, 2 fardos, tractor | camino de tierra, tierra arada (barro), estanque | $200 | ×0,75 |
+| 2 | La autopista, al atardecer | 6 autos, 2 contenedores | asfalto, charcos, barro en la banquina | $175 | ×0,9 |
+| 3 | El bosque, de noche | 7 pinos, 2 rocas | río de punta a punta con un puente, barro | $175 | ×1 |
+| 4 | El desierto, al mediodía (mesetas) | 5 cactus, 3 rocas | oasis | $160 | ×0,9 |
+| 5 | La montaña, nevando | 5 pinos nevados, 2 rocas, cabaña | lago congelado (hielo) | $160 | ×1,05 |
+
+La partida se guarda sola al terminar cada oleada (`zonaMuerta.bastion.partida`: nivel, dificultad, oleada, dinero,
+campamento y cada construcción con su vida; lo que estaba en cola se devuelve en dinero) y se sigue desde la pantalla
+de niveles con CONTINUAR. Al ganar o perder se borra. Los niveles ganados quedan en `zonaMuerta.bastion.progreso`.
+
+Con bots en Node (3 partidas por caso, dificultad media): sin construir no se gana ninguno; solo tanques gana la granja
+siempre y la autopista 2 de 3; un laberinto armado para cada escenario gana los cinco (el desierto, 2 de 3). En difícil
+la montaña no la gana ningún bot.
+
 ## Historia: «Camino a casa»
 
 Modo por niveles, de izquierda a derecha como los juegos de plataformas de antes (`js/historia.js`,

@@ -54,7 +54,8 @@
     Audio_.activar();
     misionActual = mision || null;
     opcionesActuales = opciones;
-    juego = new Juego(lienzo, misionActual, Dificultad.actual(), opciones);
+    const difGuardada = opciones.estrategia && opciones.estrategia.dificultad && DIFICULTADES[opciones.estrategia.dificultad];   // la partida guardada sigue con la suya
+    juego = new Juego(lienzo, misionActual, difGuardada || Dificultad.actual(), opciones);
     if (window.Tactil) Tactil.alEmpezar();   // en un teléfono: pantalla completa y apaisado (donde se pueda)
     pausado = false; menuPruebasAbierto = false;
     capaPausa.classList.add('oculta');
@@ -117,18 +118,28 @@
     const dif = juego.dificultad.nombre.toLowerCase(), tiempo = formatearTiempo(juego.tiempoJugado);
     const titulo = document.getElementById('fin-titulo');
     const detalle = document.getElementById('fin-detalle');
+    document.getElementById('fin-siguiente').classList.add('oculta');   // solo al ganar un nivel del último bastión
     const resumen = t('fin.resumen', { ronda: juego.ronda, dificultad: dif, bajas: juego.bajas, tiempo, armas: juego.jugador.inventario.length });
     if (juego.resultado === 'mision-cumplida') { titulo.textContent = t('fin.cumplida'); titulo.style.color = '#4caf50'; detalle.textContent = `${misionActual.nombre}: ${misionActual.descripcion} ${resumen}`; }
     else if (juego.resultado === 'mision-fallida') { titulo.textContent = t('fin.tiempo'); titulo.style.color = '#ff8a65'; detalle.textContent = t('fin.fallida', { mision: misionActual.nombre, resumen }); }
     else if (juego.estrategia) {
       document.getElementById('panel-bastion').classList.add('oculta');   // la barra de construir no va sobre el final
-      // Récord de oleadas del último bastión, por dificultad
-      const clave = 'zonaMuerta.recordBastion.' + juego.dificultad.id, olas = Math.max(0, juego.ronda - 1);
-      let record = 0; try { record = parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch { /* sin almacenamiento */ }
-      const nuevo = olas > record;
-      if (nuevo) { try { localStorage.setItem(clave, String(olas)); } catch { /* ídem */ } }
-      titulo.textContent = t('fin.bastionTitulo'); titulo.style.color = '';
-      detalle.textContent = t('fin.bastion', { olas, dificultad: dif, bajas: juego.bajas, unidades: juego.construidas, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
+      const N = juego.nivelBastion, i = NIVELES_BASTION.indexOf(N), siguiente = NIVELES_BASTION[i + 1];
+      const gano = juego.resultado === 'victoria';
+      document.getElementById('fin-siguiente').classList.toggle('oculta', !(gano && siguiente));
+      if (gano) {
+        titulo.textContent = t('fin.bastionGanado'); titulo.style.color = '#6ad06a';
+        detalle.textContent = t('fin.bastionGanadoDetalle', { nivel: t('bniv.' + N.id), olas: OLAS_POR_NIVEL, base: juego.vidaBase, max: BASTION.vidaBase, bajas: juego.bajas, tiempo })
+          + ' ' + (siguiente ? t('fin.bastionAbre', { nivel: t('bniv.' + siguiente.id) }) : t('fin.bastionTodos'));
+      } else {
+        // Récord de oleadas por nivel y dificultad
+        const clave = 'zonaMuerta.recordBastion.' + N.id + '.' + juego.dificultad.id, olas = Math.max(0, juego.ronda - 1);
+        let record = 0; try { record = parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch { /* sin almacenamiento */ }
+        const nuevo = olas > record;
+        if (nuevo) { try { localStorage.setItem(clave, String(olas)); } catch { /* ídem */ } }
+        titulo.textContent = t('fin.bastionTitulo'); titulo.style.color = '';
+        detalle.textContent = t('fin.bastionNivel', { nivel: t('bniv.' + N.id), olas, total: OLAS_POR_NIVEL }) + ' ' + t('fin.bastion', { olas, dificultad: dif, bajas: juego.bajas, unidades: juego.construidas, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
+      }
     }
     else if (juego.ultra) {
       // Récord de olas de la defensa ultra, por dificultad
@@ -381,6 +392,8 @@
 
   /* ---- Botones (delegación por data-accion) ---- */
   document.addEventListener('click', e => {
+    const nivelB = e.target.closest('[data-nivel-bastion]');
+    if (nivelB && !nivelB.disabled) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB.dataset.nivelBastion } }); return; }
     const arma = e.target.closest('[data-arma]');
     if (arma && juego) {
       if (menuPruebasAbierto) mostrarDetalleArma(arma.dataset.arma);   // primero la ficha; USAR la equipa
@@ -398,7 +411,9 @@
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
-      case 'bastion':   iniciar(null, { estrategia: true }); break;
+      case 'bastion':   NivelesBastionUI.abrir(mostrar); break;
+      case 'bastion-continuar': { const p = ProgresoBastion.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, continuar: true, dificultad: p.dificultad } }); break; }
+      case 'bastion-siguiente': { const i = NIVELES_BASTION.findIndex(n => n.id === juego.nivelBastion.id); if (NIVELES_BASTION[i + 1]) iniciar(null, { estrategia: { nivel: NIVELES_BASTION[i + 1].id } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;

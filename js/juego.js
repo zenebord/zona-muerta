@@ -8,6 +8,7 @@ class Juego {
     this.entrenamiento = !!opciones.entrenamiento;   // entrenamiento: polígono de tiro con blancos en movimiento
     this.ultra = !!opciones.ultra;        // defensa ultra: 4 carriles, el sector a la izquierda (js/defensa-ultra.js)
     this.estrategia = !!opciones.estrategia;   // último bastión: defensa con estrategia sobre una grilla (js/estrategia.js)
+    this.opcionesEstrategia = opciones.estrategia;   // { nivel, continuar } (js/bastion-niveles.js)
     // Mapa de la pelea infinita: la ciudad en ruinas o la cloaca (canal subterráneo con zombies tóxicos)
     this.mapa = opciones.mapa === 'cloaca' && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !mision ? 'cloaca' : 'ciudad';
     this.cloaca = this.mapa === 'cloaca';

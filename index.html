@@ -74,6 +74,17 @@
     </div>
   </section>
 
+  <!-- ===== ÚLTIMO BASTIÓN: niveles (js/bastion-niveles.js) ===== -->
+  <section id="panel-bastion-niveles" class="pantalla">
+    <h2 data-t="bniv.titulo">ÚLTIMO BASTIÓN</h2>
+    <p class="ayuda" data-t="bniv.ayuda">Aguanta 10 oleadas con el campamento en pie para ganar el nivel. Cada nivel ganado abre el siguiente.</p>
+    <button id="bastion-continuar" class="boton oculta" data-accion="bastion-continuar"></button>
+    <div id="lista-bastion" class="lista-mapas lista-bastion"></div>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
+  </section>
+
   <!-- ===== PANEL DE MISIONES ===== -->
   <section id="panel-misiones" class="pantalla">
     <h2 data-t="misiones.titulo">MISIONES</h2>
@@ -237,6 +248,7 @@
     <div id="fin" class="capa oculta">
       <h2 id="fin-titulo">TE DEVORARON</h2>
       <p id="fin-detalle"></p>
+      <button id="fin-siguiente" class="boton chico oculta" data-accion="bastion-siguiente" data-t="fin.siguienteNivel">SIGUIENTE NIVEL</button>
       <button class="boton chico" data-accion="reintentar" data-t="fin.otraVez">OTRA VEZ</button>
       <button class="boton chico" data-accion="al-menu" data-t="fin.menu">MENÚ</button>
     </div>
@@ -422,6 +434,7 @@
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>
   <script src="js/estrategia.js"></script>
+  <script src="js/bastion-niveles.js"></script>
   <script src="js/rama.js"></script>
   <script src="js/asistente.js"></script>
   <script src="js/interfaz.js"></script>

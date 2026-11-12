@@ -125,7 +125,10 @@ Object.assign(Juego.prototype, {
     this.colocando = null; this.puntero = null; this.trazos = [];
     this.velocidad = 1;   // 1×, 2×, 5× o 10× (el bucle de interfaz.js hace tantos pasos por cuadro)
     this.construidas = 0;
-    this.ejercitoInicial();
+    this.prepararNivelBastion();   // escenario, terreno, obstáculos y dinero del nivel (js/bastion-niveles.js)
+    const guardada = this.opcionesEstrategia && this.opcionesEstrategia.continuar && ProgresoBastion.partida();
+    if (guardada && guardada.nivel === this.nivelBastion.id) this.restaurarPartidaBastion(guardada);
+    else this.ejercitoInicial();
     this.rehacerCamino();
     document.getElementById('hud-aereo').classList.add('oculta');
     document.getElementById('panel-bastion').classList.remove('oculta');
@@ -137,14 +140,15 @@ Object.assign(Juego.prototype, {
   ejercitoInicial() {
     const B = BASTION, medio = Math.floor(this.filas / 2);
     const obra = (tipo, c, f) => {
-      if (!this.dentro(c, f) || this.ocupadaPor(c, f)) return;
+      if (!this.dentro(c, f) || this.ocupadaPor(c, f) || !this.celdaConstruible(c, f)) return;
       const U = B.unidades[tipo], p = this.centroCelda(c, f);
       this.unidades.push({ tipo, c, f, x: p.x, y: p.y, vida: U.vida, vidaMax: U.vida, listo: true, obra: 1, bloquea: true, costo: U.costo, enfriado: 0, fuego: 0, apunta: 0, adentro: 0 });
     };
     for (const df of [-2, -1, 1, 2]) obra('muro', 7, medio + df);
-    for (const df of [-1, 0, 1]) { const p = this.centroCelda(4, medio + df); this.unidades.push(this.nuevoSoldado(p.x, p.y, 4, medio + df)); }
+    for (const df of [-1, 0, 1]) { if (!this.celdaConstruible(4, medio + df)) continue; const p = this.centroCelda(4, medio + df); this.unidades.push(this.nuevoSoldado(p.x, p.y, 4, medio + df)); }
   },
 
+  celdaConstruible(c, f) { const T = TERRENOS_BASTION[this.terrenoEn(c, f)]; return !this.obstaculoEn(c, f) && !(T && T.sinConstruir); },
   // Celdas: centro y a qué celda cae un punto
   centroCelda(c, f) { const B = BASTION; return { x: B.baseX + c * B.celda[0] + B.celda[0] / 2, y: B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8 }; },
   celdaDe(x, y) { const B = BASTION; return { c: Math.floor((x - B.baseX) / B.celda[0]), f: Math.floor((y - 8 - B.arriba) / B.celda[1]) }; },
@@ -166,6 +170,7 @@ Object.assign(Juego.prototype, {
   },
   bloqueadas(extra) {
     const s = new Set(this.unidades.filter(u => u.bloquea).map(u => u.c + ',' + u.f));
+    for (const o of this.obstaculos || []) s.add(o.c + ',' + o.f);
     if (extra) s.add(extra);
     return s;
   },
@@ -184,6 +189,8 @@ Object.assign(Juego.prototype, {
   motivoNoColocar(tipo, c, f) {
     const U = BASTION.unidades[tipo];
     if (!this.dentro(c, f)) return 'bastion.fuera';
+    if (this.obstaculoEn(c, f)) return 'bastion.obstaculo';
+    if (TERRENOS_BASTION[this.terrenoEn(c, f)] && TERRENOS_BASTION[this.terrenoEn(c, f)].sinConstruir) return 'bastion.agua';
     if (this.dinero < U.costo) return 'bastion.sinDinero';
     const ocupa = this.ocupadaPor(c, f);
     if (tipo === 'soldado') return ocupa && !(ocupa.tipo === 'bunker') ? 'bastion.ocupado' : (ocupa && ocupa.tipo === 'bunker' && ocupa.adentro + this.vanAlBunker(ocupa) >= BASTION.unidades.bunker.capacidad ? 'bastion.lleno' : null);
@@ -283,6 +290,7 @@ Object.assign(Juego.prototype, {
   /* ---------- Oleadas ---------- */
   oleadas(dt) {
     const B = BASTION;
+    if (this.terminado) return;   // si el campamento cayó en este mismo cuadro, no hay victoria
     if (this.enDescanso) {
       if (this.tiempoJugado >= this.descansoHasta) this.empezarOleada();
       return;
@@ -295,9 +303,15 @@ Object.assign(Juego.prototype, {
         this.porAparecer--;
       }
     } else if (!this.zombies.some(z => z.estado !== 'muerto')) {
+      if (this.ronda >= OLAS_POR_NIVEL) {   // ganó el nivel: abre el siguiente
+        this.terminado = true; this.resultado = 'victoria';
+        ProgresoBastion.ganar(this.nivelBastion.id, this.vidaBase, this.dificultad.id); ProgresoBastion.borrarPartida();
+        Audio_.rondaSuperada(); return;
+      }
       const bono = 30 + 5 * this.ronda;
       this.dinero += bono; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + B.descanso;
       this.avisoRonda(t('bastion.oleadaSuperada', { n: this.ronda }), t('bastion.bonus', { d: bono }), 2600); Audio_.rondaSuperada();
+      this.guardarPartidaBastion();
     }
   },
   empezarOleada() {
@@ -324,7 +338,7 @@ Object.assign(Juego.prototype, {
     z.escala = Z.escala * (tipo === 'jefe' ? 1 : (0.94 + Math.random() * 0.12));
     z.ancho = 26 * z.escala; z.alto = 64 * z.escala;
     z.x = B.baseX + this.cols * B.celda[0] + 14 + Math.random() * 20; z.y = z.ySuelo = p.y + (Math.random() - 0.5) * 10;
-    z.vidaMax = z.vida = Math.max(1, Math.round(this.dificultad.vidaZombie * Z.vida * AJUSTE.vidaZombie * Math.pow(B.crecimientoVida, this.ronda - 1)));
+    z.vidaMax = z.vida = Math.max(1, Math.round(this.dificultad.vidaZombie * Z.vida * AJUSTE.vidaZombie * Math.pow(B.crecimientoVida, this.ronda - 1) * (this.nivelBastion ? this.nivelBastion.vida : 1)));
     z.vel = Z.vel * this.dificultad.velocidad * AJUSTE.velocidadZombie * (0.9 + Math.random() * 0.2);
     z.impaciente = tipo !== 'caminante' && tipo !== 'corredor' || Math.random() < B.impacientes;
     z.desvio = (Math.random() - 0.5) * 12; z.direccion = -1; z.mordiscoEn = 0; z.trabado = 0; z.ultimaX = z.x;
@@ -378,7 +392,7 @@ Object.assign(Juego.prototype, {
         if (d2 < 22 * 22 && d2 > 0.01) { cerca++; const d = Math.sqrt(d2); ex += dx / d * (22 - d); ey += dy / d * (22 - d) / 1.6; }
       }
       let vx = tx - z.x, vy = ty - z.y; const l = Math.hypot(vx, vy) || 1; vx /= l; vy /= l;
-      const v = z.vel / (1 + 0.32 * cerca) * (z.tipoBastion === 'corredor' ? 1 : 0.55 + Math.max(0, Math.sin(z.fase)) * 0.9);
+      const v = z.vel / (1 + 0.32 * cerca) * (z.tipoBastion === 'corredor' ? 1 : 0.55 + Math.max(0, Math.sin(z.fase)) * 0.9) * this.pasoTerreno(z.x, z.y);
       z.x += (vx * v + ex * 1.2) * dt; z.y += (vy * v + ey * 1.2) * dt;
       // No meterse en celdas bloqueadas (si lo empujaron, vuelve)
       const k = this.celdaDe(z.x, z.y);
@@ -397,7 +411,7 @@ Object.assign(Juego.prototype, {
         this.vidaBase = Math.max(0, this.vidaBase - dano); z.estado = 'muerto'; z.tiempoMuerto = 99;
         this.aviso(t('bastion.baseGolpeada'), 1200); this.sacudida = 6; Audio_.jugadorHerido();
         this.salpicar(B.baseX - 20, z.y - 10, '#8b0f0f', 8, 3);
-        if (this.vidaBase <= 0 && !this.terminado) { this.terminado = true; this.resultado = 'invadido'; Audio_.jugadorMuere(); }
+        if (this.vidaBase <= 0 && !this.terminado) { this.terminado = true; this.resultado = 'invadido'; ProgresoBastion.borrarPartida(); Audio_.jugadorMuere(); }
       }
       if (this.ahora >= (z.gemidoEn || 0)) { z.gemidoEn = this.ahora + 4000 + Math.random() * 9000; if (Math.random() < 0.3) Audio_.gemido(false, 300); }
     }
@@ -500,17 +514,8 @@ Object.assign(Juego.prototype, {
     const ctx = this.ctx, B = BASTION, ms = this.ahora;
     ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     if (this.sacudida) ctx.translate((Math.random() - 0.5) * this.sacudida, (Math.random() - 0.5) * this.sacudida * 0.6);
-    // Cielo y ciudad en ruinas al fondo
-    const cielo = ctx.createLinearGradient(0, 0, 0, B.arriba);
-    cielo.addColorStop(0, '#2a1f2e'); cielo.addColorStop(1, '#8a4a32');
-    ctx.fillStyle = cielo; ctx.fillRect(-20, -20, ANCHO + 40, B.arriba + 20);
-    for (let k = 0; k < 22; k++) { const x = k * (ANCHO / 20) - 20, h = 30 + azar(k, 71) * 70, w = 26 + azar(k, 72) * 30; ctx.fillStyle = k % 2 ? '#2a2328' : '#332a2e'; ctx.fillRect(x, B.arriba - 20 - h, w, h + 20); if (azar(k, 73) > 0.5) { ctx.fillStyle = '#1a1518'; ctx.fillRect(x + w * 0.6, B.arriba - 20 - h, w * 0.4, 8); } }
-    for (let k = 0; k < 6; k++) { ctx.fillStyle = 'rgba(60,50,50,0.35)'; ctx.beginPath(); ctx.ellipse((k * 211 + ms * 0.004) % (ANCHO + 200) - 100, B.arriba - 70 - k * 9, 90, 24, 0, 0, Math.PI * 2); ctx.fill(); }   // humo
-    // Campo
-    const piso = ctx.createLinearGradient(0, B.arriba - 22, 0, ALTO);
-    piso.addColorStop(0, '#4a4438'); piso.addColorStop(1, '#5e5546');
-    ctx.fillStyle = piso; ctx.fillRect(-20, B.arriba - 22, ANCHO + 40, ALTO - B.arriba + 40);
-    for (let k = 0; k < 60; k++) { ctx.fillStyle = k % 3 ? 'rgba(30,26,20,0.18)' : 'rgba(120,110,90,0.15)'; ctx.beginPath(); ctx.ellipse(azar(k, 81) * ANCHO, B.arriba + azar(k, 82) * (ALTO - B.arriba), 6 + azar(k, 83) * 16, 2 + azar(k, 84) * 4, 0, 0, Math.PI * 2); ctx.fill(); }
+    // Cielo, paisaje, suelo y terreno del nivel (js/bastion-niveles.js)
+    this.dibujarFondoBastion(ctx);
     // Grilla: tenue siempre, marcada al construir
     ctx.strokeStyle = this.colocando ? 'rgba(255,230,170,0.16)' : 'rgba(255,230,170,0.05)'; ctx.lineWidth = 1;
     for (let c = 0; c <= this.cols; c++) { const x = B.baseX + c * B.celda[0]; ctx.beginPath(); ctx.moveTo(x, B.arriba); ctx.lineTo(x, B.arriba + this.filas * B.celda[1]); ctx.stroke(); }
@@ -541,6 +546,7 @@ Object.assign(Juego.prototype, {
     // Todo lo que hay en el campo, de atrás hacia adelante
     const cosas = [];
     for (const u of this.unidades) if (!u.invisible) cosas.push([u.y, () => { ctx.save(); ctx.translate(u.x, u.y); this.dibujarUnidad(ctx, u); ctx.restore(); }]);
+    for (const o of this.obstaculos || []) cosas.push([o.y, () => { ctx.save(); ctx.translate(o.x, o.y); PaisajeBastion.obstaculo(ctx, o.tipo, o.semilla); ctx.restore(); }]);
     for (const z of this.zombies) cosas.push([z.y, () => z.dibujar(ctx, 0, ms)]);
     cosas.sort((a, b) => a[0] - b[0]);
     Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con muchos zombies se aliviana el dibujo
@@ -612,7 +618,7 @@ Object.assign(Juego.prototype, {
     const panel = document.getElementById('panel-bastion'); if (!panel) return;
     const B = BASTION;
     document.getElementById('bastion-dinero').textContent = '$ ' + this.dinero;
-    document.getElementById('bastion-ola').textContent = t('bastion.ola', { n: Math.max(1, this.ronda) });
+    document.getElementById('bastion-ola').textContent = t('bastion.olaDe', { n: Math.max(1, this.ronda), total: OLAS_POR_NIVEL });
     const base = document.getElementById('bastion-base');
     base.textContent = t('bastion.base', { v: this.vidaBase, max: B.vidaBase }); base.classList.toggle('peligro', this.vidaBase <= B.vidaBase * 0.3);
     for (const b of panel.querySelectorAll('[data-unidad]')) {

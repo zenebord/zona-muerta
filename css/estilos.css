@@ -467,6 +467,13 @@ kbd {
 .tarjeta-mapa p { margin: 0 14px; font-size: 13px; opacity: .8; line-height: 1.4; }
 .tarjeta-mapa .etiqueta { align-self: flex-start; margin: 10px 14px 0; font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border: 1px solid rgba(255,255,255,.2); opacity: .85; }
 .tarjeta-mapa .etiqueta.toxica { border-color: #8fe83a; color: #b6ff5c; }
+/* Último bastión: niveles con vista del escenario; cerrado hasta ganar el anterior */
+.lista-bastion { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); width: min(1180px, 100%); }
+.tarjeta-bastion canvas.vista { width: 100%; height: auto; aspect-ratio: 320 / 150; }
+.tarjeta-bastion.cerrada { opacity: .45; cursor: not-allowed; filter: grayscale(.7); }
+.tarjeta-bastion.cerrada:hover { transform: none; border-color: inherit; background: none; }
+.tarjeta-bastion.ganada .etiqueta { border-color: #6ad06a; color: #9fe89f; }
+#bastion-continuar { margin: 0 auto 10px; }
 
 /* Envenenado por ácido: la barra de vida se pone verde y late */
 .envenenado #vida-relleno { background: linear-gradient(#9be14a, #3f7a12); animation: latido-veneno .5s ease-in-out infinite alternate; }
