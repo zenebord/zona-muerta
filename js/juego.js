@@ -114,7 +114,7 @@ class Juego {
   }
   ponerZombiePrueba() {
     const j = this.jugador;
-    const z = new Zombie(j.x + j.direccion * 220, false, this.dificultad);
+    const z = new Zombie(j.x + j.direccion * (this.pruebas ? 150 : 220), false, this.dificultad);   // en la vitrina, más cerca: entra en el cuadro
     z.maniqui = true;   // se queda quieto y no muerde: solo recibe tiros
     this.zombies.push(z);
   }
@@ -678,12 +678,12 @@ class Juego {
     ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     ctx.imageSmoothingQuality = 'high';
     const cam = this.camaraX + (this.sacudida ? (Math.random() - 0.5) * this.sacudida : 0);
-    // Campo de pruebas: vitrina. La cámara se acerca 2,6 veces al personaje (quieto, a un tercio de la pantalla) para
+    // Campo de pruebas: vitrina. La cámara se acerca al personaje (quieto, un poco a la izquierda del centro) para
     // ver el arma, el disparo, los casquillos y la recarga de cerca; lo de la pantalla (viñeta) se dibuja sin acercar
     if (this.pruebas) {   // más cerca con las armas chicas: pistolas 3,3×, metralletas y cuerpo a cuerpo 2,9×, el resto 2,6× (cambia suave)
       const cat = j.montada ? 'ametralladora' : j.arma().categoria, meta = cat === 'pistola' ? 3.3 : cat === 'metralleta' || cat === 'cuerpo' ? 2.9 : 2.6;
       this.zoomVitrina = this.zoomVitrina ? this.zoomVitrina + (meta - this.zoomVitrina) * 0.12 : meta;
-      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * 0.3 - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * j.y));
+      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * 0.42 - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * j.y));   // a la izquierda queda la ficha; a la derecha, el blanco
     }
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
