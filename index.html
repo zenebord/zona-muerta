@@ -32,6 +32,7 @@
       <button class="boton grande" data-accion="misiones" data-t="menu.misiones">MISIONES</button>
       <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
       <button class="boton grande ultra" data-accion="ultra" data-t="menu.ultra">DEFENSA ZOMBIE ULTRA</button>
+      <button class="boton grande bastion" data-accion="bastion" data-t="menu.bastion">ÚLTIMO BASTIÓN</button>
       <button class="boton grande" data-accion="entrenamiento" data-t="menu.entrenamiento">ENTRENAMIENTO</button>
       <div class="fila-chica">
         <button class="boton chico" data-accion="pruebas" data-t="menu.pruebas">CAMPO DE PRUEBAS</button>
@@ -95,6 +96,7 @@
       <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
       <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
       <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
+      <tr><td data-t="controles.bastion"></td><td data-t-html="controles.bastion.texto"></td></tr>
       <tr><td><kbd>F</kbd> / <span data-t="controles.clic">clic</span></td><td data-t="controles.disparar"></td></tr>
       <tr><td><kbd>S</kbd> / <span data-t="controles.clicDerecho">clic derecho</span></td><td data-t="controles.recargar"></td></tr>
       <tr><td><kbd>Q</kbd> / <kbd>E</kbd> · <kbd>G</kbd> / <kbd>H</kbd></td><td data-t="controles.cambiar"></td></tr>
@@ -126,6 +128,19 @@
         <div id="hud-bajas">☠ 0</div>
         <div id="hud-tiempo">00:00</div>
         <div id="hud-dificultad" class="hud-dificultad"></div>
+      </div>
+    </div>
+    <!-- Último bastión: dinero, oleada y vida del campamento arriba; qué construir y la próxima oleada abajo -->
+    <div id="panel-bastion" class="panel-bastion">
+      <div class="bastion-estado"><span id="bastion-dinero">$ 300</span><span id="bastion-ola"></span><span id="bastion-base"></span></div>
+      <div class="bastion-barra">
+      <button type="button" data-unidad="soldado"><b data-t="bastion.soldado">SOLDADO</b><small>$50 · 4 s</small><span class="cola"></span><span class="avance"></span><kbd>1</kbd></button>
+      <button type="button" data-unidad="torreta"><b data-t="bastion.torreta">TORRETA</b><small>$125 · 8 s</small><span class="cola"></span><span class="avance"></span><kbd>2</kbd></button>
+      <button type="button" data-unidad="bunker"><b data-t="bastion.bunker">BÚNKER</b><small>$150 · 12 s</small><span class="cola"></span><span class="avance"></span><kbd>3</kbd></button>
+      <button type="button" data-unidad="tanque"><b data-t="bastion.tanque">TANQUE</b><small>$300 · 15 s</small><span class="cola"></span><span class="avance"></span><kbd>4</kbd></button>
+      <button type="button" data-unidad="muro"><b data-t="bastion.muro">MURO</b><small>$15 · 2 s</small><span class="cola"></span><span class="avance"></span><kbd>5</kbd></button>
+      <button type="button" data-unidad="vender"><b data-t="bastion.vender">VENDER</b><small>½</small><span class="cola"></span><span class="avance"></span><kbd>6</kbd></button>
+        <button type="button" id="bastion-oleada" class="bastion-oleada"></button>
       </div>
     </div>
     <!-- Controles táctiles: solo se muestran en pantallas táctiles; cada botón equivale a una tecla -->
@@ -388,6 +403,7 @@
   <script src="js/escenario-historia.js"></script>
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>
+  <script src="js/estrategia.js"></script>
   <script src="js/rama.js"></script>
   <script src="js/asistente.js"></script>
   <script src="js/interfaz.js"></script>

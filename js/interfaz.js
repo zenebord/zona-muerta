@@ -60,9 +60,11 @@
     mostrar('pantalla-juego');
     ajustarResolucion();
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
+    document.body.classList.toggle('en-bastion', !!opciones.estrategia);
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
     juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
+    if (opciones.estrategia) juego.aviso(t('bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
     ultimo = performance.now();
@@ -110,6 +112,16 @@
     const resumen = t('fin.resumen', { ronda: juego.ronda, dificultad: dif, bajas: juego.bajas, tiempo, armas: juego.jugador.inventario.length });
     if (juego.resultado === 'mision-cumplida') { titulo.textContent = t('fin.cumplida'); titulo.style.color = '#4caf50'; detalle.textContent = `${misionActual.nombre}: ${misionActual.descripcion} ${resumen}`; }
     else if (juego.resultado === 'mision-fallida') { titulo.textContent = t('fin.tiempo'); titulo.style.color = '#ff8a65'; detalle.textContent = t('fin.fallida', { mision: misionActual.nombre, resumen }); }
+    else if (juego.estrategia) {
+      document.getElementById('panel-bastion').classList.add('oculta');   // la barra de construir no va sobre el final
+      // Récord de oleadas del último bastión, por dificultad
+      const clave = 'zonaMuerta.recordBastion.' + juego.dificultad.id, olas = Math.max(0, juego.ronda - 1);
+      let record = 0; try { record = parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch { /* sin almacenamiento */ }
+      const nuevo = olas > record;
+      if (nuevo) { try { localStorage.setItem(clave, String(olas)); } catch { /* ídem */ } }
+      titulo.textContent = t('fin.bastionTitulo'); titulo.style.color = '';
+      detalle.textContent = t('fin.bastion', { olas, dificultad: dif, bajas: juego.bajas, unidades: juego.construidas, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
+    }
     else if (juego.ultra) {
       // Récord de olas de la defensa ultra, por dificultad
       const clave = 'zonaMuerta.recordUltra.' + juego.dificultad.id;
@@ -351,6 +363,7 @@
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
+      case 'bastion':   iniciar(null, { estrategia: true }); break;
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;
@@ -420,8 +433,10 @@
       else if (e.code === 'Escape') alternarMenuPruebas();
       return;
     }
+    if (juego.estrategia && e.code === 'Escape' && !pausado && juego.cancelarColocacion()) return;   // Esc primero suelta lo que se iba a construir
     if (e.code === 'KeyP' || e.code === 'Escape') { alternarPausa(); return; }
     if (pausado || juego.terminado) return;
+    if (juego.estrategia) { if (juego.teclaBastion(e.code)) e.preventDefault(); return; }
     const en = juego.entrada, j = juego.jugador;
     switch (e.code) {
       case 'ArrowRight': en.derecha = true; break;
@@ -455,7 +470,7 @@
   // Rueda del mouse: arma anterior / siguiente (con un respiro para que un giro no salte varias)
   let ultimaRueda = 0;
   window.addEventListener('wheel', e => {
-    if (!juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta) return;
+    if (!juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.estrategia) return;
     const ahora = performance.now();
     if (ahora - ultimaRueda < 120) return;
     ultimaRueda = ahora;
@@ -468,7 +483,14 @@
   const pantallaJuego = document.getElementById('pantalla-juego');
   const sobreControl = e => e.target.closest('button, a, input, select, label, [data-accion], [data-arma], [data-tecla], [data-lado]');
   let mouseDispara = false;
+  // Último bastión: el puntero (mouse o dedo) elige celdas para construir; clic derecho vende o suelta
+  const aJuego = e => { const r = lienzo.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * ANCHO, y: (e.clientY - r.top) / r.height * ALTO }; };
+  pantallaJuego.addEventListener('pointermove', e => { if (juego && juego.estrategia) { const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'move', e.button); } });
   pantallaJuego.addEventListener('pointerdown', e => {
+    if (juego && juego.estrategia) {
+      if (pausado || juego.terminado || sobreControl(e) || e.target.closest('#panel-bastion')) return;
+      const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'down', e.button); e.preventDefault(); return;
+    }
     if (e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || sobreControl(e)) return;
     if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
     else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }

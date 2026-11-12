@@ -92,6 +92,27 @@ y entrá a <http://127.0.0.1:8791/>.
 | Velocidad | ×0,75 | ×1 | ×1,3 |
 | Mordida | 8 | 10 | 15 |
 
+## Último bastión (defensa con estrategia)
+
+Modo aparte de las defensas (`js/estrategia.js`): no se dispara, se manda. Vista de estratega sobre un campo con
+grilla; a la izquierda el campamento (cuartel, taller, empalizada), y los zombies llegan por la derecha buscando el
+camino más corto (un mapa de distancias por celda que se rehace cada vez que algo se construye o se rompe).
+
+| Qué | Cuesta | Tarda | Dónde se hace | Qué hace |
+|---|---|---|---|---|
+| Soldado | $50 | 4 s | Cuartel, de a uno | Camina a su lugar y dispara (alcance medio). Si su lugar es un búnker, entra (hasta 4) |
+| Torreta | $125 | 8 s | En el lugar, con andamio | Ametralladora con su tirador detrás de bolsas de arena: mucho fuego, poco daño |
+| Búnker | $150 | 12 s | En el lugar | Mucha vida; disparan los soldados que tenga adentro, con más alcance. Si cae, salen |
+| Tanque | $300 | 15 s | Taller, de a uno | Maneja hasta su lugar; dispara muy lejos con daño en área, pero no a los que tiene pegados |
+| Muro | $15 | 2 s | En el lugar | Obliga a rodear: en los huecos angostos los zombies se amontonan y van más lento. No se puede cerrar el paso del todo |
+
+Torretas, búnkeres, tanques y muros ocupan su celda; los soldados no. Los zombies muerden lo que tienen adelante y,
+si se trancan, rompen lo que los traba. Cada muerto paga (caminante $10, corredor $12, gordo $25, el coloso de cada
+5 oleadas $150) y cada oleada superada da un premio. Entre oleadas hay 25 s para construir (la primera, 40); se
+puede adelantar con Espacio o el botón, y cobra $2 por segundo ahorrado. El que llega al campamento le saca vida
+(1, 3 el gordo, 8 el coloso); con 20 entradas se pierde. Teclas: `1` a `5` eligen, `6` vende, clic derecho vende
+a mitad de precio (o cancela entero lo que no estaba listo), `Esc` suelta lo elegido.
+
 ## Historia: «Camino a casa»
 
 Modo por niveles, de izquierda a derecha como los juegos de plataformas de antes (`js/historia.js`,

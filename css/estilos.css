@@ -94,21 +94,23 @@ html, body {
 #menu-principal .boton.descarga { font-size: clamp(13px, 2.1vh, 17px); padding: clamp(6px, 1.1vh, 12px) 16px; }
 .boton.descarga .columna-descarga { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.15; text-align: left; }
 .boton.descarga .nota-descarga { font-size: .62em; font-weight: 400; letter-spacing: .03em; opacity: .7; }
-/* De 481 a 700 px de alto: una columna, salvo entrenamiento y descargar, que comparten fila */
-@media (min-height: 481px) and (max-height: 700px) {
-  #menu-principal .opciones { display: grid; grid-template-columns: 1fr 1fr; }
+/* Más de 480 px de alto: una columna, salvo las dos defensas y el bastión con el entrenamiento, que van de a pares
+   (botones: 1 historia, 2 pelea, 3 misiones, 4 defensa, 5 ultra, 6 bastión, 7 entrenamiento) */
+@media (min-height: 481px) {
+  #menu-principal .opciones { display: grid; grid-template-columns: 1fr 1fr; width: min(600px, 100%); }
   #menu-principal .opciones > * { grid-column: 1 / -1; }
-  #menu-principal .opciones > .boton:nth-of-type(6) { grid-column: 1; }
-  #menu-principal .opciones > .boton.descarga { grid-column: 2; grid-row: 6; }
+  #menu-principal .opciones > .boton:nth-of-type(4), #menu-principal .opciones > .boton:nth-of-type(6) { grid-column: 1; }
+  #menu-principal .opciones > .boton:nth-of-type(5), #menu-principal .opciones > .boton:nth-of-type(7) { grid-column: 2; }
+  #menu-principal .opciones > .boton.grande:nth-of-type(n+4) { font-size: clamp(12px, 2vh, 18px); letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 6px; padding-right: 6px; }   /* los de a pares, en una línea */
 }
 @media (max-height: 700px) { #menu-principal .pie { display: none; } #menu-principal .creditos { margin-top: clamp(6px, 1.4vh, 12px); }
   #menu-principal .boton.descarga .nota-descarga:not(.estado) { display: none; } }   /* en una línea; los avisos de la descarga se siguen viendo */
-/* Pantalla muy baja (celular apaisado): los modos en dos columnas, Entrenamiento a lo ancho, y sin la línea
+/* Pantalla muy baja (celular apaisado): los modos en dos columnas, y sin la línea
    de teclas (en el celular no hay teclado) */
 @media (max-height: 480px) {
   #menu-principal .opciones { display: grid; grid-template-columns: 1fr 1fr; width: min(640px, 100%); }
-  #menu-principal .opciones > .boton:nth-of-type(1), #menu-principal .fila-chica { grid-column: 1 / -1; }   /* entrenamiento y descargar comparten fila */
-  #menu-principal .boton.descarga { font-size: clamp(13px, 3.6vh, 17px); grid-row: 4; grid-column: 2; }
+  #menu-principal .fila-chica { grid-column: 1 / -1; }   /* historia y descargar comparten la primera fila */
+  #menu-principal .boton.descarga { font-size: clamp(13px, 3.6vh, 17px); grid-row: 1; grid-column: 2; }
   #menu-principal .boton.grande { font-size: clamp(13px, 3.6vh, 17px); letter-spacing: .1em; }
   #menu-principal .pie { display: none; }
   #menu-principal .creditos { margin-top: 8px; }
@@ -734,3 +736,28 @@ kbd {
 @keyframes descarga-latido { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,210,122,.0); } 50% { box-shadow: 0 0 18px 2px rgba(255,210,122,.45); } }
 @keyframes descarga-aparecer { from { transform: scale(0); } to { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .boton.descarga * , .boton.descarga { animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+
+/* ===== Último bastión ===== */
+.boton.grande.bastion { border-color: #7a9a52; }
+.panel-bastion { display: none; }
+body.en-bastion #hud, body.en-bastion #hud-aereo { display: none !important; }
+body.en-bastion .controles-tactiles .pad-mover, body.en-bastion .controles-tactiles .boton-tactil:not([data-tecla="KeyP"]) { display: none !important; }   /* en el celular queda la pausa */
+body.en-bastion .panel-bastion { display: block; position: absolute; inset: 0; pointer-events: none; z-index: 5; font-family: inherit; }
+.bastion-estado { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; pointer-events: none; }
+.bastion-estado > span { background: rgba(10,8,12,.72); border: 1px solid rgba(201,169,110,.55); color: var(--texto); padding: 5px 14px; font-weight: 700; letter-spacing: .1em; font-size: clamp(12px, 2.1vh, 17px); }
+#bastion-dinero { color: var(--luz); }
+#bastion-base.peligro { color: #ff8a7a; border-color: #d14a3a; animation: descarga-latido 0.8s ease-in-out infinite; }
+.bastion-barra { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: auto; max-width: calc(100% - 16px); }
+.bastion-barra button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: clamp(62px, 9vw, 104px);
+  padding: clamp(4px, 1vh, 8px) 8px; background: rgba(14,12,18,.88); border: 2px solid rgba(201,169,110,.7); color: var(--texto); cursor: pointer; overflow: hidden; user-select: none; -webkit-user-select: none; font: inherit; }
+.bastion-barra button b { font-size: clamp(10.5px, 1.9vh, 14px); letter-spacing: .08em; }
+.bastion-barra button small { font-size: clamp(9.5px, 1.5vh, 12px); opacity: .8; }
+.bastion-barra button .cola { font-size: clamp(9px, 1.3vh, 11px); color: var(--luz); min-height: 1em; }
+.bastion-barra button .avance { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--luz); }
+.bastion-barra button kbd { position: absolute; top: 2px; left: 4px; font-size: 9px; opacity: .45; border: 0; background: none; padding: 0; color: inherit; }
+.bastion-barra button:hover { border-color: var(--luz); }
+.bastion-barra button.elegida { background: var(--arena); color: var(--noche); border-color: var(--luz); }
+.bastion-barra button.caro { opacity: .5; }
+.bastion-barra button[data-unidad="vender"] { min-width: clamp(48px, 6vw, 72px); border-color: rgba(209,106,74,.8); }
+.bastion-oleada { min-width: clamp(110px, 16vw, 190px) !important; border-color: var(--oxido) !important; font-weight: 700; letter-spacing: .05em; font-size: clamp(10px, 1.7vh, 13px) !important; }
+.bastion-oleada:disabled { cursor: default; opacity: .85; }

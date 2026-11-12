@@ -223,7 +223,7 @@ class Zombie {
       }
     }
     if (M.botes > 0) { const meta = Math.round((M.giro - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2; M.giro += (meta - M.giro) * Math.min(1, dt * 9); }   // queda tendido
-    this.y = alturaSuelo(this.x);
+    this.y = this.ySuelo !== undefined ? this.ySuelo : alturaSuelo(this.x);   // en el último bastión el piso es la fila
     const T = this.tiempoMuerto;
     if (T < 1.6 && T >= M.chorro) {   // chorros de sangre mientras se retuerce
       M.chorro = T + 0.2 + Math.random() * 0.15;
