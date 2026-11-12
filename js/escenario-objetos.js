@@ -183,8 +183,8 @@ Object.assign(Escenario, {
  * pecho), dos hileras de columnas de acero cada vez más chicas y lavadas por la neblina, estanterías lejanas, un
  * ventanal alto, haces de luz en diagonal, lámparas colgadas allá arriba y las juntas del piso que convergen.
  * El arma sigue mandando: detrás de ella queda lo más claro (la neblina luminosa del fondo), así el acero negro
- * recorta, y el piso de adelante es claro para ver casquillos, peines y cargadores. A la derecha, la trampa de balas.
- * xJugador: x en pantalla del puesto de tiro (la línea amarilla, la luz del puesto y la trampa de balas van ahí).
+ * recorta, y el piso de adelante es claro para ver casquillos, peines y cargadores. Es parejo: se ve igual en todos lados.
+ * xJugador: x en pantalla del punto de partida (ancla de todo lo que se repite, fijo al mundo).
  * xVista: x en pantalla del personaje: lo que se repite (ventanales, estanterías, columnas, lámparas, juntas) cubre
  * siempre lo que se ve alrededor de él, fijo al mundo, así el galpón no se termina por más que camine.
  */
@@ -238,14 +238,12 @@ Object.assign(Escenario, {
       g.addColorStop(0, 'rgba(220,230,240,0.12)'); g.addColorStop(1, 'rgba(220,230,240,0)');
       ctx.fillStyle = g; ctx.fillRect(x + 3, piso, 15, 40);
     }
-    // Juntas del piso y pasillo amarillo que convergen hacia el fondo (dan la profundidad)
+    // Juntas del piso que convergen hacia el fondo (dan la profundidad)
     const fx = xVista + 70, fy = piso - 40;         // punto de fuga, delante del personaje (va con la cámara)
     const haciaFuga = (xb) => xb + (fx - xb) * (ALTO - piso) / (ALTO - fy);
     ctx.lineWidth = 0.7; ctx.strokeStyle = 'rgba(0,0,0,0.16)';
     for (const k of indices(80)) { const x = xJugador + k * 80; ctx.beginPath(); ctx.moveTo(x, ALTO); ctx.lineTo(haciaFuga(x), piso); ctx.stroke(); }
     for (let k = 1; k < 7; k++) { const y = piso + (ALTO - piso) * (k / 7) ** 1.8; ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(izq, y, der - izq, 0.6); }
-    ctx.fillStyle = 'rgba(214,178,58,0.55)';
-    for (const xb of [xJugador - 330, xJugador - 300]) { ctx.beginPath(); ctx.moveTo(xb, ALTO); ctx.lineTo(xb + 5, ALTO); ctx.lineTo(haciaFuga(xb + 5), piso); ctx.lineTo(haciaFuga(xb), piso); ctx.closePath(); ctx.fill(); }
     // Hilera media de columnas: vigas doble T más grandes, apoyadas más adelante, con su placa de base
     for (const c of indices(170, -95)) {
       const x = xJugador + c * 170 - 95, base = piso + 20;
@@ -271,29 +269,7 @@ Object.assign(Escenario, {
       g.addColorStop(0, 'rgba(225,235,245,0.09)'); g.addColorStop(1, 'rgba(225,235,245,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, piso - 128); ctx.lineTo(x0 + 34, piso - 128); ctx.lineTo(x0 + 190, ALTO); ctx.lineTo(x0 + 120, ALTO); ctx.closePath(); ctx.fill();
     }
-    // Luz que cae sobre el puesto de tiro, junto a los pies
-    const luzX = xJugador + 34;
-    const r = ctx.createRadialGradient(luzX, SUELO_BASE - 2, 4, luzX, SUELO_BASE - 2, 150);
-    r.addColorStop(0, 'rgba(255,255,255,0.14)'); r.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.save(); ctx.translate(luzX, SUELO_BASE - 2); ctx.scale(1, 0.18); ctx.translate(-luzX, -(SUELO_BASE - 2));
-    ctx.fillStyle = r; ctx.beginPath(); ctx.arc(luzX, SUELO_BASE - 2, 150, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    {
-      // Trampa de balas a la derecha, detrás del maniquí: placas de acero inclinadas sobre un bloque de goma
-      const t0 = xJugador + 196, piso = SUELO_BASE - 8;   // la trampa está en el puesto, adelante
-      ctx.fillStyle = '#16181c'; ctx.fillRect(t0, piso - 150, 600, 150);
-      for (let k = 0; k < 6; k++) {
-        const y = piso - 150 + k * 25;
-        const g = ctx.createLinearGradient(0, y, 0, y + 25);
-        g.addColorStop(0, '#4b525c'); g.addColorStop(0.5, '#2d3239'); g.addColorStop(1, '#1a1d22');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(t0, y + 25); ctx.lineTo(t0 + 14, y); ctx.lineTo(t0 + 600, y); ctx.lineTo(t0 + 600, y + 25); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(t0 + 14, y, 586, 0.7);
-      }
-      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(t0 - 3, piso - 150, 3, 150);
-    }
-    // Línea de tiro: franja amarilla que cruza el piso delante de los pies (en perspectiva, inclinada)
-    const pisoLinea = SUELO_BASE - 14, lx = xJugador + 14;   // justo delante de la punta de las botas
-    ctx.fillStyle = '#d9b43a'; ctx.beginPath(); ctx.moveTo(lx, pisoLinea); ctx.lineTo(lx + 4, pisoLinea); ctx.lineTo(lx - 3, ALTO); ctx.lineTo(lx - 9, ALTO); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.moveTo(lx + 4, pisoLinea); ctx.lineTo(lx + 4.6, pisoLinea); ctx.lineTo(lx - 2.2, ALTO); ctx.lineTo(lx - 3, ALTO); ctx.closePath(); ctx.fill();
+    // Galpón parejo: sin trampa de balas, línea de tiro ni luz del puesto, así se ve igual en cualquier lugar
   },
 });
 
