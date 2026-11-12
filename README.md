@@ -312,6 +312,15 @@ También se puede fijar a mano. En Configuración, «Descargar el juego» arma u
 4,6 MB, con el CSS, los 36 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
 Claude; su progreso y su configuración se guardan aparte.
 
+**El archivo descargado se actualiza solo.** `zona-muerta.html` es un lanzador (`js/lanzador.js`): trae el juego
+entero adentro en base64 (anda sin conexión) y lo muestra en un marco `srcdoc`, que comparte el origen de la página,
+así el progreso se conserva entre versiones. Al abrirlo o recargarlo usa la versión más nueva que tenga (la de
+adentro o la última que bajó, guardada en IndexedDB) y, con conexión, consulta `version.json` en la web del juego:
+si hay una más nueva baja `juego.html`, la guarda y la carga (si está jugando, queda para la próxima recarga).
+La web se arma con `python3 -I herramientas/armar-web.py <salida> <URL pública/>` (index.html, css, js,
+juego.html, zona-muerta.html, version.json) para subirla a un hosting estático como GitHub Pages; la versión es
+fecha, hora y commit. Mientras `js/version.js` diga `dev` y no tenga dirección, el lanzador no busca nada.
+
 **Muerte de los zombies.** El golpe los despide de espaldas según el arma: con pistola o metralleta trastabillan
 y caen; con escopeta, rifle o ametralladora vuelan hacia atrás; con un explosivo salen por el aire dando vueltas.
 Pegan contra el piso y rebotan (con el golpe del cuerpo, polvo y sangre), quedan tendidos pataleando y manoteando

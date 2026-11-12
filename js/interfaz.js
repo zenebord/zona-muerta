@@ -572,7 +572,10 @@
     if (!document.querySelector('script[src^="js/"]')) { poner('config.yaDescargado'); return; }   // ya es el archivo descargado
     boton.disabled = true; poner('config.descargando');
     try {
-      const html = await armarJuegoSuelto(), nombre = 'zona-muerta.html';
+      // El archivo que se baja es el lanzador (js/lanzador.js): trae el juego adentro y se actualiza solo desde la web
+      const bytes = new TextEncoder().encode(await armarJuegoSuelto());
+      let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      const html = LANZADOR_HTML.replace('{{VERSION}}', VERSION_JUEGO).replace('{{URL}}', URL_ACTUALIZACION).replace('{{JUEGO}}', () => btoa(bin)), nombre = 'zona-muerta.html';
       const descargas = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads').catch(() => null) : null;
       const enlace = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
       if (descargas) { try { await descargas.save({ filename: nombre, data: html }); } catch { enlace(); } }   // si el visor no lo deja, por enlace

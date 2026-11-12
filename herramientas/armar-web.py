@@ -1,0 +1,41 @@
+# Arma la versión web del juego para publicarla en un hosting estático (GitHub Pages, por ejemplo):
+#   index.html, css/ y js/     el juego para jugar en línea
+#   juego.html                 el juego entero en un solo archivo (lo baja el lanzador para actualizarse)
+#   zona-muerta.html           el lanzador para descargar: trae el juego adentro y se actualiza solo (js/lanzador.js)
+#   version.json               la versión publicada, que consulta el lanzador
+# La versión es la fecha y hora más el commit (AAAAMMDD-HHMM-abc1234): se compara como texto, así que la más nueva
+# siempre es «mayor». Uso: python3 -I herramientas/armar-web.py <carpeta de salida> <URL pública terminada en />
+import base64, json, pathlib, re, shutil, subprocess, sys, time
+
+proyecto = pathlib.Path(__file__).resolve().parent.parent
+salida, url = pathlib.Path(sys.argv[1]), sys.argv[2]
+if url and not url.endswith('/'): url += '/'
+commit = subprocess.run(['git', '-C', str(proyecto), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or 'local'
+version = time.strftime('%Y%m%d-%H%M') + '-' + commit
+
+if salida.exists(): shutil.rmtree(salida)
+(salida / 'css').mkdir(parents=True); (salida / 'js').mkdir()
+shutil.copy(proyecto / 'index.html', salida / 'index.html')
+shutil.copy(proyecto / 'css/estilos.css', salida / 'css/estilos.css')
+html = (proyecto / 'index.html').read_text()
+scripts = re.findall(r'<script src="(js/[^"]+)"></script>', html)
+for s in scripts: shutil.copy(proyecto / s, salida / s)
+(salida / 'js/version.js').write_text(
+    "/* Versión publicada (la escribe herramientas/armar-web.py). */\n"
+    f"const VERSION_JUEGO = '{version}';\nconst URL_ACTUALIZACION = '{url}';\n")
+
+# juego.html: el CSS y los scripts adentro, en el mismo orden
+juego = html.replace('<link rel="stylesheet" href="css/estilos.css">', '<style>\n' + (proyecto / 'css/estilos.css').read_text() + '\n</style>')
+for s in scripts:
+    codigo = (salida / s).read_text().replace('</script', '<\\/script')
+    juego = juego.replace(f'<script src="{s}"></script>', '<script>\n' + codigo + '\n</script>', 1)
+(salida / 'juego.html').write_text(juego)
+
+# zona-muerta.html: la plantilla del lanzador con el juego en base64
+plantilla = re.search(r'const LANZADOR_HTML = `(.*?)`;', (proyecto / 'js/lanzador.js').read_text(), re.S).group(1).replace('<\\/script>', '</script>')
+lanzador = (plantilla.replace('{{VERSION}}', version).replace('{{URL}}', url)
+            .replace('{{JUEGO}}', base64.b64encode(juego.encode()).decode()))
+(salida / 'zona-muerta.html').write_text(lanzador)
+(salida / 'version.json').write_text(json.dumps({'version': version}) + '\n')
+(salida / '.nojekyll').write_text('')   # GitHub Pages: servir todo tal cual
+print(version, '·', len(scripts), 'scripts ·', len(juego) // 1024, 'KB juego.html ·', len(lanzador) // 1024, 'KB zona-muerta.html')
