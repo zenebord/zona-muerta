@@ -193,6 +193,17 @@ Rendimiento: cada pose de cada unidad y cada obstáculo se dibuja una sola vez y
 solo se pintan fogonazos, humo, bandera, reflector, nubes, nieve y brillos del agua. Con 43 unidades en pantalla el
 dibujo pasó de 26 ms a 3,4 ms por cuadro (sin la caché, el arte nuevo era inviable).
 
+## Publicar
+
+- **Código y web**: `herramientas/publicar-web.sh` sube el último commit a https://github.com/zenebord/zona-muerta
+  (rama `main`) y arma la web con `herramientas/armar-web.py` en la rama `gh-pages`, que GitHub Pages sirve en
+  https://zenebord.github.io/zona-muerta/. Solo va lo commiteado. Imprime la versión publicada (`AAAAMMDD-HHMM-commit`).
+- **Artefacto de Claude**: `herramientas/armar-artefacto.py <proyecto> <salida> <versión> https://zenebord.github.io/zona-muerta/`
+  arma la página con cada script pedido con su huella (`?v=`, para que el celular no use copias viejas) y un
+  `js/version.js` con esa versión y esa dirección, que se publica como archivo del artefacto. Así el juego que se
+  descarga desde el artefacto o desde la web (`zona-muerta.html`) consulta `version.json` en la web y se actualiza solo.
+- Los commits van firmados como `zenebord` con la dirección anónima de GitHub (configurada en este repositorio).
+
 ## Historia: «Camino a casa»
 
 Modo por niveles, de izquierda a derecha como los juegos de plataformas de antes (`js/historia.js`,

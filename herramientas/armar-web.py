@@ -5,13 +5,13 @@
 #   version.json               la versión publicada, que consulta el lanzador
 # La versión es la fecha y hora más el commit (AAAAMMDD-HHMM-abc1234): se compara como texto, así que la más nueva
 # siempre es «mayor». Uso: python3 -I herramientas/armar-web.py <carpeta de salida> <URL pública terminada en />
-import base64, json, pathlib, re, shutil, subprocess, sys, time
+import base64, json, os, pathlib, re, shutil, subprocess, sys, time
 
 proyecto = pathlib.Path(__file__).resolve().parent.parent
 salida, url = pathlib.Path(sys.argv[1]), sys.argv[2]
 if url and not url.endswith('/'): url += '/'
-commit = subprocess.run(['git', '-C', str(proyecto), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or 'local'
-version = time.strftime('%Y%m%d-%H%M') + '-' + commit
+commit = os.environ.get('COMMIT') or subprocess.run(['git', '-C', str(proyecto), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or 'local'
+version = os.environ.get('VERSION') or time.strftime('%Y%m%d-%H%M') + '-' + commit   # VERSION: la fija herramientas/publicar-web.sh
 
 if salida.exists(): shutil.rmtree(salida)
 (salida / 'css').mkdir(parents=True); (salida / 'js').mkdir()
