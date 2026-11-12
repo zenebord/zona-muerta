@@ -15,7 +15,9 @@ COMMIT=$COMMIT VERSION=$VERSION python3 -I "$T/fuente/herramientas/armar-web.py"
 git push -q origin HEAD:main
 cd "$T/web"
 git init -q -b gh-pages
+# Encima de la gh-pages que ya está publicada: así se sube solo lo que cambió (forzar la web entera puede cortarse por timeout)
+if git fetch -q --depth 1 "$REPO" gh-pages 2>/dev/null; then git reset -q --soft FETCH_HEAD; fi
 git -c user.name=zenebord -c user.email=173313277+zenebord@users.noreply.github.com add -A
 git -c user.name=zenebord -c user.email=173313277+zenebord@users.noreply.github.com commit -q -m "Web publicada: $VERSION"
-git push -q -f "$REPO" gh-pages:gh-pages
+git push -q "$REPO" gh-pages:gh-pages || git push -q -f "$REPO" gh-pages:gh-pages
 echo "$VERSION"
