@@ -76,6 +76,7 @@ class Juego {
       this.descansoHasta = Infinity;     // nunca arranca una ronda
       this.proximaCaja = Infinity;
       this.generados = 0;
+      this.puestoX = this.jugador.x;   // campo de pruebas: el puesto de tiro queda fijo; el personaje camina sobre él
     }
   }
 
@@ -567,7 +568,10 @@ class Juego {
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
     else if (this.historia) this.moverJugadorHistoria(dt, e);   // escaleras, sogas y cuerpo a tierra (js/historia.js)
-    else if (this.pruebas) j.actualizar(dt, { ...e, derecha: false, izquierda: false, saltarPulsado: false }, this);   // en la vitrina no camina ni salta
+    else if (this.pruebas) {   // en la vitrina camina (sin saltar) dentro del galpón: del fondo hasta la trampa de balas
+      j.actualizar(dt, { ...e, saltarPulsado: false }, this);
+      j.x = limitar(j.x, this.puestoX - 330, this.puestoX + 150);
+    }
     else j.actualizar(dt, e, this);
     if (!j.muerto && !(j.aTierra && j.protegido) && !j.trepa && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);   // cuerpo a tierra no dispara
     e.dispararPulsado = false;
@@ -713,7 +717,7 @@ class Juego {
     }
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
-    else if (this.pruebas) Escenario.dibujarCampo(ctx, cam, j.x - cam);
+    else if (this.pruebas) Escenario.dibujarCampo(ctx, cam, (this.puestoX ?? j.x) - cam);   // anclado al puesto: al caminar, el galpón pasa
     else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); EscenarioHistoria.sogas(ctx, cam, this); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);

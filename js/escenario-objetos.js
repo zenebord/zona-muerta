@@ -184,7 +184,7 @@ Object.assign(Escenario, {
  * ventanal alto, haces de luz en diagonal, lámparas colgadas allá arriba y las juntas del piso que convergen.
  * El arma sigue mandando: detrás de ella queda lo más claro (la neblina luminosa del fondo), así el acero negro
  * recorta, y el piso de adelante es claro para ver casquillos, peines y cargadores. A la derecha, la trampa de balas.
- * xJugador: x en pantalla del personaje (todo se ubica respecto de él, que en la vitrina no se mueve).
+ * xJugador: x en pantalla del puesto de tiro (todo se ubica respecto de él; el personaje camina sobre el puesto).
  */
 Object.assign(Escenario, {
   dibujarCampo(ctx, camaraX, xJugador = ANCHO * 0.42) {

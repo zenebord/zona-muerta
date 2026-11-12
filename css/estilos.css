@@ -798,6 +798,10 @@ body.en-pruebas .ficha-vitrina { display: flex; flex-direction: column; gap: 6px
 .ficha-vitrina .fv-estado { margin-left: auto; color: #ffb36a; font-weight: 700; letter-spacing: .08em; }
 .ficha-vitrina .fv-botones { display: flex; gap: 6px; }
 .ficha-vitrina .fv-botones .boton { flex: 1; }
+/* En el celular la ficha no puede bajar hasta donde están la barra de caminar y ◀ ARMA ▶ (alto de la barra + fila de armas) */
+body.tactil.en-pruebas .ficha-vitrina { max-height: calc(100% - 58px - clamp(72px, 21vmin, 120px) - 84px); }
+body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }
+@media (orientation: landscape) and (max-height: 500px) { body.tactil.en-pruebas .ficha-vitrina { top: 52px; max-height: calc(100% - 52px - clamp(54px, 16vmin, 84px) - 70px); } }
 .ficha-vitrina .fv-botones .boton.elegida { background: var(--arena); color: var(--noche); }
 .ficha-vitrina .fv-ayuda { margin: 0; opacity: .6; font-size: .9em; line-height: 1.5; }
 .ficha-vitrina .fv-ayuda kbd { font-size: .85em; padding: 0 4px; margin: 0 1px; }

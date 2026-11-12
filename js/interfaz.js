@@ -499,7 +499,6 @@
     if (pausado || juego.terminado) return;
     if (juego.estrategia) { if (juego.teclaBastion(e.code)) e.preventDefault(); return; }
     const en = juego.entrada, j = juego.jugador;
-    if (juego.pruebas && (e.code === 'ArrowRight' || e.code === 'ArrowLeft')) { if (!e.repeat) { j.cambiarArma(e.code === 'ArrowRight' ? 1 : -1); j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } return; }
     if (juego.pruebas && e.code === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
     if (juego.pruebas && e.code === 'KeyZ' && !e.repeat) { juego.ponerZombiePrueba(); return; }   // zombie de prueba
     switch (e.code) {
@@ -512,8 +511,8 @@
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
       case 'KeyT':       if (!e.repeat && juego.ultra) juego.comprarTorreta(); break;
       case 'KeyB':       if (!e.repeat && juego.ultra) juego.alternarTienda(); break;
-      case 'KeyQ': case 'KeyG': if (!e.repeat) { j.cambiarArma(-1); mostrarSelectorArmas(); } break;
-      case 'KeyE': case 'KeyH': if (!e.repeat) { j.cambiarArma(1); mostrarSelectorArmas(); } break;
+      case 'KeyQ': case 'KeyG': if (!e.repeat) { j.cambiarArma(-1); if (juego.pruebas) j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;   // en pruebas, lista para disparar aunque haya cámara lenta
+      case 'KeyE': case 'KeyH': if (!e.repeat) { j.cambiarArma(1); if (juego.pruebas) j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;
       default:
         // 1 a 7 (fila de números o teclado numérico): grupo de armas; otra vez, la siguiente del grupo
         if (/^(Digit|Numpad)[1-7]$/.test(e.code) && !e.repeat) {
