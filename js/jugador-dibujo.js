@@ -87,23 +87,28 @@ function piernaArticulada(ctx, hx, hy, a, doblez, color, C) {
   pintura(ctx, muslo, color); camuflaje(ctx, muslo, C.camo, hx, hy, -a, 9, L1, 11, lejos); if (C.camo) repasar(ctx, muslo, color);
   if (!Pincel.silueta) {
     ctx.save(); ctx.translate(hx, hy); ctx.rotate(-a);
-    // Bolsillo cargo con tapa y botón
+    if (C.rayaPierna) raya(ctx, C.rayaPierna, 0.7, [[0.6, 0.5], [0.8, 12.5]]);   // raya o costura a lo largo del pantalón
+    if (!C.sinBolsillo) {   // bolsillo cargo con tapa y botón
     pintura(ctx, c => c.roundRect(-2.6, 4.6, 5.2, 5.4, 1), ajustarColor(color, -0.05), { sombra: 0.5, brillo: 0.18, linea: 0.35 });
     pintura(ctx, c => c.roundRect(-2.8, 4.2, 5.6, 1.9, 0.7), ajustarColor(color, -0.12), { sombra: 0.4, brillo: 0.16, linea: 0.35 });
     detalle(ctx, ajustarColor(color, -0.45), circulo(-0.1, 5.1, 0.4));
     raya(ctx, ajustarColor(color, -0.3), 0.35, [[2.4, 0.5], [2.6, 11]]);                                    // costura de adelante
+    }
     ctx.restore();
+    if (C.rayaPierna) { ctx.save(); ctx.translate(kx, ky); ctx.rotate(-b); raya(ctx, C.rayaPierna, 0.7, [[0.4, 0.5], [0.2, 9]]); ctx.restore(); }
     ctx.save(); ctx.translate(kx, ky); ctx.rotate(-b);
     raya(ctx, ajustarColor(color, -0.3), 0.35, [[-1.8, 4], [-1.4, 8]]); raya(ctx, ajustarColor(color, -0.24), 0.3, [[1.8, 5.6], [1.4, 8.6]]);   // pliegues
     ctx.restore();
   }
-  // Rodillera de casco duro con sus dos correas
+  // Rodillera de casco duro con sus dos correas (no la llevan los que van de traje, de cuero o de tela)
+  if (!C.sinRodillera) {
   ctx.save(); ctx.translate(kx, ky); ctx.rotate(-b);
   const R = C.rodillera;
   for (const yy of [-2.6, 2.4]) pintura(ctx, c => c.roundRect(-3.2, yy - 0.5, 4.6, 1, 0.3), ajustarColor(R, -0.35), { sombra: 0.2, brillo: false, linea: 0.25 });
   pintura(ctx, c => c.ellipse(2.6, 0.2, 2.9, 3.9, 0, 0, Math.PI * 2), R, { sombra: 0.8, brillo: 0.4, linea: 0.4 });
   raya(ctx, ajustarColor(R, -0.25), 0.35, [[3.4, -2.6], [4.4, 0.2], [3.4, 2.9]]);   // canto del casco
   ctx.restore();
+  }
   // Bota de caña alta tipo desierto: caña, empeine, puntera, suela de goma con dibujo y taco
   const B = C.bota, S = C.suela || ajustarColor(B, -0.5);
   pintura(ctx, c => c.roundRect(px - 3.4, py - 6.6, 6.8, 9.8, 1.4), B, { sombra: 0.7 });
@@ -140,6 +145,12 @@ function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
     const at = (k, s) => [cx + (mx - cx) * k, cy + (my - cy) * k + s];
     if (larga) { raya(ctx, ajustarColor(C.antebrazo, -0.3), 0.4, [at(0.3, -1.4), at(0.42, 0.4)]); raya(ctx, ajustarColor(C.antebrazo, -0.3), 0.4, [at(0.6, 1.6), at(0.7, -0.2)]); }   // pliegues
     else raya(ctx, ajustarColor(C.piel, -0.22), 0.45, [at(0.25, 1.1), at(0.65, 0.7)]);
+  }
+  if (C.brazal) {   // brazal: muñequera de metal o cuero con remaches
+    ctx.save(); ctx.translate(mx, my); ctx.rotate(angAnte);
+    pintura(ctx, c => c.roundRect(-6.4, -2.9, 4.8, 5.8, 1.4), C.brazal, { sombra: 0.5, brillo: 0.45, linea: 0.4 });
+    if (!Pincel.silueta) { raya(ctx, ajustarColor(C.brazal, -0.35), 0.4, [[-4, -2.6], [-4, 2.6]]); for (const yy of [-1.6, 1.6]) detalle(ctx, ajustarColor(C.brazal, 0.35), circulo(-5.4, yy, 0.4)); }
+    ctx.restore();
   }
   if (larga) {   // puño de la manga sobre el guante
     ctx.save(); ctx.translate(mx, my); ctx.rotate(angAnte);
@@ -295,7 +306,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const tapa = this.cubierto > 0.45;   // agachado, con las manos sobre la cabeza
   const gatillo = tapa ? { x: -2, y: -80 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
   const muneca = this.montada ? gatillo : { x: gatillo.x - Math.sin(angMano) * 2.8, y: gatillo.y + Math.cos(angMano) * 2.8 };
-  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28) });
+  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28), brazal: C.brazal && ajustarColor(C.brazal, -0.28) });
   if (dArma.tanques && dArma.manguera && !this.montada) {
     const m = dArma.manguera, c = Math.cos(e.incl), sn = Math.sin(e.incl);
     dibujarManguera(ctx, ty, e.origen.x + m.x * c - m.y * sn, e.origen.y + m.x * sn + m.y * c);
@@ -306,15 +317,17 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   // Cinturón con hebilla, cartucheras atrás y funda con pistola en el muslo (angosto como el torso de perfil)
   ctx.save(); ctx.scale(0.64, 1);
   pintura(ctx, c => c.roundRect(-12.4, -37.4, 24.6, 5.2, 1.4), C.cinturon, { sombra: 0.7 });
-  pintura(ctx, c => c.roundRect(0.4, -37, 5, 4.4, 0.8), '#7d8288', { sombra: 0.5, brillo: 0.5, linea: 0.35 });          // hebilla de cierre rápido
-  for (const x of [-10.6, -4.4]) {   // portacargadores con tapa
+  pintura(ctx, c => c.roundRect(0.4, -37, 5, 4.4, 0.8), C.hebilla || '#7d8288', { sombra: 0.5, brillo: 0.5, linea: 0.35 });          // hebilla
+  if (!C.sinCartucheras) for (const x of [-10.6, -4.4]) {   // portacargadores con tapa
     pintura(ctx, c => c.roundRect(x, -36.4, 5.4, 8, 1.2), C.bolsa, { sombra: 0.7 });
     pintura(ctx, c => c.roundRect(x - 0.2, -36.8, 5.8, 2.6, 0.8), ajustarColor(C.bolsa, -0.1), { sombra: 0.4, brillo: 0.2, linea: 0.35 });
   }
   // Funda de muslo: la empuñadura de la pistola asoma, y la correa abraza la pierna
-  pintura(ctx, c => c.roundRect(6.6, -33.4, 6.8, 12.4, 1.8), C.funda, { sombra: 0.8 });
-  pintura(ctx, c => c.roundRect(7.6, -36.6, 3.8, 4.6, 1), '#26272b', { sombra: 0.5, linea: 0.35 });
-  pintura(ctx, c => c.roundRect(5.6, -25.6, 9, 1.8, 0.6), C.correa, { sombra: 0.3, brillo: false, linea: 0.3 });
+  if (!C.sinFunda) {
+    pintura(ctx, c => c.roundRect(6.6, -33.4, 6.8, 12.4, 1.8), C.funda, { sombra: 0.8 });
+    pintura(ctx, c => c.roundRect(7.6, -36.6, 3.8, 4.6, 1), '#26272b', { sombra: 0.5, linea: 0.35 });
+    pintura(ctx, c => c.roundRect(5.6, -25.6, 9, 1.8, 0.6), C.correa, { sombra: 0.3, brillo: false, linea: 0.3 });
+  }
   ctx.restore();
 
   // Torso según el personaje (chaleco táctico, armadura, traje…)
@@ -490,7 +503,7 @@ function dibujarPeineEnArma(ctx, peine) {
  * piernas suben de a un escalón (una rodilla arriba mientras la otra estira). Colgado de una soga: las dos manos
  * arriba, una sobre la otra, y las piernas juntas, balanceándose un poco. El arma va colgada a la espalda. */
 function dibujarColgado(ctx, j, S, C) {
-  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28) });
+  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28), brazal: C.brazal && ajustarColor(C.brazal, -0.28) });
   const pantalonLejos = ajustarColor(C.pantalon, -0.18);
   // Arma a la espalda, en diagonal
   ctx.save(); ctx.translate(-14, -50); ctx.rotate(-1.05);
