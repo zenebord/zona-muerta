@@ -38,7 +38,7 @@ const TEXTOS = {
     'hud.aereo.aria': 'Pedir ataque aéreo', 'tactil.aria': 'Controles táctiles', 'tactil.mover': 'Moverse: toca o desliza a la izquierda o a la derecha',
     'tactil.fuego': 'FUEGO', 'tactil.salto': 'SALTO', 'tactil.saltar': 'Saltar', 'tactil.recargar': 'RECARGAR', 'tactil.armaAnt': '◀ ARMA', 'tactil.armaSig': 'ARMA ▶',
     'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma siguiente', 'tactil.abajo': '▼ ABAJO', 'tactil.abajo.aria': 'Agacharse o montar la M2',
-    'tactil.cajas': 'ARMAS', 'tactil.zombie': '+ ZOMBIE', 'tactil.pausa': 'Pausa', 'girar': 'Gira el teléfono para jugar', 'girarNota': 'Si la pantalla no gira, activa la rotación automática.',
+    'tactil.cajas': 'ARMAS', 'tactil.zombie': 'ZOMBIE', 'tactil.pausa': 'Pausa', 'girar': 'Gira el teléfono para jugar', 'girarNota': 'Si la pantalla no gira, activa la rotación automática.',
     'pausa.titulo': 'PAUSA', 'pausa.seguir': 'SEGUIR', 'pausa.salir': 'SALIR AL MENÚ',
     'pruebas.titulo': 'CAMPO DE PRUEBAS', 'pruebas.armas': 'ARMAS', 'pruebas.ayuda': 'Clic en un arma para ver su ficha y usarla · <kbd>X</kbd> borra todo lo generado · <kbd>C</kbd> cierra',
     'pruebas.ponerM2': 'PONER M2 BROWNING', 'pruebas.quitarM2': 'QUITAR LA M2 CERCANA', 'pruebas.zombie': 'ZOMBIE DE PRUEBA', 'pruebas.borrar': 'BORRAR TODO (X)', 'pruebas.seguir': 'SEGUIR (C)',
@@ -61,7 +61,7 @@ const TEXTOS = {
     'hud.en': v => `en ${v.s} s`, 'hud.quedan': v => `quedan ${v.n}`, 'hud.tiros': v => `(${v.n} tiro${v.n > 1 ? 's' : ''} por zombie)`,
     'hud.recargando': 'RECARGANDO…', 'hud.recargaS': '¡RECARGA CON S!', 'hud.armas': v => `${v.n} arma${v.n > 1 ? 's' : ''}`,
     'hud.cambiaTactil': '◀ ARMA ▶ cambia', 'hud.cambiaTeclado': '1-7 grupo · Q/E',
-    'hud.pruebas': 'CAMPO DE PRUEBAS', 'hud.pruebasTactil': 'ARMAS: menú · ◀ ARMA ▶ · + ZOMBIE', 'hud.pruebasTeclado': 'C: menú · Q E: arma · L: cámara lenta · Z: zombie',
+    'hud.pruebas': 'CAMPO DE PRUEBAS', 'hud.pruebasTactil': 'ARMAS: menú · ◀ ARMA ▶ · ZOMBIE', 'hud.pruebasTeclado': 'C: menú · Q E: arma · L: cámara lenta · Z: zombie',
     'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARGANDO…', 'vitrina.lenta': 'CÁMARA LENTA', 'vitrina.lentaSi': 'CÁMARA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDAD NORMAL', 'vitrina.botonLenta': 'CÁMARA LENTA', 'vitrina.botonZombie': '+ ZOMBIE DE PRUEBA (Z)',
     'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> caminan · <kbd>↑</kbd> salta · <kbd>Q</kbd> <kbd>E</kbd> cambian de arma · <kbd>F</kbd> o clic dispara · <kbd>S</kbd> o clic derecho recarga · <kbd>L</kbd> cámara lenta · <kbd>Z</kbd> zombie de prueba · <kbd>C</kbd> todas las armas',
     'hud.entrenamiento': 'ENTRENAMIENTO', 'hud.pruebasModo': 'PRUEBAS', 'hud.torreta': 'DEFENSA ZOMBIE · ', 'hud.cloaca': 'CLOACA · ',
@@ -208,7 +208,7 @@ const TEXTOS = {
     'hud.aereo.aria': 'Pedir ataque aéreo', 'tactil.aria': 'Controles de toque', 'tactil.mover': 'Mover: toque ou deslize para a esquerda ou para a direita',
     'tactil.fuego': 'FOGO', 'tactil.salto': 'PULO', 'tactil.saltar': 'Pular', 'tactil.recargar': 'RECARREGAR', 'tactil.armaAnt': '◀ ARMA', 'tactil.armaSig': 'ARMA ▶',
     'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma seguinte', 'tactil.abajo': '▼ ABAIXAR', 'tactil.abajo.aria': 'Abaixar ou montar a M2',
-    'tactil.cajas': 'ARMAS', 'tactil.zombie': '+ ZUMBI', 'tactil.pausa': 'Pausa', 'girar': 'Gire o celular para jogar', 'girarNota': 'Se a tela não girar, ative a rotação automática.',
+    'tactil.cajas': 'ARMAS', 'tactil.zombie': 'ZUMBI', 'tactil.pausa': 'Pausa', 'girar': 'Gire o celular para jogar', 'girarNota': 'Se a tela não girar, ative a rotação automática.',
     'pausa.titulo': 'PAUSA', 'pausa.seguir': 'CONTINUAR', 'pausa.salir': 'SAIR PARA O MENU',
     'pruebas.titulo': 'CAMPO DE TESTES', 'pruebas.armas': 'ARMAS', 'pruebas.ayuda': 'Clique numa arma para ver a ficha e usá-la · <kbd>X</kbd> apaga tudo o que foi gerado · <kbd>C</kbd> fecha',
     'pruebas.ponerM2': 'COLOCAR M2 BROWNING', 'pruebas.quitarM2': 'TIRAR A M2 PRÓXIMA', 'pruebas.zombie': 'ZUMBI DE TESTE', 'pruebas.borrar': 'APAGAR TUDO (X)', 'pruebas.seguir': 'CONTINUAR (C)',
@@ -231,7 +231,7 @@ const TEXTOS = {
     'hud.en': v => `em ${v.s} s`, 'hud.quedan': v => `faltam ${v.n}`, 'hud.tiros': v => `(${v.n} tiro${v.n > 1 ? 's' : ''} por zumbi)`,
     'hud.recargando': 'RECARREGANDO…', 'hud.recargaS': 'RECARREGUE COM S!', 'hud.armas': v => `${v.n} arma${v.n > 1 ? 's' : ''}`,
     'hud.cambiaTactil': '◀ ARMA ▶ troca', 'hud.cambiaTeclado': '1-7 grupo · Q/E',
-    'hud.pruebas': 'CAMPO DE TESTES', 'hud.pruebasTactil': 'ARMAS: menu · ◀ ARMA ▶ · + ZUMBI', 'hud.pruebasTeclado': 'C: menu · Q E: arma · L: câmera lenta · Z: zumbi',
+    'hud.pruebas': 'CAMPO DE TESTES', 'hud.pruebasTactil': 'ARMAS: menu · ◀ ARMA ▶ · ZUMBI', 'hud.pruebasTeclado': 'C: menu · Q E: arma · L: câmera lenta · Z: zumbi',
     'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARREGANDO…', 'vitrina.lenta': 'CÂMERA LENTA', 'vitrina.lentaSi': 'CÂMERA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDADE NORMAL', 'vitrina.botonLenta': 'CÂMERA LENTA', 'vitrina.botonZombie': '+ ZUMBI DE TESTE (Z)',
     'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> andam · <kbd>↑</kbd> pula · <kbd>Q</kbd> <kbd>E</kbd> trocam de arma · <kbd>F</kbd> ou clique atira · <kbd>S</kbd> ou clique direito recarrega · <kbd>L</kbd> câmera lenta · <kbd>Z</kbd> zumbi de teste · <kbd>C</kbd> todas as armas',
     'hud.entrenamiento': 'TREINAMENTO', 'hud.pruebasModo': 'TESTES', 'hud.torreta': 'DEFESA ZUMBI · ', 'hud.cloaca': 'ESGOTO · ',
@@ -377,7 +377,7 @@ const TEXTOS = {
     'hud.aereo.aria': 'Call an air strike', 'tactil.aria': 'Touch controls', 'tactil.mover': 'Move: tap or slide left or right',
     'tactil.fuego': 'FIRE', 'tactil.salto': 'JUMP', 'tactil.saltar': 'Jump', 'tactil.recargar': 'RELOAD', 'tactil.armaAnt': '◀ GUN', 'tactil.armaSig': 'GUN ▶',
     'tactil.armaAnt.aria': 'Previous weapon', 'tactil.armaSig.aria': 'Next weapon', 'tactil.abajo': '▼ DOWN', 'tactil.abajo.aria': 'Crouch or mount the M2',
-    'tactil.cajas': 'WEAPONS', 'tactil.zombie': '+ ZOMBIE', 'tactil.pausa': 'Pause', 'girar': 'Turn your phone sideways to play', 'girarNota': 'If the screen doesn’t turn, switch on auto-rotate.',
+    'tactil.cajas': 'WEAPONS', 'tactil.zombie': 'ZOMBIE', 'tactil.pausa': 'Pause', 'girar': 'Turn your phone sideways to play', 'girarNota': 'If the screen doesn’t turn, switch on auto-rotate.',
     'pausa.titulo': 'PAUSED', 'pausa.seguir': 'RESUME', 'pausa.salir': 'QUIT TO MENU',
     'pruebas.titulo': 'TEST FIELD', 'pruebas.armas': 'WEAPONS', 'pruebas.ayuda': 'Click a weapon to see its details and use it · <kbd>X</kbd> clears everything spawned · <kbd>C</kbd> closes',
     'pruebas.ponerM2': 'PLACE M2 BROWNING', 'pruebas.quitarM2': 'REMOVE NEARBY M2', 'pruebas.zombie': 'TEST ZOMBIE', 'pruebas.borrar': 'CLEAR ALL (X)', 'pruebas.seguir': 'RESUME (C)',
@@ -400,7 +400,7 @@ const TEXTOS = {
     'hud.en': v => `in ${v.s} s`, 'hud.quedan': v => `${v.n} left`, 'hud.tiros': v => `(${v.n} shot${v.n > 1 ? 's' : ''} per zombie)`,
     'hud.recargando': 'RELOADING…', 'hud.recargaS': 'RELOAD WITH S!', 'hud.armas': v => `${v.n} weapon${v.n > 1 ? 's' : ''}`,
     'hud.cambiaTactil': '◀ GUN ▶ switches', 'hud.cambiaTeclado': '1-7 group · Q/E',
-    'hud.pruebas': 'TEST FIELD', 'hud.pruebasTactil': 'WEAPONS: menu · ◀ GUN ▶ · + ZOMBIE', 'hud.pruebasTeclado': 'C: menu · Q E: weapon · L: slow motion · Z: zombie',
+    'hud.pruebas': 'TEST FIELD', 'hud.pruebasTactil': 'WEAPONS: menu · ◀ GUN ▶ · ZOMBIE', 'hud.pruebasTeclado': 'C: menu · Q E: weapon · L: slow motion · Z: zombie',
     'vitrina.reserva': v => `reserve ${v.n}`, 'vitrina.recargando': 'RELOADING…', 'vitrina.lenta': 'SLOW MOTION', 'vitrina.lentaSi': 'SLOW MOTION ×¼', 'vitrina.lentaNo': 'NORMAL SPEED', 'vitrina.botonLenta': 'SLOW MOTION', 'vitrina.botonZombie': '+ TEST ZOMBIE (Z)',
     'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> walk · <kbd>↑</kbd> jump · <kbd>Q</kbd> <kbd>E</kbd> switch weapon · <kbd>F</kbd> or click shoots · <kbd>S</kbd> or right click reloads · <kbd>L</kbd> slow motion · <kbd>Z</kbd> test zombie · <kbd>C</kbd> all weapons',
     'hud.entrenamiento': 'TRAINING', 'hud.pruebasModo': 'TEST', 'hud.torreta': 'ZOMBIE DEFENSE · ', 'hud.cloaca': 'SEWER · ',
@@ -572,7 +572,7 @@ const Idioma = (() => {
     aplicar(raiz = document) {
       document.documentElement.lang = actual === 'pt' ? 'pt-BR' : actual;
       document.title = t('doc.titulo');
-      raiz.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
+      raiz.querySelectorAll('[data-t]').forEach(el => { const txt = t(el.dataset.t); if (txt !== el.dataset.t) el.textContent = txt; });   // sin traducción: queda el texto del HTML
       raiz.querySelectorAll('[data-t-html]').forEach(el => { el.innerHTML = t(el.dataset.tHtml); });
       raiz.querySelectorAll('[data-t-mayus]').forEach(el => { el.textContent = t(el.dataset.tMayus).toUpperCase(); });
       raiz.querySelectorAll('[data-t-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.tAria)); });
