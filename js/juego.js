@@ -568,8 +568,8 @@ class Juego {
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
     else if (this.historia) this.moverJugadorHistoria(dt, e);   // escaleras, sogas y cuerpo a tierra (js/historia.js)
-    else if (this.pruebas) {   // en la vitrina camina (sin saltar) dentro del galpón: del fondo hasta la trampa de balas
-      j.actualizar(dt, { ...e, saltarPulsado: false }, this);
+    else if (this.pruebas) {   // en la vitrina camina y salta dentro del galpón: del fondo hasta la trampa de balas
+      j.actualizar(dt, e, this);
       j.x = limitar(j.x, this.puestoX - 330, this.puestoX + 150);
     }
     else j.actualizar(dt, e, this);
@@ -711,9 +711,11 @@ class Juego {
     // Campo de pruebas: vitrina. La cámara se acerca al personaje (quieto, un poco a la izquierda del centro) para
     // ver el arma, el disparo, los casquillos y la recarga de cerca; lo de la pantalla (viñeta) se dibuja sin acercar
     if (this.pruebas) {   // más cerca con las armas chicas: pistolas 3,3×, metralletas y cuerpo a cuerpo 2,9×, el resto 2,6× (cambia suave)
-      const cat = j.montada ? 'ametralladora' : j.arma().categoria, meta = cat === 'pistola' ? 3.3 : cat === 'metralleta' || cat === 'cuerpo' ? 2.9 : 2.6;
+      const cat = j.montada ? 'ametralladora' : j.arma().categoria, meta = (cat === 'pistola' ? 3.3 : cat === 'metralleta' || cat === 'cuerpo' ? 2.9 : 2.6) * (j.enSuelo ? 1 : 0.8);   // en el aire, un poco más lejos
       this.zoomVitrina = this.zoomVitrina ? this.zoomVitrina + (meta - this.zoomVitrina) * 0.12 : meta;
-      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * this.lugarVitrina() - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * j.y));   // a la izquierda queda la ficha; a la derecha, el blanco
+      // La cámara sigue la altura con demora: al saltar se ve subir al personaje y después lo alcanza
+      this.yVitrina = this.yVitrina == null ? j.y : this.yVitrina + (j.y - this.yVitrina) * 0.09;
+      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * this.lugarVitrina() - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * this.yVitrina));   // a la izquierda queda la ficha; a la derecha, el blanco
     }
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
