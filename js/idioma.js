@@ -61,9 +61,9 @@ const TEXTOS = {
     'hud.en': v => `en ${v.s} s`, 'hud.quedan': v => `quedan ${v.n}`, 'hud.tiros': v => `(${v.n} tiro${v.n > 1 ? 's' : ''} por zombie)`,
     'hud.recargando': 'RECARGANDO…', 'hud.recargaS': '¡RECARGA CON S!', 'hud.armas': v => `${v.n} arma${v.n > 1 ? 's' : ''}`,
     'hud.cambiaTactil': '◀ ARMA ▶ cambia', 'hud.cambiaTeclado': '1-7 grupo · Q/E',
-    'hud.pruebas': 'CAMPO DE PRUEBAS', 'hud.pruebasTactil': 'ARMAS: menú · ◀ ARMA ▶', 'hud.pruebasTeclado': 'C: menú · ← →: arma · L: cámara lenta',
-    'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARGANDO…', 'vitrina.lenta': 'CÁMARA LENTA', 'vitrina.lentaSi': 'CÁMARA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDAD NORMAL', 'vitrina.botonLenta': 'CÁMARA LENTA',
-    'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> cambian de arma · <kbd>F</kbd> o clic dispara · <kbd>S</kbd> o clic derecho recarga · <kbd>L</kbd> cámara lenta · <kbd>C</kbd> todas las armas',
+    'hud.pruebas': 'CAMPO DE PRUEBAS', 'hud.pruebasTactil': 'ARMAS: menú · ◀ ARMA ▶', 'hud.pruebasTeclado': 'C: menú · ← →: arma · L: cámara lenta · Z: zombie',
+    'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARGANDO…', 'vitrina.lenta': 'CÁMARA LENTA', 'vitrina.lentaSi': 'CÁMARA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDAD NORMAL', 'vitrina.botonLenta': 'CÁMARA LENTA', 'vitrina.botonZombie': '+ ZOMBIE DE PRUEBA (Z)',
+    'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> cambian de arma · <kbd>F</kbd> o clic dispara · <kbd>S</kbd> o clic derecho recarga · <kbd>L</kbd> cámara lenta · <kbd>Z</kbd> zombie de prueba · <kbd>C</kbd> todas las armas',
     'hud.entrenamiento': 'ENTRENAMIENTO', 'hud.pruebasModo': 'PRUEBAS', 'hud.torreta': 'DEFENSA ZOMBIE · ', 'hud.cloaca': 'CLOACA · ',
     'aereo.nombre': '✈ ATAQUE AÉREO', 'aereo.tocar': 'TOCA AQUÍ', 'aereo.tecla': 'TECLA A', 'aereo.listo': v => `LISTO · ${v.tecla}`, 'aereo.curso': 'MISILES EN CAMINO', 'aereo.recargando': v => `RECARGANDO · ${v.s} S`,
     'serie.titulo': v => `SERIE ${v.n}`, 'serie.blancos': v => `15 blancos · ${v.nov}`,
@@ -108,6 +108,7 @@ const TEXTOS = {
     'arma.hacha': 'Hacha de bombero', 'arma.bate': 'Bate con clavos', 'arma.mazo': 'Mazo', 'arma.tridente': 'Tridente de Poseidón', 'arma.egida': 'Égida',
     'grupo.0': 'Pistolas', 'grupo.1': 'Metralletas', 'grupo.2': 'Rifles', 'grupo.3': 'Escopetas', 'grupo.4': 'Especiales',
     'arma.recortada': 'Escopeta de dos cañones', 'arma.m79': 'Lanzagranadas M79', 'arma.bazuca': 'Bazuca M9', 'arma.granadas': 'Granadas M67', 'arma.laser': 'Láser alienígena',
+    'arma.lanzallamas': 'Lanzallamas M2', 'recargaTipo.ignicion': 'cilindro de ignición', 'unidad.fuego': v => `${v.s} s de fuego`, 'detalle.danoFuego': v => `${v.dano} por llama + quema ${v.quema}/s durante ${v.seg} s`, 'detalle.matarFuego': 'Fuego para matar un zombie', 'hud.fuegoPor': v => `(${v.s} s de fuego por zombie)`,
     'dif.facil': 'Fácil', 'dif.medio': 'Medio', 'dif.dificil': 'Difícil',
     'dif.facil.desc': 'Rondas chicas que empiezan con 5 zombies lentos. Caen con menos tiros: pistola 2, metralleta 3, rifle 1.',
     'dif.medio.desc': 'Zombies normales, con la vida y la resistencia de siempre: pistola 3 tiros, metralleta 5, rifle 1.',
@@ -230,9 +231,9 @@ const TEXTOS = {
     'hud.en': v => `em ${v.s} s`, 'hud.quedan': v => `faltam ${v.n}`, 'hud.tiros': v => `(${v.n} tiro${v.n > 1 ? 's' : ''} por zumbi)`,
     'hud.recargando': 'RECARREGANDO…', 'hud.recargaS': 'RECARREGUE COM S!', 'hud.armas': v => `${v.n} arma${v.n > 1 ? 's' : ''}`,
     'hud.cambiaTactil': '◀ ARMA ▶ troca', 'hud.cambiaTeclado': '1-7 grupo · Q/E',
-    'hud.pruebas': 'CAMPO DE TESTES', 'hud.pruebasTactil': 'ARMAS: menu · ◀ ARMA ▶', 'hud.pruebasTeclado': 'C: menu · ← →: arma · L: câmera lenta',
-    'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARREGANDO…', 'vitrina.lenta': 'CÂMERA LENTA', 'vitrina.lentaSi': 'CÂMERA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDADE NORMAL', 'vitrina.botonLenta': 'CÂMERA LENTA',
-    'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> trocam de arma · <kbd>F</kbd> ou clique atira · <kbd>S</kbd> ou clique direito recarrega · <kbd>L</kbd> câmera lenta · <kbd>C</kbd> todas as armas',
+    'hud.pruebas': 'CAMPO DE TESTES', 'hud.pruebasTactil': 'ARMAS: menu · ◀ ARMA ▶', 'hud.pruebasTeclado': 'C: menu · ← →: arma · L: câmera lenta · Z: zumbi',
+    'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARREGANDO…', 'vitrina.lenta': 'CÂMERA LENTA', 'vitrina.lentaSi': 'CÂMERA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDADE NORMAL', 'vitrina.botonLenta': 'CÂMERA LENTA', 'vitrina.botonZombie': '+ ZUMBI DE TESTE (Z)',
+    'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> trocam de arma · <kbd>F</kbd> ou clique atira · <kbd>S</kbd> ou clique direito recarrega · <kbd>L</kbd> câmera lenta · <kbd>Z</kbd> zumbi de teste · <kbd>C</kbd> todas as armas',
     'hud.entrenamiento': 'TREINAMENTO', 'hud.pruebasModo': 'TESTES', 'hud.torreta': 'DEFESA ZUMBI · ', 'hud.cloaca': 'ESGOTO · ',
     'aereo.nombre': '✈ ATAQUE AÉREO', 'aereo.tocar': 'TOQUE AQUI', 'aereo.tecla': 'TECLA A', 'aereo.listo': v => `PRONTO · ${v.tecla}`, 'aereo.curso': 'MÍSSEIS A CAMINHO', 'aereo.recargando': v => `RECARREGANDO · ${v.s} S`,
     'serie.titulo': v => `SÉRIE ${v.n}`, 'serie.blancos': v => `15 alvos · ${v.nov}`,
@@ -277,6 +278,7 @@ const TEXTOS = {
     'arma.hacha': 'Machado de bombeiro', 'arma.bate': 'Taco com pregos', 'arma.mazo': 'Marreta', 'arma.tridente': 'Tridente de Poseidon', 'arma.egida': 'Égide',
     'grupo.0': 'Pistolas', 'grupo.1': 'Submetralhadoras', 'grupo.2': 'Fuzis', 'grupo.3': 'Espingardas', 'grupo.4': 'Especiais',
     'arma.recortada': 'Espingarda de dois canos', 'arma.m79': 'Lança-granadas M79', 'arma.bazuca': 'Bazuca M9', 'arma.granadas': 'Granadas M67', 'arma.laser': 'Laser alienígena',
+    'arma.lanzallamas': 'Lança-chamas M2', 'recargaTipo.ignicion': 'cilindro de ignição', 'unidad.fuego': v => `${v.s} s de fogo`, 'detalle.danoFuego': v => `${v.dano} por chama + queima ${v.quema}/s por ${v.seg} s`, 'detalle.matarFuego': 'Fogo para matar um zumbi', 'hud.fuegoPor': v => `(${v.s} s de fogo por zumbi)`,
     'dif.facil': 'Fácil', 'dif.medio': 'Médio', 'dif.dificil': 'Difícil',
     'dif.facil.desc': 'Rodadas pequenas que começam com 5 zumbis lentos. Caem com menos tiros: pistola 2, submetralhadora 3, fuzil 1.',
     'dif.medio.desc': 'Zumbis normais, com a vida e a resistência de sempre: pistola 3 tiros, submetralhadora 5, fuzil 1.',
@@ -398,9 +400,9 @@ const TEXTOS = {
     'hud.en': v => `in ${v.s} s`, 'hud.quedan': v => `${v.n} left`, 'hud.tiros': v => `(${v.n} shot${v.n > 1 ? 's' : ''} per zombie)`,
     'hud.recargando': 'RELOADING…', 'hud.recargaS': 'RELOAD WITH S!', 'hud.armas': v => `${v.n} weapon${v.n > 1 ? 's' : ''}`,
     'hud.cambiaTactil': '◀ GUN ▶ switches', 'hud.cambiaTeclado': '1-7 group · Q/E',
-    'hud.pruebas': 'TEST FIELD', 'hud.pruebasTactil': 'WEAPONS: menu · ◀ GUN ▶', 'hud.pruebasTeclado': 'C: menu · ← →: weapon · L: slow motion',
-    'vitrina.reserva': v => `reserve ${v.n}`, 'vitrina.recargando': 'RELOADING…', 'vitrina.lenta': 'SLOW MOTION', 'vitrina.lentaSi': 'SLOW MOTION ×¼', 'vitrina.lentaNo': 'NORMAL SPEED', 'vitrina.botonLenta': 'SLOW MOTION',
-    'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> switch weapon · <kbd>F</kbd> or click shoots · <kbd>S</kbd> or right click reloads · <kbd>L</kbd> slow motion · <kbd>C</kbd> all weapons',
+    'hud.pruebas': 'TEST FIELD', 'hud.pruebasTactil': 'WEAPONS: menu · ◀ GUN ▶', 'hud.pruebasTeclado': 'C: menu · ← →: weapon · L: slow motion · Z: zombie',
+    'vitrina.reserva': v => `reserve ${v.n}`, 'vitrina.recargando': 'RELOADING…', 'vitrina.lenta': 'SLOW MOTION', 'vitrina.lentaSi': 'SLOW MOTION ×¼', 'vitrina.lentaNo': 'NORMAL SPEED', 'vitrina.botonLenta': 'SLOW MOTION', 'vitrina.botonZombie': '+ TEST ZOMBIE (Z)',
+    'vitrina.ayuda': '<kbd>←</kbd> <kbd>→</kbd> switch weapon · <kbd>F</kbd> or click shoots · <kbd>S</kbd> or right click reloads · <kbd>L</kbd> slow motion · <kbd>Z</kbd> test zombie · <kbd>C</kbd> all weapons',
     'hud.entrenamiento': 'TRAINING', 'hud.pruebasModo': 'TEST', 'hud.torreta': 'ZOMBIE DEFENSE · ', 'hud.cloaca': 'SEWER · ',
     'aereo.nombre': '✈ AIR STRIKE', 'aereo.tocar': 'TAP HERE', 'aereo.tecla': 'KEY A', 'aereo.listo': v => `READY · ${v.tecla}`, 'aereo.curso': 'MISSILES INBOUND', 'aereo.recargando': v => `RECHARGING · ${v.s} S`,
     'serie.titulo': v => `SERIES ${v.n}`, 'serie.blancos': v => `15 targets · ${v.nov}`,
@@ -445,6 +447,7 @@ const TEXTOS = {
     'arma.hacha': 'Fire axe', 'arma.bate': 'Spiked bat', 'arma.mazo': 'Sledgehammer', 'arma.tridente': 'Poseidon’s trident', 'arma.egida': 'Aegis',
     'grupo.0': 'Pistols', 'grupo.1': 'SMGs', 'grupo.2': 'Rifles', 'grupo.3': 'Shotguns', 'grupo.4': 'Specials',
     'arma.recortada': 'Double-barrel shotgun', 'arma.m79': 'M79 grenade launcher', 'arma.bazuca': 'M9 bazooka', 'arma.granadas': 'M67 grenades', 'arma.laser': 'Alien laser',
+    'arma.lanzallamas': 'M2 flamethrower', 'recargaTipo.ignicion': 'ignition cylinder', 'unidad.fuego': v => `${v.s} s of fire`, 'detalle.danoFuego': v => `${v.dano} per flame + burns ${v.quema}/s for ${v.seg} s`, 'detalle.matarFuego': 'Fire to kill a zombie', 'hud.fuegoPor': v => `(${v.s} s of fire per zombie)`,
     'dif.facil': 'Easy', 'dif.medio': 'Normal', 'dif.dificil': 'Hard',
     'dif.facil.desc': 'Small rounds that start with 5 slow zombies. They go down with fewer shots: pistol 2, SMG 3, rifle 1.',
     'dif.medio.desc': 'Regular zombies with their usual health and toughness: pistol 3 shots, SMG 5, rifle 1.',
@@ -583,7 +586,7 @@ const Idioma = (() => {
         d.nombre = t('dif.' + d.id); d.descripcion = t('dif.' + d.id + '.desc');
       }
       GRUPOS_ARMAS.forEach((g, k) => { guardarOriginal(g, ['nombre']); g.nombre = t('grupo.' + k); });
-      for (const id of ['recortada', 'm79', 'bazuca', 'granadas', 'laser', 'hacha', 'bate', 'mazo', 'tridente', 'egida', 'cuchillo']) if (ARMAS[id]) { guardarOriginal(ARMAS[id], ['nombre']); ARMAS[id].nombre = t('arma.' + id); }
+      for (const id of ['recortada', 'm79', 'bazuca', 'granadas', 'lanzallamas', 'laser', 'hacha', 'bate', 'mazo', 'tridente', 'egida', 'cuchillo']) if (ARMAS[id]) { guardarOriginal(ARMAS[id], ['nombre']); ARMAS[id].nombre = t('arma.' + id); }
     },
   };
 })();

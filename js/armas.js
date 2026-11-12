@@ -4,9 +4,9 @@
  * caen con menos tiros; en difícil tienen la misma vida que en medio.
  *
  * Recarga de cada arma:
- *   recargaTipo    cargador-pistola | cargador | tambor | tambor-rapido | peine | cerrojo | palanca | cartuchos | quiebre | cinta | granada
+ *   recargaTipo    cargador-pistola | cargador | tambor | tambor-rapido | peine | cerrojo | palanca | cartuchos | quiebre | cinta | granada | ignicion
  *   recargaFinal   qué hace al terminar de poner el cargador: corredera | liberar | palmada | palmada-hk | cerrojo | ninguno
- *   recargaUnidad  qué lleva en la mano: cargador | cargador-curvo | cargador-plano | tambor-cargador | bala | cartucho | peine | speedloader | cinta | granada40 | celda
+ *   recargaUnidad  qué lleva en la mano: cargador | cargador-curvo | cargador-plano | tambor-cargador | bala | cartucho | peine | speedloader | cinta | granada40 | celda | ignicion
  *   balanceo       el cargador se engancha de adelante hacia atrás (AK, Saiga)
  */
 const VIDA_ZOMBIE_NORMAL = 15;
@@ -58,6 +58,10 @@ const ARMAS = {
   rpg7:     { id: 'rpg7',     nombre: 'RPG-7', categoria: 'bazuca', dano: 15, cargador: 1, cadencia: 900, recarga: 2600, automatica: false, velocidad: 8, alcance: 1100, explosivo: true, cohete: true, radio: 155, gravedad: 0, reservaInicial: 5, colaCm: 133, recargaTipo: 'cohete', recargaUnidad: 'cohete', color: '#5a4a2a' },
   mgl:      { id: 'mgl',      nombre: 'Milkor MGL', categoria: 'lanzagranadas', dano: 15, cargador: 6, cadencia: 450, recarga: 3600, automatica: false, velocidad: 11, alcance: 700, explosivo: true, radio: 100, gravedad: 0.35, reservaInicial: 18, recargaTipo: 'quiebre', recargaUnidad: 'granada40', color: '#a68b69' },
   granadas: { id: 'granadas', nombre: 'Granadas M67',    categoria: 'granada', dano: 15, cargador: 3,  cadencia: 600, recarga: 400,  automatica: false, velocidad: 9,  alcance: 500, explosivo: true, radio: 120, gravedad: 0.45, mecha: 900, reservaInicial: 6, recargaTipo: 'granada', recargaUnidad: 'granada', color: '#3d5a2a' },
+  // Lanzallamas M2 (EE. UU., 1943): chorro continuo de corto alcance. Cada llama pega una vez (dano) y prende fuego al
+  // zombie, que sigue quemándose quemaSeg segundos (quema por segundo). cargador = descargas; a 50 ms son 7 s de fuego.
+  // Lo que se cambia al recargar es el cilindro de ignición de la punta (el combustible va en la mochila).
+  lanzallamas: { id: 'lanzallamas', nombre: 'Lanzallamas M2', categoria: 'lanzallamas', fuego: true, dano: 0.4, quema: 4, quemaSeg: 3, llamas: 3, cargador: 140, cadencia: 50, recarga: 2400, automatica: true, velocidad: 8.5, alcance: 330, gravedad: 0.035, reservaInicial: 4, recargaTipo: 'ignicion', recargaFinal: 'ninguno', recargaUnidad: 'ignicion', color: '#4a5532' },
   laser:    { id: 'laser',    nombre: 'Láser alienígena', categoria: 'laser', dano: 15, cargador: 20, cadencia: 220, recarga: 2000, automatica: false, velocidad: 40, alcance: 1400, perfora: true, reservaInicial: 40, recargaTipo: 'cargador', recargaFinal: 'ninguno', recargaUnidad: 'celda', color: '#39ff14' },
 
   // --- Cuerpo a cuerpo: se empuñan; sin munición ni recarga. alcance en unidades, objetivos = a cuántos pega por golpe ---
@@ -83,7 +87,7 @@ const ARMAS_COMUNES = ['glock', 'magnum', 'colt1911', 'deagle', 'python', 'beret
   'machete', 'katana', 'hacha', 'bate', 'mazo'];
 
 // Armas especiales que solo aparecen arriba de las montañas
-const ARMAS_ESPECIALES = ['m79', 'mgl', 'bazuca', 'rpg7', 'granadas', 'laser'];
+const ARMAS_ESPECIALES = ['m79', 'mgl', 'bazuca', 'rpg7', 'granadas', 'lanzallamas', 'laser'];
 // Legendarias: también en las montañas, en lugar de una especial cada tanto
 const ARMAS_LEGENDARIAS = ['mjolnir', 'excalibur', 'tridente', 'egida', 'gungnir'];
 
@@ -107,10 +111,15 @@ const ARMA_INICIAL = 'glock';
 
 const NOMBRE_CATEGORIA = {
   pistola: 'Pistola', metralleta: 'Metralleta', rifle: 'Rifle', escopeta: 'Escopeta',
-  ametralladora: 'Ametralladora', lanzagranadas: 'Lanzagranadas', bazuca: 'Bazuca', granada: 'Granada', laser: 'Láser',
+  ametralladora: 'Ametralladora', lanzagranadas: 'Lanzagranadas', bazuca: 'Bazuca', granada: 'Granada', lanzallamas: 'Lanzallamas', laser: 'Láser',
   cuerpo: 'Cuerpo a cuerpo', legendaria: 'Legendaria',
 };
 
+// Lanzallamas: segundos de fuego para matar un zombie (la mitad de las llamas le pega, más la quema), redondeado a décimas
+function segundosParaMatarFuego(arma, vidaZombie = VIDA_ZOMBIE_NORMAL) {
+  const porSegundo = arma.dano * arma.llamas * 1000 / arma.cadencia * 0.5 + arma.quema;
+  return Math.round(vidaZombie / porSegundo * 10) / 10;
+}
 // Cuántos tiros hacen falta para matar un zombie con esa arma, según la vida que tenga en la dificultad elegida
 function disparosParaMatar(arma, vidaZombie = VIDA_ZOMBIE_NORMAL) {
   return Math.ceil(vidaZombie / arma.dano);

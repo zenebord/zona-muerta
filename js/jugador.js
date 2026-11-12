@@ -9,7 +9,7 @@ const DETRAS_M2 = 20;                    // a cuánto detrás de la M2 se para e
 const ESCALA_JUGADOR = 1.16;
 const BAJA_AGACHADO = 13;                // rodilla en tierra: cuánto bajan la cadera, el torso y el arma
 // Fuerza del retroceso (1 = fusil): mueve el arma, las manos, el hombro y la cabeza
-const FUERZA_RETROCESO = { pistola: 0.6, metralleta: 0.45, rifle: 1.0, escopeta: 1.3, ametralladora: 0.55, lanzagranadas: 1.2, bazuca: 0.35, granada: 0.15, laser: 0.3, cuerpo: 0, legendaria: 0 };
+const FUERZA_RETROCESO = { pistola: 0.6, metralleta: 0.45, rifle: 1.0, escopeta: 1.3, ametralladora: 0.55, lanzagranadas: 1.2, bazuca: 0.35, granada: 0.15, lanzallamas: 0.12, laser: 0.3, cuerpo: 0, legendaria: 0 };
 const FUERZA_RETROCESO_ARMA = { magnum: 1.0, deagle: 1.0, python: 0.9, uzi: 0.4, p90: 0.35, barrett: 1.7, mosin: 1.15, winchester1887: 1.4, recortada: 1.5, aa12: 1.0,
   ppk: 0.45, vector: 0.3, thompson: 0.5, svd: 1.1, garand: 1.05, mgl: 1.0 };
 // Dónde queda la empuñadura según cómo se agarra el arma (respecto de los pies)
@@ -326,8 +326,8 @@ class Jugador {
         l.ajustar(T + (montar ? PAUSA_MONTAR : 0));
         break;
 
-      case 'cargador': {
-        const suelta = unidad === 'celda' ? null : unidad === 'tambor-cargador' ? 'tambor' : 'cargador';
+      case 'cargador': case 'ignicion': {   // ignicion: el lanzallamas cambia el cilindro de ignición de la punta (no cae al piso)
+        const suelta = unidad === 'celda' || unidad === 'ignicion' ? null : unidad === 'tambor-cargador' ? 'tambor' : 'cargador';
         if (arma.recargaFinal === 'palmada-hk') l.fase('trabar', 320, { a: 'corredera', llegada: 0.4, co: 1, eventos: [[0.5, s('cerrojo-abrir')]] });
         if (suelta) {   // tira el cargador hacia abajo, lo suelta y cae al piso; la mano va vacía al portacargador
           l.fase('sacar', 320, { a: 'cargador', llegada: 0.5, incl: -0.2, presionar: 6, mano: [[unidad, 0.55, 1]], eventos: [[0.55, quitar(null)]] });

@@ -269,6 +269,10 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
     }
   }
 
+  // Lanzallamas: la mochila con los tanques (el de combustible cercano, el de nitrógeno asomando arriba, el armazón)
+  const dTanques = !this.montada && DIBUJO_ARMAS[this.arma().id];
+  if (dTanques && dTanques.tanques) dibujarTanques(ctx, ty);
+
   // Trepando una escalera o colgado de una soga: pose propia, con el arma colgada a la espalda
   if ((this.trepa || this.soga) && !this.muerto) { dibujarColgado(ctx, this, S, C); return; }
 
@@ -292,6 +296,10 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const gatillo = tapa ? { x: -2, y: -80 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
   const muneca = this.montada ? gatillo : { x: gatillo.x - Math.sin(angMano) * 2.8, y: gatillo.y + Math.cos(angMano) * 2.8 };
   const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28) });
+  if (dArma.tanques && dArma.manguera && !this.montada) {
+    const m = dArma.manguera, c = Math.cos(e.incl), sn = Math.sin(e.incl);
+    dibujarManguera(ctx, ty, e.origen.x + m.x * c - m.y * sn, e.origen.y + m.x * sn + m.y * c);
+  }
   const golpe = (this.montada || dArma.agarre === 'hombro') ? e.empuje * 1.2 : e.empuje * 0.4;   // el hombro absorbe el retroceso
   brazoDetallado(ctx, -4 - golpe, -53 + ty, muneca.x, muneca.y, Clejos);
 
@@ -389,6 +397,30 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   }
 };
 
+/* Mochila del lanzallamas M2 en la espalda: dos tanques de combustible (de perfil se ve el cercano, con domos arriba y
+ * abajo), el tanque esférico de nitrógeno que asoma arriba entre los dos, el armazón y las válvulas */
+function dibujarTanques(ctx, ty) {
+  const OD = '#4b5434';
+  pintura(ctx, c => c.roundRect(-14.5, -63 + ty, 3.2, 28, 1), '#2f3322', { sombra: 0.4 });                                   // armazón contra la espalda
+  pintura(ctx, c => c.arc(-20.5, -64.5 + ty, 5.2, 0, Math.PI * 2), ajustarColor(OD, -0.12), { sombra: 0.8, brillo: 0.3 });   // nitrógeno
+  pintura(ctx, c => { c.moveTo(-27.5, -60 + ty); c.quadraticCurveTo(-27.5, -66 + ty, -21, -66 + ty); c.quadraticCurveTo(-14.5, -66 + ty, -14.5, -60 + ty);
+    c.lineTo(-14.5, -39 + ty); c.quadraticCurveTo(-14.5, -33 + ty, -21, -33 + ty); c.quadraticCurveTo(-27.5, -33 + ty, -27.5, -39 + ty); }, OD, { sombra: 1.1, brillo: 0.35 });   // combustible
+  if (!Pincel.silueta) {
+    for (const y of [-58, -40]) raya(ctx, ajustarColor(OD, -0.35), 0.5, [[-27.3, y + ty], [-14.7, y + ty]]);                   // costuras de soldadura
+    ctx.fillStyle = '#d8d0b0'; ctx.font = '700 2.6px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('M2', -21, -48 + ty); ctx.textAlign = 'start';
+  }
+  pintura(ctx, c => c.roundRect(-22.6, -69 + ty, 3.2, 3.4, 0.6), '#3a3c3e', { sombra: 0.4 });                               // válvula de arriba
+  pintura(ctx, c => c.roundRect(-18.6, -34.4 + ty, 4, 2.6, 0.6), '#3a3c3e', { sombra: 0.4 });                               // salida de la manguera
+}
+// Manguera de goma: sale de abajo del tanque, baja por detrás de la cadera y sube a la válvula de la lanza (x, y)
+function dibujarManguera(ctx, ty, x, y) {
+  ctx.save(); ctx.lineCap = 'round';
+  const trazado = () => { ctx.beginPath(); ctx.moveTo(-16.6, -32.6 + ty); ctx.bezierCurveTo(-17, -16 + ty, x - 16, y + 18, x, y); };
+  trazado(); ctx.strokeStyle = tinta('#1c1d1b'); ctx.lineWidth = 2.6; ctx.stroke();
+  if (!Pincel.silueta) { trazado(); ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 0.7; ctx.stroke(); }
+  ctx.restore();
+}
+
 /* Lo que puede llevar la mano durante una recarga, con su forma propia */
 function dibujarUnidad(ctx, tipo, x, y, rot = 0) {
   const laton = '#c9a227', cobre = '#b87333';
@@ -433,6 +465,10 @@ function dibujarUnidad(ctx, tipo, x, y, rot = 0) {
       break;
     case 'granada':
       esfera(ctx, 0, 0, 5, '#3d5a2a'); parte(ctx, -1.5, -7, 3, 3, '#999'); parte(ctx, 1, -6.5, 4, 1.5, '#777'); break;
+    case 'ignicion':    // cilindro de ignición del lanzallamas, con los culotes de los cartuchos
+      parte(ctx, -3, -2.6, 6, 5.2, '#4b5434');
+      if (!Pincel.silueta) { ctx.fillStyle = '#c9a227'; for (const x of [-1.5, 0, 1.5]) { ctx.beginPath(); ctx.arc(x, -2.4, 0.5, 0, Math.PI * 2); ctx.fill(); } }
+      break;
     case 'celda':
       if (!Pincel.silueta) { ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 8; }
       esfera(ctx, 0, 0, 3.5, '#39ff14'); break;

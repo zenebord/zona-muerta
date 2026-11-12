@@ -97,9 +97,12 @@ y entrá a <http://127.0.0.1:8791/>.
 El personaje queda quieto y la cámara se acerca (3,3× con pistolas, 2,9× con metralletas y cuerpo a cuerpo, 2,6×
 con el resto) para ver de cerca el arma, el fogonazo, los casquillos y la recarga. ← y → cambian de arma (lista para
 tirar, sin heredar la espera de la anterior), `F` o clic dispara, `S` o clic derecho recarga y `L` pone cámara lenta
-(un cuarto de la velocidad; el sonido sigue normal). Se dibuja siempre con todos los píxeles de la pantalla (hasta 3×), sin importar la calidad elegida, para que de cerca no se vea pixelado. La ficha del arma en la mano: su dibujo entero de perfil con el largo, grupo, origen, año,
+(un cuarto de la velocidad; el sonido sigue normal). `Z` o el botón **+ ZOMBIE DE PRUEBA** de la ficha ponen un zombie quieto
+que no muerde, para probar el arma: cada uno nuevo va un poco más atrás que el anterior y puede haber hasta 5 (con uno
+más se va el más viejo). Se dibuja siempre con todos los píxeles de la pantalla (hasta 3×), sin importar la calidad elegida, para que de cerca no se vea pixelado. La ficha del arma en la mano: su dibujo entero de perfil con el largo, grupo, origen, año,
 munición, descripción, daño, tiros para matar, cargador, cadencia, funcionamiento, recarga, alcance y retroceso, con
-la munición en vivo; va arriba a la izquierda, el personaje un poco a la izquierda del centro y el maniquí a 150 px, dentro del cuadro. `C` sigue abriendo la lista de todas las armas.
+la munición en vivo; va arriba a la izquierda y el personaje justo a su derecha (el juego mide dónde termina la ficha, que cambia con la
+pantalla: entre el 30 % y el 42 % del ancho), así queda lugar a la derecha para los zombies de prueba, desde 140 px. `C` sigue abriendo la lista de todas las armas.
 
 El escenario es un galpón enorme (`Escenario.dibujarCampo`). Como la cámara acercada sólo muestra unos tres metros, el
 tamaño se lee por la profundidad: el piso sigue hasta la pared del fondo, dos hileras de columnas de acero cada vez más
@@ -357,7 +360,7 @@ Tiros en dificultad media:
 | Rifles | Remington 700, Barrett M82, Mosin-Nagant, M1 Garand, Dragunov SVD, Winchester 1894 | 1 |
 | Escopetas | Recortada doble caño, Mossberg 500, SPAS-12, AA-12, Saiga-12, Benelli M4, Remington 870, Winchester 1887 | 1 |
 | Ametralladora fija | M2 Browning .50, clavada en las montañas, no se puede llevar | 1 |
-| Especiales (solo en montañas) | Lanzagranadas M79, Milkor MGL (6 granadas), Bazuca M9, RPG-7, Granadas M67, Láser alienígena | 1 |
+| Especiales (solo en montañas) | Lanzagranadas M79, Milkor MGL (6 granadas), Bazuca M9, RPG-7, Granadas M67, Lanzallamas M2, Láser alienígena | 1 (el lanzallamas: 0,9 s de fuego) |
 | Cuerpo a cuerpo (tecla 6) | Machete y Bate con clavos (2 golpes), Katana (2, rápida), Hacha de bombero y Mazo (1, lentos; el mazo empuja lejos) | 1–2 |
 | Legendarias (tecla 7, solo en montañas) | Mjölnir (llama rayos sobre 4 zombies), Excalibur (onda de luz que atraviesa), Tridente de Poseidón (ola que barre), Égida (escudo que se lanza y vuelve), Gungnir (lanza que se lanza y vuelve) | 1 |
 
@@ -365,6 +368,22 @@ Las armas cuerpo a cuerpo y las legendarias no usan munición ni se recargan: `F
 la baja de golpe y vuelve a la guardia) y pega a los dos o tres zombies más cercanos adelante. Las de dos
 manos se toman con las dos en el mango; el machete, la Égida y Gungnir, con una. Las legendarias son de la
 mitología (nórdica, artúrica y griega); 3 de cada 10 cajas de montaña traen una.
+
+### Lanzallamas M2
+
+El lanzallamas de mochila de Estados Unidos (1943), en el grupo de especiales. La lanza (111 cm) tiene la válvula de
+combustible atrás con la manguera, dos empuñaduras de madera con sus gatillos (combustible e ignición), el cilindro de
+ignición en la punta y la llama piloto que titila; en la espalda van los dos tanques de combustible y el de nitrógeno, y
+la manguera baja por detrás del cuerpo hasta la válvula siguiendo al arma.
+
+- **Chorro**: automático, una descarga cada 50 ms con tres llamas escalonadas que se estiran hacia donde vuelan, frenan
+  con el aire, caen un poco y pasan de blanco amarillento a anaranjado, rojo y humo (alcance unos 7 m). Lo que toca el
+  piso sigue ardiendo un poco más de un segundo. La luz del chorro ilumina el piso y al tirador (`LuzLlama`).
+- **Daño**: cada llama pega una vez (0,4) y prende fuego al zombie, que se sigue quemando 3 s (4 por segundo), con lenguas
+  de fuego por el cuerpo y su luz. Sin destello, ruido de impacto, empujón ni sangre por llama. Un zombie cae con
+  0,6 s de fuego en fácil y 0,9 s en medio y difícil; la ficha y el HUD lo muestran en segundos.
+- **Carga**: 7 s de fuego (140 descargas) y 4 de reserva. Recargar cambia el cilindro de ignición (`recargaTipo: 'ignicion'`).
+- **Sonido**: un rugido grave que se encadena entre descargas, con algún chisporroteo.
 
 ### Diseño
 

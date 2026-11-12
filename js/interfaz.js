@@ -200,6 +200,9 @@
     ['grupo.6', id => ARMAS[id].categoria === 'legendaria'],
   ];
   const UNIDAD = { granada: 'granadas', laser: 'disparos', lanzagranadas: 'granada', bazuca: 'cohete', escopeta: 'cartuchos' };
+  // Capacidad del arma: balas, cartuchos, granadas… o, en el lanzallamas, los segundos de fuego
+  const capacidadArma = a => a.fuego ? t('unidad.fuego', { s: (a.cargador * a.cadencia / 1000).toLocaleString(Idioma.actual()) })
+    : `${a.cargador} ${t('unidad.' + (a.cargador === 1 ? (UNIDAD[a.categoria] || 'bala') : (UNIDAD[a.categoria] || 'balas')))}`;
   function renderizarArmasPrueba() {
     const lista = document.getElementById('lista-armas-prueba');
     lista.innerHTML = '';
@@ -215,7 +218,7 @@
         b.className = 'boton-arma' + (ARMAS_ESPECIALES.includes(id) ? ' especial' : a.legendaria ? ' legendaria' : '');
         b.dataset.arma = id;
         b.innerHTML = a.cuerpo ? `${a.nombre}<small>${a.legendaria ? t('poder.' + a.poder) : t('hud.golpes', { n: disparosParaMatar(a) })}</small>`
-          : `${a.nombre}<small>${a.cargador} ${t('unidad.' + (a.cargador === 1 ? (UNIDAD[a.categoria] || 'bala') : (UNIDAD[a.categoria] || 'balas')))}</small>`;
+          : `${a.nombre}<small>${capacidadArma(a)}</small>`;
         rejilla.appendChild(b);
       }
       grupo.appendChild(rejilla);
@@ -231,10 +234,17 @@
   function filasFicha(id) {
     const a = ARMAS[id], f = FICHAS[id], filas = [];
     if (f) { filas.push([t('detalle.origen'), enIdioma(ORIGENES[f[0]] || f[0])], [t('detalle.anio'), f[1]], [t(a.cuerpo ? 'detalle.medida' : 'detalle.municion'), enIdioma(f[2])]); }
+    if (a.fuego) {   // lanzallamas: daño por llama más la quema, y segundos de fuego para matar
+      const seg = v => `${segundosParaMatarFuego(a, v).toLocaleString(Idioma.actual())} s`;
+      filas.push([t('detalle.dano'), t('detalle.danoFuego', { dano: a.dano.toLocaleString(Idioma.actual()), quema: a.quema, seg: a.quemaSeg }), true, true]);
+      filas.push([t('detalle.matarFuego'), ['facil', 'medio', 'dificil'].map(d => `${DIFICULTADES[d].nombre} ${seg(DIFICULTADES[d].vidaZombie)}`).join(' · '), true, true]);
+      filas.push([t('detalle.toxico'), seg(VIDA_TOXICO())]);
+    } else {
     filas.push([t('detalle.dano'), a.perdigones ? t('detalle.danoPerdigones', { dano: a.dano, n: a.perdigones }) : String(a.dano), true]);
     const porDif = ['facil', 'medio', 'dificil'].map(d => `${DIFICULTADES[d].nombre} ${disparosParaMatar(a, DIFICULTADES[d].vidaZombie)}`).join(' · ');
     filas.push([t(a.cuerpo ? 'detalle.matarGolpes' : 'detalle.matar'), porDif, true, true]);
     filas.push([t('detalle.toxico'), String(disparosParaMatar(a, VIDA_TOXICO()))]);
+    }
     if (a.cuerpo) {
       filas.push([t('detalle.ritmoGolpe'), `${Math.round(60000 / a.cadencia)}/min`]);
       filas.push([t('detalle.alcanceGolpe'), `${m(a.alcance).toLocaleString(Idioma.actual())} m`]);
@@ -244,10 +254,9 @@
       if (a.poder) filas.push([t('detalle.poder'), t('poder.' + a.poder), true]);
       return filas;
     }
-    const unidad = a.cargador === 1 ? (UNIDAD[a.categoria] || 'bala') : (UNIDAD[a.categoria] || 'balas');
-    filas.push([t('detalle.cargador'), `${a.cargador} ${t('unidad.' + unidad)}`]);
+    filas.push([t('detalle.cargador'), capacidadArma(a)]);
     if (a.reservaInicial !== undefined) filas.push([t('detalle.reserva'), String(a.reservaInicial)]);
-    filas.push([t('detalle.cadencia'), `${Math.round(60000 / a.cadencia)}/min`]);
+    if (!a.fuego) filas.push([t('detalle.cadencia'), `${Math.round(60000 / a.cadencia)}/min`]);
     const manual = MODOS_MANUALES[ACCION_MANUAL[id]];
     filas.push([t('detalle.modo'), t(manual || (a.automatica ? 'modo.auto' : a.cargador === 1 ? 'modo.tiro' : a.recargaTipo === 'tambor' || a.recargaTipo === 'tambor-rapido' ? 'modo.revolver' : 'modo.semi'))]);
     filas.push([t('detalle.recarga'), `${(a.recarga / 1000).toLocaleString(Idioma.actual())} s · ${t('recargaTipo.' + a.recargaTipo)}`]);
@@ -492,6 +501,7 @@
     const en = juego.entrada, j = juego.jugador;
     if (juego.pruebas && (e.code === 'ArrowRight' || e.code === 'ArrowLeft')) { if (!e.repeat) { j.cambiarArma(e.code === 'ArrowRight' ? 1 : -1); j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } return; }
     if (juego.pruebas && e.code === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
+    if (juego.pruebas && e.code === 'KeyZ' && !e.repeat) { juego.ponerZombiePrueba(); return; }   // zombie de prueba
     switch (e.code) {
       case 'ArrowRight': en.derecha = true; break;
       case 'ArrowLeft':  en.izquierda = true; break;

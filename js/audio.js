@@ -311,6 +311,10 @@ const Audio_ = (() => {
           detonacion({ crack: 0.6, boom: 1.0, boomHz: 260, golpeVol: 0.9, golpeHz: 70, golpeDur: 0.35, cola: 0.4, colaDur: 1.3, rev: 0.7, eco: 0.8 });
           ruido({ dur: 0.9, vol: 0.28, filtro: 'bandpass', freq: 2200, freqFin: 700, q: 0.8, ataque: 0.03, retraso: 0.05, rev: 0.08 }); break;   // silbido del cohete que se aleja
         case 'granada':       ruido({ dur: 0.25, vol: 0.14, filtro: 'bandpass', freq: 400, freqFin: 1300, q: 1.5, ataque: 0.08 }); break;
+        case 'lanzallamas':   // rugido del chorro: las descargas (cada 50 ms) se encadenan; a veces chisporrotea
+          ruido({ dur: 0.13, vol: 0.3, filtro: 'lowpass', freq: 850 + Math.random() * 300, freqFin: 480, q: 0.7, ataque: 0.02, rev: 0.05 });
+          if (Math.random() < 0.35) ruido({ dur: 0.02, vol: 0.06, filtro: 'highpass', freq: 3200, ataque: 0.001 });
+          break;
         case 'laser':
           tono({ tipo: 'sawtooth', desde: 2400, hasta: 260, dur: 0.32, vol: 0.16, rev: 0.12 });
           tono({ desde: 1300, hasta: 90, dur: 0.22, vol: 0.32, sat: 1.5, rev: 0.08 });

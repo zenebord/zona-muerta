@@ -16,7 +16,7 @@ class Juego {
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
     Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
     Mundo.interior = this.entrenamiento || this.cloaca;   // el polígono y la cloaca son lugares cerrados
-    Audio_.lugar(this.entrenamiento ? 'galpon' : this.cloaca ? 'cloaca' : 'aire');
+    Audio_.lugar(this.entrenamiento || this.pruebas ? 'galpon' : this.cloaca ? 'cloaca' : 'aire');   // el campo de pruebas también es un galpón
     this.mision = mision ? new SeguimientoMision(mision) : null;
     this.jugador = new Jugador(600);
     this.zombies = []; this.proyectiles = []; this.explosiones = []; this.cajas = []; this.particulas = []; this.casquillos = [];
@@ -57,7 +57,7 @@ class Juego {
       this.proximaCaja = Infinity;
     }
     this.proximoLatido = 0; this.proximoGemidoLejano = 6000;
-    Audio_.ambiente(this.cloaca ? 0 : this.entrenamiento ? 0.012 : this.pruebas ? 0.04 : 0.07);   // viento de fondo (en el galpón, apenas el de afuera)
+    Audio_.ambiente(this.cloaca ? 0 : this.entrenamiento || this.pruebas ? 0.012 : 0.07);   // viento de fondo (en los galpones, apenas el de afuera)
     Audio_.agua(this.cloaca ? 0.09 : 0);   // en la cloaca, el agua del canal
     this.proximaGota = 0;
     if (this.entrenamiento) {
@@ -113,11 +113,31 @@ class Juego {
     this.ametralladoras.delete(mejor);
     this.aviso(t('aviso.m2Quitada'), 1200);
   }
+  // Zombie de prueba: quieto, no muerde, sólo recibe tiros. Cada uno nuevo va un poco más atrás que el anterior (en la
+  // vitrina, más cerca para que entre en el cuadro); hasta 5 vivos: con uno más se va el más viejo
   ponerZombiePrueba() {
-    const j = this.jugador;
-    const z = new Zombie(j.x + j.direccion * (this.pruebas ? 150 : 220), false, this.dificultad);   // en la vitrina, más cerca: entra en el cuadro
-    z.maniqui = true;   // se queda quieto y no muerde: solo recibe tiros
+    const j = this.jugador, vivos = this.zombies.filter(z => z.maniqui && z.estado !== 'muerto');
+    if (vivos.length >= 5) this.zombies.splice(this.zombies.indexOf(vivos.shift()), 1);
+    const base = this.pruebas ? 140 : 220, paso = 26;
+    let k = 0;
+    while (k < 4 && vivos.some(z => Math.abs(z.x - (j.x + j.direccion * (base + k * paso))) < paso / 2)) k++;
+    const z = new Zombie(j.x + j.direccion * (base + k * paso), false, this.dificultad);
+    z.maniqui = true;
     this.zombies.push(z);
+    Audio_.gemido(true, base + k * paso);
+  }
+  // Campo de pruebas: qué fracción del ancho ocupa el personaje en pantalla. Justo a la derecha de la ficha (que mide
+  // distinto según la pantalla), entre 0,30 y 0,42; se mide cada medio segundo, no en cada cuadro
+  lugarVitrina() {
+    if (this.lugarVitrinaHasta > this.ahora) return this.lugarVitrinaFraccion;
+    let f = 0.42;
+    const ficha = document.getElementById('ficha-vitrina'), lienzo = document.getElementById('lienzo');
+    if (ficha && lienzo && ficha.offsetParent) {
+      const rf = ficha.getBoundingClientRect(), rl = lienzo.getBoundingClientRect();
+      if (rl.width > 0) f = Math.min(0.42, Math.max(0.3, (rf.right - rl.left) / rl.width + 0.11));
+    }
+    this.lugarVitrinaFraccion = f; this.lugarVitrinaHasta = this.ahora + 500;
+    return f;
   }
   borrarGenerado() {
     this.jugador.desmontar();
@@ -163,7 +183,10 @@ class Juego {
       const j = this.jugador, h = y - j.y - j.agachado * BAJA_AGACHADO, previa = this.ent.alturaTiro[arma.id];
       this.ent.alturaTiro[arma.id] = previa === undefined ? h : Math.max(previa, h);   // la más baja: el retroceso sube la boca
     }
-    if (arma.categoria === 'escopeta') {
+    if (arma.fuego) {   // lanzallamas: unas llamas por descarga, apenas abiertas, y la luz del chorro
+      for (let k = 0; k < arma.llamas; k++) this.proyectiles.push(new Proyectil(arma, x + direccion * k * 8, y, v * (0.88 + Math.random() * 0.24) * direccion, (Math.random() - 0.5) * 1.1 - 0.15));   // escalonadas: cubren el hueco entre descargas
+      this.explosiones.push(new LuzLlama(x + direccion * 45, y, direccion));
+    } else if (arma.categoria === 'escopeta') {
       for (let k = 0; k < arma.perdigones; k++) {
         const ang = (Math.random() - 0.5) * arma.dispersion;
         this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
@@ -186,7 +209,7 @@ class Juego {
       this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
       if (arma.categoria === 'rifle') this.sacudida = 3;
     }
-    if (arma.categoria !== 'granada') {
+    if (arma.categoria !== 'granada' && !arma.fuego) {
       const tam = { pistola: 6, metralleta: 6.5, rifle: 9, escopeta: 10, ametralladora: 10, lanzagranadas: 8, laser: 6 }[arma.categoria] || 6;
       this.explosiones.push(new Fogonazo(x, y, direccion, tam * (0.85 + Math.random() * 0.3), arma.categoria === 'laser' ? 'laser' : 'fuego'));
     }
@@ -592,6 +615,8 @@ class Juego {
         z.x = nx; z.y = alturaSuelo(z.x);
       }
     }
+    // Zombies prendidos fuego: la quema les va restando vida
+    for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) z.recibirDano(ARMAS.lanzallamas.quema * dt, 0, ARMAS.lanzallamas, this);
     this.zombies = this.zombies.filter(z => !z.terminado());
     this.proyectiles = this.proyectiles.filter(p => p.vivo);
     this.explosiones = this.explosiones.filter(x => x.vivo);
@@ -643,7 +668,7 @@ class Juego {
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +
         `<br><small>${t('hud.armas', { n: j.inventario.length })} · ${t(document.body.classList.contains('tactil') ? 'hud.cambiaTactil' : 'hud.cambiaTeclado')}</small>`;
-    } else h.arma.innerHTML = `${arma.nombre} <small>${t('hud.tiros', { n: tiros })}</small><br>` +
+    } else h.arma.innerHTML = `${arma.nombre} <small>${arma.fuego && !j.montada ? t('hud.fuegoPor', { s: segundosParaMatarFuego(arma, vidaActual).toLocaleString(Idioma.actual()) }) : t('hud.tiros', { n: tiros })}</small><br>` +
       `<span class="municion ${mun <= 0 ? 'vacio' : ''}">${mun}</span> / ${reserva} ${estado}` +
       (j.montada ? '' : `<br><small>${t('hud.armas', { n: j.inventario.length })} · ${t(document.body.classList.contains('tactil') ? 'hud.cambiaTactil' : 'hud.cambiaTeclado')}</small>`);
     h.bajas.textContent = '☠ ' + this.bajas;
@@ -684,11 +709,11 @@ class Juego {
     if (this.pruebas) {   // más cerca con las armas chicas: pistolas 3,3×, metralletas y cuerpo a cuerpo 2,9×, el resto 2,6× (cambia suave)
       const cat = j.montada ? 'ametralladora' : j.arma().categoria, meta = cat === 'pistola' ? 3.3 : cat === 'metralleta' || cat === 'cuerpo' ? 2.9 : 2.6;
       this.zoomVitrina = this.zoomVitrina ? this.zoomVitrina + (meta - this.zoomVitrina) * 0.12 : meta;
-      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * 0.42 - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * j.y));   // a la izquierda queda la ficha; a la derecha, el blanco
+      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * this.lugarVitrina() - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * j.y));   // a la izquierda queda la ficha; a la derecha, el blanco
     }
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
-    else if (this.pruebas) Escenario.dibujarCampo(ctx, cam);
+    else if (this.pruebas) Escenario.dibujarCampo(ctx, cam, j.x - cam);
     else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); EscenarioHistoria.sogas(ctx, cam, this); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);
@@ -698,6 +723,10 @@ class Juego {
       Escenario.dibujarFondoDelMundo(ctx, cam, this.tiempoJugado);
       if (this.ultra) this.dibujarCarrilesUltra(ctx, cam);
     }
+    // El destello de los disparos, el chorro del lanzallamas y los zombies que se queman iluminan el piso y al tirador
+    const luces = LuzFogonazo.activos(this.explosiones);
+    for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) luces.push({ x: z.x, y: z.y - 30, dir: 0, tam: 6, color: 'fuego', luz: () => 0.45 });
+    LuzFogonazo.piso(ctx, cam, luces);
     if (this.entrenamiento) { this.dibujarDistancias(ctx, cam); for (const b of this.blancos) b.dibujar(ctx, cam); }
     if (j.montada) j.dibujar(ctx, cam, this.ahora);
     const eM2 = j.montada ? j.estadoArma() : null;
@@ -709,8 +738,9 @@ class Juego {
       Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con hordas grandes (o calidad baja) se aliviana el dibujo de los zombies
       for (const z of this.zombies) z.dibujar(ctx, cam, this.ahora);
       Pincel.bisel = !Lienzo.liviano;
-      if (!j.montada) j.dibujar(ctx, cam, this.ahora);
+      if (!j.montada) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }
     }
+    for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) Fuego.cuerpo(ctx, cam, z, this.ahora);
     for (const p of this.proyectiles) p.dibujar(ctx, cam);
     for (const e2 of this.escupitajos) e2.dibujar(ctx, cam);
     for (const c of this.casquillos) c.dibujar(ctx, cam);

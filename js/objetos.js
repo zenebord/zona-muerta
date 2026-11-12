@@ -37,6 +37,7 @@ class Proyectil {
       this.vx = Math.sign(this.vx) * Math.min(26, Math.abs(this.vx) * (1 + 0.07 * paso));
       if (juego.particulas.length < 600) juego.particulas.push(new Particula(this.x - this.direccion * 6, this.y + (Math.random() - 0.5) * 2, -this.direccion * 0.4, -0.15 - Math.random() * 0.3, '#a49c92', 0.7, 3 + Math.random() * 3, false));
     }
+    if (this.arma.fuego) this.vx *= Math.pow(0.986, paso);   // la llama frena con el aire
     this.x += this.vx * paso;
     this.y += this.vy * paso;
     this.recorrido += Math.abs(this.vx * paso);
@@ -51,7 +52,7 @@ class Proyectil {
       const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, caja);
       if (t !== null) cruces.push([t, z]);
     }
-    for (const b of juego.blancos || []) {
+    for (const b of this.arma.fuego ? [] : juego.blancos || []) {   // las llamas no cuentan en los blancos del entrenamiento
       if (!b.golpeable() || this.golpeados.has(b)) continue;
       const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, b.caja());
       if (t !== null) cruces.push([t, b]);
@@ -68,6 +69,7 @@ class Proyectil {
       }
       if (this.arma.explosivo) { this.x = ix; this.y = iy; this.explotar(juego); return; }
       z.recibirDano(this.arma.dano, this.direccion, this.arma, juego);
+      if (this.arma.fuego && z.quemar) z.quemar(juego, this.arma.quemaSeg);
       this.golpeados.add(z);
       if (!this.arma.perfora) { this.x = ix; this.y = iy; this.vivo = false; return; }
     }
@@ -84,6 +86,7 @@ class Proyectil {
       if (this.mecha <= 0) { this.explotar(juego); return; }
     }
     if (this.recorrido > this.arma.alcance || this.y > ALTO + 50 || (!this.arma.explosivo && this.y >= piso)) {
+      if (this.arma.fuego && this.y >= piso && Math.random() < 0.35 && juego.explosiones.length < 400) juego.explosiones.push(new FuegoPiso(this.x, piso));   // el combustible sigue ardiendo en el piso
       if (this.arma.explosivo && !this.arma.mecha) this.explotar(juego); else this.vivo = false;
     }
   }
@@ -96,6 +99,20 @@ class Proyectil {
   dibujar(ctx, camaraX) {
     const sx = this.x - camaraX;
     ctx.save();
+    if (this.arma.fuego) {   // llama: lengua estirada hacia donde vuela; crece y pasa de blanco amarillento a anaranjado, rojo y humo
+      const p = Math.min(1, this.recorrido / this.arma.alcance), r = (3.6 + p * 14) * (0.85 + Math.random() * 0.3);
+      const rapidez = Math.hypot(this.vx, this.vy), estira = 1 + rapidez * 0.28;
+      if (p > 0.5) { ctx.fillStyle = `rgba(58,52,48,${(p - 0.5) * 0.4})`; ctx.beginPath(); ctx.arc(sx, this.y - p * 8, r * 1.15, 0, Math.PI * 2); ctx.fill(); }
+      if (p < 0.9) {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.translate(sx, this.y); ctx.rotate(Math.atan2(this.vy, this.vx)); ctx.scale(estira, 1);
+        const a = 0.8 * (1 - p * 0.85), g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        g.addColorStop(0, `rgba(255,${Math.round(245 - p * 150)},${Math.round(170 - p * 160)},${a})`);
+        g.addColorStop(0.5, `rgba(255,${Math.round(150 - p * 70)},30,${a * 0.55})`); g.addColorStop(1, 'rgba(200,50,10,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore(); return;
+    }
     if (this.arma.cohete) {
       ctx.translate(sx, this.y); ctx.scale(this.direccion, 1);
       ctx.fillStyle = `rgba(255, ${170 + Math.random() * 60}, 60, 0.9)`;
@@ -244,6 +261,94 @@ class Fogonazo {
     ctx.restore();
   }
 }
+
+/* Luz del fogonazo: el destello ilumina el piso debajo de la boca y al tirador (cuerpo y arma), más fuerte cerca de la
+ * boca. Dura un poco más que la llama (la vista la retiene) y se apaga en curva. */
+Fogonazo.prototype.luz = function () { return this.t < 0.09 ? (1 - this.t / 0.09) ** 1.4 : 0; };
+const LuzFogonazo = {
+  activos(explosiones) { return explosiones.filter(e => e.luz && e.luz() > 0); },   // fogonazos, el chorro del lanzallamas y el fuego del piso
+  colorDe(f) { return f.color === 'laser' ? '120,255,90' : '255,184,96'; },
+  // Mancha cálida en el piso: más ancha y más tenue cuanto más arriba está la boca
+  piso(ctx, camaraX, fogonazos) {
+    if (!fogonazos.length) return;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const f of fogonazos) {
+      const suelo = alturaSuelo(f.x), alto = Math.max(0, suelo - f.y), R = f.tam * 12 + alto * 1.1;
+      const fuerza = f.luz() * Math.min(1, f.tam / 6) * 0.95 / (1 + alto / 160), c = f.color === 'laser' ? '110,255,80' : '255,160,60';   // en el piso, más anaranjada: se nota sobre el cemento claro
+      ctx.save(); ctx.translate(f.x - camaraX + f.dir * f.tam * 1.5, suelo); ctx.scale(1, 0.22);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+      g.addColorStop(0, `rgba(${c},${fuerza})`); g.addColorStop(0.4, `rgba(${c},${fuerza * 0.45})`); g.addColorStop(1, `rgba(${c},0)`);
+      ctx.fillStyle = g; ctx.fillRect(-R, -R, R * 2, R * 2); ctx.restore();
+    }
+    ctx.restore();
+  },
+  // Luz sobre el tirador: su silueta (sin la sombra) en un lienzo aparte, teñida con la luz que sale de la boca y
+  // sumada encima. Con la calidad liviana se omite.
+  cuerpo(ctx, camaraX, jugador, fogonazos) {
+    if (!fogonazos.length || Lienzo.liviano || jugador.muerto || jugador.aTierra) return;
+    const w = ctx.canvas.width, h = ctx.canvas.height;
+    if (!this.silueta || this.silueta.width !== w || this.silueta.height !== h) {
+      for (const k of ['silueta', 'luces']) { this[k] = document.createElement('canvas'); this[k].width = w; this[k].height = h; }
+    }
+    const s = this.silueta.getContext('2d'), l = this.luces.getContext('2d'), m = ctx.getTransform();
+    s.setTransform(1, 0, 0, 1, 0, 0); s.globalCompositeOperation = 'source-over'; s.clearRect(0, 0, w, h);
+    l.setTransform(1, 0, 0, 1, 0, 0); l.globalCompositeOperation = 'source-over'; l.clearRect(0, 0, w, h);
+    s.setTransform(m); Pincel.silueta = '#fff';
+    s.save(); s.translate(jugador.x - camaraX, jugador.y); jugador.cuerpo(s, false); s.restore();
+    Pincel.silueta = null;
+    l.setTransform(m); l.globalCompositeOperation = 'lighter';
+    for (const f of fogonazos) {
+      const x = f.x - camaraX + f.dir * f.tam * 0.6, R = f.tam * 15, a = f.luz() * Math.min(1, 0.55 + f.tam / 14), c = this.colorDe(f);
+      const g = l.createRadialGradient(x, f.y, 0, x, f.y, R);
+      g.addColorStop(0, `rgba(${c},${a * 0.85})`); g.addColorStop(0.3, `rgba(${c},${a * 0.42})`); g.addColorStop(0.65, `rgba(${c},${a * 0.1})`); g.addColorStop(1, `rgba(${c},0)`);
+      l.fillStyle = g; l.fillRect(x - R, f.y - R, R * 2, R * 2);
+    }
+    s.setTransform(1, 0, 0, 1, 0, 0); s.globalCompositeOperation = 'source-in'; s.drawImage(this.luces, 0, 0);
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(this.silueta, 0, 0); ctx.restore();
+  },
+};
+
+/* ===== Fuego del lanzallamas ===== */
+// Luz del chorro: una por descarga, en la mitad de la llama; dura un poco más que la descarga y se apaga
+class LuzLlama {
+  constructor(x, y, dir) { this.x = x; this.y = y; this.dir = dir; this.tam = 9; this.color = 'fuego'; this.t = 0; this.vivo = true; }
+  actualizar(dt) { this.t += dt; if (this.t > 0.1) this.vivo = false; }
+  luz() { return this.t < 0.1 ? (1 - this.t / 0.1) * 0.6 : 0; }
+  dibujar() {}
+}
+// Combustible que sigue ardiendo en el piso un poco más de un segundo
+class FuegoPiso {
+  constructor(x, y) { this.x = x; this.y = y; this.t = 0; this.dur = 1.1 + Math.random() * 0.6; this.vivo = true; this.dir = 0; this.tam = 3.5; this.color = 'fuego'; this.fase = Math.random() * 6; }
+  actualizar(dt) { this.t += dt; if (this.t > this.dur) this.vivo = false; }
+  luz() { return Math.max(0, 1 - this.t / this.dur) * 0.3; }
+  dibujar(ctx, camaraX) {
+    const k = Math.max(0, 1 - this.t / this.dur), sx = this.x - camaraX;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 3; i++) Fuego.lengua(ctx, sx + (i - 1) * 3.4, this.y, 2.2, (5 + Math.sin(this.t * 22 + this.fase + i * 2) * 2) * k, Math.sin(this.t * 15 + i) * 1.2, k);
+    ctx.restore();
+  }
+}
+const Fuego = {
+  // Una lengua de fuego: base ancha abajo, punta que se mece; amarilla adentro, roja afuera
+  lengua(ctx, x, y, ancho, alto, vaiven, fuerza = 1) {
+    if (alto <= 0.5) return;
+    const g = ctx.createLinearGradient(0, y, 0, y - alto);
+    g.addColorStop(0, `rgba(255,236,150,${0.8 * fuerza})`); g.addColorStop(0.45, `rgba(255,140,40,${0.65 * fuerza})`); g.addColorStop(1, 'rgba(210,50,10,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - ancho, y);
+    ctx.quadraticCurveTo(x - ancho, y - alto * 0.55, x + vaiven, y - alto); ctx.quadraticCurveTo(x + ancho, y - alto * 0.55, x + ancho, y); ctx.closePath(); ctx.fill();
+  },
+  // Zombie prendido fuego: lenguas que suben por todo el cuerpo; se apagan en el último medio segundo
+  cuerpo(ctx, camaraX, z, ahora) {
+    const resto = (z.quemaHasta - ahora) / 500, fuerza = Math.max(0, Math.min(1, resto)), c = z.caja();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 6; i++) {
+      const fx = c.x + c.w * (0.15 + 0.7 * ((i * 0.37) % 1)) - camaraX, base = c.y + c.h * (0.35 + 0.6 * ((i * 0.61) % 1));
+      const alto = (10 + Math.sin(ahora / 70 + i * 1.7) * 4 + Math.random() * 3) * (0.6 + 0.4 * fuerza);
+      Fuego.lengua(ctx, fx, base, 3.2, alto, Math.sin(ahora / 90 + i) * 2.5, fuerza);
+    }
+    ctx.restore();
+  },
+};
 
 class Particula {
   constructor(x, y, vx, vy, color, vida, tam, gravedad) {

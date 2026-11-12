@@ -383,7 +383,7 @@ reemplazar('uzi', { casquillo: 'pistola',
     const dx = -e.corredera * 5;
     pintar(ctx, Cc(P(261, 24)[0] + dx, P(261, 24)[1], 0.9, 12), '#3a3c40', { brillo: 0.35 });                  // perilla de carga
   } });
-Object.assign(DIBUJO_ARMAS.uzi, { agarre: 'hombro', culataCm: 17, anguloEmpunadura: 0.12 });   // con la culata plegada, la cantonera atrás va al hombro
+Object.assign(DIBUJO_ARMAS.uzi, { agarre: 'pecho', anguloEmpunadura: 0.12 });   // con la culata plegada no se apoya en el hombro: adelante del pecho, una mano en el pistolete y la otra en el guardamanos
 
 // Detalles que el acabado general no puede inventar: remaches, rebajes, sombras donde una pieza entra en otra
 function remache(ctx, x, y, r = 0.28) {
@@ -761,6 +761,7 @@ reemplazar('p90', { casquillo: 'pistola',
     if (!sil) { ctx.beginPath(); ctx.arc(...P(538, 973), 0.55, 0, Math.PI * 2); ctx.strokeStyle = '#8a8d92'; ctx.lineWidth = 0.18; ctx.stroke(); }
     ctx.restore();
   } });
+DIBUJO_ARMAS.p90.agarre = 'pistola';   // bullpup: la mano de apoyo va pegada a la del gatillo; al hombro el brazo quedaba doblado en V bajo el arma y el hombro la tapaba. Con los brazos estirados se ve entera
 
 /* ======================= RIFLES ======================= */
 
@@ -2244,3 +2245,55 @@ DIBUJO_ARMAS.cuchillo = modelo({ casquillo: null,
     trazo(ctx, 'rgba(255,255,255,0.2)', 0.2, [[-1.2, -2.4], [-1.2, -12]]);
   } });
 Object.assign(DIBUJO_ARMAS.cuchillo, { agarre: 'cuerpo', anguloEmpunadura: 0 });
+
+// Lanzallamas M2 (EE. UU., 1943): la lanza, de unos 104 cm. Atrás el cuerpo de la válvula de combustible con la
+// conexión de la manguera, la empuñadura de madera y el gatillo del combustible; el tubo de combustible a lo largo
+// con un caño fino debajo; la empuñadura delantera con el gatillo de ignición entre dos abrazaderas; adelante el
+// cilindro de ignición (cinco cartuchos, es lo que se cambia al recargar), la boquilla y la llama piloto encendida.
+// Los tanques van en la espalda (tanques: true) y la manguera sale de abajo de ellos hasta el ancla `manguera`.
+DIBUJO_ARMAS.lanzallamas = modelo({ casquillo: null, agarre: 'pecho', anguloEmpunadura: 0.22, tanques: true,
+  anclas: { manoDelantera: [37.6, 3.0], cargador: [77.5, -3.6], corredera: [0, -4], expulsion: [0, -3], boca: [93.4, -3.3], manguera: [-12.6, -1.8] },
+  dibujarCm(ctx, e) {
+    const OD = '#4b5434', ACERO = '#2c2e31', MADERA = '#5a3a20';
+    // Conexión de la manguera (atrás, abajo) y cuerpo de la válvula de combustible
+    pintar(ctx, suave([[-13.4, -3.6], [-11.6, -3.6], [-11.6, 0.2], [-13.4, 0.2]], 0.4, 2), ACERO);
+    pintar(ctx, RRc(-12, -6.8, 16, 6.6, 1.4), OD);
+    for (const x of [-9.6, -6.4]) tornillo(ctx, x, -3.6, 0.36);
+    pintar(ctx, RRc(-4.2, -8.4, 5, 1.8, 0.6), OD);                                                        // tapa de la válvula
+    // Empuñadura de atrás (madera) con su tapa, gatillo del combustible y guardamonte
+    empunadura(ctx, -2.4, 2.6, 10.5, 0.22, MADERA, { y: -0.2 });
+    pintar(ctx, suave([[-5.2, 10.2], [0.4, 10.2], [0.2, 11.2], [-5.4, 11.2]], 0.3, 2), ACERO);
+    if (!Pincel.silueta) for (let k = 0; k < 4; k++) trazo(ctx, 'rgba(0,0,0,0.3)', 0.16, [[-1.4 - k * 0.55 + 0.6, 2 + k * 2], [1.2 - k * 0.55, 2 + k * 2]]);
+    guardamonteC(ctx, 3.2, 9.6, 0.2, 2.9, OD);
+    pintar(ctx, [[4.6, 0], [5.4, 0], [5.8, 1.8], [5.2, 2.4], [4.6, 1.4]], ACERO);
+    // Tubo de combustible y caño fino de abajo, a lo largo de la lanza
+    pintar(ctx, Rc(4, -4.5, 80.5, 1.8), ACERO);
+    pintar(ctx, Rc(9, -2.4, 64, 0.8), '#3a3c3e');
+    // Empuñadura delantera con el gatillo de ignición, entre dos abrazaderas
+    pintar(ctx, suave([[35.6, -2.6], [39.8, -2.6], [39.4, 8.6], [38.8, 9.6], [36.4, 9.6], [35.8, 8.6]], 0.7, 3), MADERA);
+    if (!Pincel.silueta) for (let k = 0; k < 4; k++) trazo(ctx, 'rgba(0,0,0,0.3)', 0.16, [[35.9, 1.6 + k * 1.8], [39.5, 1.6 + k * 1.8]]);
+    pintar(ctx, [[33.4, -2.2], [34.4, -2.2], [34.8, -0.4], [34.2, 0.4], [33.6, -0.6]], ACERO);
+    guardamonteC(ctx, 31.6, 35.4, -2.2, 2.6, OD);
+    for (const x of [34.6, 40.6]) pintar(ctx, RRc(x, -5.4, 1.5, 3.8, 0.4), OD);
+    // Cilindro de ignición: cinco cartuchos que giran; al recargar se saca
+    if (!e.sinCargador) {
+      pintar(ctx, RRc(72, -7.8, 11, 8.6, 2), OD);
+      if (!Pincel.silueta) {
+        for (const x of [74.6, 77.5, 80.4]) trazo(ctx, 'rgba(0,0,0,0.45)', 0.3, [[x, -7.2], [x, 0.2]]);
+        for (const x of [75.9, 78.8]) punto(ctx, x, -7.0, 0.5, '#c9a227');                                  // culotes de los cartuchos
+      }
+    } else pintar(ctx, Rc(72, -4.6, 11, 1.9), ACERO);                                                       // sin cilindro: se ve el tubo
+    pintar(ctx, RRc(83, -6.2, 2.4, 5.2, 0.6), ACERO);                                                       // tuerca del cilindro
+    // Boquilla cónica y soporte del encendido
+    pintar(ctx, [[85.2, -5.0], [91, -4.4], [93.2, -4.2], [93.2, -2.3], [91, -2.1], [85.2, -1.5]], ACERO);
+    pintar(ctx, Rc(86.6, -6.4, 1.2, 1.6), OD);
+    // Llama piloto: azul en la base, anaranjada en la punta, titila
+    if (!Pincel.silueta) {
+      const largo = 1.6 + Math.random() * 1.4;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(93.8, -3.3, 0, 93.8 + largo * 0.4, -3.4, largo);
+      g.addColorStop(0, 'rgba(150,190,255,0.9)'); g.addColorStop(0.35, 'rgba(255,190,80,0.85)'); g.addColorStop(1, 'rgba(255,110,30,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(93.8 + largo * 0.45, -3.4, largo, 0.9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  } });

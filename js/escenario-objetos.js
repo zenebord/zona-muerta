@@ -177,40 +177,117 @@ Object.assign(Escenario, {
   },
 });
 
-/* ===== Campo de pruebas: cielo y una planicie de tierra, sin nada más ===== */
+/* ===== Campo de pruebas: un galpón enorme, con la línea de tiro adentro =====
+ * Con la cámara acercada sólo se ve una franja de unos tres metros alrededor del personaje, así que el tamaño se lee
+ * por la profundidad: el piso sigue hacia atrás hasta la pared del fondo (que se junta con el piso a la altura del
+ * pecho), dos hileras de columnas de acero cada vez más chicas y lavadas por la neblina, estanterías lejanas, un
+ * ventanal alto, haces de luz en diagonal, lámparas colgadas allá arriba y las juntas del piso que convergen.
+ * El arma sigue mandando: detrás de ella queda lo más claro (la neblina luminosa del fondo), así el acero negro
+ * recorta, y el piso de adelante es claro para ver casquillos, peines y cargadores. A la derecha, la trampa de balas.
+ * xJugador: x en pantalla del personaje (todo se ubica respecto de él, que en la vitrina no se mueve).
+ */
 Object.assign(Escenario, {
-  dibujarCampo(ctx, camaraX) {
-    const g = ctx.createLinearGradient(0, 0, 0, SUELO_BASE);
-    g.addColorStop(0, '#1d1226'); g.addColorStop(0.45, '#6b2f2c'); g.addColorStop(0.8, '#c97a3f'); g.addColorStop(1, '#e4b06a');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
-    const solX = ((700 - camaraX * 0.01) % 2000 + 2000) % 2000 - 300;
-    ctx.fillStyle = 'rgba(255, 224, 170, 0.95)';
-    ctx.beginPath(); ctx.arc(solX, 300, 58, 0, Math.PI * 2); ctx.fill();
-    const horizonte = SUELO_BASE - FONDO_CALLE;
-    // Tierra: clara y lavada lejos, oscura cerca
-    const t = ctx.createLinearGradient(0, horizonte, 0, ALTO);
-    t.addColorStop(0, '#d2ad78'); t.addColorStop(0.25, '#a97d4f'); t.addColorStop(1, '#6a4a2e');
-    ctx.fillStyle = t; ctx.fillRect(0, horizonte, ANCHO, ALTO - horizonte);
-    // Surcos cada vez más separados hacia el frente (perspectiva)
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
-    for (let k = 0, y = horizonte + 6; y < ALTO; k++, y += 6 + k * 2.2) ctx.fillRect(0, y, ANCHO, 1);
-    // Terrones y grietas fijos al mundo, para que se note el movimiento
-    const desde = Math.floor(camaraX / 40) - 1, hasta = Math.floor((camaraX + ANCHO) / 40) + 1;
-    for (let c = desde; c <= hasta; c++) {
-      for (let fila = 0; fila < 4; fila++) {
-        if (azar(c, 300 + fila) > 0.55) continue;
-        const x = c * 40 + azar(c, 310 + fila) * 40 - camaraX;
-        const prof = azar(c, 320 + fila);
-        const y = horizonte + 8 + prof * (ALTO - horizonte - 16);
-        const r = 2 + prof * 5;
-        ctx.fillStyle = azar(c, 330 + fila) < 0.5 ? 'rgba(0,0,0,0.18)' : 'rgba(255,230,190,0.18)';
-        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.5, 0, 0, Math.PI * 2); ctx.fill();
-      }
+  dibujarCampo(ctx, camaraX, xJugador = ANCHO * 0.42) {
+    const piso = SUELO_BASE - 62;                   // fondo del galpón: donde la pared lejana toca el piso
+    const neblina = (a) => `rgba(158,172,190,${a})`;
+    const izq = xJugador - 520, der = xJugador + 820;
+    // Pared del fondo: oscura arriba, se aclara hacia abajo con la neblina luminosa del galpón
+    const pared = ctx.createLinearGradient(0, piso - 260, 0, piso);
+    pared.addColorStop(0, '#1d2128'); pared.addColorStop(0.55, '#3c434d'); pared.addColorStop(0.85, '#6e7884'); pared.addColorStop(1, '#8a95a2');
+    ctx.fillStyle = '#1d2128'; ctx.fillRect(izq, -ALTO, der - izq, piso - 260 + ALTO);
+    ctx.fillStyle = pared; ctx.fillRect(izq, piso - 260, der - izq, 260);
+    // Ventanal corrido, alto y lejano: paños claros con parantes finos
+    for (let x = izq + ((xJugador - izq) % 22); x < der; x += 22) {
+      const g = ctx.createLinearGradient(0, piso - 128, 0, piso - 82);
+      g.addColorStop(0, 'rgba(214,226,238,0.55)'); g.addColorStop(1, 'rgba(190,206,222,0.3)');
+      ctx.fillStyle = g; ctx.fillRect(x + 1.5, piso - 128, 19, 46);
+      ctx.fillStyle = 'rgba(40,46,54,0.35)'; ctx.fillRect(x + 1.5, piso - 106, 19, 0.8);
     }
-    // Neblina sobre el horizonte
-    const n = ctx.createLinearGradient(0, horizonte - 24, 0, horizonte + 50);
-    n.addColorStop(0, 'rgba(228, 176, 106, 0.55)'); n.addColorStop(1, 'rgba(228, 176, 106, 0)');
-    ctx.fillStyle = n; ctx.fillRect(0, horizonte - 24, ANCHO, 74);
+    ctx.fillStyle = 'rgba(30,34,40,0.6)'; ctx.fillRect(izq, piso - 82, der - izq, 1.5);
+    // Estanterías lejanas al pie de la pared: siluetas de racks con bultos, lavadas por la neblina
+    for (let c = -10; c <= 18; c++) {
+      if (azar(c, 611) < 0.25) continue;
+      const x = xJugador + c * 46 - 23, alto = 22 + azar(c, 612) * 10;
+      ctx.fillStyle = 'rgba(78,88,100,0.55)'; ctx.fillRect(x, piso - alto, 40, alto);
+      ctx.fillStyle = 'rgba(52,60,70,0.5)';
+      for (let n = 1; n < 3; n++) ctx.fillRect(x, piso - alto * n / 3, 40, 1);
+      for (let n = 0; n < 4; n++) if (azar(c * 7 + n, 613) < 0.7) { ctx.fillStyle = `rgba(${azar(c, 614 + n) < 0.5 ? '120,104,82' : '96,104,112'},0.45)`; ctx.fillRect(x + 2 + n * 9.5, piso - alto + 2 + (n % 2) * alto / 3, 8, alto / 3 - 3); }
+    }
+    // Hilera lejana de columnas: finas, altas y muy lavadas
+    for (let c = -12; c <= 22; c++) {
+      const x = xJugador + c * 64 + 20;
+      ctx.fillStyle = 'rgba(92,102,114,0.75)'; ctx.fillRect(x, -ALTO, 3, piso + 3 + ALTO);
+      ctx.fillStyle = 'rgba(180,192,206,0.25)'; ctx.fillRect(x, -ALTO, 0.8, piso + 3 + ALTO);
+    }
+    // Neblina sobre el fondo: lo lejano se funde en un gris azulado claro
+    const nb = ctx.createLinearGradient(0, piso - 90, 0, piso + 10);
+    nb.addColorStop(0, neblina(0)); nb.addColorStop(0.7, neblina(0.35)); nb.addColorStop(1, neblina(0.15));
+    ctx.fillStyle = nb; ctx.fillRect(izq, piso - 90, der - izq, 100);
+    // Piso: más claro al fondo (neblina y luz), oscuro adelante; reflejos verticales del ventanal
+    const p = ctx.createLinearGradient(0, piso, 0, ALTO);
+    p.addColorStop(0, '#8d97a2'); p.addColorStop(0.35, '#6f7781'); p.addColorStop(1, '#3b4047');
+    ctx.fillStyle = p; ctx.fillRect(izq, piso, der - izq, ALTO - piso);
+    for (let x = izq + ((xJugador - izq) % 22); x < der; x += 22) {
+      const g = ctx.createLinearGradient(0, piso, 0, piso + 40);
+      g.addColorStop(0, 'rgba(220,230,240,0.12)'); g.addColorStop(1, 'rgba(220,230,240,0)');
+      ctx.fillStyle = g; ctx.fillRect(x + 3, piso, 15, 40);
+    }
+    // Juntas del piso y pasillo amarillo que convergen hacia el fondo (dan la profundidad)
+    const fx = xJugador + 70, fy = piso - 40;       // punto de fuga, un poco detrás de la pared
+    const haciaFuga = (xb) => xb + (fx - xb) * (ALTO - piso) / (ALTO - fy);
+    ctx.lineWidth = 0.7; ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+    for (let x = xJugador - 600; x <= xJugador + 900; x += 80) { ctx.beginPath(); ctx.moveTo(x, ALTO); ctx.lineTo(haciaFuga(x), piso); ctx.stroke(); }
+    for (let k = 1; k < 7; k++) { const y = piso + (ALTO - piso) * (k / 7) ** 1.8; ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(izq, y, der - izq, 0.6); }
+    ctx.fillStyle = 'rgba(214,178,58,0.55)';
+    for (const xb of [xJugador - 330, xJugador - 300]) { ctx.beginPath(); ctx.moveTo(xb, ALTO); ctx.lineTo(xb + 5, ALTO); ctx.lineTo(haciaFuga(xb + 5), piso); ctx.lineTo(haciaFuga(xb), piso); ctx.closePath(); ctx.fill(); }
+    // Hilera media de columnas: vigas doble T más grandes, apoyadas más adelante, con su placa de base
+    for (let c = -5; c <= 9; c++) {
+      const x = xJugador + c * 170 - 95, base = piso + 20;
+      ctx.fillStyle = '#434a54'; ctx.fillRect(x, -ALTO, 9, base + ALTO);
+      ctx.fillStyle = '#353b44'; ctx.fillRect(x + 2.5, -ALTO, 4, base + ALTO);              // alma de la viga
+      ctx.fillStyle = 'rgba(190,200,214,0.22)'; ctx.fillRect(x, -ALTO, 1, base + ALTO);    // canto con luz
+      ctx.fillStyle = '#2c3138'; ctx.fillRect(x - 3, base - 2, 15, 3);                     // placa de base
+      ctx.fillStyle = 'rgba(214,178,58,0.7)'; ctx.fillRect(x, base - 26, 9, 2); ctx.fillRect(x, base - 20, 9, 2);   // franjas de seguridad
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(x + 4.5, base + 1, 12, 2, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // Lámparas colgadas allá arriba: un punto con su halo
+    for (let c = -4; c <= 8; c++) {
+      const x = xJugador + c * 120 - 30, y = piso - 150;
+      const h = ctx.createRadialGradient(x, y, 0, x, y, 26); h.addColorStop(0, 'rgba(255,240,210,0.5)'); h.addColorStop(1, 'rgba(255,240,210,0)');
+      ctx.fillStyle = h; ctx.fillRect(x - 26, y - 26, 52, 52);
+      ctx.fillStyle = '#2a2f36'; ctx.fillRect(x - 0.4, -ALTO, 0.8, y - 3 + ALTO);
+      ctx.fillStyle = '#fff3dc'; ctx.fillRect(x - 3, y - 1, 6, 2);
+    }
+    // Haces de luz en diagonal desde el ventanal
+    for (let k = 0; k < 4; k++) {
+      const x0 = xJugador - 260 + k * 150 + azar(k, 620) * 40;
+      const g = ctx.createLinearGradient(x0, piso - 128, x0 + 120, ALTO);
+      g.addColorStop(0, 'rgba(225,235,245,0.09)'); g.addColorStop(1, 'rgba(225,235,245,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, piso - 128); ctx.lineTo(x0 + 34, piso - 128); ctx.lineTo(x0 + 190, ALTO); ctx.lineTo(x0 + 120, ALTO); ctx.closePath(); ctx.fill();
+    }
+    // Luz que cae sobre el puesto de tiro, junto a los pies
+    const luzX = xJugador + 34;
+    const r = ctx.createRadialGradient(luzX, SUELO_BASE - 2, 4, luzX, SUELO_BASE - 2, 150);
+    r.addColorStop(0, 'rgba(255,255,255,0.14)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save(); ctx.translate(luzX, SUELO_BASE - 2); ctx.scale(1, 0.18); ctx.translate(-luzX, -(SUELO_BASE - 2));
+    ctx.fillStyle = r; ctx.beginPath(); ctx.arc(luzX, SUELO_BASE - 2, 150, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    {
+      // Trampa de balas a la derecha, detrás del maniquí: placas de acero inclinadas sobre un bloque de goma
+      const t0 = xJugador + 196, piso = SUELO_BASE - 8;   // la trampa está en el puesto, adelante
+      ctx.fillStyle = '#16181c'; ctx.fillRect(t0, piso - 150, 600, 150);
+      for (let k = 0; k < 6; k++) {
+        const y = piso - 150 + k * 25;
+        const g = ctx.createLinearGradient(0, y, 0, y + 25);
+        g.addColorStop(0, '#4b525c'); g.addColorStop(0.5, '#2d3239'); g.addColorStop(1, '#1a1d22');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(t0, y + 25); ctx.lineTo(t0 + 14, y); ctx.lineTo(t0 + 600, y); ctx.lineTo(t0 + 600, y + 25); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(t0 + 14, y, 586, 0.7);
+      }
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(t0 - 3, piso - 150, 3, 150);
+    }
+    // Línea de tiro: franja amarilla que cruza el piso delante de los pies (en perspectiva, inclinada)
+    const pisoLinea = SUELO_BASE - 14, lx = xJugador + 14;   // justo delante de la punta de las botas
+    ctx.fillStyle = '#d9b43a'; ctx.beginPath(); ctx.moveTo(lx, pisoLinea); ctx.lineTo(lx + 4, pisoLinea); ctx.lineTo(lx - 3, ALTO); ctx.lineTo(lx - 9, ALTO); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.moveTo(lx + 4, pisoLinea); ctx.lineTo(lx + 4.6, pisoLinea); ctx.lineTo(lx - 2.2, ALTO); ctx.lineTo(lx - 3, ALTO); ctx.closePath(); ctx.fill();
   },
 });
 

@@ -172,10 +172,12 @@ class Zombie {
     if (this.estado === 'muerto') return;
     if (this.dormido) this.despertar(juego, juego.jugador);
     this.vida -= cantidad;
-    this.golpeadoHasta = juego.ahora + 90;
-    if (!arma || !arma.explosivo) Audio_.impactoCarne();
-    this.empuje = direccion * (cantidad >= this.vidaMax ? 4 : 1.5);
-    juego.salpicar(this.x, this.y - this.altura - 40 * this.escala, this.colorSangre, 6, 3);
+    // El fuego pega muchas veces por segundo con poco daño: sin destello, ruido de impacto, empujón ni sangre en cada llama
+    const fuego = arma && arma.fuego;
+    if (!fuego) this.golpeadoHasta = juego.ahora + 90;
+    if (!arma || (!arma.explosivo && !fuego)) Audio_.impactoCarne();
+    this.empuje = direccion * (fuego ? 0.2 : cantidad >= this.vidaMax ? 4 : 1.5);
+    if (!fuego) juego.salpicar(this.x, this.y - this.altura - 40 * this.escala, this.colorSangre, 6, 3);
     if (this.vida <= 0) {
       this.estado = 'muerto';
       juego.salpicar(this.x, this.y - this.altura - 30 * this.escala, this.colorSangre, 18, 5);
@@ -185,6 +187,10 @@ class Zombie {
       juego.alMorirZombie(this, arma);
     }
   }
+
+  // Prendido fuego: sigue quemándose `seg` segundos (el juego le descuenta la quema por segundo)
+  quemar(juego, seg) { if (this.estado !== 'muerto') this.quemaHasta = Math.max(this.quemaHasta || 0, juego.ahora + seg * 1000); }
+  quemandose(ahora) { return this.estado !== 'muerto' && this.quemaHasta > ahora; }
 
   // Caja de impacto: el cuerpo más los brazos estirados hacia donde mira
   caja() { const w = this.ancho + 8 * this.escala; return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - this.alto - 4, w, h: this.alto + 4 }; }
