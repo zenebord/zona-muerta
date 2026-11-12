@@ -17,19 +17,20 @@
  */
 const BASTION = {
   celda: [44, 34], arriba: 178, abajo: 490, baseX: 120, margenDer: 26,
-  dineroInicial: 300, vidaBase: 20, descanso: 25, primerDescanso: 40,
+  // Economía ajustada: se arranca con un ejército mínimo ya armado y poca plata; cada zombie paga poco y la vida crece 11 % por oleada
+  dineroInicial: 150, vidaBase: 15, descanso: 25, primerDescanso: 40, crecimientoVida: 1.2, adelantoPorSegundo: 1,
   unidades: {
     soldado: { costo: 50,  tiempo: 4,  vida: 30,  alcance: 175, dano: 3,  cadencia: 0.65, donde: 'cuartel', tecla: 1 },
-    torreta: { costo: 125, tiempo: 8,  vida: 90,  alcance: 195, dano: 2,  cadencia: 0.13, donde: 'obra', bloquea: true, tecla: 2 },
+    torreta: { costo: 150, tiempo: 8,  vida: 90,  alcance: 195, dano: 2,  cadencia: 0.13, donde: 'obra', bloquea: true, tecla: 2 },
     bunker:  { costo: 150, tiempo: 12, vida: 280, alcance: 210, dano: 3,  cadencia: 0.65, donde: 'obra', bloquea: true, capacidad: 4, tecla: 3 },
-    tanque:  { costo: 300, tiempo: 15, vida: 170, alcance: 420, minimo: 70, dano: 18, radio: 48, cadencia: 2.6, donde: 'taller', bloquea: true, tecla: 4 },
-    muro:    { costo: 15,  tiempo: 2,  vida: 150, donde: 'obra', bloquea: true, tecla: 5 },
+    tanque:  { costo: 375, tiempo: 15, vida: 170, alcance: 420, minimo: 70, dano: 18, radio: 48, cadencia: 2.6, donde: 'taller', bloquea: true, tecla: 4 },
+    muro:    { costo: 25,  tiempo: 2,  vida: 150, donde: 'obra', bloquea: true, tecla: 5 },
   },
   zombies: {
-    caminante: { vida: 1,   vel: 24, paga: 10,  dano: 1,  escala: 0.58 },
-    corredor:  { vida: 0.8, vel: 46, paga: 12,  dano: 1,  escala: 0.5 },
-    gordo:     { vida: 3.2, vel: 16, paga: 25,  dano: 3,  escala: 0.66 },
-    jefe:      { vida: 22,  vel: 14, paga: 150, dano: 8,  escala: 1.25 },
+    caminante: { vida: 1,   vel: 24, paga: 6,   dano: 1,  escala: 0.58 },
+    corredor:  { vida: 0.8, vel: 46, paga: 7,   dano: 1,  escala: 0.5 },
+    gordo:     { vida: 3.2, vel: 16, paga: 15, dano: 3,  escala: 0.66 },
+    jefe:      { vida: 22,  vel: 14, paga: 90,  dano: 8,  escala: 1.25 },
   },
 };
 const ARMA_BASTION = { categoria: 'rifle', explosivo: false };
@@ -120,11 +121,26 @@ Object.assign(Juego.prototype, {
     this.unidades = []; this.colaCuartel = []; this.colaTaller = [];
     this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = B.primerDescanso; this.proximoZombie = 0;
     this.colocando = null; this.puntero = null; this.trazos = [];
+    this.velocidad = 1;   // 1×, 2×, 5× o 10× (el bucle de interfaz.js hace tantos pasos por cuadro)
     this.construidas = 0;
+    this.ejercitoInicial();
     this.rehacerCamino();
     document.getElementById('hud-aereo').classList.add('oculta');
     document.getElementById('panel-bastion').classList.remove('oculta');
     this.panelBastion();
+  },
+
+  // Ejército mínimo al empezar, para mostrar lo básico: tres soldados y cuatro muros que dejan un pasillo en el medio
+  // (los muros desvían a los zombies, no los frenan del todo). Solo no alcanza: hay que construir desde la primera oleada
+  ejercitoInicial() {
+    const B = BASTION, medio = Math.floor(this.filas / 2);
+    const obra = (tipo, c, f) => {
+      if (!this.dentro(c, f) || this.ocupadaPor(c, f)) return;
+      const U = B.unidades[tipo], p = this.centroCelda(c, f);
+      this.unidades.push({ tipo, c, f, x: p.x, y: p.y, vida: U.vida, vidaMax: U.vida, listo: true, obra: 1, bloquea: true, costo: U.costo, enfriado: 0, fuego: 0, apunta: 0, adentro: 0 });
+    };
+    for (const df of [-2, -1, 1, 2]) obra('muro', 7, medio + df);
+    for (const df of [-1, 0, 1]) { const p = this.centroCelda(4, medio + df); this.unidades.push(this.nuevoSoldado(p.x, p.y, 4, medio + df)); }
   },
 
   // Celdas: centro y a qué celda cae un punto
@@ -257,19 +273,19 @@ Object.assign(Juego.prototype, {
     if (this.porAparecer > 0) {
       this.proximoZombie -= dt;
       if (this.proximoZombie <= 0) {
-        this.proximoZombie = Math.max(0.45, 1.6 - this.ronda * 0.1) * (0.7 + Math.random() * 0.6);
+        this.proximoZombie = Math.max(0.35, 1.5 - this.ronda * 0.1) * (0.7 + Math.random() * 0.6);
         this.aparecerZombieBastion(this.porAparecer === 1 && this.ronda % 5 === 0 ? 'jefe' : this.tipoAlAzar());
         this.porAparecer--;
       }
     } else if (!this.zombies.some(z => z.estado !== 'muerto')) {
-      const bono = 50 + 10 * this.ronda;
+      const bono = 30 + 5 * this.ronda;
       this.dinero += bono; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + B.descanso;
       this.avisoRonda(t('bastion.oleadaSuperada', { n: this.ronda }), t('bastion.bonus', { d: bono }), 2600); Audio_.rondaSuperada();
     }
   },
   empezarOleada() {
     this.ronda++; this.enDescanso = false;
-    this.porAparecer = 6 + 3 * (this.ronda - 1) + Math.floor(Math.pow(this.ronda, 1.3));
+    this.porAparecer = 8 + 4 * (this.ronda - 1) + Math.floor(Math.pow(this.ronda, 1.4));
     this.proximoZombie = 0.5;
     this.avisoRonda(t('bastion.ola', { n: this.ronda }), t('bastion.vienen', { n: this.porAparecer }), 2200); Audio_.sirena();
   },
@@ -291,7 +307,7 @@ Object.assign(Juego.prototype, {
     z.escala = Z.escala * (tipo === 'jefe' ? 1 : (0.94 + Math.random() * 0.12));
     z.ancho = 26 * z.escala; z.alto = 64 * z.escala;
     z.x = B.baseX + this.cols * B.celda[0] + 14 + Math.random() * 20; z.y = z.ySuelo = p.y + (Math.random() - 0.5) * 10;
-    z.vidaMax = z.vida = Math.max(1, Math.round(this.dificultad.vidaZombie * Z.vida * AJUSTE.vidaZombie * (1 + 0.08 * (this.ronda - 1))));
+    z.vidaMax = z.vida = Math.max(1, Math.round(this.dificultad.vidaZombie * Z.vida * AJUSTE.vidaZombie * Math.pow(B.crecimientoVida, this.ronda - 1)));
     z.vel = Z.vel * this.dificultad.velocidad * AJUSTE.velocidadZombie * (0.9 + Math.random() * 0.2);
     z.desvio = (Math.random() - 0.5) * 12; z.direccion = -1; z.mordiscoEn = 0; z.trabado = 0; z.ultimaX = z.x;
     this.zombies.push(z);
@@ -570,6 +586,7 @@ Object.assign(Juego.prototype, {
       const tipo = b.dataset.unidad, U = B.unidades[tipo];
       b.classList.toggle('elegida', this.colocando === tipo);
       if (!U) continue;
+      b.querySelector('small').textContent = `$${U.costo} · ${U.tiempo} s`;
       b.classList.toggle('caro', this.dinero < U.costo);
       const cola = U.donde === 'cuartel' ? this.colaCuartel : U.donde === 'taller' ? this.colaTaller : null;
       const enCola = cola ? cola.filter(o => o.tipo === tipo).length : 0;
@@ -577,11 +594,13 @@ Object.assign(Juego.prototype, {
       const avance = cola && cola[0] && cola[0].tipo === tipo ? Math.min(1, cola[0].hecho / U.tiempo) : 0;
       b.querySelector('.avance').style.width = Math.round(avance * 100) + '%';
     }
+    for (const b of panel.querySelectorAll('[data-velocidad]')) b.classList.toggle('elegida', +b.dataset.velocidad === this.velocidad);
     const ola = document.getElementById('bastion-oleada');
     if (this.enDescanso) { ola.disabled = false; ola.textContent = t('bastion.proxima', { n: this.ronda + 1, s: Math.max(0, Math.ceil(this.descansoHasta - this.tiempoJugado)) }); }
     else { ola.disabled = true; ola.textContent = t('bastion.enCurso', { n: this.ronda, q: this.porAparecer + this.zombies.filter(z => z.estado !== 'muerto').length }); }
   },
-  oleadaYa() { if (this.enDescanso) { this.dinero += Math.max(0, Math.round((this.descansoHasta - this.tiempoJugado) * 2)); this.descansoHasta = this.tiempoJugado; } },   // adelantarla paga $2 por segundo ahorrado
+  cambiarVelocidad(v) { this.velocidad = v; this.panelBastion(); },
+  oleadaYa() { if (this.enDescanso) { this.dinero += Math.max(0, Math.round((this.descansoHasta - this.tiempoJugado) * BASTION.adelantoPorSegundo)); this.descansoHasta = this.tiempoJugado; } },   // adelantarla paga por segundo ahorrado
 
   // Puntero sobre el lienzo (x, y en coordenadas del juego); boton: 0 izquierdo, 2 derecho
   punteroBastion(x, y, tipo, boton) {
@@ -598,6 +617,7 @@ Object.assign(Juego.prototype, {
     const n = /^(Digit|Numpad)([1-6])$/.exec(codigo);
     if (n) { const tipo = n[2] === '6' ? 'vender' : Object.keys(BASTION.unidades).find(k => BASTION.unidades[k].tecla === +n[2]); if (tipo) this.elegirUnidad(tipo); return true; }
     if (codigo === 'Space' || codigo === 'Enter') { this.oleadaYa(); return true; }
+    if (codigo === 'KeyV') { const v = [1, 2, 5, 10]; this.cambiarVelocidad(v[(v.indexOf(this.velocidad) + 1) % v.length]); return true; }   // V: siguiente velocidad
     return false;
   },
 });
@@ -609,5 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const juego = window.ZonaMuerta && ZonaMuerta.juego(); if (!juego || !juego.estrategia) return;
     const b = e.target.closest('[data-unidad]'); if (b) { juego.elegirUnidad(b.dataset.unidad); return; }
     if (e.target.closest('#bastion-oleada')) juego.oleadaYa();
+    const v = e.target.closest('[data-velocidad]'); if (v) juego.cambiarVelocidad(+v.dataset.velocidad);
   });
 });

@@ -756,6 +756,11 @@ body.en-bastion .panel-bastion { display: block; position: absolute; inset: 0; p
 .bastion-barra button .avance { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--luz); }
 .bastion-barra button kbd { position: absolute; top: 2px; left: 4px; font-size: 9px; opacity: .45; border: 0; background: none; padding: 0; color: inherit; }
 .bastion-barra button:hover { border-color: var(--luz); }
+/* Velocidad del juego (1×, 2×, 5×, 10×), arriba a la derecha */
+.bastion-velocidades { position: absolute; top: 10px; right: 12px; display: flex; gap: 4px; pointer-events: auto; }
+.bastion-velocidades button { background: rgba(10,8,12,.72); border: 1px solid rgba(201,169,110,.45); color: var(--texto); font: inherit; font-weight: 700; font-size: clamp(11px, 1.9vh, 15px); min-width: 40px; padding: 5px 8px; cursor: pointer; }
+.bastion-velocidades button:hover { border-color: var(--luz); }
+.bastion-velocidades button.elegida { background: var(--luz); color: #1a1410; border-color: var(--luz); }
 .bastion-barra button.elegida { background: var(--arena); color: var(--noche); border-color: var(--luz); }
 .bastion-barra button.caro { opacity: .5; }
 .bastion-barra button[data-unidad="vender"] { min-width: clamp(48px, 6vw, 72px); border-color: rgba(209,106,74,.8); }

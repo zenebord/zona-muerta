@@ -98,7 +98,9 @@
     if (!pausado && juego && !juego.terminado) medirRendimiento(t - ultimo);
     ultimo = t;
     if (!pausado && juego) {
-      juego.actualizar(juego.camaraLenta ? dt * 0.25 : dt);   // campo de pruebas: cámara lenta a un cuarto
+      // Campo de pruebas: cámara lenta a un cuarto. Último bastión: 2×, 5× o 10× en pasos normales (no uno gigante, que atravesaría todo)
+      const pasos = juego.velocidad || 1;
+      for (let k = 0; k < pasos && !juego.terminado; k++) juego.actualizar(juego.camaraLenta ? dt * 0.25 : dt);
       if (juego.pruebas) fichaVitrina();
       juego.dibujar();
       if (juego.terminado) { mostrarFin(); return; }
