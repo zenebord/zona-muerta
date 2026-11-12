@@ -351,16 +351,19 @@ const Fuego = {
 };
 
 class Particula {
-  constructor(x, y, vx, vy, color, vida, tam, gravedad) {
+  // piso: hasta dónde cae (en el último bastión, la fila de quien la largó; cada gota un poco más adelante o más atrás,
+  // para que quede una mancha y no una raya); si no, el suelo de ese lugar
+  constructor(x, y, vx, vy, color, vida, tam, gravedad, piso) {
     this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color;
     this.vida = vida; this.vidaMax = vida; this.tam = tam; this.gravedad = gravedad; this.vivo = true;
+    this.piso = piso === undefined ? undefined : piso + (Math.random() - 0.5) * 14;
   }
   actualizar(dt) {
     const paso = dt * 60;
     this.vida -= dt; if (this.vida <= 0) { this.vivo = false; return; }
     if (this.gravedad) this.vy += 0.4 * paso;
     this.x += this.vx * paso; this.y += this.vy * paso;
-    const piso = alturaSuelo(this.x);
+    const piso = this.piso ?? alturaSuelo(this.x);
     if (this.y > piso) { this.y = piso; this.vy = 0; this.vx *= 0.5; }
   }
   dibujar(ctx, camaraX) {

@@ -177,10 +177,10 @@ class Zombie {
     if (!fuego) this.golpeadoHasta = juego.ahora + 90;
     if (!arma || (!arma.explosivo && !fuego)) Audio_.impactoCarne();
     this.empuje = direccion * (fuego ? 0.2 : cantidad >= this.vidaMax ? 4 : 1.5);
-    if (!fuego) juego.salpicar(this.x, this.y - this.altura - 40 * this.escala, this.colorSangre, 6, 3);
+    if (!fuego) juego.salpicar(this.x, this.y - this.altura - 40 * this.escala, this.colorSangre, 6, 3, this.ySuelo);
     if (this.vida <= 0) {
       this.estado = 'muerto';
-      juego.salpicar(this.x, this.y - this.altura - 30 * this.escala, this.colorSangre, 18, 5);
+      juego.salpicar(this.x, this.y - this.altura - 30 * this.escala, this.colorSangre, 18, 5, this.ySuelo);
       const despedido = !this.toxico && !this.animal;
       if (this.sonidoMuerte) this.sonidoMuerte(); else Audio_.zombieMuere(!despedido);
       if (despedido) this.lanzarCadaver(direccion, arma, juego);
@@ -222,8 +222,8 @@ class Zombie {
           Audio_.cuerpoAnimalCae(this.jefe ? 2 : 1.1, primero ? 1 : 0.5);
           if (primero) {
             juego.sacudida = Math.max(juego.sacudida, this.jefe ? 14 : 2.5);
-            juego.salpicar(this.x + M.d * 14 * e, this.y - 8 * e, this.colorSangre, 8, 3);
-            for (let k = 0; k < 8; k++) juego.particulas.push(new Particula(this.x + (Math.random() - 0.3) * 40 * e * M.d, this.y - 2, (Math.random() - 0.5) * 3.5, -Math.random() * 1.8, '#8a7e6a', 0.5 + Math.random() * 0.4, 3 + Math.random() * 4, true));
+            juego.salpicar(this.x + M.d * 14 * e, this.y - 8 * e, this.colorSangre, 8, 3, this.ySuelo);
+            for (let k = 0; k < 8; k++) juego.particulas.push(new Particula(this.x + (Math.random() - 0.3) * 40 * e * M.d, this.y - 2, (Math.random() - 0.5) * 3.5, -Math.random() * 1.8, '#8a7e6a', 0.5 + Math.random() * 0.4, 3 + Math.random() * 4, true, this.ySuelo));
           }
         } else { M.botes = Math.max(M.botes, 1); M.vy = 0; M.vx *= Math.pow(0.78, paso); if (Math.abs(M.vx) < 0.08) M.quieto = true; }
       }
@@ -234,7 +234,7 @@ class Zombie {
     if (T < 1.6 && T >= M.chorro) {   // chorros de sangre mientras se retuerce
       M.chorro = T + 0.2 + Math.random() * 0.15;
       const lx = this.x + Math.sin(M.giro) * 22 * e, ly = this.y - M.altura - 10 * e;
-      for (let k = 0; k < 4; k++) juego.particulas.push(new Particula(lx + (Math.random() - 0.5) * 6, ly, (Math.random() - 0.5) * 2.2, -(2 + Math.random() * 2.6), k % 2 ? this.colorSangre : '#5a0606', 0.5 + Math.random() * 0.4, 2 + Math.random() * 2.5, true));
+      for (let k = 0; k < 4; k++) juego.particulas.push(new Particula(lx + (Math.random() - 0.5) * 6, ly, (Math.random() - 0.5) * 2.2, -(2 + Math.random() * 2.6), k % 2 ? this.colorSangre : '#5a0606', 0.5 + Math.random() * 0.4, 2 + Math.random() * 2.5, true, this.ySuelo));
     }
   }
 
