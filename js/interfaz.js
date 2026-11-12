@@ -245,8 +245,9 @@
   // Dibuja el arma entera, centrada y lo más grande posible: primero en un lienzo aparte, en chico, para medir
   // dónde quedó; después otra vez directo en la ficha al tamaño final, así no se estira una imagen chica
   // (una pistola se agrandaba unas cinco veces y quedaba borrosa) y el acabado del material sale nítido
-  function dibujarFicha(id) {
-    const lienzoFicha = document.getElementById('detalle-vista'), c = lienzoFicha.getContext('2d');
+  // Sirve para la ficha del menú de armas y para la del campo de pruebas (otro lienzo y otra etiqueta de largo)
+  function dibujarFicha(id, lienzoFicha = document.getElementById('detalle-vista'), etiquetaLargo = document.getElementById('detalle-largo'), margen = 40) {
+    const c = lienzoFicha.getContext('2d');
     const a = ARMAS[id], d = DIBUJO_ARMAS[id], PX = 8;   // 8 píxeles por centímetro al medir
     const estado = { corredera: 0, sinCargador: false, abierto: 0, bombeo: 0, palanca: 0, mirar: 0, tapa: 0 };
     const aparte = document.createElement('canvas'); aparte.width = 1800; aparte.height = 1200;
@@ -259,7 +260,7 @@
     for (let y = 0; y < aparte.height; y += 2) for (let x = 0; x < aparte.width; x += 2) if (datos[(y * aparte.width + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, lienzoFicha.width, lienzoFicha.height);
     if (x1 <= x0) return;
-    const w = x1 - x0 + 4, h = y1 - y0 + 4, margen = 40;
+    const w = x1 - x0 + 4, h = y1 - y0 + 4;
     const esc = Math.min((lienzoFicha.width - margen * 2) / w, (lienzoFicha.height - margen * 2) / h);
     // El punto (x0 - 2, y0 - 2) del lienzo de medir cae en la esquina del recuadro centrado
     const ox = (lienzoFicha.width - w * esc) / 2, oy = (lienzoFicha.height - h * esc) / 2;
@@ -267,7 +268,7 @@
     if (a.cuerpo) c.rotate(Math.PI / 2);
     d.dibujar(c, estado);
     c.setTransform(1, 0, 0, 1, 0, 0);
-    document.getElementById('detalle-largo').textContent = t('detalle.largo', { cm: Math.round(w / PX) });
+    if (etiquetaLargo) etiquetaLargo.textContent = t('detalle.largo', { cm: Math.round(w / PX) });
   }
   function mostrarDetalleArma(id) {
     const a = ARMAS[id], f = FICHAS[id];
@@ -314,6 +315,7 @@
       document.getElementById('fv-grupo').textContent = g >= 0 ? GRUPOS_ARMAS[g].nombre.toUpperCase() : '';
       document.getElementById('fv-nombre').textContent = a.nombre;
       document.getElementById('fv-desc').textContent = f ? enIdioma(f[3]) : '';
+      dibujarFicha(id, document.getElementById('fv-vista'), document.getElementById('fv-largo'), 16);   // el arma entera, de perfil
       document.getElementById('fv-datos').innerHTML = filasFicha(id).filter(([k]) => k !== t('detalle.toxico')).map(([k, v, dest, ancha]) => `<div class="${dest ? 'destacado' : ''}${ancha ? ' ancha' : ''}"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
     }
     const carga = j.municionActual(), reserva = a.cuerpo ? '' : (j.reserva[id] === undefined || j.reserva[id] >= 999 ? '∞' : j.reserva[id]);
