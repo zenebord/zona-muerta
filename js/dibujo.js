@@ -19,8 +19,9 @@ function ajustarColor(hex, factor) {
   const clave = hex + factor;
   let r = cacheColores.get(clave);
   if (r) return r;
-  const n = parseInt(hex.slice(1), 16);
-  let rojo = (n >> 16) & 255, verde = (n >> 8) & 255, azul = n & 255;
+  let rojo, verde, azul;
+  if (hex[0] === '#') { const n = parseInt(hex.slice(1), 16); rojo = (n >> 16) & 255; verde = (n >> 8) & 255; azul = n & 255; }
+  else [rojo, verde, azul] = (hex.match(/[\d.]+/g) || [0, 0, 0]).map(Number);   // 'rgb(r, g, b)': un color ya ajustado se puede volver a ajustar
   if (factor > 0) { rojo += (255 - rojo) * factor; verde += (255 - verde) * factor; azul += (255 - azul) * factor; }
   else { rojo *= 1 + factor; verde *= 1 + factor; azul *= 1 + factor; }
   r = `rgb(${Math.round(rojo)}, ${Math.round(verde)}, ${Math.round(azul)})`;
@@ -71,10 +72,35 @@ function cilindro(ctx, x, y, r, h, color) {
 
 // Dibuja un cuerpo dos veces: primero su sombra aplastada sobre el piso, después el cuerpo
 // ySuelo: dónde está el piso debajo del cuerpo; si salta, la sombra queda en el piso, más chica y más clara
-function conSombra(ctx, x, y, dibujarCuerpo, alfa = 0.32, ySuelo = y) {
+// Sombra pareja: la silueta se pinta opaca en una capa aparte del tamaño justo y se pega con la transparencia.
+// Así las piezas que se superponen (brazo sobre torso, correas, bolsillos) no oscurecen más la sombra.
+// La usa el jugador, que tiene muchas piezas encimadas; dibujarCuerpo recibe el contexto donde pintar.
+const capaSombra = { lienzo: null, ctx: null };
+function sombraPareja(ctx, x, ySuelo, altura, tamano, alfa, dibujarCuerpo) {
+  const m = ctx.getTransform();
+  // Caja que puede ocupar la sombra alrededor del pie, en unidades del dibujo (cae hacia adelante y abajo)
+  const esquinas = [[-175, -14], [115, -14], [-175, 48], [115, 48]].map(([px, py]) => m.transformPoint(new DOMPoint(x + px, ySuelo + py)));
+  const x0 = Math.floor(Math.min(...esquinas.map(q => q.x))), y0 = Math.floor(Math.min(...esquinas.map(q => q.y)));
+  const w = Math.ceil(Math.max(...esquinas.map(q => q.x))) - x0, h = Math.ceil(Math.max(...esquinas.map(q => q.y))) - y0;
+  if (w <= 0 || h <= 0 || w > 6000 || h > 3000) return false;
+  if (!capaSombra.lienzo) { capaSombra.lienzo = document.createElement('canvas'); capaSombra.ctx = capaSombra.lienzo.getContext('2d'); }
+  const L = capaSombra.lienzo, o = capaSombra.ctx;
+  if (L.width < w || L.height < h) { L.width = Math.max(L.width, w); L.height = Math.max(L.height, h); }
+  o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, w, h);
+  o.setTransform(m.a, m.b, m.c, m.d, m.e - x0, m.f - y0);
+  o.translate(x - altura * 0.12, ySuelo); o.scale(tamano, tamano); o.transform(1, 0, 0.55, -0.3, 0, 0);
+  Pincel.silueta = '#000';
+  dibujarCuerpo(o);
+  Pincel.silueta = null;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha *= alfa;
+  ctx.drawImage(L, 0, 0, w, h, x0, y0, w, h);
+  ctx.restore();
+  return true;
+}
+function conSombra(ctx, x, y, dibujarCuerpo, alfa = 0.32, ySuelo = y, pareja = false) {
   const altura = Math.max(0, ySuelo - y);
   const fuerza = Math.max(0, 1 - altura / 140), tamano = Math.max(0.55, 1 - altura / 260);
-  if (fuerza > 0.02) {
+  if (fuerza > 0.02 && !(pareja && sombraPareja(ctx, x, ySuelo, altura, tamano, alfa * fuerza, dibujarCuerpo))) {
     ctx.save();
     ctx.translate(x - altura * 0.12, ySuelo);
     ctx.scale(tamano, tamano);

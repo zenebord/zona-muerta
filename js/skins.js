@@ -38,30 +38,42 @@ function dibujarCapa(ctx, color, ty, t, mov, largo = 1) {
 }
 
 /* ---------- Torso de cada skin ---------- */
-function dibujarTorso(ctx, S, C, ty) {
+// Torso más angosto que el dibujo original (88 % de ancho): figura más esbelta sin tocar cada traje
+function dibujarTorso(ctx, S, C, ty) { ctx.save(); ctx.scale(0.88, 1); torsoCompleto(ctx, S, C, ty); ctx.restore(); }
+function torsoCompleto(ctx, S, C, ty) {
   const trapecio = poli([[-13, -36 + ty], [-15, -58 + ty], [15, -58 + ty], [12, -36 + ty]]);
   const solapas = color => {
     pieza(ctx, poli([[-6, -58 + ty], [-8, -63 + ty], [-1, -59 + ty]]), color, -8, -1);
     pieza(ctx, poli([[6, -58 + ty], [8, -63 + ty], [1, -59 + ty]]), color, 1, 8);
   };
-  pieza(ctx, trapecio, C.chaqueta, -15, 15);
-  sombraInterna(ctx, c => c.rect(-13, -40 + ty, 25, 4), 0.18);
+  // Torso con forma: espalda curva, hombros redondeados, pecho y la cintura más angosta
+  pintura(ctx, c => { c.moveTo(-12.6, -36 + ty); c.quadraticCurveTo(-15.6, -47 + ty, -14.4, -56 + ty); c.quadraticCurveTo(-13.4, -59.6 + ty, -8, -59.6 + ty);
+    c.lineTo(8.6, -59.6 + ty); c.quadraticCurveTo(14.4, -59.4 + ty, 14.6, -55 + ty); c.quadraticCurveTo(15.4, -46 + ty, 11.8, -36 + ty); }, C.chaqueta);
   switch (S.torso) {
-    case 'tactico':   // chaleco táctico con bolsillos, correas de la mochila, radio y solapas (el de siempre)
-      pieza(ctx, poli([[-9, -37 + ty], [-10, -57 + ty], [10, -57 + ty], [9, -37 + ty]]), C.chaleco, -10, 10);
-      for (let fila = 0; fila < 2; fila++) for (let col = 0; col < 2; col++) {
-        const bx = -7 + col * 7.5, by = -52 + fila * 8 + ty;
-        pieza(ctx, redondo(bx, by, 6, 6, 1), C.bolsillo, bx, bx + 6);
-        detalle(ctx, ajustarColor(C.bolsillo, 0.35), c => c.rect(bx + 0.5, by + 0.5, 5, 1.2));
+    case 'tactico': {   // chaleco portaplacas: placa con cintas, tres portacargadores con los cargadores asomando, radio y hombreras
+      const V = C.chaleco;
+      pintura(ctx, c => c.roundRect(-14.6, -57.6 + ty, 5, 21, 1.6), C.correa, { sombra: 0.6, brillo: 0.2 });                              // correa de la mochila
+      pintura(ctx, c => { c.moveTo(-9.6, -37 + ty); c.lineTo(-10.6, -56 + ty); c.quadraticCurveTo(-10, -58.6 + ty, -6.6, -58.4 + ty); c.lineTo(7.6, -58.4 + ty);
+        c.quadraticCurveTo(11, -58.2 + ty, 11, -55.4 + ty); c.lineTo(10.4, -37 + ty); }, V);                                              // placa
+      if (!Pincel.silueta) for (let k = 0; k < 4; k++) raya(ctx, ajustarColor(V, -0.35), 0.5, [[-9.4, -55 + k * 4.4 + ty], [10, -55 + k * 4.4 + ty]]);   // cintas para enganchar
+      for (let k = 0; k < 3; k++) {   // portacargadores: cargador que asoma, cuerpo y tapa con abrojo
+        const bx = -8.4 + k * 6.2, by = -48.6 + ty;
+        pintura(ctx, c => c.roundRect(bx + 1, by - 2.6, 3.6, 3.4, 0.6), '#2a2b2e', { sombra: 0.4, linea: 0.3 });
+        pintura(ctx, c => c.roundRect(bx, by, 5.6, 9.6, 1.2), C.bolsillo, { sombra: 0.7 });
+        pintura(ctx, c => c.roundRect(bx - 0.2, by - 0.4, 6, 3, 0.9), ajustarColor(C.bolsillo, -0.1), { sombra: 0.4, brillo: 0.25, linea: 0.35 });
+        detalle(ctx, ajustarColor(C.bolsillo, 0.3), c => c.rect(bx + 1.4, by + 0.7, 2.8, 0.9));
       }
-      for (let k = 0; k < 3; k++) linea(ctx, 'rgba(0, 0, 0, 0.35)', 0.6, [[-9, -54.5 + k * 8 + ty], [9, -54.5 + k * 8 + ty]]);
-      pieza(ctx, redondo(-13, -58 + ty, 3.5, 20, 1), C.correa, -13, -9.5, { contorno: false });
-      pieza(ctx, redondo(9.5, -58 + ty, 3.5, 20, 1), C.correa, 9.5, 13, { contorno: false });
-      pieza(ctx, redondo(9, -57 + ty, 4.5, 7, 1), '#2b2d30', 9, 13.5);
-      linea(ctx, tinta('#1a1a1c'), 0.9, [[12, -57 + ty], [13, -66 + ty]]);
-      detalle(ctx, '#7fd36a', c => c.rect(10, -55.5 + ty, 1.4, 1));
-      solapas(ajustarColor(C.chaqueta, 0.12));
+      pintura(ctx, c => c.roundRect(-6.6, -57 + ty, 9.4, 5.6, 1.2), ajustarColor(V, 0.08), { sombra: 0.5, brillo: 0.25, linea: 0.4 });   // bolsillo de mapas
+      pintura(ctx, c => c.roundRect(-5.4, -56 + ty, 4.4, 2.6, 0.5), '#5a5f3a', { sombra: 0.3, brillo: 0.2, linea: 0.3 });                // parche de abrojo
+      // Hombreras acolchadas y la radio con su antena y la luz verde
+      pintura(ctx, c => c.roundRect(-8.6, -60.4 + ty, 6, 3.6, 1.6), ajustarColor(V, 0.05), { sombra: 0.5, linea: 0.4 });
+      pintura(ctx, c => c.roundRect(3.4, -60.4 + ty, 6, 3.6, 1.6), ajustarColor(V, 0.05), { sombra: 0.5, linea: 0.4 });
+      pintura(ctx, c => c.roundRect(9.6, -57.2 + ty, 4.6, 7.4, 1.2), '#2b2d30', { sombra: 0.5, linea: 0.4 });
+      raya(ctx, '#1a1a1c', 0.9, [[12.6, -57 + ty], [13.4, -66 + ty]]);
+      detalle(ctx, '#7fd36a', c => c.rect(10.6, -55.6 + ty, 1.4, 1));
+      if (!Pincel.silueta) for (let k = 0; k < 3; k++) detalle(ctx, '#1a1b1e', c => c.rect(10.4, -53.4 + k * 1.3 + ty, 3, 0.5));         // rejilla del parlante
       break;
+    }
     case 'placas':    // cota de malla oscura y peto de acero con dos filas de discos
       if (!Pincel.silueta) for (let y = -56; y < -38; y += 2.4) linea(ctx, 'rgba(255,255,255,0.08)', 0.5, [[-13, y + ty], [13, y + ty]]);
       pieza(ctx, poli([[-9, -38 + ty], [-10.5, -57 + ty], [10.5, -57 + ty], [9, -38 + ty]]), C.chaleco, -10, 10);
@@ -129,33 +141,82 @@ function barbaLlena(ctx, color, hy) {
 }
 function dibujarCabeza(ctx, S, C, ty, e) {
   const hy = -78 + ty, tipo = S.cabeza;
-  if (tipo === 'casco-alado' || tipo === 'pelo-largo') peloAtras(ctx, C, hy);
-  // Cuello y pañuelo
-  pieza(ctx, redondo(-3, -64 + ty, 7, 7, 1.5), tipo === 'ninja' || tipo === 'casco-armadura' ? C.chaqueta : C.piel, -3, 4);
-  sombraInterna(ctx, c => c.rect(-3, -64 + ty, 7, 3), 0.25);
-  if (S.panuelo) {
-    pieza(ctx, poli([[-6, -61 + ty], [6, -61.5 + ty], [7, -57 + ty], [1, -55 + ty], [-6, -57 + ty]]), S.panuelo, -6, 7);
-    pieza(ctx, poli([[-5, -59 + ty], [-10, -55 + ty], [-8, -53 + ty], [-4, -57 + ty]]), ajustarColor(S.panuelo, -0.12), -10, -4);
+  // La cabeza va un poco más chica (88 %) y 4 más arriba, con el mentón como pivote: deja ver el cuello y estiliza la figura
+  const cabezaArriba = () => { ctx.translate(1, hy + 16.4 - 4); ctx.scale(0.88, 0.88); ctx.translate(-1, -(hy + 16.4)); };
+  if (tipo === 'casco-alado' || tipo === 'pelo-largo') { ctx.save(); cabezaArriba(); peloAtras(ctx, C, hy); ctx.restore(); }
+  // Cuello largo y fino, con el trapecio que baja al hombro, la nuez y el tendón
+  const piel = C.piel, cuelloColor = tipo === 'ninja' || tipo === 'casco-armadura' ? C.chaqueta : piel;
+  pintura(ctx, c => { c.moveTo(-4.8, -57.4 + ty); c.quadraticCurveTo(-2.6, -59.4 + ty, -2.6, -63 + ty); c.lineTo(-2.4, -68.6 + ty); c.lineTo(3.6, -68.4 + ty);
+    c.quadraticCurveTo(3.4, -64.8 + ty, 4.4, -61.4 + ty); c.quadraticCurveTo(5, -58.6 + ty, 6.2, -57.4 + ty); }, ajustarColor(cuelloColor, -0.04), { sombra: 0.7 });
+  if (!Pincel.silueta && cuelloColor === piel) {
+    detalle(ctx, 'rgba(60, 30, 20, 0.22)', c => { c.moveTo(-2.4, -67.6 + ty); c.lineTo(3.6, -67.4 + ty); c.lineTo(3.4, -64.6 + ty); c.quadraticCurveTo(0.4, -64 + ty, -2.5, -65 + ty); });   // sombra de la mandíbula
+    raya(ctx, ajustarColor(piel, -0.28), 0.4, [[-0.6, -64.4 + ty], [1.6, -58.6 + ty]]);   // tendón
+    detalle(ctx, ajustarColor(piel, -0.1), elipse(3.6, -62.4 + ty, 0.7, 1.1));            // nuez
   }
-  // Cara
-  pieza(ctx, poli([[-8, hy + 3], [-6, hy], [6, hy], [8, hy + 3], [8, hy + 11], [6, hy + 15], [-4, hy + 16], [-8, hy + 12]]), C.piel, -8, 8);
+  if (S.panuelo) {   // pañuelo anudado en la base del cuello, con las puntas cayendo atrás
+    pintura(ctx, c => { c.moveTo(-5.8, -59.4 + ty); c.quadraticCurveTo(0, -61 + ty, 6.4, -59.6 + ty); c.quadraticCurveTo(7.2, -57.8 + ty, 6.2, -56.8 + ty); c.quadraticCurveTo(0.6, -55.2 + ty, -5.4, -56.6 + ty); c.quadraticCurveTo(-6.6, -58 + ty, -5.8, -59.4 + ty); }, S.panuelo, { sombra: 0.7 });
+    pintura(ctx, c => { c.moveTo(-4.6, -58.4 + ty); c.quadraticCurveTo(-8.4, -57 + ty, -10, -53 + ty); c.lineTo(-7.8, -52.4 + ty); c.quadraticCurveTo(-7, -55.4 + ty, -3.6, -56.8 + ty); }, ajustarColor(S.panuelo, -0.1), { sombra: 0.6 });
+    pintura(ctx, c => c.ellipse(-4.4, -57.8 + ty, 1.5, 1.3, 0, 0, Math.PI * 2), ajustarColor(S.panuelo, -0.05), { sombra: 0.5, linea: 0.35 });   // nudo
+    if (!Pincel.silueta) raya(ctx, ajustarColor(S.panuelo, -0.35), 0.4, [[-2, -58.4 + ty], [4, -57.8 + ty]]);
+  }
+  ctx.save(); cabezaArriba();
+  // Cara de perfil: nuca y cráneo, frente, cejas, nariz, labios, mentón y la mandíbula
+  const cara = c => {
+    c.moveTo(-4.6, hy + 16.4); c.quadraticCurveTo(-8.8, hy + 13, -8.8, hy + 7); c.quadraticCurveTo(-8.6, hy - 0.6, -1, hy - 0.8);
+    c.quadraticCurveTo(6.4, hy - 0.8, 7.6, hy + 3.6); c.lineTo(8.2, hy + 5.2);                    // frente y arco de la ceja
+    c.quadraticCurveTo(8.4, hy + 6.6, 9.6, hy + 8.4); c.quadraticCurveTo(10.8, hy + 9.6, 9.6, hy + 10);   // nariz
+    c.lineTo(8.8, hy + 10.2); c.quadraticCurveTo(9.4, hy + 10.8, 9, hy + 11.6);                       // labio de arriba
+    c.lineTo(8.4, hy + 11.9); c.quadraticCurveTo(9.2, hy + 12.4, 8.8, hy + 13.1);                     // labio de abajo
+    c.quadraticCurveTo(9.2, hy + 15, 7.6, hy + 15.8); c.quadraticCurveTo(4, hy + 17.4, 0.4, hy + 16.2);   // mentón y mandíbula
+    c.quadraticCurveTo(-2.4, hy + 16.6, -4.6, hy + 16.4);
+  };
+  pintura(ctx, cara, piel, { sombra: 1.1, oscuro: 0.22, brillo: 0.35 });
   if (S.barba) barbaLlena(ctx, S.barba, hy);
-  else if (tipo !== 'payaso' && tipo !== 'mascara') sombraInterna(ctx, c => { c.moveTo(-7, hy + 10.5); c.lineTo(8, hy + 10.5); c.lineTo(6, hy + 15); c.lineTo(-4, hy + 16); c.lineTo(-8, hy + 12); }, 0.16);   // barba de tres días
-  if (tipo === 'gorra' || tipo === 'sombrero') pieza(ctx, poli([[-8, hy + 3], [-6, hy], [-3, hy + 1], [-4, hy + 7], [-8, hy + 7]]), C.pelo, -8, -3, { contorno: false });
-  pieza(ctx, redondo(-6, hy + 6, 3, 4, 1.5), ajustarColor(C.piel, -0.08), -6, -3);                    // oreja
-  pieza(ctx, poli([[7, hy + 6], [10, hy + 9], [7, hy + 10.5]]), ajustarColor(C.piel, -0.04), 7, 10);   // nariz
-  if (tipo === 'payaso') detalle(ctx, 'rgba(40,30,60,0.75)', elipse(4.4, hy + 6.6, 3.2, 2.6));          // ojeras pintadas
-  detalle(ctx, '#f4f1ea', c => c.rect(2.5, hy + 5.5, 3.5, 2.5));
-  detalle(ctx, '#1d1a17', c => c.rect(4.6, hy + 5.5 + e.mirar, 1.5, 2.5 - e.mirar));
-  detalle(ctx, tipo === 'payaso' ? '#2a3a20' : '#2a1e14', c => c.rect(2, hy + 4, 5, 1));
-  if (!S.barba && tipo !== 'payaso') detalle(ctx, 'rgba(70, 30, 20, 0.6)', c => c.rect(4, hy + 12.5, 3, 0.8));
+  else if (tipo !== 'payaso' && tipo !== 'mascara' && !Pincel.silueta) {   // barba de tres días: sombra sobre la mandíbula y el bigote, con puntitos
+    ctx.save(); ctx.beginPath(); cara(ctx); ctx.clip();
+    ctx.fillStyle = 'rgba(60, 40, 30, 0.2)'; ctx.beginPath(); ctx.moveTo(-1, hy + 11.4); ctx.quadraticCurveTo(4, hy + 12.4, 8, hy + 10.6); ctx.lineTo(11, hy + 12); ctx.lineTo(10, hy + 18); ctx.lineTo(-2, hy + 18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(50, 32, 24, 0.35)'; for (let k = 0; k < 26; k++) { ctx.fillRect(azar(k, 401) * 10, hy + 11.6 + azar(k, 402) * 5, 0.3, 0.3); }
+    ctx.restore();
+  }
+  if ((tipo === 'gorra' || tipo === 'sombrero') && !Pincel.silueta) {   // pelo corto bajo la gorra y la patilla
+    pintura(ctx, c => { c.moveTo(-8.6, hy + 7); c.quadraticCurveTo(-8.8, hy + 1, -3, hy + 0.4); c.lineTo(-1.6, hy + 3); c.quadraticCurveTo(-4.4, hy + 3.6, -4.6, hy + 9.6); c.lineTo(-6.4, hy + 10.2); }, C.pelo, { sombra: 0.5, brillo: 0.15, linea: 0.35 });
+    pintura(ctx, c => c.roundRect(-0.8, hy + 3.2, 1.6, 5.2, 0.6), C.pelo, { sombra: 0.3, brillo: false, linea: 0.3 });
+  }
+  // Oreja con su pliegue
+  pintura(ctx, c => { c.moveTo(-1.4, hy + 6.2); c.quadraticCurveTo(-4.8, hy + 5.4, -4.6, hy + 8.6); c.quadraticCurveTo(-4.6, hy + 11.6, -1.2, hy + 11.4); c.quadraticCurveTo(-2.2, hy + 8.8, -1.4, hy + 6.2); }, ajustarColor(piel, -0.04), { sombra: 0.6, linea: 0.4 });
+  raya(ctx, ajustarColor(piel, -0.35), 0.4, [[-2.2, hy + 7.4], [-3.4, hy + 8.6], [-2.4, hy + 10.2]]);
+  if (tipo === 'payaso') detalle(ctx, 'rgba(40,30,60,0.75)', elipse(5.2, hy + 6.8, 3.2, 2.6));          // ojeras pintadas
+  if (!Pincel.silueta) {
+    // Ojo almendrado: blanco, iris, pupila y el brillo; el párpado de arriba marcado (baja la mirada al recargar)
+    const ox = 5.6, oy = hy + 6.6, baja = e.mirar;
+    ctx.save(); ctx.beginPath(); ctx.moveTo(ox - 2.4, oy); ctx.quadraticCurveTo(ox, oy - 1.9 + baja * 0.8, ox + 2.2, oy - 0.2); ctx.quadraticCurveTo(ox, oy + 1.5, ox - 2.4, oy); ctx.closePath();
+    ctx.fillStyle = '#f2ede4'; ctx.fill(); ctx.clip();
+    ctx.fillStyle = '#4a3322'; ctx.beginPath(); ctx.arc(ox + 0.7, oy + baja * 0.5, 1.15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#120c08'; ctx.beginPath(); ctx.arc(ox + 0.8, oy + baja * 0.5, 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(ox + 0.2, oy - 0.6 + baja * 0.5, 0.5, 0.5);
+    ctx.restore();
+    raya(ctx, '#2a1a12', 0.7, [[ox - 2.5, oy - 0.1], [ox, oy - 1.9 + baja * 0.8], [ox + 2.3, oy - 0.3]]);                   // párpado
+    raya(ctx, ajustarColor(piel, -0.25), 0.35, [[ox - 1.6, oy + 1.3], [ox + 1.4, oy + 1.1]]);                                // ojera suave
+    raya(ctx, tipo === 'payaso' ? '#2a3a20' : C.pelo, 1.1, [[ox - 3, oy - 3], [ox + 2.6, oy - 3.4]]);                       // ceja
+    if (!S.barba && tipo !== 'payaso') raya(ctx, 'rgba(110, 50, 40, 0.75)', 0.5, [[7.4, hy + 11.9], [8.6, hy + 11.8]]);    // boca
+    raya(ctx, ajustarColor(piel, -0.25), 0.4, [[7.8, hy + 9.8], [7, hy + 11.2]]);                                             // surco de la nariz
+    detalle(ctx, 'rgba(200, 90, 70, 0.12)', elipse(4.6, hy + 9.6, 2.2, 1.4));                                                 // mejilla
+  }
   // Lo de arriba de la cabeza
   switch (tipo) {
-    case 'gorra':
-      pieza(ctx, c => { c.moveTo(-9, hy + 3); c.quadraticCurveTo(-9, hy - 6, 0, hy - 6); c.quadraticCurveTo(9, hy - 6, 9, hy + 3); c.lineTo(9, hy + 4); c.lineTo(-9, hy + 4); }, C.gorra, -9, 9);
-      pieza(ctx, c => { c.moveTo(4, hy + 2); c.lineTo(18, hy + 2); c.quadraticCurveTo(19.5, hy + 4, 17, hy + 5.2); c.lineTo(4, hy + 5); }, ajustarColor(C.gorra, -0.1), 4, 19);
-      detalle(ctx, ajustarColor(C.gorra, 0.3), c => c.rect(-1, hy - 6.5, 2, 1.5));
-      linea(ctx, tinta('#4a3a26'), 1.6, [[-8.5, hy + 1], [-2, hy - 3.4], [4, hy - 3]]);
+    case 'gorra': {   // gorra táctica: copa con gajos y costuras, botón, parche, visera con espesor y las antiparras arriba
+      const G = C.gorra;
+      pintura(ctx, c => { c.moveTo(-9.4, hy + 3.6); c.quadraticCurveTo(-10, hy - 6.6, 0.4, hy - 6.8); c.quadraticCurveTo(9.6, hy - 6.4, 9.6, hy + 2.6); c.lineTo(9.6, hy + 3.8); c.lineTo(-9.4, hy + 4.4); }, G, { sombra: 1 });
+      if (!Pincel.silueta) {
+        raya(ctx, ajustarColor(G, -0.35), 0.45, [[0.4, hy - 6.6], [-3.4, hy - 2], [-5, hy + 4]]); raya(ctx, ajustarColor(G, -0.35), 0.45, [[0.4, hy - 6.6], [4.6, hy - 2.4], [5.4, hy + 3.6]]);   // gajos
+        raya(ctx, ajustarColor(G, -0.4), 0.5, [[-9.2, hy + 2.6], [9.4, hy + 2]]);                                                                // cinta de la base
+        pintura(ctx, c => c.roundRect(-7.4, hy - 2.6, 4.6, 3.2, 0.6), '#4f5536', { sombra: 0.3, brillo: 0.2, linea: 0.3 });                      // parche
+      }
+      pintura(ctx, c => c.ellipse(0.4, hy - 6.8, 1.4, 0.8, 0, 0, Math.PI * 2), ajustarColor(G, 0.1), { sombra: 0.3, linea: 0.3 });             // botón
+      // Visera: arriba la cara iluminada, abajo el espesor en sombra
+      pintura(ctx, c => { c.moveTo(4, hy + 1.6); c.quadraticCurveTo(13, hy + 0.6, 18.6, hy + 2.6); c.quadraticCurveTo(19.6, hy + 3.6, 18, hy + 4.4); c.quadraticCurveTo(12, hy + 3.6, 4, hy + 4.6); }, ajustarColor(G, -0.08), { sombra: 0.7, brillo: 0.4 });
+      if (!Pincel.silueta) raya(ctx, ajustarColor(G, -0.45), 0.4, [[5, hy + 3.4], [17.6, hy + 3.6]]);
+      linea(ctx, tinta('#4a3a26'), 1.5, [[-9, hy + 0.8], [-2, hy - 3.6], [4, hy - 3.2]]);                                                         // correa de las antiparras
       pieza(ctx, redondo(1.5, hy - 5.8, 7, 4.2, 1.8), '#3a3a3e', 1.5, 8.5);
       if (!Pincel.silueta) {
         const vidrio = ctx.createLinearGradient(2, hy - 5, 8, hy - 2);
@@ -164,6 +225,7 @@ function dibujarCabeza(ctx, S, C, ty, e) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.fillRect(3.6, hy - 4.6, 1.2, 0.6);
       }
       break;
+    }
     case 'casco-alado':   // casco de acero con alas a los costados
       pieza(ctx, c => { c.moveTo(-9, hy + 4); c.quadraticCurveTo(-9, hy - 7, 0, hy - 7); c.quadraticCurveTo(9, hy - 7, 9.4, hy + 4); c.lineTo(9.4, hy + 5); c.lineTo(-9, hy + 5); }, '#9aa2ad', -9, 9);
       pieza(ctx, poli([[6.6, hy + 4], [8.4, hy + 4], [8.4, hy + 10], [7.2, hy + 10]]), '#9aa2ad', 6.6, 8.4);   // nasal
@@ -215,4 +277,5 @@ function dibujarCabeza(ctx, S, C, ty, e) {
       pieza(ctx, poli([[-8, hy + 5.4], [-13.4, hy + 11.6], [-12, hy + 12.8], [-7.6, hy + 7.2]]), C.gorra, -13.4, -7.6);
       break;
   }
+  ctx.restore();   // fin de la cabeza achicada
 }
