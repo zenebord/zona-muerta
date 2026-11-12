@@ -92,6 +92,15 @@ y entrá a <http://127.0.0.1:8791/>.
 | Velocidad | ×0,75 | ×1 | ×1,3 |
 | Mordida | 8 | 10 | 15 |
 
+## Campo de pruebas: vitrina de armas
+
+El personaje queda quieto y la cámara se acerca (3,3× con pistolas, 2,9× con metralletas y cuerpo a cuerpo, 2,6×
+con el resto) para ver de cerca el arma, el fogonazo, los casquillos y la recarga. ← y → cambian de arma (lista para
+tirar, sin heredar la espera de la anterior), `F` o clic dispara, `S` o clic derecho recarga y `L` pone cámara lenta
+(un cuarto de la velocidad; el sonido sigue normal). A la derecha, la ficha del arma en la mano: grupo, origen, año,
+munición, descripción, daño, tiros para matar, cargador, cadencia, funcionamiento, recarga, alcance y retroceso, con
+la munición en vivo. `C` sigue abriendo la lista de todas las armas.
+
 ## Último bastión (defensa con estrategia)
 
 Modo aparte de las defensas (`js/estrategia.js`): no se dispara, se manda. Vista de estratega sobre un campo con

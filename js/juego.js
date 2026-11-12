@@ -88,6 +88,7 @@ class Juego {
     if (ARMAS_ESPECIALES.includes(armaId)) j.reserva[armaId] = 999;
     j.indiceArma = j.inventario.indexOf(armaId);
     j.cancelarRecarga();
+    j.ultimoDisparo = -1e9;                              // lista para tirar: no hereda la espera del arma anterior
     Audio_.recoger();
     this.aviso(t('aviso.enMano') + ARMAS[armaId].nombre.toUpperCase(), 1300);
   }
@@ -542,6 +543,7 @@ class Juego {
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
     else if (this.historia) this.moverJugadorHistoria(dt, e);   // escaleras, sogas y cuerpo a tierra (js/historia.js)
+    else if (this.pruebas) j.actualizar(dt, { ...e, derecha: false, izquierda: false, saltarPulsado: false }, this);   // en la vitrina no camina ni salta
     else j.actualizar(dt, e, this);
     if (!j.muerto && !(j.aTierra && j.protegido) && !j.trepa && (e.dispararPulsado || (e.disparar && j.arma().automatica))) j.disparar(this);   // cuerpo a tierra no dispara
     e.dispararPulsado = false;
@@ -676,6 +678,13 @@ class Juego {
     ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     ctx.imageSmoothingQuality = 'high';
     const cam = this.camaraX + (this.sacudida ? (Math.random() - 0.5) * this.sacudida : 0);
+    // Campo de pruebas: vitrina. La cámara se acerca 2,6 veces al personaje (quieto, a un tercio de la pantalla) para
+    // ver el arma, el disparo, los casquillos y la recarga de cerca; lo de la pantalla (viñeta) se dibuja sin acercar
+    if (this.pruebas) {   // más cerca con las armas chicas: pistolas 3,3×, metralletas y cuerpo a cuerpo 2,9×, el resto 2,6× (cambia suave)
+      const cat = j.montada ? 'ametralladora' : j.arma().categoria, meta = cat === 'pistola' ? 3.3 : cat === 'metralleta' || cat === 'cuerpo' ? 2.9 : 2.6;
+      this.zoomVitrina = this.zoomVitrina ? this.zoomVitrina + (meta - this.zoomVitrina) * 0.12 : meta;
+      const Z = this.zoomVitrina, E = Lienzo.escala; ctx.setTransform(E * Z, 0, 0, E * Z, E * (ANCHO * 0.3 - Z * (j.x - cam)), E * (ALTO * 0.86 - Z * j.y));
+    }
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
     else if (this.pruebas) Escenario.dibujarCampo(ctx, cam);
@@ -710,6 +719,7 @@ class Juego {
     if (this.cloaca) Escenario.dibujarCloacaFrente(ctx, cam, this.tiempoJugado);
     else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia, this); }
     else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
+    if (this.pruebas) ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ALTO * 0.95);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, ANCHO, ALTO);

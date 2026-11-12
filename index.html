@@ -130,6 +130,19 @@
         <div id="hud-dificultad" class="hud-dificultad"></div>
       </div>
     </div>
+    <!-- Campo de pruebas: ficha del arma que está en la mano -->
+    <aside id="ficha-vitrina" class="ficha-vitrina">
+      <div class="fv-cabeza"><span id="fv-grupo" class="chip-grupo"></span><h3 id="fv-nombre"></h3></div>
+      <p id="fv-desc" class="fv-desc"></p>
+      <dl id="fv-datos" class="fv-datos"></dl>
+      <div class="fv-municion"><b id="fv-carga"></b><span id="fv-reserva"></span><span id="fv-estado" class="fv-estado"></span></div>
+      <div class="fv-botones">
+        <button type="button" class="boton mini" data-accion="arma-ant">◀</button>
+        <button type="button" class="boton mini" id="fv-lenta" data-accion="camara-lenta" data-t="vitrina.botonLenta">CÁMARA LENTA</button>
+        <button type="button" class="boton mini" data-accion="arma-sig">▶</button>
+      </div>
+      <p class="fv-ayuda" data-t-html="vitrina.ayuda"></p>
+    </aside>
     <!-- Último bastión: dinero, oleada y vida del campamento arriba; qué construir y la próxima oleada abajo -->
     <div id="panel-bastion" class="panel-bastion">
       <div class="bastion-estado"><span id="bastion-dinero">$ 300</span><span id="bastion-ola"></span><span id="bastion-base"></span></div>

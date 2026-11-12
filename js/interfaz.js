@@ -61,6 +61,8 @@
     ajustarResolucion();
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     document.body.classList.toggle('en-bastion', !!opciones.estrategia);
+    document.body.classList.toggle('en-pruebas', !!opciones.pruebas);
+    fichaVitrinaId = null;
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
     juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
@@ -93,7 +95,8 @@
     if (!pausado && juego && !juego.terminado) medirRendimiento(t - ultimo);
     ultimo = t;
     if (!pausado && juego) {
-      juego.actualizar(dt);
+      juego.actualizar(juego.camaraLenta ? dt * 0.25 : dt);   // campo de pruebas: cámara lenta a un cuarto
+      if (juego.pruebas) fichaVitrina();
       juego.dibujar();
       if (juego.terminado) { mostrarFin(); return; }
     }
@@ -300,6 +303,31 @@
     mostrarSelectorArmas();
   }
 
+  /* Ficha del campo de pruebas: el arma que está en la mano, con su origen, año, calibre, descripción y cifras, y la
+   * munición en vivo (cargada, reserva y si está recargando) */
+  let fichaVitrinaId = null;
+  function fichaVitrina() {
+    const j = juego.jugador, a = j.arma(), id = a.id;
+    if (id !== fichaVitrinaId) {
+      fichaVitrinaId = id;
+      const f = FICHAS[id], g = grupoDeArma(id);
+      document.getElementById('fv-grupo').textContent = g >= 0 ? GRUPOS_ARMAS[g].nombre.toUpperCase() : '';
+      document.getElementById('fv-nombre').textContent = a.nombre;
+      document.getElementById('fv-desc').textContent = f ? enIdioma(f[3]) : '';
+      document.getElementById('fv-datos').innerHTML = filasFicha(id).filter(([k]) => k !== t('detalle.toxico')).map(([k, v, dest, ancha]) => `<div class="${dest ? 'destacado' : ''}${ancha ? ' ancha' : ''}"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+    }
+    const carga = j.municionActual(), reserva = a.cuerpo ? '' : (j.reserva[id] === undefined || j.reserva[id] >= 999 ? '∞' : j.reserva[id]);
+    document.getElementById('fv-carga').textContent = a.cuerpo ? '—' : `${carga} / ${a.cargador}`;
+    document.getElementById('fv-reserva').textContent = a.cuerpo ? '' : t('vitrina.reserva', { n: reserva });
+    document.getElementById('fv-estado').textContent = j.recarga ? t('vitrina.recargando') : juego.camaraLenta ? t('vitrina.lenta') : '';
+  }
+  function alternarCamaraLenta() {
+    if (!juego || !juego.pruebas) return;
+    juego.camaraLenta = !juego.camaraLenta;
+    document.getElementById('fv-lenta').classList.toggle('elegida', juego.camaraLenta);
+    juego.aviso(t(juego.camaraLenta ? 'vitrina.lentaSi' : 'vitrina.lentaNo'), 1000);
+  }
+
   function salirAlMenu() {
     cancelAnimationFrame(cuadro);
     Audio_.ambiente(0);
@@ -399,6 +427,8 @@
       case 'config-probar': Audio_.disparo('pistola', 'glock'); break;
       case 'config-completa': alternarPantallaCompleta(); break;
       case 'descargar-juego': descargarJuego(boton); break;
+      case 'camara-lenta': alternarCamaraLenta(); break;
+      case 'arma-ant': case 'arma-sig': if (juego) { juego.jugador.cambiarArma(boton.dataset.accion === 'arma-sig' ? 1 : -1); juego.jugador.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;
       case 'asist-abrir': Asistente.abrir(capaConfig); break;   // asistente de construcción (temporal)
       case 'asist-volver': Asistente.cerrar(); break;
     }
@@ -438,6 +468,8 @@
     if (pausado || juego.terminado) return;
     if (juego.estrategia) { if (juego.teclaBastion(e.code)) e.preventDefault(); return; }
     const en = juego.entrada, j = juego.jugador;
+    if (juego.pruebas && (e.code === 'ArrowRight' || e.code === 'ArrowLeft')) { if (!e.repeat) { j.cambiarArma(e.code === 'ArrowRight' ? 1 : -1); j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } return; }
+    if (juego.pruebas && e.code === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
     switch (e.code) {
       case 'ArrowRight': en.derecha = true; break;
       case 'ArrowLeft':  en.izquierda = true; break;
@@ -481,7 +513,7 @@
   // recarga (como la S), sin abrir el menú del navegador. Solo con mouse: los toques los maneja tactil.js; y no
   // sobre los botones del HUD (ataque aéreo, controles táctiles).
   const pantallaJuego = document.getElementById('pantalla-juego');
-  const sobreControl = e => e.target.closest('button, a, input, select, label, [data-accion], [data-arma], [data-tecla], [data-lado]');
+  const sobreControl = e => e.target.closest('button, a, input, select, label, [data-accion], [data-arma], [data-tecla], [data-lado], #ficha-vitrina');
   let mouseDispara = false;
   // Último bastión: el puntero (mouse o dedo) elige celdas para construir; clic derecho vende o suelta
   const aJuego = e => { const r = lienzo.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * ANCHO, y: (e.clientY - r.top) / r.height * ALTO }; };

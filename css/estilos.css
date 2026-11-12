@@ -761,3 +761,27 @@ body.en-bastion .panel-bastion { display: block; position: absolute; inset: 0; p
 .bastion-barra button[data-unidad="vender"] { min-width: clamp(48px, 6vw, 72px); border-color: rgba(209,106,74,.8); }
 .bastion-oleada { min-width: clamp(110px, 16vw, 190px) !important; border-color: var(--oxido) !important; font-weight: 700; letter-spacing: .05em; font-size: clamp(10px, 1.7vh, 13px) !important; }
 .bastion-oleada:disabled { cursor: default; opacity: .85; }
+
+/* ===== Campo de pruebas: vitrina con la ficha del arma ===== */
+.ficha-vitrina { display: none; }
+body.en-pruebas .hud-der { display: none; }
+body.en-pruebas .ficha-vitrina { display: flex; flex-direction: column; gap: 6px; position: absolute; top: 10px; right: 10px; width: min(380px, 40vw);
+  max-height: 58%; overflow-y: auto; padding: 10px 12px; background: rgba(12,10,16,.82); border: 1px solid rgba(201,169,110,.55); color: var(--texto);
+  z-index: 4; font-size: clamp(10.5px, 1.6vh, 13px); backdrop-filter: blur(2px); }
+.ficha-vitrina .fv-cabeza { display: flex; align-items: center; gap: 8px; }
+.ficha-vitrina h3 { margin: 0; font-size: clamp(15px, 2.8vh, 22px); letter-spacing: .06em; color: var(--luz); }
+.ficha-vitrina .fv-desc { margin: 0; opacity: .85; line-height: 1.3; }
+.ficha-vitrina .fv-datos { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; }
+.ficha-vitrina .fv-datos > div { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px solid rgba(255,255,255,.06); padding: 1px 0; }
+.ficha-vitrina .fv-datos > div.ancha { grid-column: 1 / -1; }
+.ficha-vitrina .fv-datos dt { opacity: .65; }
+.ficha-vitrina .fv-datos dd { margin: 0; text-align: right; font-weight: 700; }
+.ficha-vitrina .fv-datos .destacado dd { color: var(--luz); }
+.ficha-vitrina .fv-municion { display: flex; align-items: baseline; gap: 10px; }
+.ficha-vitrina .fv-municion b { font-size: clamp(16px, 3vh, 24px); color: var(--luz); }
+.ficha-vitrina .fv-estado { margin-left: auto; color: #ffb36a; font-weight: 700; letter-spacing: .08em; }
+.ficha-vitrina .fv-botones { display: flex; gap: 6px; }
+.ficha-vitrina .fv-botones .boton { flex: 1; }
+.ficha-vitrina .fv-botones .boton.elegida { background: var(--arena); color: var(--noche); }
+.ficha-vitrina .fv-ayuda { margin: 0; opacity: .6; font-size: .9em; line-height: 1.5; }
+.ficha-vitrina .fv-ayuda kbd { font-size: .85em; padding: 0 4px; margin: 0 1px; }
