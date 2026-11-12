@@ -349,7 +349,7 @@ Object.assign(Juego.prototype, {
     if (j.soga) {
       j.actualizar(dt, neutral, this);
       const p = this.extremoSoga(j.soga);
-      j.x = p.x; j.y = p.y + 70; j.vy = 0; j.enSuelo = false;
+      j.x = p.x; j.y = p.y + 70 * ESCALA_JUGADOR; j.vy = 0;   // la mano (a 70 del pie en el esqueleto) en el extremo j.enSuelo = false;
       if (e.saltarPulsado) { j.impulso = p.vx * 1.15; j.vy = Math.min(-5, p.vy - 6); j.soga = null; j.sogaLibreHasta = this.ahora + 450; Audio_.recoger && Audio_.recoger(); }
       e.saltarPulsado = false; return;
     }

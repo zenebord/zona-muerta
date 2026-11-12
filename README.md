@@ -365,7 +365,9 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
 - El lienzo se dibuja a la resolución real de la pantalla (hasta 1920×1080) sobre una escena lógica de 960×540.
 - Personajes y armas se ilustran por piezas con degradado, bisel de luz y sombra en el borde y contorno fino.
   Las armas tienen brillo metálico, veta en la madera y culatas con caída.
-- El jugador (`js/jugador-dibujo.js` y `js/skins.js`) tiene proporciones reales (unas 6,5 cabezas de alto) y se
+- El jugador (`js/jugador-dibujo.js` y `js/skins.js`) tiene proporciones reales (unas 6,5 cabezas de alto), se
+  dibuja al 116 % de su esqueleto (`ESCALA_JUGADOR`, para quedar a la altura de los zombies; `puntoArma` y la soga
+  lo tienen en cuenta) y se
   pinta con sombreado de dos tonos tipo ilustración (`pintura`): la forma en tono oscuro, encima la misma forma
   corrida hacia la luz, un brillo en el borde y contorno del mismo color más oscuro. El sobreviviente es un
   soldado: camisa de combate oliva con parche, portaplacas coyote, pantalón camuflado (`camuflaje`, manchas fijas

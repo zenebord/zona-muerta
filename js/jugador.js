@@ -4,6 +4,9 @@ const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay 
 const ORIGEN_ARMA = { x: 12, y: -47 };   // mano del gatillo, respecto de los pies
 const CADERA = { x: -4, y: -30 };        // de ahí saca cargadores, balas y cartuchos
 const DETRAS_M2 = 20;                    // a cuánto detrás de la M2 se para el tirador
+// El cuerpo se dibuja 16 % más grande que su esqueleto (proporciones reales sin quedar más bajo que los zombies):
+// todo punto del dibujo que se lleva al mundo (boca del arma, cargador, pasador) se multiplica por esto
+const ESCALA_JUGADOR = 1.16;
 const BAJA_AGACHADO = 13;                // rodilla en tierra: cuánto bajan la cadera, el torso y el arma
 // Fuerza del retroceso (1 = fusil): mueve el arma, las manos, el hombro y la cabeza
 const FUERZA_RETROCESO = { pistola: 0.6, metralleta: 0.45, rifle: 1.0, escopeta: 1.3, ametralladora: 0.55, lanzagranadas: 1.2, bazuca: 0.35, granada: 0.15, laser: 0.3, cuerpo: 0, legendaria: 0 };
@@ -171,9 +174,10 @@ class Jugador {
   puntoArma(nombre) {
     const d = DIBUJO_ARMAS[this.arma().id];
     if (this.montada) return { x: this.montada.x + this.direccion * (nombre === 'boca' ? 64 : -2), y: this.montada.y - 46 };
-    if (!d) return { x: this.x + this.direccion * (nombre === 'boca' ? 60 : -6), y: this.y - 44 };
+    const K = ESCALA_JUGADOR;
+    if (!d) return { x: this.x + this.direccion * K * (nombre === 'boca' ? 60 : -6), y: this.y - 44 * K };
     const e = this.estadoArma(), a = d[nombre], c = Math.cos(e.incl), s = Math.sin(e.incl);
-    return { x: this.x + this.direccion * (e.origen.x + a.x * c - a.y * s), y: this.y + e.origen.y + a.x * s + a.y * c + this.agachado * BAJA_AGACHADO };
+    return { x: this.x + this.direccion * K * (e.origen.x + a.x * c - a.y * s), y: this.y + K * (e.origen.y + a.x * s + a.y * c + this.agachado * BAJA_AGACHADO) };
   }
 
   // Golpe cuerpo a cuerpo: alza, baja de golpe (ahí pega) y vuelve a la guardia
@@ -241,7 +245,7 @@ class Jugador {
     };
     const tirarPasador = () => {
       const m = this.estadoArma().mano;
-      juego.casquillos.push(new Casquillo(this.x + this.direccion * m.x, this.y + m.y + this.agachado * BAJA_AGACHADO, this.direccion, 'pasador', true));
+      juego.casquillos.push(new Casquillo(this.x + this.direccion * m.x * ESCALA_JUGADOR, this.y + (m.y + this.agachado * BAJA_AGACHADO) * ESCALA_JUGADOR, this.direccion, 'pasador', true));
     };
     this.ciclo = new LineaTiempo(juego.ahora, { ab: 0, co: 0, incl: 0, org: { x: 0, y: 0 } }, 'ciclo')
       .fase('tomar', 170, { a: 'anilla' })
@@ -286,7 +290,7 @@ class Jugador {
     // Suelta lo que tiene en la mano: cae al piso desde donde está la mano en ese momento
     const soltarDeLaMano = tipoCaida => () => {
       const e = this.estadoArma();
-      juego.soltarCargador(this, tipoCaida, { x: this.x + this.direccion * e.mano.x, y: this.y + e.mano.y + this.agachado * BAJA_AGACHADO });
+      juego.soltarCargador(this, tipoCaida, { x: this.x + this.direccion * e.mano.x * ESCALA_JUGADOR, y: this.y + (e.mano.y + this.agachado * BAJA_AGACHADO) * ESCALA_JUGADOR });
     };
     const meterUna = sonido => () => {
       if (this.reserva[arma.id] !== undefined) { if (this.reserva[arma.id] <= 0) return; this.reserva[arma.id]--; }

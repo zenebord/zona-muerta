@@ -234,7 +234,7 @@ Jugador.prototype.dibujar = function (ctx, camaraX, ahora) {
 };
 
 Jugador.prototype.cuerpo = function (ctx, parpadeo) {
-  ctx.scale(this.direccion, 1);
+  ctx.scale(this.direccion * ESCALA_JUGADOR, ESCALA_JUGADOR);   // más grande que el esqueleto: a la altura de los zombies
   // Con parapeto (defensa zombie) baja detrás de las bolsas; sin parapeto (defensa ultra) se tira cuerpo a tierra:
   // el cuerpo gira hasta quedar boca abajo, con la cabeza hacia adelante y el pecho en el piso
   if (this.aTierra && this.cubierto > 0.01) { const p = this.cubierto; ctx.translate(-36 * p, -9 * p); ctx.rotate(p * Math.PI / 2); }
@@ -289,7 +289,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const angMano = this.montada ? 0 : (dArma.anguloEmpunadura ?? 0.3) + e.incl;   // cuerpo a cuerpo: el mango sigue al arma
   // Con la M2: la mano del gatillo en la empuñadura de pala de abajo (16,5 detrás del cajón)
   const tapa = this.cubierto > 0.45;   // agachado, con las manos sobre la cabeza
-  const gatillo = tapa ? { x: -2, y: -80 + ty } : this.montada ? { x: e.origen.x - 12 - 16.5, y: -44 } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
+  const gatillo = tapa ? { x: -2, y: -80 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
   const muneca = this.montada ? gatillo : { x: gatillo.x - Math.sin(angMano) * 2.8, y: gatillo.y + Math.cos(angMano) * 2.8 };
   const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28) });
   const golpe = (this.montada || dArma.agarre === 'hombro') ? e.empuje * 1.2 : e.empuje * 0.4;   // el hombro absorbe el retroceso
@@ -329,10 +329,10 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   if (this.montada) {
     // Mano del gatillo fija en las empuñaduras (su brazo va detrás del torso); el brazo izquierdo sigue la recarga de la cinta
     manoConGuante(ctx, gatillo.x, gatillo.y, Clejos);
-    const apoyo = tapa ? { x: 4, y: -82 + ty } : e.mano;
+    const apoyo = tapa ? { x: 4, y: -82 + ty } : { x: e.mano.x / ESCALA_JUGADOR, y: e.mano.y / ESCALA_JUGADOR };   // la M2 está en el mundo, sin agrandar
     brazoDetallado(ctx, 4 - golpe, -52 + ty, apoyo.x, apoyo.y, C);
     manoConGuante(ctx, apoyo.x, apoyo.y, C);
-    if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano);
+    if (e.enMano) dibujarUnidad(ctx, e.enMano, apoyo.x, apoyo.y, e.rotMano);
     return;
   }
 
