@@ -799,6 +799,8 @@ body.en-pruebas .ficha-vitrina { display: flex; flex-direction: column; gap: 6px
 .ficha-vitrina .fv-estado { margin-left: auto; color: #ffb36a; font-weight: 700; letter-spacing: .08em; }
 .ficha-vitrina .fv-botones { display: flex; gap: 6px; }
 .ficha-vitrina .fv-botones .boton { flex: 1; }
+/* Con el menú de armas (C) o la pausa abiertos, la ficha se esconde: si no, en el celular tapaba la flecha ‹ del menú */
+body.menu-armas-abierto .ficha-vitrina, #pantalla-juego:has(.capa:not(.oculta)) .ficha-vitrina { display: none !important; }
 /* En el celular la ficha no puede bajar hasta donde están la barra de caminar y ◀ ARMA ▶ (alto de la barra + fila de armas) */
 body.tactil.en-pruebas .ficha-vitrina { max-height: calc(100% - 58px - clamp(72px, 21vmin, 120px) - 84px); }
 body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }

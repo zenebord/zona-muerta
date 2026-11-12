@@ -57,7 +57,7 @@
     const difGuardada = opciones.estrategia && opciones.estrategia.dificultad && DIFICULTADES[opciones.estrategia.dificultad];   // la partida guardada sigue con la suya
     juego = new Juego(lienzo, misionActual, difGuardada || Dificultad.actual(), opciones);
     if (window.Tactil) Tactil.alEmpezar();   // en un teléfono: pantalla completa y apaisado (donde se pueda)
-    pausado = false; menuPruebasAbierto = false;
+    pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');
     capaPausa.classList.add('oculta');
     capaFin.classList.add('oculta');
     capaPruebas.classList.add('oculta');
@@ -187,6 +187,7 @@
     menuPruebasAbierto = !menuPruebasAbierto;
     ocultarDetalleArma();
     capaPruebas.classList.toggle('oculta', !menuPruebasAbierto);
+    document.body.classList.toggle('menu-armas-abierto', menuPruebasAbierto);   // esconde la ficha de la vitrina (CSS)
     juego.entrada.derecha = juego.entrada.izquierda = juego.entrada.disparar = juego.entrada.abajo = false;
   }
   // Armas del menú de cajas, agrupadas por tipo; cada botón muestra la capacidad del arma
@@ -359,7 +360,7 @@
     cancelAnimationFrame(cuadro);
     Audio_.ambiente(0);
     Musica.detener(0.8);
-    juego = null; pausado = false; menuPruebasAbierto = false;
+    juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');
     capaPruebas.classList.add('oculta');
     mostrar('menu-principal');
   }
