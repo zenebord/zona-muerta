@@ -365,12 +365,13 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
 - El lienzo se dibuja a la resolución real de la pantalla (hasta 1920×1080) sobre una escena lógica de 960×540.
 - Personajes y armas se ilustran por piezas con degradado, bisel de luz y sombra en el borde y contorno fino.
   Las armas tienen brillo metálico, veta en la madera y culatas con caída.
-- El jugador (`js/jugador-dibujo.js` y `js/skins.js`) usa sombreado de dos tonos tipo ilustración (`pintura`):
-  la forma en tono oscuro, encima la misma forma corrida hacia la luz, un brillo en el borde y contorno del mismo
-  color más oscuro. Brazos y piernas son tramos que se afinan con músculo (`tramo`), rodilla articulada, botas
-  con suela y cordones, cara de perfil con ojo, nariz, labios y barba de tres días, cuello largo con la cabeza
-  al 88 % y el torso y el cinturón al 88 % de ancho (figura esbelta). Su sombra se pinta en una capa aparte
-  (`sombraPareja` en `js/dibujo.js`) para que las piezas encimadas no la manchen.
+- El jugador (`js/jugador-dibujo.js` y `js/skins.js`) tiene proporciones reales (unas 6,5 cabezas de alto) y se
+  pinta con sombreado de dos tonos tipo ilustración (`pintura`): la forma en tono oscuro, encima la misma forma
+  corrida hacia la luz, un brillo en el borde y contorno del mismo color más oscuro. El sobreviviente es un
+  soldado: camisa de combate oliva con parche, portaplacas coyote, pantalón camuflado (`camuflaje`, manchas fijas
+  a la tela), rodilleras, botas de desierto, guantes arena, barba corta y shemagh. Los torsos de las otras skins
+  se dibujan al 64 % de ancho (perfil) y todas las cabezas al 72 %. La sombra del jugador se pinta en una capa
+  aparte (`sombraPareja` en `js/dibujo.js`) para que las piezas encimadas no la manchen.
 - Cada zombie sale distinto: pelo, heridas, desgarros, manchas y a veces un brazo colgando. Al morir cae sobre un charco de sangre.
 - Los mecanismos de recarga (cargadores, correderas, cerrojos, bombeo, cartuchos, balas) son grabaciones reales
   de armas, recortadas en eventos sueltos y elegidas según el arma. Fuentes y licencias en `sonidos/CREDITOS.md`.
