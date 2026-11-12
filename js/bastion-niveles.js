@@ -97,7 +97,7 @@ Object.assign(Juego.prototype, {
     this.rehacerCamino();
   },
 
-  // dibujarFondoBastion, el paisaje y los obstáculos: js/bastion-dibujo.js
+  // El paisaje y los obstáculos: js/bastion-dibujo.js; la cámara y la capa quieta del escenario: js/bastion-camara.js
 });
 
 /* ---------- Vista chica de cada escenario (fondo, suelo, terreno y obstáculos se dibujan en js/bastion-dibujo.js) ---------- */
@@ -110,10 +110,13 @@ const PaisajeBastion = {
     for (const [tipo, c0, f0, c1, f1] of N.terreno) for (let f = f0; f <= f1; f++) for (let c = c0; c <= c1; c++) if (g.dentro(c, f)) g.terreno[f][c] = tipo;
     g.terrenoEn = (c, f) => g.dentro(c, f) ? g.terreno[f][c] : null;
     g.nivelBastion = N;
-    ctx.setTransform(e, 0, 0, e, 0, -60 * e);   // recorta arriba: se ve el borde del mapa y el campo
-    this.suelo(ctx, N); this.fondo(ctx, N, 0); this.terreno(ctx, g, 0);
-    N.obstaculos.forEach(([tipo, c, f], i) => { ctx.save(); ctx.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(ctx, tipo, i); ctx.restore(); });
-    ctx.fillStyle = 'rgba(70,55,40,0.9)'; ctx.fillRect(0, B.arriba - 10, B.baseX - 10, ALTO);   // el campamento, apenas sugerido
+    // La misma cámara que en la partida (js/bastion-camara.js), a escala chica y recortando arriba
+    const cam = camaraBastion(cols, filas), capa = capaQuietaBastion(g, N, e, cam);
+    ctx.setTransform(e, 0, 0, e, 0, -60 * e);
+    ctx.drawImage(capa, 0, 0, ANCHO, ALTO);
+    N.obstaculos.forEach(([tipo, c, f], i) => enCamara(ctx, cam, B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8, k => { k.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(k, tipo, i); }));
+    const q = [[-600, B.arriba - 10], [B.baseX - 10, B.arriba - 10], [B.baseX - 10, ALTO], [-600, ALTO]].map(([x, y]) => cam.proyectar(x, y));   // el campamento, apenas sugerido
+    ctx.fillStyle = 'rgba(70,55,40,0.9)'; ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
   },
 };
 

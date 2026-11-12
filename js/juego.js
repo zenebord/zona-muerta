@@ -165,10 +165,10 @@ class Juego {
     this.avisoRondaHasta = this.ahora + duracion;
   }
 
-  salpicar(x, y, color, cantidad, fuerza) {
+  salpicar(x, y, color, cantidad, fuerza, piso) {   // piso: hasta dónde caen las gotas (ver Particula)
     for (let k = 0; k < cantidad; k++) {
       const a = Math.random() * Math.PI * 2, v = Math.random() * fuerza;
-      this.particulas.push(new Particula(x, y, Math.cos(a) * v, Math.sin(a) * v - 1, color, 0.5 + Math.random() * 0.6, 2 + Math.random() * 3, true));
+      this.particulas.push(new Particula(x, y, Math.cos(a) * v, Math.sin(a) * v - 1, color, 0.5 + Math.random() * 0.6, 2 + Math.random() * 3, true, piso));
     }
   }
 

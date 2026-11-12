@@ -184,7 +184,7 @@ Object.assign(Juego.prototype, {
     for (const s of this.unidades) if (s.destinoBunker === u) s.destinoBunker = null;
     if (destruida) {
       this.explosiones.push(new Explosion(u.x, u.y - 10, u.tipo === 'soldado' ? 16 : 34));
-      if (u.tipo === 'soldado') this.salpicar(u.x, u.y - 14, '#8b0f0f', 10, 3); else { this.salpicar(u.x, u.y - 10, '#7a7468', 16, 4); Audio_.explosion(); this.sacudida = 4; }
+      if (u.tipo === 'soldado') this.salpicar(u.x, u.y - 14, '#8b0f0f', 10, 3, u.y); else { this.salpicar(u.x, u.y - 10, '#7a7468', 16, 4, u.y); Audio_.explosion(); this.sacudida = 4; }
     }
     if (u.bloquea) this.rehacerCamino();
   },
@@ -339,7 +339,7 @@ Object.assign(Juego.prototype, {
         const dano = B.zombies[z.tipoBastion].dano;
         this.vidaBase = Math.max(0, this.vidaBase - dano); z.estado = 'muerto'; z.tiempoMuerto = 99;
         this.aviso(t('bastion.baseGolpeada'), 1200); this.sacudida = 6; Audio_.jugadorHerido();
-        this.salpicar(B.baseX - 20, z.y - 10, '#8b0f0f', 8, 3);
+        this.salpicar(B.baseX - 20, z.y - 10, '#8b0f0f', 8, 3, z.y);
         if (this.vidaBase <= 0 && !this.terminado) { this.terminado = true; this.resultado = 'invadido'; ProgresoBastion.borrarPartida(); Audio_.jugadorMuere(); }
       }
       if (this.ahora >= (z.gemidoEn || 0)) { z.gemidoEn = this.ahora + 4000 + Math.random() * 9000; if (Math.random() < 0.3) Audio_.gemido(false, 300); }
@@ -395,7 +395,7 @@ Object.assign(Juego.prototype, {
       u.fuego = 1;
       if (u.tipo === 'tanque') {
         u.retroceso = 1;
-        this.balasBastion.push({ x: u.x + 34, y: u.y - 20, tx: blanco.x, ty: blanco.y - 6, t: 0, dur: Math.max(0.25, Math.hypot(blanco.x - u.x, blanco.y - u.y) / 520), dano: U.dano, radio: U.radio });
+        this.balasBastion.push({ x: u.x + 34, y: u.y - 20, tx: blanco.x, ty: blanco.y - 6, b0: u.y, b1: blanco.y, t: 0, dur: Math.max(0.25, Math.hypot(blanco.x - u.x, blanco.y - u.y) / 520), dano: U.dano, radio: U.radio });
         this.explosiones.push(new Fogonazo(u.x + 36, u.y - 20, 1, 14, 'fuego')); Audio_.disparo('bazuca', 'tanque');
         continue;
       }
@@ -403,7 +403,7 @@ Object.assign(Juego.prototype, {
         const z = k === 0 ? blanco : (vivos.filter(o => Math.hypot(o.x - u.x, o.y - u.y) < alcance)[k] || blanco);
         z.recibirDano(U.dano, 1, ARMA_BASTION, this);
         const sale = u.tipo === 'bunker' ? { x: u.x - 9 + k * 6, y: u.y - 17 } : u.tipo === 'torreta' ? { x: u.x + 30, y: u.y - 12 } : { x: u.x + 20, y: u.y - 22 };
-        this.trazos.push({ x0: sale.x, y0: sale.y, x1: z.x + (Math.random() - 0.5) * 4, y1: z.y - 22 * z.escala, t: 0.06 });
+        this.trazos.push({ x0: sale.x, y0: sale.y, x1: z.x + (Math.random() - 0.5) * 4, y1: z.y - 22 * z.escala, b0: u.y, b1: z.y, t: 0.06 });   // b0, b1: el piso de cada punta (para la cámara)
         if (u.tipo === 'bunker') { u.fuegoK = u.fuegoK || []; u.fuegoK[k] = 1; }
       }
       if (Math.random() < (u.tipo === 'torreta' ? 0.35 : 0.8)) Audio_.disparo(u.tipo === 'torreta' ? 'ametralladora' : 'rifle', u.tipo === 'torreta' ? 'm2' : 'm16');
@@ -438,45 +438,51 @@ Object.assign(Juego.prototype, {
     if ((this.ultimoPanel || 0) + 150 < this.ahora) { this.ultimoPanel = this.ahora; this.panelBastion(); }
   },
 
-  /* ---------- Dibujo ---------- */
+  /* ---------- Dibujo, con la cámara en perspectiva (js/bastion-camara.js) ---------- */
   dibujarBastion() {
-    const ctx = this.ctx, B = BASTION, ms = this.ahora;
+    const ctx = this.ctx, B = BASTION, ms = this.ahora, cam = this.camaraBastion(), [W, H] = B.celda;
+    const yN = B.arriba + this.filas * H, xD = B.baseX + this.cols * W;
     ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     if (this.sacudida) ctx.translate((Math.random() - 0.5) * this.sacudida, (Math.random() - 0.5) * this.sacudida * 0.6);
-    // Cielo, paisaje, suelo y terreno del nivel (js/bastion-niveles.js)
-    this.dibujarFondoBastion(ctx);
-    // Grilla: tenue siempre, marcada al construir
-    ctx.strokeStyle = this.colocando ? 'rgba(255,230,170,0.16)' : 'rgba(255,230,170,0.05)'; ctx.lineWidth = 1;
-    for (let c = 0; c <= this.cols; c++) { const x = B.baseX + c * B.celda[0]; ctx.beginPath(); ctx.moveTo(x, B.arriba); ctx.lineTo(x, B.arriba + this.filas * B.celda[1]); ctx.stroke(); }
-    for (let f = 0; f <= this.filas; f++) { const y = B.arriba + f * B.celda[1]; ctx.beginPath(); ctx.moveTo(B.baseX, y); ctx.lineTo(B.baseX + this.cols * B.celda[0], y); ctx.stroke(); }
-    // Niebla de la derecha, por donde vienen
-    const niebla = ctx.createLinearGradient(ANCHO - 90, 0, ANCHO, 0); niebla.addColorStop(0, 'rgba(40,36,40,0)'); niebla.addColorStop(1, 'rgba(40,36,40,0.7)');
-    ctx.fillStyle = niebla; ctx.fillRect(ANCHO - 90, B.arriba - 22, 90, ALTO);
-    this.dibujarCampamento(ctx);
-    // Fantasma de lo que se va a poner
+    // Escenario quieto (piso en trapecio, meseta, escalón y campamento) y lo que se mueve en él
+    this.dibujarFondoBastion(ctx, cam);
+    // Grilla con la perspectiva: tenue siempre, marcada al construir
+    ctx.strokeStyle = this.colocando ? 'rgba(255,230,170,0.16)' : 'rgba(255,230,170,0.05)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let c = 0; c <= this.cols; c++) { const a = cam.proyectar(B.baseX + c * W, B.arriba), b = cam.proyectar(B.baseX + c * W, yN); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+    for (let f = 0; f <= this.filas; f++) { const a = cam.proyectar(B.baseX, B.arriba + f * H), b = cam.proyectar(xD, B.arriba + f * H); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+    ctx.stroke();
+    this.dibujarCampamento(ctx, cam);
+    // Lo que se va a poner: la celda (en perspectiva), el alcance sobre el piso y la unidad a medias
+    const celda = (c, f) => [[0, 0], [1, 0], [1, 1], [0, 1]].map(([i, j]) => cam.proyectar(B.baseX + (c + i) * W + (i ? -1 : 1), B.arriba + (f + j) * H + (j ? -1 : 1)));
     if (this.colocando && this.puntero) {
       const { c, f } = this.celdaDe(this.puntero.x, this.puntero.y);
       if (this.dentro(c, f)) {
         const herr = this.colocando === 'vender' || this.colocando === 'reparar';
         const ok = this.colocando === 'vender' ? !!this.unidades.find(u => u.c === c && u.f === f && !u.invisible) : this.colocando === 'reparar' ? !!this.aReparar(c, f) : !this.motivoNoColocar(this.colocando, c, f);
         ctx.fillStyle = this.colocando === 'vender' ? 'rgba(255,190,80,0.25)' : this.colocando === 'reparar' ? (ok ? 'rgba(110,190,255,0.3)' : 'rgba(255,255,255,0.08)') : ok ? 'rgba(120,230,120,0.25)' : 'rgba(240,80,70,0.28)';
-        ctx.fillRect(B.baseX + c * B.celda[0] + 1, B.arriba + f * B.celda[1] + 1, B.celda[0] - 2, B.celda[1] - 2);
+        ctx.beginPath(); celda(c, f).forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
+        const p = this.centroCelda(c, f), P = cam.proyectar(p.x, p.y);
         if (herr && this.colocando === 'reparar' && ok) {   // cuánto cuesta arreglar lo que está abajo del puntero
-          const u = this.aReparar(c, f), p = this.centroCelda(c, f);
-          ctx.fillStyle = this.dinero >= this.costoReparar(u) ? '#bfe3ff' : '#ff9a8a'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + this.costoReparar(u), p.x, p.y - 30);
+          const u = this.aReparar(c, f);
+          ctx.fillStyle = this.dinero >= this.costoReparar(u) ? '#bfe3ff' : '#ff9a8a'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + this.costoReparar(u), P.x, P.y - 30 * P.s);
         }
         if (!herr) {
-          const p = this.centroCelda(c, f), U = BASTION.unidades[this.colocando];
-          if (U.alcance) { ctx.strokeStyle = 'rgba(255,230,170,0.35)'; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.ellipse(p.x, p.y - 10, U.alcance, U.alcance / 1.3, 0, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
-          ctx.save(); ctx.globalAlpha = 0.5; ctx.translate(p.x, p.y); this.dibujarUnidad(ctx, { tipo: this.colocando, listo: true, vida: 1, vidaMax: 1, apunta: 0, adentro: 0 }); ctx.restore();
+          const U = BASTION.unidades[this.colocando];
+          if (U.alcance) {   // el alcance es un círculo en el piso (en el plano, la fila vale 1,3)
+            ctx.strokeStyle = 'rgba(255,230,170,0.35)'; ctx.setLineDash([5, 5]); ctx.beginPath();
+            for (let i = 0; i <= 56; i++) { const a = i / 56 * Math.PI * 2, q = cam.proyectar(p.x + Math.cos(a) * U.alcance, p.y + Math.sin(a) * U.alcance / 1.3); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
+            ctx.stroke(); ctx.setLineDash([]);
+          }
+          ctx.save(); ctx.globalAlpha = 0.5; ctx.translate(P.x, P.y); ctx.scale(P.s, P.s); this.dibujarUnidad(ctx, { tipo: this.colocando, listo: true, vida: 1, vidaMax: 1, apunta: 0, adentro: 0 }); ctx.restore();
         }
       }
     }
-    // Todo lo que hay en el campo, de atrás hacia adelante
-    const cosas = [];
-    for (const u of this.unidades) if (!u.invisible) cosas.push([u.y, () => { ctx.save(); ctx.translate(u.x, u.y); this.dibujarUnidad(ctx, u); ctx.restore(); }]);
-    for (const o of this.obstaculos || []) cosas.push([o.y, () => { ctx.save(); ctx.translate(o.x, o.y); PaisajeBastion.obstaculo(ctx, o.tipo, o.semilla); ctx.restore(); }]);
-    for (const z of this.zombies) cosas.push([z.y, () => z.dibujar(ctx, 0, ms)]);
+    // Todo lo que hay en el campo, de atrás hacia adelante, cada cosa en su punto proyectado y a su escala; los zombies
+    // aparecen de a poco en la niebla (en perspectiva, la esquina de atrás a la derecha deja ver más allá del campo)
+    const cosas = [], entrada = xD + 36, aEscala = (x, y, fn) => { const P = cam.proyectar(x, y); ctx.save(); ctx.translate(P.x, P.y); ctx.scale(P.s, P.s); fn(); ctx.restore(); };
+    for (const u of this.unidades) if (!u.invisible) cosas.push([u.y, () => aEscala(u.x, u.y, () => this.dibujarUnidad(ctx, u))]);
+    for (const o of this.obstaculos || []) cosas.push([o.y, () => aEscala(o.x, o.y, () => PaisajeBastion.obstaculo(ctx, o.tipo, o.semilla))]);
+    for (const z of this.zombies) cosas.push([z.y, () => { ctx.save(); const a = limitar((entrada - z.x) / 32, 0, 1); if (a < 1) ctx.globalAlpha = a; enCamara(ctx, cam, z.x, z.y, g => z.dibujar(g, 0, ms)); ctx.restore(); }]);
     cosas.sort((a, b) => a[0] - b[0]);
     Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con muchos zombies se aliviana el dibujo
     for (const [, d] of cosas) d();
@@ -484,27 +490,40 @@ Object.assign(Juego.prototype, {
     // Lugares reservados (soldados y tanques en formación): un cartel con la cuenta
     for (const o of [...this.colaCuartel, ...this.colaTaller]) {
       const p = this.centroCelda(o.c, o.f);
-      ctx.strokeStyle = 'rgba(255,230,170,0.5)'; ctx.setLineDash([3, 3]); ctx.strokeRect(p.x - 18, p.y - 24, 36, 26); ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(255,230,170,0.8)'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t('bastion.' + o.tipo), p.x, p.y - 8);
+      aEscala(p.x, p.y, () => {
+        ctx.strokeStyle = 'rgba(255,230,170,0.5)'; ctx.setLineDash([3, 3]); ctx.strokeRect(-18, -24, 36, 26); ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,230,170,0.8)'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t('bastion.' + o.tipo), 0, -8);
+      });
     }
-    // Barras de vida de lo dañado y de las obras
+    // Barras de vida de lo dañado y de las obras: en su lugar, pero del mismo tamaño en todos lados (son de interfaz)
     for (const u of this.unidades) {
       if (u.invisible) continue;
       const lleno = u.listo ? u.vida / u.vidaMax : u.obra;
       if (u.listo && lleno >= 0.999) continue;
-      const w = u.tipo === 'soldado' ? 18 : 30;
-      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(u.x - w / 2 - 1, u.y + 4, w + 2, 4);
-      ctx.fillStyle = !u.listo ? '#e8c45a' : lleno > 0.5 ? '#6ad06a' : lleno > 0.25 ? '#e8c45a' : '#e05a4a'; ctx.fillRect(u.x - w / 2, u.y + 5, w * lleno, 2);
+      const w = u.tipo === 'soldado' ? 18 : 30, P = cam.proyectar(u.x, u.y), y = P.y + 4 * P.s;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(P.x - w / 2 - 1, y, w + 2, 4);
+      ctx.fillStyle = !u.listo ? '#e8c45a' : lleno > 0.5 ? '#6ad06a' : lleno > 0.25 ? '#e8c45a' : '#e05a4a'; ctx.fillRect(P.x - w / 2, y + 1, w * lleno, 2);
     }
-    for (const z of this.zombies) if (z.estado !== 'muerto' && z.vida < z.vidaMax) { const w = 16 * Math.max(1, z.escala * 1.6); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(z.x - w / 2, z.y - 70 * z.escala - 6, w, 3); ctx.fillStyle = '#c0392b'; ctx.fillRect(z.x - w / 2, z.y - 70 * z.escala - 6, w * z.vida / z.vidaMax, 3); }
-    // Trazadoras, proyectiles del tanque, explosiones y partículas
-    for (const tr of this.trazos) { ctx.strokeStyle = `rgba(255,230,150,${tr.t / 0.06})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(tr.x0, tr.y0); ctx.lineTo(tr.x1, tr.y1); ctx.stroke(); }
+    for (const z of this.zombies) if (z.estado !== 'muerto' && z.vida < z.vidaMax) {
+      const w = 16 * Math.max(1, z.escala * 1.6), P = cam.proyectar(z.x, z.y), y = P.y - (70 * z.escala + 6) * P.s;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(P.x - w / 2, y, w, 3); ctx.fillStyle = '#c0392b'; ctx.fillRect(P.x - w / 2, y, w * z.vida / z.vidaMax, 3);
+    }
+    // Trazadoras y proyectiles del tanque: del piso de donde salen al de donde llegan, con la altura achicada por la distancia
+    for (const tr of this.trazos) {
+      const b0 = tr.b0 ?? tr.y0, b1 = tr.b1 ?? tr.y1, a = cam.proyectar(tr.x0, b0, b0 - tr.y0), b = cam.proyectar(tr.x1, b1, b1 - tr.y1);
+      ctx.strokeStyle = `rgba(255,230,150,${tr.t / 0.06})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
     for (const b of this.balasBastion) {
-      const f = b.t / b.dur, x = b.x + (b.tx - b.x) * f, y = b.y + (b.ty - b.y) * f - Math.sin(f * Math.PI) * 40;
-      ctx.fillStyle = '#ffd27a'; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+      const f = b.t / b.dur, b0 = b.b0 ?? b.y, b1 = b.b1 ?? b.ty, piso = b0 + (b1 - b0) * f, alto = (b0 - b.y) * (1 - f) + (b1 - b.ty) * f + Math.sin(f * Math.PI) * 40;
+      const P = cam.proyectar(b.x + (b.tx - b.x) * f, piso, alto);
+      ctx.fillStyle = '#ffd27a'; ctx.beginPath(); ctx.arc(P.x, P.y, 2.6 * P.s, 0, Math.PI * 2); ctx.fill();
     }
-    for (const x of this.explosiones) x.dibujar(ctx, 0);
-    for (const p of this.particulas) p.dibujar(ctx, 0);
+    for (const x of this.explosiones) enCamara(ctx, cam, x.x, x.y, g => x.dibujar(g, 0));
+    for (const p of this.particulas) {   // gotas y polvo: directo en su punto proyectado (son muchas; sin guardar el contexto)
+      const P = p.piso !== undefined ? cam.proyectar(p.x, p.piso, p.piso - p.y) : cam.proyectar(p.x, p.y), t = p.tam * P.s;   // con piso: en su fila, a su altura
+      ctx.globalAlpha = Math.min(1, p.vida / p.vidaMax * 2); ctx.fillStyle = p.color; ctx.fillRect(P.x - t / 2, P.y - t / 2, t, t);
+    }
+    ctx.globalAlpha = 1;
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.5, ANCHO / 2, ALTO / 2, ALTO);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.45)'); ctx.fillStyle = v; ctx.fillRect(0, 0, ANCHO, ALTO);
   },
@@ -549,6 +568,7 @@ Object.assign(Juego.prototype, {
 
   // Puntero sobre el lienzo (x, y en coordenadas del juego); boton: 0 izquierdo, 2 derecho
   punteroBastion(x, y, tipo, boton) {
+    ({ x, y } = this.camaraBastion().desproyectar(x, y));   // de la pantalla (en perspectiva) al plano del juego
     this.puntero = { x, y };
     if (tipo !== 'down' || this.terminado) return;
     if (boton === 2) { if (!this.cancelarColocacion()) this.vender(x, y); return; }

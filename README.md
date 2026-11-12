@@ -175,20 +175,34 @@ la montaña no la gana ningún bot.
 
 ### Arte
 
-Vista en 3/4, como StarCraft: la cámara mira al norte desde arriba y de costado (unos 50°), así que de cada cosa se ve
-el techo y el frente (`caja34`). La luz viene del noroeste: los techos con luz, los frentes que miran al sur en sombra
-(los muros de cestones tienen el techo de arena claro y la malla del frente más oscura), y las sombras caen abajo a la
-derecha (`sombraCaja`). No hay cielo.
+Vista como en StarCraft 2: la cámara mira al norte desde arriba y de costado, con perspectiva suave
+(`js/bastion-camara.js`). La fila de adelante queda del tamaño de siempre y la de atrás al 80 % (`CAMARA_BASTION`); los
+costados del campo se cierran hacia el fondo y las filas se achican, como un tablero visto desde una punta. La
+perspectiva es sólo la cámara: el juego sigue pasando en el plano (la grilla, las distancias, los alcances, el
+movimiento y el guardado no cambiaron) y el toque se lleva de vuelta al plano (`desproyectar`), así que construir,
+vender y reparar funcionan igual.
 
-- **Borde del mapa** (`PaisajeBastion.fondo`): una meseta más alta que el campo, separada por un escalón del que se ve el
+- **El piso** (pasto, terreno, campos, calles, el patio del campamento) se pinta plano en un lienzo aparte y se lleva a
+  la pantalla en trapecio, fila por fila, cada una a su escala (`capaQuietaBastion`, una vez por nivel).
+- **Lo que está parado** (unidades, zombies, obstáculos, edificios, árboles, el campamento) va en su punto proyectado,
+  escalado alrededor de los pies (`enCamara`), de atrás hacia adelante. Las barras de vida y los carteles no se achican.
+- **Lo que vuela** (trazadoras, proyectiles del tanque, gotas de sangre, humo) lleva su altura sobre el piso, que también
+  se achica con la distancia; las gotas caen a la fila de quien sangra.
+
+De cada cosa se ve el techo y el frente (`caja34`). La luz viene del noroeste: los techos con luz, los frentes que miran
+al sur en sombra (los muros de cestones tienen el techo de arena claro y la malla del frente más oscura), y las sombras
+caen abajo a la derecha (`sombraCaja`). No hay cielo.
+
+- **Borde del mapa** (`PaisajeBastion.borde`): una meseta más alta que el campo, separada por un escalón del que se ve el
   frente (`escalon34`). El escalón va en tramos diagonales, como las barrancas de StarCraft: los que miran al suroeste,
   más claros; los que miran al sureste, más oscuros. Cada escenario tiene el suyo: barranca de tierra con piedras, raíces
   y alambrado en la granja (con una rampa por donde baja el camino); muro de contención de paneles con baranda en la
   autopista; barranca con raíces en el bosque; paredón de estratos con el cañón como rampa en el desierto; paredón de roca
-  con vetas de nieve en la montaña. Arriba, con la misma cámara: casas y granero con el techo a dos aguas a la vista,
-  silo, molino y campos sembrados con la altura de las plantas (`parcela34`); dos filas de edificios con las azoteas a
-  la vista (pretil, máquinas, tanques de agua, agujeros quemados e incendios), la calle con autos y faroles; el bosque
-  cerrado de pinos; la meseta con piedras y cactus; los pinos nevados.
+  con vetas de nieve en la montaña. Arriba, con la misma cámara y hasta el borde de la pantalla: casas y granero con el
+  techo a dos aguas a la vista, silo, molino, fardos y campos sembrados con la altura de las plantas (`parcela34`), entre
+  caminos con cortinas de árboles; manzanas de edificios entre calles y avenidas, con las azoteas a la vista (pretil,
+  máquinas, tanques de agua, agujeros quemados e incendios con humo), autos y faroles; el bosque cerrado de pinos, con la
+  niebla de la noche; piedras, cactus y el cañón; peñascos y pinos nevados.
 - **Terreno hundido** (`pozo34`): del agua, el barro, el hielo y la ruta entre los cordones se ve la pared de enfrente
   (la del norte) y el fondo corrido hacia abajo; contra la orilla oeste, la sombra. El agua refleja la barranca y tiene
   la línea del agua; la tierra arada, surcos con el lomo con luz; el puente de tablones queda levantado sobre el agua, con
@@ -196,23 +210,25 @@ derecha (`sombraCaja`). No hay cielo.
 - **Muro del campamento**: como está sobre el borde izquierdo de la pantalla, la cámara lo ve un poco de costado
   (`prisma34`): además del techo de arena se ve la cara que mira al campo, con la malla y los parantes.
 
-La grilla, el movimiento, la colocación y el guardado no cambiaron.
-
-Todo lo del modo se dibuja en `js/bastion-dibujo.js`, con el mismo estilo de ilustración que el jugador (`pintura`:
+Todo lo del modo se dibuja en `js/bastion-dibujo.js` (la cámara, en `js/bastion-camara.js`), con el mismo estilo de
+ilustración que el jugador (`pintura`:
 dos tonos, brillo de borde y contorno del color de cada pieza). Soldado con casco con funda, chaleco, mochila y fusil
 con mira; nido de ametralladora pesada en trípode con el tirador agachado tras bolsas de arena; búnker de hormigón con
 red de camuflaje, tronera con los cascos de los de adentro y antena; tanque con orugas, ruedas, faldones, torre con
 escotilla, ametralladora, lanzahumos y cañón con evacuador y freno de boca; muro de cestones de malla con concertina
 (se abolla y pierde arena con el daño); obra con andamio y tablón de seguridad. El campamento es una base de avanzada:
 muro de cestones con portón y barrera, torre de guardia con reflector que barre el campo, bandera, carpas, cuartel
-prefabricado y taller de chapa en arco. Cada escenario tiene fondo en capas con bruma (granja con granero, silo y
-molino; ciudad con incendios y autopista cortada; bosque de noche con luciérnagas; desierto con mesetas y buitres;
-montaña nevando) y terreno con bordes redondeados, orillas, juncos, carriles y surcos.
+prefabricado y taller de chapa en arco. Cada escenario tiene su paisaje alrededor del campo (granja con granero, silo
+y molino; ciudad con incendios; bosque de noche con luciérnagas; desierto con cañón y buitres; montaña nevando) y
+terreno con bordes redondeados, orillas, juncos, carriles y surcos.
 
 Rendimiento: cada pose de cada unidad y cada obstáculo se dibuja una sola vez y queda en una caché de imágenes
-(`conSprite`, a la resolución en que se ve); el fondo quieto, el suelo y el terreno van en una capa por nivel; por cuadro
-solo se pintan fogonazos, humo, bandera, reflector, nubes, nieve y brillos del agua. Con 43 unidades en pantalla el
-dibujo pasó de 26 ms a 3,4 ms por cuadro (sin la caché, el arte nuevo era inviable).
+(`conSprite`, a la resolución en que se ve, que con la cámara depende de la fila); el piso en trapecio, el borde del
+mapa, el campamento y la niebla de la derecha van en una capa por nivel (`capaQuietaBastion`: de 25 a 78 ms al entrar,
+en Chrome sin GPU); por cuadro solo se pintan fogonazos, humo, bandera, reflector, nubes, nieve y brillos del agua. Con
+43 unidades en pantalla el dibujo pasó de 26 ms a 3,4 ms por cuadro (sin la caché, el arte nuevo era inviable). La
+cámara le suma algo al cuadro: en una batalla chica (6 unidades, 4 o 5 zombies), de 5,2–6,0 ms a 6,4–7,9 ms (Chrome sin
+GPU), por las unidades y los zombies escalados.
 
 ## Publicar
 
