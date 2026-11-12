@@ -1215,7 +1215,7 @@ body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261112-1748-5029bf0';
+const VERSION_JUEGO = '20261112-1811-6d6b4a8';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -15165,7 +15165,7 @@ Object.assign(Juego.prototype, {
   prepararBastion() {
     const B = BASTION;
     Mundo.plano = true; Mundo.carriles = false; Mundo.perfil = null;
-    this.cols = Math.max(8, Math.floor((ANCHO - B.baseX - B.margenDer) / B.celda[0]));
+    this.cols = columnasBastion();   // según el ancho de la pantalla y el zoom (js/bastion-camara.js)
     this.filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
     this.dinero = B.dineroInicial; this.vidaBase = B.vidaBase;
     this.unidades = []; this.colaCuartel = []; this.colaTaller = [];
@@ -15827,14 +15827,14 @@ const PaisajeBastion = {
   // Vista chica de un nivel (para la pantalla de elegir): escena completa a escala
   vista(lienzo, N) {
     const ctx = lienzo.getContext('2d'), B = BASTION, e = lienzo.width / ANCHO;
-    const cols = Math.max(8, Math.floor((ANCHO - B.baseX - B.margenDer) / B.celda[0])), filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
+    const cols = columnasBastion(), filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
     const g = { cols, filas, dentro: (c, f) => c >= 0 && f >= 0 && c < cols && f < filas, terreno: Array.from({ length: filas }, () => new Array(cols).fill(N.base)) };
     for (const [tipo, c0, f0, c1, f1] of N.terreno) for (let f = f0; f <= f1; f++) for (let c = c0; c <= c1; c++) if (g.dentro(c, f)) g.terreno[f][c] = tipo;
     g.terrenoEn = (c, f) => g.dentro(c, f) ? g.terreno[f][c] : null;
     g.nivelBastion = N;
     // La misma cámara que en la partida (js/bastion-camara.js), a escala chica y recortando arriba
     const cam = camaraBastion(cols, filas), capa = capaQuietaBastion(g, N, e, cam);
-    ctx.setTransform(e, 0, 0, e, 0, -60 * e);
+    ctx.setTransform(e, 0, 0, e, 0, -40 * e);
     ctx.drawImage(capa, 0, 0, ANCHO, ALTO);
     N.obstaculos.forEach(([tipo, c, f], i) => enCamara(ctx, cam, B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8, k => { k.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(k, tipo, i); }));
     const q = [[-600, B.arriba - 10], [B.baseX - 10, B.arriba - 10], [B.baseX - 10, ALTO], [-600, ALTO]].map(([x, y]) => cam.proyectar(x, y));   // el campamento, apenas sugerido
@@ -16354,6 +16354,15 @@ Object.assign(DibujoBastion, {
 });
 
 /* ---------- Campamento con la cámara: el piso va plano (en trapecio con el resto) y cada cosa parada en su lugar ---------- */
+// El campamento se arrima al muro (corre: cuánto de la distancia al muro conserva) y se achica un poco, así la franja
+// que se ve a la izquierda es angosta y el campo de juego gana pantalla
+const CAMPAMENTO_JUNTO = { corre: 0.7, escala: 0.82 };
+const alMuro = (wx, x) => wx - (wx - x) * CAMPAMENTO_JUNTO.corre;
+// Lo dibujado alrededor de (x, y) llevado a su lugar junto al muro, más chico
+function juntoAlMuro(wx, x, y, dibujar) {
+  const nx = alMuro(wx, x), e = CAMPAMENTO_JUNTO.escala;
+  return { x: nx, y, dibujar: ctx => { ctx.save(); ctx.translate(nx, y); ctx.scale(e, e); ctx.translate(-x, -y); dibujar(ctx); ctx.restore(); } };
+}
 Juego.prototype.medidasCampamento = function () {
   const B = BASTION, alto = this.filas * B.celda[1], y0 = B.arriba, x = B.baseX;
   return { B, alto, y0, x, puertaY: y0 + alto / 2 + 8, abajo: y0 + alto + 20, tx: 30, ty: y0 + 26, mx: 74, my: y0 + 40, cy: y0 + alto - 80, gy: y0 + alto - 16, wx: x - 14 };
@@ -16376,7 +16385,7 @@ Juego.prototype.campamentoPiso = function (ctx) {
 // Lo que está parado en el campamento, cada cosa con su punto de apoyo (x, y) en el plano
 Juego.prototype.campamentoProps = function () {
   const { y0, x, puertaY, abajo, tx, ty, mx, my, cy, gy, wx } = this.medidasCampamento(), P = PAL_BASTION, lista = [];
-  const poner = (px, py, dibujar) => lista.push({ x: px, y: py, dibujar });
+  const poner = (px, py, dibujar) => lista.push(px < wx ? juntoAlMuro(wx, px, py, dibujar) : { x: px, y: py, dibujar });   // el muro y el portón, en su lugar
   // Torre de guardia: cuatro patas, plataforma de tablones con bolsas, techo y reflector
   poner(tx, ty, ctx => {
     sombraCaja(ctx, tx - 13, tx + 13, ty, 12, 40, 0.28);
@@ -16466,21 +16475,22 @@ Juego.prototype.campamentoProps = function () {
 };
 // Por cuadro: el haz del reflector, la bandera, el avance del cuartel y del taller y el golpe al campamento
 Juego.prototype.dibujarCampamento = function (ctx, cam = this.camaraBastion()) {
-  const { B, alto, y0, x, tx, ty, mx, my, cy, gy } = this.medidasCampamento(), ms = this.ahora;
+  const { B, alto, y0, x, tx, ty, mx, my, cy, gy, wx } = this.medidasCampamento(), ms = this.ahora, eC = CAMPAMENTO_JUNTO.escala;
   if (!Lienzo.liviano) {   // haz del reflector que barre el campo
-    const T = cam.proyectar(tx, ty), a = Math.sin(ms / 2200) * 0.25, largo = 260 * T.s;
-    ctx.save(); ctx.translate(T.x + 13 * T.s, T.y - 48 * T.s); ctx.rotate(0.3 + a); ctx.globalCompositeOperation = 'lighter';
+    const T = cam.proyectar(alMuro(wx, tx), ty), a = Math.sin(ms / 2200) * 0.25, largo = 260 * T.s;
+    ctx.save(); ctx.translate(T.x + 13 * eC * T.s, T.y - 48 * eC * T.s); ctx.rotate(0.3 + a); ctx.globalCompositeOperation = 'lighter';
     const g = ctx.createLinearGradient(0, 0, largo, 0); g.addColorStop(0, 'rgba(255,245,200,0.16)'); g.addColorStop(1, 'rgba(255,245,200,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, -1.5); ctx.lineTo(largo, -30 * T.s); ctx.lineTo(largo, 30 * T.s); ctx.lineTo(0, 1.5); ctx.fill(); ctx.restore();
   }
   const ond = k => Math.sin(ms / 260 + k) * 1.6;
-  enCamara(ctx, cam, mx, my, g => {
+  enCamara(ctx, cam, alMuro(wx, mx), my, g => {
+    g.translate(alMuro(wx, mx), my); g.scale(eC, eC); g.translate(-mx, -my);
     pb(g, c => { c.moveTo(mx, my - 66); c.quadraticCurveTo(mx + 9, my - 67 + ond(0), mx + 20, my - 65 + ond(1)); c.lineTo(mx + 20, my - 55 + ond(1)); c.quadraticCurveTo(mx + 9, my - 57 + ond(0), mx, my - 56); c.closePath(); }, '#3a6fb0', { sombra: 0.4, linea: 0.4 });
     detalle(g, '#f2e9d4', c => c.rect(mx + 4, my - 63 + ond(0) * 0.5, 4, 4));
   });
   for (const [cola, ax, ay, sube] of [[this.colaCuartel, 49, cy, 46], [this.colaTaller, 50, gy, 66]]) {   // la barra de avance, arriba del edificio (no se achica)
     const o = cola[0]; if (!o) continue;
-    const f = Math.min(1, (o.hecho || 0) / B.unidades[o.tipo].tiempo), P = cam.proyectar(ax, ay), yb = P.y - sube * P.s;
+    const f = Math.min(1, (o.hecho || 0) / B.unidades[o.tipo].tiempo), P = cam.proyectar(alMuro(wx, ax), ay), yb = P.y - sube * eC * P.s;
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(P.x - 33, yb, 66, 5); ctx.fillStyle = '#ffd27a'; ctx.fillRect(P.x - 32, yb + 1, 64 * f, 3);
     if (cola.length > 1) { ctx.fillStyle = '#ffd27a'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('+' + (cola.length - 1), P.x + 41, yb + 5); }
   }
@@ -17104,6 +17114,7 @@ PaisajeBastion.borde = function (N, cam) {
       const colores = ['#5b5452', '#4d4a50', '#6a5a4c', '#57544a', '#625c58', '#4f4b47'];
       calles.forEach(([a], fila) => {
         const yF = a - 3, fondoMz = fila + 1 < calles.length ? calles[fila + 1][1] + 3 : Y0 - 60, profMax = yF - fondoMz, s = sp(yF);
+        if (profMax < 24) return;   // manzana que no entra (con la meseta angosta, la de más atrás queda fuera de cuadro)
         for (let x = X0, k = fila * 61; x < X1; k++) {
           const w = 44 + azar(k, 561) * 58, choca = avenidas.find(ax => x < ax + 18 && x + w > ax - 18);
           if (choca !== undefined) { x = choca + 18; continue; }
@@ -17236,21 +17247,40 @@ PaisajeBastion.fondoVivo = function (ctx, N, ms, cam) {
  *     proyectado, escalado según la distancia; las barras de vida y los carteles no se achican (son de interfaz).
  *   - El toque se convierte de vuelta al plano (desproyectar), así que construir, vender y reparar no cambian.
  * Todo lo quieto se arma una vez por nivel (capaQuietaBastion) y por cuadro sólo se copia.
+ * Encuadre: el campo ocupa casi toda la pantalla. Su borde de atrás queda apenas debajo de la franja de arriba (la del
+ * dinero y la oleada) y el de adelante, sobre el panel de construir; a la izquierda se ve sólo una franja del campamento.
+ * En pantallas anchas el campo se agranda (zoom) en vez de sumar columnas, hasta zoomMax; nunca baja de 18 columnas
+ * (los niveles están dibujados para 18 × 9).
  */
-const CAMARA_BASTION = { atras: 0.8, adelante: 1 };   // escala de la fila de atrás; alto de la fila de adelante (1: como antes)
+const CAMARA_BASTION = {
+  atras: 0.8,         // escala de la fila de atrás respecto de la de adelante
+  arriba: 84,         // y en pantalla del borde de atrás del campo (arriba queda la meseta, detrás de la franja de datos)
+  abajo: 484,         // y en pantalla del borde de adelante
+  campamento: 100,    // ancho en pantalla de la franja del campamento, a la izquierda del campo
+  zoomMax: 1.15,
+};
+// Columnas de la grilla según el ancho de la pantalla: con el zoom que da 18 columnas (si entra más, se suman)
+function columnasBastion() {
+  const B = BASTION, C = CAMARA_BASTION, libre = ANCHO - C.campamento - B.margenDer;
+  const z = limitar(libre / (18 * B.celda[0]), 1, C.zoomMax);
+  return Math.max(8, Math.floor(libre / (B.celda[0] * z)));
+}
 
 function camaraBastion(cols, filas) {
-  const B = BASTION, [W, H] = B.celda, yF = B.arriba, yN = B.arriba + filas * H, clave = ANCHO + ':' + cols + ':' + filas;
+  const B = BASTION, C = CAMARA_BASTION, [W, H] = B.celda, yF = B.arriba, yN = B.arriba + filas * H, clave = ANCHO + ':' + cols + ':' + filas;
   if (camaraBastion.ultima && camaraBastion.ultima.clave === clave) return camaraBastion.ultima;
-  const k = (1 / CAMARA_BASTION.atras - 1) / (yN - yF);   // 1/escala crece parejo hacia atrás (como la distancia a la cámara)
-  const YN = yN, YH = YN - CAMARA_BASTION.adelante / k, XV = B.baseX + cols * W / 2;   // YH: el horizonte, muy arriba de la pantalla
+  const k = (1 / C.atras - 1) / (yN - yF);   // 1/escala crece parejo hacia atrás (como la distancia a la cámara)
+  // Zoom: el campo llena el ancho que le toca (r es la escala relativa a la fila de adelante; s = Z·r, la de pantalla)
+  const Z = limitar((ANCHO - C.campamento - B.margenDer) / (cols * W), 0.6, C.zoomMax);
+  const XV = B.baseX + cols * W / 2, XS = C.campamento + cols * W * Z / 2;   // centro del campo: en el plano y en pantalla
+  const YN = C.abajo, YH = YN - (C.abajo - C.arriba) / (1 - C.atras);       // YH: el horizonte, muy arriba de la pantalla
   const cam = {
-    clave, yF, yN, XV, YN, YH, k,
-    escala: y => 1 / (1 + k * (yN - y)),
+    clave, yF, yN, XV, XS, YN, YH, k, Z,
+    escala: y => Z / (1 + k * (yN - y)),
     // Del plano a la pantalla; h: altura sobre el piso, que se achica igual que todo a esa distancia
-    proyectar(x, y, h = 0) { const s = 1 / (1 + k * (yN - y)); return { x: XV + (x - XV) * s, y: YH + (YN - YH) * s - h * s, s }; },
+    proyectar(x, y, h = 0) { const r = 1 / (1 + k * (yN - y)), s = Z * r; return { x: XS + (x - XV) * s, y: YH + (YN - YH) * r - h * s, s }; },
     // De la pantalla al plano (al piso)
-    desproyectar(X, Y) { const s = Math.max(0.05, (Y - YH) / (YN - YH)); return { x: XV + (X - XV) / s, y: yN - (1 / s - 1) / k, s }; },
+    desproyectar(X, Y) { const r = Math.max(0.05, (Y - YH) / (YN - YH)), s = Z * r; return { x: XV + (X - XS) / s, y: yN - (1 / r - 1) / k, s }; },
   };
   camaraBastion.ultima = cam;
   return cam;
@@ -17286,12 +17316,12 @@ function capaQuietaBastion(g, N, e, cam) {
     if (g.campamentoPiso) g.campamentoPiso(p);
     // 2) Del plano a la pantalla, fila por fila: cada fila de pantalla toma su tira del plano, a su escala
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-    const pend = (cam.YN - cam.YH) * cam.k;   // cuánto baja la pantalla por unidad del plano, a escala 1
+    const pend = (cam.YN - cam.YH) * cam.k;   // cuánto baja la pantalla por unidad del plano, en la fila de adelante
     for (let j = 0; j < L.height; j++) {
-      const q = cam.desproyectar(cam.XV, (j + 0.5) / e), s = q.s, tira = 1 / (e * pend * s * s);   // tira: cuánto plano cabe en un píxel
+      const q = cam.desproyectar(cam.XS, (j + 0.5) / e), s = q.s, r = s / cam.Z, tira = 1 / (e * pend * r * r);   // tira: cuánto plano cabe en un píxel
       const sy = (q.y - y0 - tira / 2) * ep, sh = Math.max(0.5, tira * ep);
       if (sy + sh <= 0 || sy >= plano.height) continue;
-      c.drawImage(plano, 0, sy, plano.width, sh, (cam.XV + (x0 - cam.XV) * s) * e, j, (x1 - x0) * s * e, 1);
+      c.drawImage(plano, 0, sy, plano.width, sh, (cam.XS + (x0 - cam.XV) * s) * e, j, (x1 - x0) * s * e, 1);
     }
     // 3) Lo que está parado, de atrás hacia adelante
     c.setTransform(e, 0, 0, e, 0, 0);
@@ -18029,6 +18059,7 @@ const Asistente = (() => {
     misionActual = mision || null;
     opcionesActuales = opciones;
     const difGuardada = opciones.estrategia && opciones.estrategia.dificultad && DIFICULTADES[opciones.estrategia.dificultad];   // la partida guardada sigue con la suya
+    ajustarResolucion();   // antes de armar la partida: el ancho de la pantalla define, por ejemplo, las columnas del bastión
     juego = new Juego(lienzo, misionActual, difGuardada || Dificultad.actual(), opciones);
     if (window.Tactil) Tactil.alEmpezar();   // en un teléfono: pantalla completa y apaisado (donde se pueda)
     pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');

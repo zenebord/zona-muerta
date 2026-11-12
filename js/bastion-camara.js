@@ -8,21 +8,40 @@
  *     proyectado, escalado según la distancia; las barras de vida y los carteles no se achican (son de interfaz).
  *   - El toque se convierte de vuelta al plano (desproyectar), así que construir, vender y reparar no cambian.
  * Todo lo quieto se arma una vez por nivel (capaQuietaBastion) y por cuadro sólo se copia.
+ * Encuadre: el campo ocupa casi toda la pantalla. Su borde de atrás queda apenas debajo de la franja de arriba (la del
+ * dinero y la oleada) y el de adelante, sobre el panel de construir; a la izquierda se ve sólo una franja del campamento.
+ * En pantallas anchas el campo se agranda (zoom) en vez de sumar columnas, hasta zoomMax; nunca baja de 18 columnas
+ * (los niveles están dibujados para 18 × 9).
  */
-const CAMARA_BASTION = { atras: 0.8, adelante: 1 };   // escala de la fila de atrás; alto de la fila de adelante (1: como antes)
+const CAMARA_BASTION = {
+  atras: 0.8,         // escala de la fila de atrás respecto de la de adelante
+  arriba: 84,         // y en pantalla del borde de atrás del campo (arriba queda la meseta, detrás de la franja de datos)
+  abajo: 484,         // y en pantalla del borde de adelante
+  campamento: 100,    // ancho en pantalla de la franja del campamento, a la izquierda del campo
+  zoomMax: 1.15,
+};
+// Columnas de la grilla según el ancho de la pantalla: con el zoom que da 18 columnas (si entra más, se suman)
+function columnasBastion() {
+  const B = BASTION, C = CAMARA_BASTION, libre = ANCHO - C.campamento - B.margenDer;
+  const z = limitar(libre / (18 * B.celda[0]), 1, C.zoomMax);
+  return Math.max(8, Math.floor(libre / (B.celda[0] * z)));
+}
 
 function camaraBastion(cols, filas) {
-  const B = BASTION, [W, H] = B.celda, yF = B.arriba, yN = B.arriba + filas * H, clave = ANCHO + ':' + cols + ':' + filas;
+  const B = BASTION, C = CAMARA_BASTION, [W, H] = B.celda, yF = B.arriba, yN = B.arriba + filas * H, clave = ANCHO + ':' + cols + ':' + filas;
   if (camaraBastion.ultima && camaraBastion.ultima.clave === clave) return camaraBastion.ultima;
-  const k = (1 / CAMARA_BASTION.atras - 1) / (yN - yF);   // 1/escala crece parejo hacia atrás (como la distancia a la cámara)
-  const YN = yN, YH = YN - CAMARA_BASTION.adelante / k, XV = B.baseX + cols * W / 2;   // YH: el horizonte, muy arriba de la pantalla
+  const k = (1 / C.atras - 1) / (yN - yF);   // 1/escala crece parejo hacia atrás (como la distancia a la cámara)
+  // Zoom: el campo llena el ancho que le toca (r es la escala relativa a la fila de adelante; s = Z·r, la de pantalla)
+  const Z = limitar((ANCHO - C.campamento - B.margenDer) / (cols * W), 0.6, C.zoomMax);
+  const XV = B.baseX + cols * W / 2, XS = C.campamento + cols * W * Z / 2;   // centro del campo: en el plano y en pantalla
+  const YN = C.abajo, YH = YN - (C.abajo - C.arriba) / (1 - C.atras);       // YH: el horizonte, muy arriba de la pantalla
   const cam = {
-    clave, yF, yN, XV, YN, YH, k,
-    escala: y => 1 / (1 + k * (yN - y)),
+    clave, yF, yN, XV, XS, YN, YH, k, Z,
+    escala: y => Z / (1 + k * (yN - y)),
     // Del plano a la pantalla; h: altura sobre el piso, que se achica igual que todo a esa distancia
-    proyectar(x, y, h = 0) { const s = 1 / (1 + k * (yN - y)); return { x: XV + (x - XV) * s, y: YH + (YN - YH) * s - h * s, s }; },
+    proyectar(x, y, h = 0) { const r = 1 / (1 + k * (yN - y)), s = Z * r; return { x: XS + (x - XV) * s, y: YH + (YN - YH) * r - h * s, s }; },
     // De la pantalla al plano (al piso)
-    desproyectar(X, Y) { const s = Math.max(0.05, (Y - YH) / (YN - YH)); return { x: XV + (X - XV) / s, y: yN - (1 / s - 1) / k, s }; },
+    desproyectar(X, Y) { const r = Math.max(0.05, (Y - YH) / (YN - YH)), s = Z * r; return { x: XV + (X - XS) / s, y: yN - (1 / r - 1) / k, s }; },
   };
   camaraBastion.ultima = cam;
   return cam;
@@ -58,12 +77,12 @@ function capaQuietaBastion(g, N, e, cam) {
     if (g.campamentoPiso) g.campamentoPiso(p);
     // 2) Del plano a la pantalla, fila por fila: cada fila de pantalla toma su tira del plano, a su escala
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-    const pend = (cam.YN - cam.YH) * cam.k;   // cuánto baja la pantalla por unidad del plano, a escala 1
+    const pend = (cam.YN - cam.YH) * cam.k;   // cuánto baja la pantalla por unidad del plano, en la fila de adelante
     for (let j = 0; j < L.height; j++) {
-      const q = cam.desproyectar(cam.XV, (j + 0.5) / e), s = q.s, tira = 1 / (e * pend * s * s);   // tira: cuánto plano cabe en un píxel
+      const q = cam.desproyectar(cam.XS, (j + 0.5) / e), s = q.s, r = s / cam.Z, tira = 1 / (e * pend * r * r);   // tira: cuánto plano cabe en un píxel
       const sy = (q.y - y0 - tira / 2) * ep, sh = Math.max(0.5, tira * ep);
       if (sy + sh <= 0 || sy >= plano.height) continue;
-      c.drawImage(plano, 0, sy, plano.width, sh, (cam.XV + (x0 - cam.XV) * s) * e, j, (x1 - x0) * s * e, 1);
+      c.drawImage(plano, 0, sy, plano.width, sh, (cam.XS + (x0 - cam.XV) * s) * e, j, (x1 - x0) * s * e, 1);
     }
     // 3) Lo que está parado, de atrás hacia adelante
     c.setTransform(e, 0, 0, e, 0, 0);

@@ -482,6 +482,15 @@ Object.assign(DibujoBastion, {
 });
 
 /* ---------- Campamento con la cámara: el piso va plano (en trapecio con el resto) y cada cosa parada en su lugar ---------- */
+// El campamento se arrima al muro (corre: cuánto de la distancia al muro conserva) y se achica un poco, así la franja
+// que se ve a la izquierda es angosta y el campo de juego gana pantalla
+const CAMPAMENTO_JUNTO = { corre: 0.7, escala: 0.82 };
+const alMuro = (wx, x) => wx - (wx - x) * CAMPAMENTO_JUNTO.corre;
+// Lo dibujado alrededor de (x, y) llevado a su lugar junto al muro, más chico
+function juntoAlMuro(wx, x, y, dibujar) {
+  const nx = alMuro(wx, x), e = CAMPAMENTO_JUNTO.escala;
+  return { x: nx, y, dibujar: ctx => { ctx.save(); ctx.translate(nx, y); ctx.scale(e, e); ctx.translate(-x, -y); dibujar(ctx); ctx.restore(); } };
+}
 Juego.prototype.medidasCampamento = function () {
   const B = BASTION, alto = this.filas * B.celda[1], y0 = B.arriba, x = B.baseX;
   return { B, alto, y0, x, puertaY: y0 + alto / 2 + 8, abajo: y0 + alto + 20, tx: 30, ty: y0 + 26, mx: 74, my: y0 + 40, cy: y0 + alto - 80, gy: y0 + alto - 16, wx: x - 14 };
@@ -504,7 +513,7 @@ Juego.prototype.campamentoPiso = function (ctx) {
 // Lo que está parado en el campamento, cada cosa con su punto de apoyo (x, y) en el plano
 Juego.prototype.campamentoProps = function () {
   const { y0, x, puertaY, abajo, tx, ty, mx, my, cy, gy, wx } = this.medidasCampamento(), P = PAL_BASTION, lista = [];
-  const poner = (px, py, dibujar) => lista.push({ x: px, y: py, dibujar });
+  const poner = (px, py, dibujar) => lista.push(px < wx ? juntoAlMuro(wx, px, py, dibujar) : { x: px, y: py, dibujar });   // el muro y el portón, en su lugar
   // Torre de guardia: cuatro patas, plataforma de tablones con bolsas, techo y reflector
   poner(tx, ty, ctx => {
     sombraCaja(ctx, tx - 13, tx + 13, ty, 12, 40, 0.28);
@@ -594,21 +603,22 @@ Juego.prototype.campamentoProps = function () {
 };
 // Por cuadro: el haz del reflector, la bandera, el avance del cuartel y del taller y el golpe al campamento
 Juego.prototype.dibujarCampamento = function (ctx, cam = this.camaraBastion()) {
-  const { B, alto, y0, x, tx, ty, mx, my, cy, gy } = this.medidasCampamento(), ms = this.ahora;
+  const { B, alto, y0, x, tx, ty, mx, my, cy, gy, wx } = this.medidasCampamento(), ms = this.ahora, eC = CAMPAMENTO_JUNTO.escala;
   if (!Lienzo.liviano) {   // haz del reflector que barre el campo
-    const T = cam.proyectar(tx, ty), a = Math.sin(ms / 2200) * 0.25, largo = 260 * T.s;
-    ctx.save(); ctx.translate(T.x + 13 * T.s, T.y - 48 * T.s); ctx.rotate(0.3 + a); ctx.globalCompositeOperation = 'lighter';
+    const T = cam.proyectar(alMuro(wx, tx), ty), a = Math.sin(ms / 2200) * 0.25, largo = 260 * T.s;
+    ctx.save(); ctx.translate(T.x + 13 * eC * T.s, T.y - 48 * eC * T.s); ctx.rotate(0.3 + a); ctx.globalCompositeOperation = 'lighter';
     const g = ctx.createLinearGradient(0, 0, largo, 0); g.addColorStop(0, 'rgba(255,245,200,0.16)'); g.addColorStop(1, 'rgba(255,245,200,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, -1.5); ctx.lineTo(largo, -30 * T.s); ctx.lineTo(largo, 30 * T.s); ctx.lineTo(0, 1.5); ctx.fill(); ctx.restore();
   }
   const ond = k => Math.sin(ms / 260 + k) * 1.6;
-  enCamara(ctx, cam, mx, my, g => {
+  enCamara(ctx, cam, alMuro(wx, mx), my, g => {
+    g.translate(alMuro(wx, mx), my); g.scale(eC, eC); g.translate(-mx, -my);
     pb(g, c => { c.moveTo(mx, my - 66); c.quadraticCurveTo(mx + 9, my - 67 + ond(0), mx + 20, my - 65 + ond(1)); c.lineTo(mx + 20, my - 55 + ond(1)); c.quadraticCurveTo(mx + 9, my - 57 + ond(0), mx, my - 56); c.closePath(); }, '#3a6fb0', { sombra: 0.4, linea: 0.4 });
     detalle(g, '#f2e9d4', c => c.rect(mx + 4, my - 63 + ond(0) * 0.5, 4, 4));
   });
   for (const [cola, ax, ay, sube] of [[this.colaCuartel, 49, cy, 46], [this.colaTaller, 50, gy, 66]]) {   // la barra de avance, arriba del edificio (no se achica)
     const o = cola[0]; if (!o) continue;
-    const f = Math.min(1, (o.hecho || 0) / B.unidades[o.tipo].tiempo), P = cam.proyectar(ax, ay), yb = P.y - sube * P.s;
+    const f = Math.min(1, (o.hecho || 0) / B.unidades[o.tipo].tiempo), P = cam.proyectar(alMuro(wx, ax), ay), yb = P.y - sube * eC * P.s;
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(P.x - 33, yb, 66, 5); ctx.fillStyle = '#ffd27a'; ctx.fillRect(P.x - 32, yb + 1, 64 * f, 3);
     if (cola.length > 1) { ctx.fillStyle = '#ffd27a'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('+' + (cola.length - 1), P.x + 41, yb + 5); }
   }
@@ -1232,6 +1242,7 @@ PaisajeBastion.borde = function (N, cam) {
       const colores = ['#5b5452', '#4d4a50', '#6a5a4c', '#57544a', '#625c58', '#4f4b47'];
       calles.forEach(([a], fila) => {
         const yF = a - 3, fondoMz = fila + 1 < calles.length ? calles[fila + 1][1] + 3 : Y0 - 60, profMax = yF - fondoMz, s = sp(yF);
+        if (profMax < 24) return;   // manzana que no entra (con la meseta angosta, la de más atrás queda fuera de cuadro)
         for (let x = X0, k = fila * 61; x < X1; k++) {
           const w = 44 + azar(k, 561) * 58, choca = avenidas.find(ax => x < ax + 18 && x + w > ax - 18);
           if (choca !== undefined) { x = choca + 18; continue; }

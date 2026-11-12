@@ -55,6 +55,7 @@
     misionActual = mision || null;
     opcionesActuales = opciones;
     const difGuardada = opciones.estrategia && opciones.estrategia.dificultad && DIFICULTADES[opciones.estrategia.dificultad];   // la partida guardada sigue con la suya
+    ajustarResolucion();   // antes de armar la partida: el ancho de la pantalla define, por ejemplo, las columnas del bastión
     juego = new Juego(lienzo, misionActual, difGuardada || Dificultad.actual(), opciones);
     if (window.Tactil) Tactil.alEmpezar();   // en un teléfono: pantalla completa y apaisado (donde se pueda)
     pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');

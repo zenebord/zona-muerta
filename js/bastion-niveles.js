@@ -105,14 +105,14 @@ const PaisajeBastion = {
   // Vista chica de un nivel (para la pantalla de elegir): escena completa a escala
   vista(lienzo, N) {
     const ctx = lienzo.getContext('2d'), B = BASTION, e = lienzo.width / ANCHO;
-    const cols = Math.max(8, Math.floor((ANCHO - B.baseX - B.margenDer) / B.celda[0])), filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
+    const cols = columnasBastion(), filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
     const g = { cols, filas, dentro: (c, f) => c >= 0 && f >= 0 && c < cols && f < filas, terreno: Array.from({ length: filas }, () => new Array(cols).fill(N.base)) };
     for (const [tipo, c0, f0, c1, f1] of N.terreno) for (let f = f0; f <= f1; f++) for (let c = c0; c <= c1; c++) if (g.dentro(c, f)) g.terreno[f][c] = tipo;
     g.terrenoEn = (c, f) => g.dentro(c, f) ? g.terreno[f][c] : null;
     g.nivelBastion = N;
     // La misma cámara que en la partida (js/bastion-camara.js), a escala chica y recortando arriba
     const cam = camaraBastion(cols, filas), capa = capaQuietaBastion(g, N, e, cam);
-    ctx.setTransform(e, 0, 0, e, 0, -60 * e);
+    ctx.setTransform(e, 0, 0, e, 0, -40 * e);
     ctx.drawImage(capa, 0, 0, ANCHO, ALTO);
     N.obstaculos.forEach(([tipo, c, f], i) => enCamara(ctx, cam, B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8, k => { k.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(k, tipo, i); }));
     const q = [[-600, B.arriba - 10], [B.baseX - 10, B.arriba - 10], [B.baseX - 10, ALTO], [-600, ALTO]].map(([x, y]) => cam.proyectar(x, y));   // el campamento, apenas sugerido
