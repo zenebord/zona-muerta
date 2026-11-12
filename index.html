@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zona Muerta — Zombies del Apocalipsis</title>
+  <link rel="stylesheet" href="css/estilos.css?v=400d6cbe86">
+</head>
+<body>
+
+  <!-- ===== MENÚ PRINCIPAL ===== -->
+  <section id="menu-principal" class="pantalla visible">
+    <div class="humo"></div>
+    <!-- Personaje: arriba a la derecha, con la vista previa del elegido -->
+    <button class="boton-personaje" type="button" data-accion="personaje-abrir">
+      <canvas id="vista-personaje" width="128" height="150" aria-hidden="true"></canvas>
+      <span class="rotulo" data-t="personaje.titulo">PERSONAJE</span>
+      <span id="nombre-personaje" class="nombre"></span>
+    </button>
+    <h1 class="titulo" data-t="menu.titulo">ZONA MUERTA</h1>
+    <p class="subtitulo" data-t="menu.sub">Sobrevive al apocalipsis zombie</p>
+    <div class="selector-dificultad" id="selector-dificultad">
+      <span class="rotulo" data-t="menu.dificultad">DIFICULTAD</span>
+      <button class="opcion-dificultad" data-dificultad="facil" data-t-mayus="dif.facil">FÁCIL</button>
+      <button class="opcion-dificultad" data-dificultad="medio" data-t-mayus="dif.medio">MEDIO</button>
+      <button class="opcion-dificultad" data-dificultad="dificil" data-t-mayus="dif.dificil">DIFÍCIL</button>
+      <p id="descripcion-dificultad" class="descripcion-dificultad"></p>
+    </div>
+    <nav class="opciones">
+      <button class="boton grande historia" data-accion="historia" data-t="menu.historia">HISTORIA: CAMINO A CASA</button>
+      <button class="boton grande" data-accion="infinita" data-t="menu.infinita">PELEA INFINITA</button>
+      <button class="boton grande" data-accion="misiones" data-t="menu.misiones">MISIONES</button>
+      <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
+      <button class="boton grande ultra" data-accion="ultra" data-t="menu.ultra">DEFENSA ZOMBIE ULTRA</button>
+      <button class="boton grande bastion" data-accion="bastion" data-t="menu.bastion">ÚLTIMO BASTIÓN</button>
+      <button class="boton grande" data-accion="entrenamiento" data-t="menu.entrenamiento">ENTRENAMIENTO</button>
+      <div class="fila-chica">
+        <button class="boton chico" data-accion="pruebas" data-t="menu.pruebas">CAMPO DE PRUEBAS</button>
+        <button class="boton chico" data-accion="controles" data-t="menu.controles">CONTROLES</button>
+        <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
+      </div>
+      <!-- Descargar el juego en un solo archivo que se actualiza solo (js/lanzador.js) -->
+      <button type="button" class="boton descarga" data-accion="descargar-juego">
+        <span class="icono-descarga" aria-hidden="true"></span>
+        <span class="columna-descarga"><span class="texto-descarga" data-t="config.descargar">Descargar el juego</span>
+          <span class="nota-descarga" id="nota-descarga" data-t="menu.descargarNota">Un solo archivo para jugar sin pasar por Claude: va más fluido</span></span>
+        <span class="barra-descarga" aria-hidden="true"><span class="relleno-descarga"></span></span>
+      </button>
+    </nav>
+    <p class="pie" data-t="menu.pie">Flechas para moverte y saltar · F o clic dispara · S o clic derecho recarga</p>
+    <p class="creditos" data-t="menu.creditos">Desarrollado por Francisco y el tío Lea</p>
+  </section>
+
+  <!-- ===== MAPAS DE LA PELEA INFINITA ===== -->
+  <section id="panel-mapas" class="pantalla">
+    <h2 data-t="mapas.titulo">ELIGE EL MAPA</h2>
+    <p class="ayuda" data-t="mapas.ayuda">Pelea infinita: rondas cada vez más duras hasta que caigas.</p>
+    <div class="lista-mapas">
+      <button class="tarjeta-mapa ciudad" data-accion="mapa-ciudad">
+        <span class="vista" aria-hidden="true"></span>
+        <h3 data-t="mapas.ciudad">CIUDAD EN RUINAS</h3>
+        <p data-t="mapas.ciudad.texto">La calle al atardecer, con montañas que tienen ametralladoras M2 y cajas con armas especiales.</p>
+        <span class="etiqueta" data-t="mapas.ciudad.etiqueta">ZOMBIES COMUNES Y CORREDORES</span>
+      </button>
+      <button class="tarjeta-mapa cloaca" data-accion="mapa-cloaca">
+        <span class="vista" aria-hidden="true"></span>
+        <h3 data-t="mapas.cloaca">CLOACA</h3>
+        <p data-t="mapas.cloaca.texto">Un canal subterráneo gigante. Entre los zombies de siempre aparecen zombies tóxicos: saltan, dan volteretas y escupen ácido. Agáchate (↓) para esquivar el chorro y no pises los charcos.</p>
+        <span class="etiqueta toxica" data-t="mapas.cloaca.etiqueta">ZOMBIES TÓXICOS</span>
+      </button>
+    </div>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
+  </section>
+
+  <!-- ===== ÚLTIMO BASTIÓN: niveles (js/bastion-niveles.js) ===== -->
+  <section id="panel-bastion-niveles" class="pantalla">
+    <h2 data-t="bniv.titulo">ÚLTIMO BASTIÓN</h2>
+    <p class="ayuda" data-t="bniv.ayuda">Aguanta 10 oleadas con el campamento en pie para ganar el nivel. Cada nivel ganado abre el siguiente.</p>
+    <button id="bastion-continuar" class="boton oculta" data-accion="bastion-continuar"></button>
+    <div id="lista-bastion" class="lista-mapas lista-bastion"></div>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
+  </section>
+
+  <!-- ===== PANEL DE MISIONES ===== -->
+  <section id="panel-misiones" class="pantalla">
+    <h2 data-t="misiones.titulo">MISIONES</h2>
+    <p class="ayuda" data-t="misiones.ayuda">Todas las misiones se juegan dentro de la pelea infinita. Elige una y a sobrevivir.</p>
+    <div id="lista-misiones" class="lista-misiones"></div>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+      <button class="boton chico peligro" data-accion="borrar-progreso" data-t="misiones.borrar">BORRAR PROGRESO</button>
+    </div>
+  </section>
+
+  <!-- ===== CONTROLES ===== -->
+  <section id="panel-controles" class="pantalla">
+    <h2 data-t="controles.titulo">CONTROLES</h2>
+    <table class="tabla-controles">
+      <tr><td><kbd>→</kbd></td><td data-t="controles.avanzar">Avanzar</td></tr>
+      <tr><td><kbd>←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
+      <tr><td><kbd>↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
+      <tr><td><kbd>↓</kbd></td><td data-t="controles.abajo"></td></tr>
+      <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
+      <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
+      <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
+      <tr><td data-t="controles.bastion"></td><td data-t-html="controles.bastion.texto"></td></tr>
+      <tr><td><kbd>F</kbd> / <span data-t="controles.clic">clic</span></td><td data-t="controles.disparar"></td></tr>
+      <tr><td><kbd>S</kbd> / <span data-t="controles.clicDerecho">clic derecho</span></td><td data-t="controles.recargar"></td></tr>
+      <tr><td><kbd>Q</kbd> / <kbd>E</kbd> · <kbd>G</kbd> / <kbd>H</kbd></td><td data-t="controles.cambiar"></td></tr>
+      <tr><td><kbd>C</kbd></td><td data-t-html="controles.c"></td></tr>
+      <tr><td><kbd>1</kbd> … <kbd>5</kbd></td><td data-t="controles.grupos"></td></tr>
+      <tr><td data-t="controles.rueda"></td><td data-t="controles.cambiar"></td></tr>
+      <tr><td><kbd>P</kbd> / <kbd>Esc</kbd></td><td data-t="controles.pausa"></td></tr>
+      <tr><td data-t="controles.engranaje"></td><td data-t="controles.engranaje.texto"></td></tr>
+      <tr><td data-t="controles.celular"></td><td data-t="controles.celular.texto"></td></tr>
+    </table>
+    <p class="ayuda" data-t="controles.ayuda"></p>
+    <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+  </section>
+
+  <!-- ===== JUEGO ===== -->
+  <section id="pantalla-juego" class="pantalla">
+    <canvas id="lienzo" width="960" height="540"></canvas>
+    <div id="hud" class="hud">
+      <div class="hud-izq">
+        <div class="barra-vida"><div id="vida-relleno"></div><span id="vida-texto">100</span></div>
+        <div id="hud-arma" class="hud-arma"></div>
+        <button id="hud-aereo" class="hud-aereo oculta" type="button" data-t-aria="hud.aereo.aria" aria-label="Pedir ataque aéreo"></button>
+      </div>
+      <div class="hud-centro">
+        <div id="hud-mision" class="hud-mision"></div>
+      </div>
+      <div class="hud-der">
+        <div id="hud-ronda" class="hud-ronda">RONDA 1</div>
+        <div id="hud-bajas">☠ 0</div>
+        <div id="hud-tiempo">00:00</div>
+        <div id="hud-dificultad" class="hud-dificultad"></div>
+      </div>
+    </div>
+    <!-- Campo de pruebas: ficha del arma que está en la mano -->
+    <aside id="ficha-vitrina" class="ficha-vitrina">
+      <div class="fv-cabeza"><span id="fv-grupo" class="chip-grupo"></span><h3 id="fv-nombre"></h3></div>
+      <div class="fv-imagen"><canvas id="fv-vista" width="760" height="300" aria-hidden="true"></canvas><span id="fv-largo" class="fv-largo"></span></div>
+      <p id="fv-desc" class="fv-desc"></p>
+      <dl id="fv-datos" class="fv-datos"></dl>
+      <div class="fv-municion"><b id="fv-carga"></b><span id="fv-reserva"></span><span id="fv-estado" class="fv-estado"></span></div>
+      <div class="fv-botones">
+        <button type="button" class="boton mini" data-accion="arma-ant">◀</button>
+        <button type="button" class="boton mini" id="fv-lenta" data-accion="camara-lenta" data-t="vitrina.botonLenta">CÁMARA LENTA</button>
+        <button type="button" class="boton mini" data-accion="arma-sig">▶</button>
+      </div>
+      <div class="fv-botones"><button type="button" class="boton mini" data-accion="poner-zombie" data-t="vitrina.botonZombie">+ ZOMBIE DE PRUEBA (Z)</button></div>
+      <p class="fv-ayuda" data-t-html="vitrina.ayuda"></p>
+    </aside>
+    <!-- Último bastión: dinero, oleada y vida del campamento arriba; qué construir y la próxima oleada abajo -->
+    <div id="panel-bastion" class="panel-bastion">
+      <div class="bastion-estado"><span id="bastion-dinero">$ 300</span><span id="bastion-ola"></span><span id="bastion-base"></span></div>
+      <div class="bastion-barra">
+      <button type="button" data-unidad="soldado"><b data-t="bastion.soldado">SOLDADO</b><small>$50 · 4 s</small><span class="cola"></span><span class="avance"></span><kbd>1</kbd></button>
+      <button type="button" data-unidad="torreta"><b data-t="bastion.torreta">TORRETA</b><small>$150 · 8 s</small><span class="cola"></span><span class="avance"></span><kbd>2</kbd></button>
+      <button type="button" data-unidad="bunker"><b data-t="bastion.bunker">BÚNKER</b><small>$150 · 12 s</small><span class="cola"></span><span class="avance"></span><kbd>3</kbd></button>
+      <button type="button" data-unidad="tanque"><b data-t="bastion.tanque">TANQUE</b><small>$375 · 15 s</small><span class="cola"></span><span class="avance"></span><kbd>4</kbd></button>
+      <button type="button" data-unidad="muro"><b data-t="bastion.muro">MURO</b><small>$35 · 2 s</small><span class="cola"></span><span class="avance"></span><kbd>5</kbd></button>
+      <button type="button" data-unidad="vender"><b data-t="bastion.vender">VENDER</b><small>½</small><span class="cola"></span><span class="avance"></span><kbd>6</kbd></button>
+      <button type="button" data-unidad="reparar"><b data-t="bastion.reparar">REPARAR</b><small data-t="bastion.repararCosto">¾ del daño</small><span class="cola"></span><span class="avance"></span><kbd>7</kbd></button>
+        <button type="button" id="bastion-oleada" class="bastion-oleada"></button>
+      </div>
+      <div class="bastion-velocidades" role="group" data-t-aria="bastion.velocidad" aria-label="Velocidad">
+        <button type="button" data-velocidad="1">1×</button><button type="button" data-velocidad="2">2×</button><button type="button" data-velocidad="5">5×</button><button type="button" data-velocidad="10">10×</button>
+      </div>
+    </div>
+    <!-- Controles táctiles: solo se muestran en pantallas táctiles; cada botón equivale a una tecla -->
+    <div id="controles-tactiles" class="controles-tactiles" data-t-aria="tactil.aria" aria-label="Controles táctiles">
+      <div class="pad-mover" data-t-aria="tactil.mover">
+        <span class="mitad" data-lado="ArrowLeft">◀</span>
+        <span class="mitad" data-lado="ArrowRight">▶</span>
+      </div>
+      <button class="boton-tactil fuego" data-tecla="KeyF" data-t="tactil.fuego">FUEGO</button>
+      <button class="boton-tactil saltar" data-tecla="ArrowUp" data-t-aria="tactil.saltar">▲<small data-t="tactil.salto">SALTO</small></button>
+      <button class="boton-tactil recargar" data-tecla="KeyS" data-t="tactil.recargar">RECARGAR</button>
+      <!-- Defensa ultra: cambiar de carril (en lugar de caminar) -->
+      <div class="carriles-tactiles solo-ultra">
+        <button class="boton-tactil carril" data-tecla="ArrowUp" data-t-aria="tactil.carrilArriba" aria-label="Carril de arriba">▲</button>
+        <button class="boton-tactil carril" data-tecla="ArrowDown" data-t-aria="tactil.carrilAbajo" aria-label="Carril de abajo">▼</button>
+      </div>
+      <div class="armas-tactiles">
+        <button class="boton-tactil pildora" data-tecla="KeyG" data-t-aria="tactil.armaAnt.aria" data-t="tactil.armaAnt">◀ ARMA</button>
+        <button class="boton-tactil pildora" data-tecla="KeyH" data-t-aria="tactil.armaSig.aria" data-t="tactil.armaSig">ARMA ▶</button>
+      </div>
+      <div class="extras-tactiles">
+        <button class="boton-tactil pildora" data-tecla="ArrowDown" data-t-aria="tactil.abajo.aria" data-t="tactil.abajo">▼ ABAJO</button>
+        <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
+        <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
+        <button class="boton-tactil pildora solo-ultra" data-tecla="KeyB" data-t="tactil.tienda">TIENDA</button>
+        <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
+      </div>
+    </div>
+    <!-- En un teléfono parado el juego se tapa con este aviso (y la partida se pausa): se juega apaisado -->
+    <div class="girar-obligatorio" role="alert">
+      <div class="icono-girar" aria-hidden="true"></div>
+      <p data-t="girar">Gira el teléfono para jugar</p>
+      <small data-t="girarNota">Si la pantalla no gira, activa la rotación automática.</small>
+    </div>
+    <div id="selector-armas" class="selector-armas" aria-live="polite"></div>
+    <div id="aviso" class="aviso"></div>
+    <div id="aviso-ronda" class="aviso-ronda"></div>
+    <div id="pausa" class="capa oculta">
+      <h2 data-t="pausa.titulo">PAUSA</h2>
+      <button class="boton chico" data-accion="reanudar" data-t="pausa.seguir">SEGUIR</button>
+      <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
+      <button class="boton chico" data-accion="al-menu" data-t="pausa.salir">SALIR AL MENÚ</button>
+    </div>
+    <!-- Tienda de la defensa ultra: armas, munición y torretas con el dinero de los zombies (pausa la partida) -->
+    <div id="tienda-ultra" class="capa oculta" role="dialog" aria-labelledby="tienda-titulo">
+      <h2 id="tienda-titulo" data-t="tienda.titulo">TIENDA</h2>
+      <p id="tienda-dinero" class="tienda-dinero"></p>
+      <div id="tienda-contenido" class="tienda-contenido"></div>
+      <button class="boton chico" type="button" data-comprar="cerrar" data-t="tienda.seguir">SEGUIR</button>
+    </div>
+    <div id="menu-pruebas" class="capa oculta">
+      <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
+      <p class="ayuda" data-t-html="pruebas.ayuda"></p>
+      <div id="lista-armas-prueba" class="lista-grupos-armas"></div>
+      <!-- Ficha del arma elegida: imagen, descripción, datos y USAR -->
+      <div id="detalle-arma" class="detalle-arma oculta" aria-live="polite">
+        <div class="cabecera-detalle"><h3 id="detalle-nombre"></h3><span id="detalle-grupo" class="chip-grupo"></span></div>
+        <div class="vista-detalle"><canvas id="detalle-vista" width="1120" height="380" aria-hidden="true"></canvas><span id="detalle-largo" class="largo"></span>
+          <button class="flecha-arma izq" type="button" data-accion="arma-anterior" aria-label="Arma anterior">‹</button>
+          <button class="flecha-arma der" type="button" data-accion="arma-siguiente" aria-label="Arma siguiente">›</button>
+          <span class="pista-flechas" data-t="detalle.flechas">← → otra arma</span></div>
+        <p id="detalle-desc" class="detalle-desc"></p>
+        <dl id="detalle-datos" class="detalle-datos"></dl>
+        <div class="fila-botones botones-detalle">
+          <button class="boton chico" type="button" data-accion="volver-armas" data-t="boton.volver">VOLVER</button>
+          <button class="boton chico boton-usar" type="button" data-accion="usar-arma" data-t="detalle.usar">USAR</button>
+        </div>
+      </div>
+      <div class="fila-botones">
+        <button class="boton chico" data-accion="poner-m2" data-t="pruebas.ponerM2">PONER M2 BROWNING</button>
+        <button class="boton chico" data-accion="quitar-m2" data-t="pruebas.quitarM2">QUITAR LA M2 CERCANA</button>
+        <button class="boton chico" data-accion="poner-zombie" data-t="pruebas.zombie">ZOMBIE DE PRUEBA</button>
+        <button class="boton chico peligro" data-accion="borrar-generado" data-t="pruebas.borrar">BORRAR TODO (X)</button>
+      </div>
+      <button class="boton chico" data-accion="cerrar-pruebas" data-t="pruebas.seguir">SEGUIR (C)</button>
+    </div>
+    <div id="fin" class="capa oculta">
+      <h2 id="fin-titulo">TE DEVORARON</h2>
+      <p id="fin-detalle"></p>
+      <button id="fin-siguiente" class="boton chico oculta" data-accion="bastion-siguiente" data-t="fin.siguienteNivel">SIGUIENTE NIVEL</button>
+      <button class="boton chico" data-accion="reintentar" data-t="fin.otraVez">OTRA VEZ</button>
+      <button class="boton chico" data-accion="al-menu" data-t="fin.menu">MENÚ</button>
+    </div>
+  </section>
+
+  <!-- ===== HISTORIA: viñetas de 8 bits, resumen de cada nivel y final (js/historia.js) ===== -->
+  <div id="capa-historia" class="capa-historia oculta" role="dialog" aria-live="polite">
+    <div class="historia-caja">
+      <h2 id="historia-titulo"></h2>
+      <canvas id="historia-vineta" width="960" height="540" aria-hidden="true"></canvas>
+      <p id="historia-texto"></p>
+      <div id="historia-estrellas" class="historia-estrellas oculta"></div>
+      <dl id="historia-datos" class="historia-datos oculta"></dl>
+      <div id="historia-botones" class="historia-botones"></div>
+      <p id="historia-pista" class="historia-pista"></p>
+    </div>
+  </div>
+
+  <!-- ===== CONFIGURACIÓN: engranaje arriba a la izquierda, en todas las pantallas ===== -->
+  <button id="boton-config" class="boton-config" type="button" data-accion="config-abrir" data-t-aria="boton.config" data-t-title="boton.config" aria-label="Configuración">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <defs><mask id="agujero-engranaje"><rect width="24" height="24" fill="#fff"/><circle cx="12" cy="12" r="3.3" fill="#000"/></mask></defs>
+      <g fill="currentColor" mask="url(#agujero-engranaje)">
+        <circle cx="12" cy="12" r="7.3"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(45 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(90 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(135 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(180 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(225 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(270 12 12)"/>
+        <rect x="10.1" y="1.2" width="3.8" height="5" rx="0.9" transform="rotate(315 12 12)"/>
+      </g>
+    </svg>
+  </button>
+  <div id="capa-personaje" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="personaje-titulo">
+    <div class="panel-config panel-personajes">
+      <h2 id="personaje-titulo" data-t="personaje.elegir">ELIGE TU PERSONAJE</h2>
+      <div id="lista-personajes" class="lista-personajes"></div>
+      <p class="nota" data-t="personaje.nota"></p>
+      <div class="fila-botones"><button class="boton chico" type="button" data-accion="personaje-cerrar" data-t="config.cerrar">CERRAR</button></div>
+    </div>
+  </div>
+  <!-- Asistente de construcción (temporal: se retira cuando el juego esté terminado, ver js/asistente.js) -->
+  <div id="capa-asistente" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="asistente-titulo">
+    <div class="panel-config panel-asistente">
+      <h2 id="asistente-titulo" data-t="asist.titulo">ASISTENTE</h2>
+      <p class="asist-intro" data-t="asist.intro"></p>
+      <p id="asist-estado" class="asist-estado" hidden></p>
+      <div id="asist-mensajes" class="asist-mensajes" aria-live="polite"></div>
+      <form id="asist-form" class="asist-form">
+        <textarea id="asist-texto" rows="2" maxlength="600"></textarea>
+        <button class="boton mini" type="submit" id="asist-enviar" data-t="asist.enviar">ENVIAR</button>
+        <button class="boton mini" type="button" id="asist-parar" data-t="asist.parar" hidden>PARAR</button>
+      </form>
+      <section>
+        <h3 data-t="rama.titulo">MI RAMA</h3>
+        <p class="nota izq" data-t="rama.nota"></p>
+        <ul id="rama-parches" class="asist-ajustes"></ul>
+        <div class="fila-doble">
+          <button class="boton mini" type="button" id="rama-recargar" data-t="rama.recargar">RECARGAR EL JUEGO</button>
+          <button class="boton mini" type="button" id="rama-enviar" data-t="rama.enviar">ENVIAR A REVISIÓN</button>
+        </div>
+        <p id="rama-estado" class="nota izq" hidden></p>
+        <div id="rama-otra" class="fila-doble" hidden>
+          <input id="rama-codigo" class="asist-codigo" type="text" maxlength="24" autocomplete="off" spellcheck="false">
+          <button class="boton mini" type="button" id="rama-usar" data-t="rama.usar">USAR ESA RAMA</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="asist.activos">AJUSTES ACTIVOS</h3>
+        <ul id="asist-ajustes" class="asist-ajustes"></ul>
+        <div class="fila-doble">
+          <button class="boton mini" type="button" id="asist-restaurar" data-t="asist.restaurar">RESTAURAR TODO</button>
+          <button class="boton mini" type="button" id="asist-fijar" data-t="asist.fijar" hidden>FIJAR PARA TODOS</button>
+          <button class="boton mini peligro" type="button" id="asist-quitar" data-t="asist.quitar" hidden>QUITAR LOS DE TODOS</button>
+        </div>
+        <p class="nota" data-t="asist.pedidosNota"></p>
+        <div id="asist-pedidos-locales" class="fila-doble" hidden><span id="asist-pedidos-n"></span><button class="boton mini" type="button" id="asist-copiar" data-t="asist.copiar">COPIAR PEDIDOS</button></div>
+      </section>
+      <div class="fila-botones"><button class="boton chico" type="button" id="asist-volver" data-accion="asist-volver" data-t="asist.volver">VOLVER</button></div>
+    </div>
+  </div>
+  <div id="capa-config" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="config-titulo">
+    <div class="panel-config">
+      <h2 id="config-titulo" data-t="config.titulo">CONFIGURACIÓN</h2>
+      <section>
+        <h3 data-t="config.sonido">SONIDO</h3>
+        <label class="fila-rango"><span data-t="config.general">Volumen general</span><input type="range" min="0" max="100" step="5" data-config="general"><output></output></label>
+        <label class="fila-rango"><span data-t="config.efectos">Efectos</span><input type="range" min="0" max="100" step="5" data-config="efectos"><output></output></label>
+        <label class="fila-rango"><span data-t="config.musica">Música</span><input type="range" min="0" max="100" step="5" data-config="musica"><output></output></label>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="silencio"><span data-t="config.silencio">Silenciar todo</span></label>
+          <button class="boton mini" type="button" data-accion="config-probar" data-t="config.probar">Probar</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="config.idioma">IDIOMA</h3>
+        <div class="segmentos" data-config-opciones="idioma">
+          <button type="button" data-valor="es" lang="es">Español</button>
+          <button type="button" data-valor="pt" lang="pt-BR">Português</button>
+          <button type="button" data-valor="en" lang="en">English</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="config.juego">JUEGO</h3>
+        <div class="fila-opcion"><span data-t="config.dificultad">Dificultad</span>
+          <div class="segmentos" data-config-opciones="dificultad">
+            <button type="button" data-valor="facil" data-t="dif.facil">Fácil</button>
+            <button type="button" data-valor="medio" data-t="dif.medio">Medio</button>
+            <button type="button" data-valor="dificil" data-t="dif.dificil">Difícil</button>
+          </div>
+        </div>
+        <p class="nota" data-t="config.dificultadNota">Se aplica en la próxima partida</p>
+      </section>
+      <section>
+        <h3 data-t="config.pantalla">PANTALLA Y CONTROLES</h3>
+        <div class="fila-opcion"><span data-t="config.calidad">Calidad gráfica</span>
+          <div class="segmentos" data-config-opciones="calidad">
+            <button type="button" data-valor="auto" data-t="config.auto">Automático</button>
+            <button type="button" data-valor="alta" data-t="config.alta">Alta</button>
+            <button type="button" data-valor="normal" data-t="config.normal">Normal</button>
+            <button type="button" data-valor="baja" data-t="config.baja">Baja</button>
+          </div>
+        </div>
+        <div class="fila-opcion"><span data-t="config.tactil">Botones en pantalla</span>
+          <div class="segmentos" data-config-opciones="tactil">
+            <button type="button" data-valor="auto" data-t="config.auto">Automático</button>
+            <button type="button" data-valor="si" data-t="config.si">Siempre</button>
+            <button type="button" data-valor="no" data-t="config.no">Nunca</button>
+          </div>
+        </div>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="vibracion"><span data-t="config.vibracion">Vibración al tocar</span></label>
+          <button class="boton mini" type="button" id="boton-completa" data-accion="config-completa" data-t="config.completa">Pantalla completa</button>
+        </div>
+      </section>
+      <section>
+        <h3 data-t="asist.seccion">ASISTENTE DE PRUEBAS</h3>
+        <div class="fila-opcion"><span data-t="asist.notaConfig">Pide cambios en armas o jugabilidad mientras se arma el juego</span>
+          <button class="boton mini" type="button" data-accion="asist-abrir" data-t="asist.abrir">Abrir asistente</button>
+        </div>
+      </section>
+      <div class="fila-botones">
+        <button class="boton chico peligro" type="button" data-accion="config-restablecer" data-t="config.restablecer">RESTABLECER</button>
+        <button class="boton chico" type="button" data-accion="config-cerrar" data-t="config.cerrar">CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/version.js?v=a2841bdf7e"></script>
+  <script src="js/lanzador.js?v=c9b43bf48c"></script>
+  <script src="js/sonidos-datos.js?v=7384f89d08"></script>
+  <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
+  <script src="js/config.js?v=3c345f9de3"></script>
+  <script src="js/idioma.js?v=df26640448"></script>
+  <script src="js/audio.js?v=c0f16920ec"></script>
+  <script src="js/musica.js?v=50afd150ca"></script>
+  <script src="js/armas.js?v=d80ee0e134"></script>
+  <script src="js/dificultad.js?v=cec7b59c76"></script>
+  <script src="js/dibujo.js?v=81c959fcbf"></script>
+  <script src="js/armas-dibujo.js?v=9f55c033cf"></script>
+  <script src="js/armas-dibujo-2.js?v=d81b346fb3"></script>
+  <script src="js/armas-modelos.js?v=40830c843d"></script>
+  <script src="js/armas-modelos-2.js?v=0401b4b84a"></script>
+  <script src="js/armas-modelos-3.js?v=5287947dc2"></script>
+  <script src="js/misiones.js?v=cb44f40083"></script>
+  <script src="js/fichas-armas.js?v=d51e2a309b"></script>
+  <script src="js/terreno.js?v=c85e281b9f"></script>
+  <script src="js/escenario.js?v=417f78f1df"></script>
+  <script src="js/escenario-objetos.js?v=8c9ccc7cc9"></script>
+  <script src="js/escenario-cloaca.js?v=b8f2e8e22f"></script>
+  <script src="js/jugador.js?v=775b0d85fd"></script>
+  <script src="js/jugador-dibujo.js?v=4a6509bfbc"></script>
+  <script src="js/skins.js?v=ed2cd648fa"></script>
+  <script src="js/zombie.js?v=6d69cbcb62"></script>
+  <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
+  <script src="js/objetos.js?v=e3a60e829a"></script>
+  <script src="js/juego.js?v=0cc033efad"></script>
+  <script src="js/poderes.js?v=01589d1bf2"></script>
+  <script src="js/defensa-ultra.js?v=cf29653513"></script>
+  <script src="js/escenario-historia.js?v=3224c7c117"></script>
+  <script src="js/zombies-autoctonos.js?v=56e35bef1c"></script>
+  <script src="js/historia.js?v=8bffdb3dff"></script>
+  <script src="js/estrategia.js?v=ed080962d6"></script>
+  <script src="js/bastion-niveles.js?v=5fac09402d"></script>
+  <script src="js/bastion-dibujo.js?v=cfb87363ae"></script>
+  <script src="js/rama.js?v=a923ab6bf2"></script>
+  <script src="js/asistente.js?v=7bcf596264"></script>
+  <script src="js/interfaz.js?v=80c3a56d94"></script>
+  <script src="js/tactil.js?v=96be5efe86"></script>
+</body>
+</html>
