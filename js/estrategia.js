@@ -46,7 +46,7 @@ Object.assign(Juego.prototype, {
   prepararBastion() {
     const B = BASTION;
     Mundo.plano = true; Mundo.carriles = false; Mundo.perfil = null;
-    this.cols = Math.max(8, Math.floor((ANCHO - B.baseX - B.margenDer) / B.celda[0]));
+    this.cols = columnasBastion();   // según el ancho de la pantalla y el zoom (js/bastion-camara.js)
     this.filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
     this.dinero = B.dineroInicial; this.vidaBase = B.vidaBase;
     this.unidades = []; this.colaCuartel = []; this.colaTaller = [];
