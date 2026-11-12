@@ -38,6 +38,13 @@
         <button class="boton chico" data-accion="controles" data-t="menu.controles">CONTROLES</button>
         <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
       </div>
+      <!-- Descargar el juego en un solo archivo que se actualiza solo (js/lanzador.js) -->
+      <button type="button" class="boton descarga" data-accion="descargar-juego">
+        <span class="icono-descarga" aria-hidden="true"></span>
+        <span class="columna-descarga"><span class="texto-descarga" data-t="config.descargar">Descargar el juego</span>
+          <span class="nota-descarga" id="nota-descarga" data-t="menu.descargarNota">Un solo archivo para jugar sin pasar por Claude: va más fluido</span></span>
+        <span class="barra-descarga" aria-hidden="true"><span class="relleno-descarga"></span></span>
+      </button>
     </nav>
     <p class="pie" data-t="menu.pie">Flechas para moverte y saltar · F o clic dispara · S o clic derecho recarga</p>
     <p class="creditos" data-t="menu.creditos">Desarrollado por Francisco y el tío Lea</p>
@@ -322,10 +329,6 @@
             <button type="button" data-valor="baja" data-t="config.baja">Baja</button>
           </div>
         </div>
-        <div class="fila-opcion"><span data-t="config.descargarTitulo">Jugar sin Claude</span>
-          <button type="button" class="boton mini" data-accion="descargar-juego" data-t="config.descargar">Descargar el juego</button>
-        </div>
-        <p class="nota" id="nota-descarga" data-t="config.descargarNota">Un solo archivo de unos 5 MB que se abre con el navegador: va más fluido. Lo que guardes ahí (progreso, configuración) queda aparte.</p>
         <div class="fila-opcion"><span data-t="config.tactil">Botones en pantalla</span>
           <div class="segmentos" data-config-opciones="tactil">
             <button type="button" data-valor="auto" data-t="config.auto">Automático</button>

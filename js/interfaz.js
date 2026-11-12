@@ -544,7 +544,7 @@
   /* Juego descargable: un solo .html con el CSS y todos los scripts adentro (sonidos incluidos, unos 5 MB), para abrirlo
    * con el navegador sin pasar por la página de Claude. Se arma con la página tal como llegó (HTML_PAGINA) y los
    * mismos archivos que cargó; en el artefacto se guarda con la capacidad «downloads», fuera de él con un enlace. */
-  async function armarJuegoSuelto() {
+  async function armarJuegoSuelto(avance = () => {}) {
     // HTML_PAGINA se tomó al cargar config.js: los scripts que venían después todavía no estaban. Se completan con los
     // que cargó la página, en el mismo orden. Las rutas pueden venir reescritas por el visor: vale cualquiera que
     // termine en js/<archivo>.js; los scripts ajenos al juego (del visor) se sacan.
@@ -559,7 +559,9 @@
     html = html.slice(0, fin) + '\n' + despues + '\n' + html.slice(html.indexOf('</body>', fin));
     const css = html.match(/<link rel="stylesheet" href="([^"]*css\/[^"]+)">/);
     if (css) { const txt = await (await fetch(css[1])).text(); html = html.replace(css[0], () => '<style>\n' + txt + '\n</style>'); }
-    for (const [tag, src] of [...html.matchAll(etiqueta)]) {
+    const lista = [...html.matchAll(etiqueta)];
+    for (const [k, [tag, src]] of lista.entries()) {
+      avance((k + 1) / lista.length);
       if (!esDelJuego(src)) { html = html.replace(tag, ''); continue; }
       const r = await fetch(src); if (!r.ok) throw new Error(src);
       const txt = (await r.text()).replace(/<\/script/gi, '<\\/script');
@@ -568,22 +570,33 @@
     return '<!doctype html>\n' + html;
   }
   async function descargarJuego(boton) {
-    const nota = document.getElementById('nota-descarga'), poner = clave => { if (nota) nota.textContent = t(clave); };
-    if (!document.querySelector('script[src^="js/"]')) { poner('config.yaDescargado'); return; }   // ya es el archivo descargado
-    boton.disabled = true; poner('config.descargando');
+    const nota = document.getElementById('nota-descarga'), texto = boton.querySelector('.texto-descarga'), relleno = boton.querySelector('.relleno-descarga');
+    const poner = clave => { if (nota) { nota.textContent = t(clave); nota.classList.add('estado'); } };
+    const estado = (clase, etiqueta, fraccion) => {
+      boton.classList.remove('trabajando', 'listo', 'error'); if (clase) boton.classList.add(clase);
+      if (texto) texto.textContent = etiqueta; if (relleno && fraccion !== undefined) relleno.style.width = Math.round(fraccion * 100) + '%';
+    };
+    if (boton.classList.contains('trabajando')) return;
+    if (!document.querySelector('script[src*="js/"]')) { poner('config.yaDescargado'); return; }   // ya es el archivo descargado
+    clearTimeout(boton._volver);
+    estado('trabajando', t('config.armando', { p: 0 }), 0); poner('config.descargando');
     try {
       // El archivo que se baja es el lanzador (js/lanzador.js): trae el juego adentro y se actualiza solo desde la web
-      const bytes = new TextEncoder().encode(await armarJuegoSuelto());
+      const juego = await armarJuegoSuelto(f => estado('trabajando', t('config.armando', { p: Math.round(f * 85) }), f * 0.85));
+      estado('trabajando', t('config.guardando'), 0.92);
+      await new Promise(r => setTimeout(r, 30));
+      const bytes = new TextEncoder().encode(juego);
       let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       const html = LANZADOR_HTML.replace('{{VERSION}}', VERSION_JUEGO).replace('{{URL}}', URL_ACTUALIZACION).replace('{{JUEGO}}', () => btoa(bin)), nombre = 'zona-muerta.html';
       const descargas = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads').catch(() => null) : null;
       const enlace = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
       if (descargas) { try { await descargas.save({ filename: nombre, data: html }); } catch { enlace(); } }   // si el visor no lo deja, por enlace
       else enlace();
-      poner('config.descargado');
-    } catch { poner('config.descargaError'); }
-    boton.disabled = false;
+      estado('listo', t('config.listo'), 1); poner('config.descargado');
+    } catch { estado('error', t('config.reintentar'), 0); poner('config.descargaError'); }
+    boton._volver = setTimeout(() => { estado(null, t('config.descargar'), 0); if (nota) { nota.textContent = t('menu.descargarNota'); nota.classList.remove('estado'); } }, 6000);   // a los 6 s vuelve a su estado normal
   }
+
 
   function alternarPantallaCompleta() {
     try {

@@ -308,7 +308,7 @@ de las montañas, y vuelven a aparecer a los 90 segundos.
 **Calidad gráfica y juego descargable.** La calidad viene en «Automático»: arranca en alta (hasta 2× de
 resolución) y, si en 3 s de partida el cuadro promedio tarda más de 24 ms (menos de unos 42 por segundo), baja un
 escalón (normal: 1×; baja: 0,75× y sin el bisel de las piezas) y avisa; recuerda lo medido en cada computadora.
-También se puede fijar a mano. En Configuración, «Descargar el juego» arma un solo `zona-muerta.html` (unos
+También se puede fijar a mano. En la portada, «Descargar el juego» (grande, con avance animado) arma un solo `zona-muerta.html` (unos
 4,6 MB, con el CSS, los 36 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
 Claude; su progreso y su configuración se guardan aparte.
 
