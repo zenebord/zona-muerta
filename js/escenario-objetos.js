@@ -184,20 +184,25 @@ Object.assign(Escenario, {
  * ventanal alto, haces de luz en diagonal, lámparas colgadas allá arriba y las juntas del piso que convergen.
  * El arma sigue mandando: detrás de ella queda lo más claro (la neblina luminosa del fondo), así el acero negro
  * recorta, y el piso de adelante es claro para ver casquillos, peines y cargadores. A la derecha, la trampa de balas.
- * xJugador: x en pantalla del puesto de tiro (todo se ubica respecto de él; el personaje camina sobre el puesto).
+ * xJugador: x en pantalla del puesto de tiro (la línea amarilla, la luz del puesto y la trampa de balas van ahí).
+ * xVista: x en pantalla del personaje: lo que se repite (ventanales, estanterías, columnas, lámparas, juntas) cubre
+ * siempre lo que se ve alrededor de él, fijo al mundo, así el galpón no se termina por más que camine.
  */
 Object.assign(Escenario, {
-  dibujarCampo(ctx, camaraX, xJugador = ANCHO * 0.42) {
+  dibujarCampo(ctx, camaraX, xJugador = ANCHO * 0.42, xVista = xJugador) {
     const piso = SUELO_BASE - 62;                   // fondo del galpón: donde la pared lejana toca el piso
     const neblina = (a) => `rgba(158,172,190,${a})`;
-    const izq = xJugador - 520, der = xJugador + 820;
+    const izq = xVista - 560, der = xVista + 860;
+    // Índices k de un elemento que se repite cada `paso` (en x = xJugador + k·paso + corrido) y cae entre izq y der
+    const indices = (paso, corrido = 0) => { const r = []; for (let k = Math.floor((izq - xJugador - corrido) / paso) - 1; k <= Math.ceil((der - xJugador - corrido) / paso) + 1; k++) r.push(k); return r; };
     // Pared del fondo: oscura arriba, se aclara hacia abajo con la neblina luminosa del galpón
     const pared = ctx.createLinearGradient(0, piso - 260, 0, piso);
     pared.addColorStop(0, '#1d2128'); pared.addColorStop(0.55, '#3c434d'); pared.addColorStop(0.85, '#6e7884'); pared.addColorStop(1, '#8a95a2');
     ctx.fillStyle = '#1d2128'; ctx.fillRect(izq, -ALTO, der - izq, piso - 260 + ALTO);
     ctx.fillStyle = pared; ctx.fillRect(izq, piso - 260, der - izq, 260);
     // Ventanal corrido, alto y lejano: paños claros con parantes finos
-    for (let x = izq + ((xJugador - izq) % 22); x < der; x += 22) {
+    for (const k of indices(22)) {
+      const x = xJugador + k * 22;
       const g = ctx.createLinearGradient(0, piso - 128, 0, piso - 82);
       g.addColorStop(0, 'rgba(214,226,238,0.55)'); g.addColorStop(1, 'rgba(190,206,222,0.3)');
       ctx.fillStyle = g; ctx.fillRect(x + 1.5, piso - 128, 19, 46);
@@ -205,7 +210,7 @@ Object.assign(Escenario, {
     }
     ctx.fillStyle = 'rgba(30,34,40,0.6)'; ctx.fillRect(izq, piso - 82, der - izq, 1.5);
     // Estanterías lejanas al pie de la pared: siluetas de racks con bultos, lavadas por la neblina
-    for (let c = -10; c <= 18; c++) {
+    for (const c of indices(46, -23)) {
       if (azar(c, 611) < 0.25) continue;
       const x = xJugador + c * 46 - 23, alto = 22 + azar(c, 612) * 10;
       ctx.fillStyle = 'rgba(78,88,100,0.55)'; ctx.fillRect(x, piso - alto, 40, alto);
@@ -214,7 +219,7 @@ Object.assign(Escenario, {
       for (let n = 0; n < 4; n++) if (azar(c * 7 + n, 613) < 0.7) { ctx.fillStyle = `rgba(${azar(c, 614 + n) < 0.5 ? '120,104,82' : '96,104,112'},0.45)`; ctx.fillRect(x + 2 + n * 9.5, piso - alto + 2 + (n % 2) * alto / 3, 8, alto / 3 - 3); }
     }
     // Hilera lejana de columnas: finas, altas y muy lavadas
-    for (let c = -12; c <= 22; c++) {
+    for (const c of indices(64, 20)) {
       const x = xJugador + c * 64 + 20;
       ctx.fillStyle = 'rgba(92,102,114,0.75)'; ctx.fillRect(x, -ALTO, 3, piso + 3 + ALTO);
       ctx.fillStyle = 'rgba(180,192,206,0.25)'; ctx.fillRect(x, -ALTO, 0.8, piso + 3 + ALTO);
@@ -227,21 +232,22 @@ Object.assign(Escenario, {
     const p = ctx.createLinearGradient(0, piso, 0, ALTO);
     p.addColorStop(0, '#8d97a2'); p.addColorStop(0.35, '#6f7781'); p.addColorStop(1, '#3b4047');
     ctx.fillStyle = p; ctx.fillRect(izq, piso, der - izq, ALTO - piso);
-    for (let x = izq + ((xJugador - izq) % 22); x < der; x += 22) {
+    for (const k of indices(22)) {
+      const x = xJugador + k * 22;
       const g = ctx.createLinearGradient(0, piso, 0, piso + 40);
       g.addColorStop(0, 'rgba(220,230,240,0.12)'); g.addColorStop(1, 'rgba(220,230,240,0)');
       ctx.fillStyle = g; ctx.fillRect(x + 3, piso, 15, 40);
     }
     // Juntas del piso y pasillo amarillo que convergen hacia el fondo (dan la profundidad)
-    const fx = xJugador + 70, fy = piso - 40;       // punto de fuga, un poco detrás de la pared
+    const fx = xVista + 70, fy = piso - 40;         // punto de fuga, delante del personaje (va con la cámara)
     const haciaFuga = (xb) => xb + (fx - xb) * (ALTO - piso) / (ALTO - fy);
     ctx.lineWidth = 0.7; ctx.strokeStyle = 'rgba(0,0,0,0.16)';
-    for (let x = xJugador - 600; x <= xJugador + 900; x += 80) { ctx.beginPath(); ctx.moveTo(x, ALTO); ctx.lineTo(haciaFuga(x), piso); ctx.stroke(); }
+    for (const k of indices(80)) { const x = xJugador + k * 80; ctx.beginPath(); ctx.moveTo(x, ALTO); ctx.lineTo(haciaFuga(x), piso); ctx.stroke(); }
     for (let k = 1; k < 7; k++) { const y = piso + (ALTO - piso) * (k / 7) ** 1.8; ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(izq, y, der - izq, 0.6); }
     ctx.fillStyle = 'rgba(214,178,58,0.55)';
     for (const xb of [xJugador - 330, xJugador - 300]) { ctx.beginPath(); ctx.moveTo(xb, ALTO); ctx.lineTo(xb + 5, ALTO); ctx.lineTo(haciaFuga(xb + 5), piso); ctx.lineTo(haciaFuga(xb), piso); ctx.closePath(); ctx.fill(); }
     // Hilera media de columnas: vigas doble T más grandes, apoyadas más adelante, con su placa de base
-    for (let c = -5; c <= 9; c++) {
+    for (const c of indices(170, -95)) {
       const x = xJugador + c * 170 - 95, base = piso + 20;
       ctx.fillStyle = '#434a54'; ctx.fillRect(x, -ALTO, 9, base + ALTO);
       ctx.fillStyle = '#353b44'; ctx.fillRect(x + 2.5, -ALTO, 4, base + ALTO);              // alma de la viga
@@ -251,7 +257,7 @@ Object.assign(Escenario, {
       ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(x + 4.5, base + 1, 12, 2, 0, 0, Math.PI * 2); ctx.fill();
     }
     // Lámparas colgadas allá arriba: un punto con su halo
-    for (let c = -4; c <= 8; c++) {
+    for (const c of indices(120, -30)) {
       const x = xJugador + c * 120 - 30, y = piso - 150;
       const h = ctx.createRadialGradient(x, y, 0, x, y, 26); h.addColorStop(0, 'rgba(255,240,210,0.5)'); h.addColorStop(1, 'rgba(255,240,210,0)');
       ctx.fillStyle = h; ctx.fillRect(x - 26, y - 26, 52, 52);
@@ -259,7 +265,7 @@ Object.assign(Escenario, {
       ctx.fillStyle = '#fff3dc'; ctx.fillRect(x - 3, y - 1, 6, 2);
     }
     // Haces de luz en diagonal desde el ventanal
-    for (let k = 0; k < 4; k++) {
+    for (const k of indices(150, -260)) {
       const x0 = xJugador - 260 + k * 150 + azar(k, 620) * 40;
       const g = ctx.createLinearGradient(x0, piso - 128, x0 + 120, ALTO);
       g.addColorStop(0, 'rgba(225,235,245,0.09)'); g.addColorStop(1, 'rgba(225,235,245,0)');
