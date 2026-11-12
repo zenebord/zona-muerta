@@ -110,8 +110,8 @@ const PaisajeBastion = {
     for (const [tipo, c0, f0, c1, f1] of N.terreno) for (let f = f0; f <= f1; f++) for (let c = c0; c <= c1; c++) if (g.dentro(c, f)) g.terreno[f][c] = tipo;
     g.terrenoEn = (c, f) => g.dentro(c, f) ? g.terreno[f][c] : null;
     g.nivelBastion = N;
-    ctx.setTransform(e, 0, 0, e, 0, -60 * e);   // recorta arriba: se ve el horizonte y el campo
-    this.fondo(ctx, N, 0); this.suelo(ctx, N); this.terreno(ctx, g, 0);
+    ctx.setTransform(e, 0, 0, e, 0, -60 * e);   // recorta arriba: se ve el borde del mapa y el campo
+    this.suelo(ctx, N); this.fondo(ctx, N, 0); this.terreno(ctx, g, 0);
     N.obstaculos.forEach(([tipo, c, f], i) => { ctx.save(); ctx.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(ctx, tipo, i); ctx.restore(); });
     ctx.fillStyle = 'rgba(70,55,40,0.9)'; ctx.fillRect(0, B.arriba - 10, B.baseX - 10, ALTO);   // el campamento, apenas sugerido
   },
