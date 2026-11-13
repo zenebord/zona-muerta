@@ -233,8 +233,8 @@ GPU), por las unidades y los zombies escalados.
 ### Último bastión v2: dos bandos con contrapesos (prueba del diseño nuevo)
 
 Botón aparte en el menú («ÚLTIMO BASTIÓN V2»), con un solo nivel (La granja, 12 oleadas) y partida guardada propia. Es
-la prueba del rediseño por bandos: el plantel completo, 12 unidades contra 12 tipos de zombie, donde ninguna unidad
-sirve contra todo. El modo de siempre no cambia: los archivos `js/bastion-v2*.js` envuelven los métodos de
+la prueba del rediseño por bandos: el plantel completo, 13 unidades contra 16 tipos de zombie, donde ninguna unidad
+sirve contra todo y no todos los zombies vienen de frente. El modo de siempre no cambia: los archivos `js/bastion-v2*.js` envuelven los métodos de
 `js/estrategia.js` y lo nuevo corre sólo si `juego.v2`.
 
 | Archivo | Qué tiene |
@@ -265,13 +265,14 @@ Los contrapesos salen de cinco reglas que valen para todos, no de una tabla de m
 | | Lanzallamas | 110 | 45 | 14 por segundo a todos los del cono, a 2 celdas, y los deja prendidos. Perros y toro no cruzan el fuego |
 | | Médico | 90 | 25 | Cura 4 por segundo a la infantería a 2 celdas. Quien cae a su lado no se contagia; con él cerca el gas no vacía los búnkeres |
 | Mecanizados | Torreta | 150 | 90 | 2 por bala cada 0,13 s a 4,4 celdas. No apunta al aire |
-| | Tanque | 375 | 400 | Cañón de 70 cada 1,8 s a 5 celdas, al que más vida tiene. Las mordidas le hacen un tercio. Se mueve |
+| | Tanque | 375 | 400 | Cañón de 70 cada 1,8 s a 5 celdas, al que más vida tiene. Las mordidas le hacen un tercio. Se mueve. Ningún topo pasa por debajo a 2 celdas |
 | | Mortero | 130 | 60 | 14 en un radio de 40 px cada 3,5 s, de 4 a 9 celdas, adonde hay más juntos |
 | | Antiaérea | 140 | 80 | 6 en un radio de 34 px cada 0,4 s a 6 celdas, sólo a lo que vuela |
 | Estructuras | Muro | 35 | 150 | Bloquea el paso (nunca del todo) y es el escudo de quien está detrás |
 | | Alambrado | 15 | 40 | No bloquea: frena al 45 % y saca 20 % de la vida. Aguanta 20 pisadas |
 | | Búnker | 120 | 280 | Refugio para 4 de infantería de cualquier oficio, que tiran desde adentro con 20 % más de alcance |
-| | Señuelo | 50 | 100 | Llama a los caminantes a 5 celdas, que lo golpean 5 s. Una vez por zombie |
+| | Señuelo | 50 | 100 | Llama a los caminantes a 5 celdas, que lo golpean 5 s. Una vez por zombie. El topo sale junto a él |
+| | Torre de vigía | 60 | 80 | No dispara: descubre a los topos enterrados a 4 celdas y los obliga a salir, encandilados 2,5 s |
 
 La infantería se forma en el cuartel de a uno y camina a su puesto (uno por celda); en el barro sólo van la infantería,
 el alambrado y el señuelo. Al romperse una máquina queda un soldado a pie, herido. **Mover** (tecla `C`) cambia de lugar
@@ -293,9 +294,15 @@ a la infantería, al tanque o al último que entró a un búnker, también en pl
 | | Toro | 6 | 20 | Ve a 6. Avisa, embiste en línea recta (96 px/s) y aturde 2 s a quien atropella; después queda quieto 2 s |
 | | Bandada | 0,4 | 55 | Seis cuervos que vuelan: picotean a la gente a pie o, si no hay, le sacan 1 cada uno al campamento |
 | | Buitre | 2,5 | 40 | Vuela hasta alguien a pie (primero el francotirador), lo levanta y lo suelta junto al caminante más cercano |
+| Acechadores | Topo | 1,6 | 36 | Se entierra al entrar y va por debajo de todo, sin que se le pueda tirar, hasta lo que hay más atrás (mortero, francotirador, médico, antiaérea); sale en 0,8 s y muerde ×1,5 |
+| | Lanzador | 6 | 16 | Agarra al zombie que tiene al lado y lo arroja hasta 7 celdas, junto al humano que esté más atrás; sin zombies a mano, tira cascotes a lo construido |
+| | Escupidor | 1,2 | 20 | Se planta a 5 celdas de la gente (más de lo que alcanzan el soldado y la torreta) y escupe ácido en arco: un charco de 3,5 s |
+| | Rabioso | 0,7 | 120 | De a cuatro, en zigzag, directo al campamento sin detenerse. El francotirador y el cañón le erran 6 de cada 10 tiros |
 
-El soldado que cae se levanta a los 3 s como soldado zombie (blindaje 1), salvo que lo haya matado una explosión o
-tenga un médico cerca. El Coloso (vida ×22) es el jefe de las oleadas 6 y 12.
+Los acechadores son los que no vienen de frente: el topo pasa por debajo de la línea, el lanzador por arriba, el
+escupidor tira desde más lejos y el rabioso corre más rápido que las armas lentas. El soldado que cae se levanta a los
+3 s como soldado zombie (blindaje 1), salvo que lo haya matado una explosión o tenga un médico cerca. El Coloso (vida
+×22) es el jefe de las oleadas 6 y 12: rompe todo y arroja fardos a lo que tiene a 5 celdas.
 
 **Información sin tapar el campo.** Cada oleada estrena un tipo y el parte de arriba dice qué viene, con el debutante
 marcado. Al elegir una unidad, en el parte quedan en verde los zombies que frena y en rojo aquellos contra los que
@@ -304,12 +311,12 @@ rinde poco; al tocar un zombie del parte, en la barra quedan marcadas las unidad
 débil, cómo usarlo) es la pantalla previa. La partida se guarda al empezar cada oleada: al perder, la pantalla de fin
 dice quiénes entraron, con qué se los frena, y ofrece repetir esa oleada con todo como estaba.
 
-Teclas: `1` a `4` la infantería, `Q W E R` los mecanizados, `A S D F` las estructuras; `Z` vende (75 % en el descanso,
+Teclas: `1` a `4` la infantería, `Q W E R` los mecanizados, `A S D F G` las estructuras; `Z` vende (75 % en el descanso,
 50 % en la oleada), `X` repara, `C` mueve.
 
 **Balance medido** con bots que juegan con el código real, en dificultad media. Cruce por cruce (una defensa de un solo
-tipo y unos $300 contra una tanda de un solo tipo en la oleada 6; campamento que queda sobre 15 y parte de la defensa
-en pie):
+tipo y unos $300 contra una tanda de un solo tipo, en la oleada 6 los doce primeros y en la 8 los acechadores;
+campamento que queda sobre 15 y parte de la defensa en pie):
 
 | Tanda | Lo que frena | Lo que no |
 |---|---|---|
@@ -318,12 +325,34 @@ en pie):
 | 15 perros | 3 lanzallamas 15 y 100 %; 2 torretas 12 y 100 % | 6 soldados 4 y 0 %; 2 antiaéreas 0 (ni los miran) |
 | 3 toros | 3 francotiradores 15 y 100 %; 3 lanzallamas 15 y 100 % | 6 soldados 0 y 0 % |
 | 18 cuervos | 2 antiaéreas 15; búnker con 4 soldados 12 | 2 torretas 0; tanque 0; 2 morteros 0 |
+| 4 topos | tanque 15 y 100 %; 3 lanzallamas 15 y 67 % | 3 francotiradores 11 y 0 %; 2 torretas 9 y 0 %; búnker con 4: 7 y 0 % |
+| 5 escupidores | 3 francotiradores 15 y 100 %; tanque 15 y 100 % | 2 torretas 3 y 0 %; 6 soldados 0 y 0 %; búnker con 4: 1 y 0 % |
+| 12 rabiosos | 3 lanzallamas 15 y 100 % | 3 francotiradores 7; 2 torretas 6; 2 morteros 3 |
+| 3 lanzadores con 12 comunes | búnker con 4 francotiradores 15 y 100 %; tanque con 2 francotiradores 15 y 100 % | 4 francotiradores a pie 10 y 25 %; tanque solo 1 y 0 % |
 
-La partida entera (6 corridas por plan): no construir pierde en la oleada 2 o 3; sólo soldados, en la 4; sólo torretas,
-en la 10 u 11, por los cuervos. Un plan que responde a cada debut (búnker de ancla, torretas con alambrado,
-francotiradores, antiaérea, mortero, tanque, médico) gana 5 de 6 con el campamento en 10,5 de 15; el mismo plan sin
-mortero gana 2 de 6 y sin torretas, ninguna. En fácil gana 4 de 4 sin recibir un golpe y en difícil pierde en la 11.
-No está medido con jugadores.
+El topo es el caso de detector: contra una retaguardia de dos francotiradores, mortero y antiaérea, 4 topos la dejan en
+0 % con 4 contagiados; con una torre de vigía adelante y una torreta, o con un señuelo y una torreta, o con el tanque
+adelante, la retaguardia queda entera y no entra ninguno.
+
+La partida entera, con tres planes de distinta calidad:
+
+| Plan | Resultado |
+|---|---|
+| No construir | pierde en la oleada 2 o 3 |
+| Sólo soldados | pierde en la 3 o 4 |
+| Sólo torretas | pierde en la 4 o 5 |
+| Respuesta a cada debut sin pensar en los acechadores | pierde 4 de 4, en la 10 u 11 |
+| Embudo (columna 7 cerrada, lanzallamas en el hueco, francotiradores y mortero atrás) | pierde 6 de 6, en la 11 |
+| El embudo adaptado: francotiradores dentro de un búnker, dos torres de vigía adelante, torretas atrás, dos antiaéreas | gana 6 de 8, con el campamento en 7 de 15 |
+
+El plan adaptado sin francotiradores pierde en la oleada 4 (5 de 5); sin antiaéreas gana 1 de 5; sin torres de vigía o
+sin mortero, 3 de 5. En fácil, el embudo y el adaptado ganan 3 de 3 sin perder campamento; en difícil el adaptado
+pierde en la 10. El embudo ganaba 4 de 4 sin recibir un golpe antes de los acechadores.
+
+La plata por zombie es la perilla de la dificultad: con las pagas de antes (un común, $3) ningún plan llegaba al final;
+con las actuales (un común, $4, y un poco más por los demás) gana el que se adapta. El resultado es brusco, no gradual: en los planes que pierden, el campamento suele estar entero hasta la
+oleada 8 o 9 y la defensa se derrumba en una sola oleada, porque cada baja se levanta en contra. No está medido con
+jugadores.
 
 Rendimiento: con 87 zombies de todos los tipos y 26 unidades, 0,8 ms de lógica y 13,6 ms de dibujo por cuadro (Chrome
 de escritorio, lienzo a escala 2). No está medido en un celular.

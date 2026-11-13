@@ -124,11 +124,12 @@
       if (z.blindaje && z.estado !== 'muerto') this.reboteV2(z, pega, dir);
       if (Math.random() < (tipo === 'torreta' ? 0.35 : 0.8)) Audio_.disparo(tipo === 'torreta' ? 'ametralladora' : 'rifle', tipo === 'torreta' ? 'm2' : 'm16');
     } else if (U.arma === 'pesada') {
-      z.recibirDano(U.dano, dir, ARMA_PESADA, this);
+      const erra = Math.random() < (BASTION2.zombies[z.tipoBastion].esquiva || 0);   // el rabioso zigzaguea: los tiros lentos le pasan al lado
+      if (erra) { pega.x += dir * 14; pega.y += 10; this.salpicar(pega.x, z.y - 2, '#a89a7c', 4, 2, z.y); } else z.recibirDano(U.dano, dir, ARMA_PESADA, this);
       this.rayosV2.push({ x0: sale.x, y0: sale.y, x1: pega.x, y1: pega.y, b0: u.y, b1: z.y, t: 0.3, dura: 0.3, grueso: tipo === 'tanque' ? 2.6 : 1.3 });
       if (tipo === 'tanque') {
         u.retroceso = 1; this.sacudida = Math.max(this.sacudida, 3);
-        this.explosiones.push(new Explosion(z.x, z.y - 12, 14)); this.explosiones.push(new Fogonazo(sale.x, sale.y, 1, 14, 'fuego'));
+        this.explosiones.push(new Explosion(pega.x, z.y - 12, 14)); this.explosiones.push(new Fogonazo(sale.x, sale.y, 1, 14, 'fuego'));
         Audio_.disparo('bazuca', 'tanque');
       } else Audio_.disparo('rifle', 'barrett');
     } else if (U.arma === 'explosivo') {
@@ -229,7 +230,7 @@
       if (distPlano(u.x, u.y, e.x, e.y) > e.radio + (u.bloquea ? 14 : 0)) continue;
       this.herirUnidadV2(u, esInf(u) ? e.gente : e.unidades, 'explosion');
     }
-    for (const z of this.zombies) if (z !== e.de && z.estado !== 'muerto' && !z.vuela && distPlano(z.x, z.y, e.x, e.y) <= e.radio) z.recibirDano(e.zombies * base, z.x >= e.x ? 1 : -1, ARMA_EXPLOSION, this);
+    for (const z of this.zombies) if (z !== e.de && z.estado !== 'muerto' && !z.vuela && !z.enterrado && distPlano(z.x, z.y, e.x, e.y) <= e.radio) z.recibirDano(e.zombies * base, z.x >= e.x ? 1 : -1, ARMA_EXPLOSION, this);
   };
   P.efectosV2 = function (dt) {
     const ahora = this.ahora, K = this.K2 || this.contextoV2();
@@ -242,7 +243,7 @@
       g.fin = true;
       this.explosiones.push(new Explosion(g.x, g.y - 6, g.radio * 0.8)); this.sacudida = Math.max(this.sacudida, 4); Audio_.explosion();
       for (let k = 0; k < 8; k++) this.particulas.push(new Particula(g.x + (Math.random() - 0.5) * g.radio, g.y - 2, (Math.random() - 0.5) * 4, -Math.random() * 3.5, '#6a5a44', 0.4 + Math.random() * 0.4, 2 + Math.random() * 2.5, true, g.y));
-      for (const z of this.zombies) if (z.estado !== 'muerto' && !z.vuela && distPlano(z.x, z.y, g.x, g.y) <= g.radio) z.recibirDano(g.dano, z.x >= g.x ? 1 : -1, ARMA_EXPLOSION, this);
+      for (const z of this.zombies) if (z.estado !== 'muerto' && !z.vuela && !z.enterrado && distPlano(z.x, z.y, g.x, g.y) <= g.radio) z.recibirDano(g.dano, z.x >= g.x ? 1 : -1, ARMA_EXPLOSION, this);
     }
     this.granadasV2 = this.granadasV2.filter(g => !g.fin);
     // Gas del tóxico: daña a la infantería (también vacía de a uno los búnkeres); el fuego lo enciende
@@ -267,6 +268,33 @@
       }
     }
     this.nubesV2 = this.nubesV2.filter(n => n.t < n.dura);
+    // Lo que arroja la horda: cascotes del lanzador, fardos del Coloso y escupitajos, que dejan un charco de ácido
+    for (const p of this.arrojadosV2) {
+      p.t += dt;
+      if (p.t < p.dur) continue;
+      p.fin = true;
+      const acido = p.tipo === 'escupitajo';
+      if (acido) { this.charcosV2.push({ x: p.x, y: p.y, radio: p.radio, t: 0, dura: p.dura, gente: p.gente, cosas: p.cosas }); this.salpicar(p.x, p.y - 4, '#b6e04a', 10, 3, p.y); Audio_.salpicaduraToxica(0.6); }
+      else {
+        this.sacudida = Math.max(this.sacudida, p.tipo === 'fardo' ? 5 : 3); Audio_.cuerpoAnimalCae(p.tipo === 'fardo' ? 2.2 : 1.4, 1);
+        for (let k = 0; k < 10; k++) this.particulas.push(new Particula(p.x + (Math.random() - 0.5) * p.radio, p.y - 3, (Math.random() - 0.5) * 4, -Math.random() * 3, p.tipo === 'fardo' ? '#d9b65a' : '#8a8478', 0.4 + Math.random() * 0.4, 2 + Math.random() * 2.5, true, p.y));
+      }
+      for (const u of [...this.unidades]) {
+        if (u.invisible || u.llevado || u.quitada || !U_(u.tipo)) continue;
+        if (distPlano(u.x, u.y, p.x, p.y) > p.radio + (u.bloquea ? 14 : 0)) continue;
+        this.herirUnidadV2(u, acido ? p.golpe : esInf(u) ? p.gente : p.unidades, acido ? 'acido' : 'golpe');
+      }
+    }
+    this.arrojadosV2 = this.arrojadosV2.filter(p => !p.fin);
+    for (const c of this.charcosV2) {
+      c.t += dt;
+      for (const u of [...this.unidades]) {
+        if (u.invisible || u.llevado || u.quitada || !U_(u.tipo)) continue;
+        if (distPlano(u.x, u.y, c.x, c.y) > c.radio + (u.bloquea ? 14 : 0)) continue;
+        this.herirUnidadV2(u, (esInf(u) ? c.gente : c.cosas) * dt, 'acido');
+      }
+    }
+    this.charcosV2 = this.charcosV2.filter(c => c.t < c.dura);
     // Explosiones en cola; lo que maten y estalle se encadena (hasta cuatro vueltas por cuadro)
     for (let vuelta = 0; this.pendientesV2.length && vuelta < 4; vuelta++) { const lista = this.pendientesV2; this.pendientesV2 = []; for (const e of lista) this.explotarV2(e); }
     for (const lista of [this.rayosV2, this.flakV2, this.ondasV2]) for (const x of lista) x.t += lista === this.rayosV2 ? -dt : dt;

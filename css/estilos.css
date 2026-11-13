@@ -814,7 +814,7 @@ body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }
 /* En el celular la pausa sube al lado del engranaje: abajo tapaba los botones de construir */
 body.en-bastion.tactil .extras-tactiles { left: calc(var(--izq) + 50px); right: auto; top: 8px; bottom: auto; justify-content: flex-start; flex-wrap: nowrap; }
 .bastion-parte, .bastion-info, .b2-barra { display: none; }
-body.bastion-v2 .panel-bastion { --lado: clamp(40px, 5.4vw, 62px); }
+body.bastion-v2 .panel-bastion { --lado: clamp(36px, 4.95vw, 60px); }
 body.bastion-v2 .bastion-barra { display: none; }
 /* Panel: tres grupos de cuatro unidades (cada clase con su color), las herramientas y el botón de la oleada */
 body.en-bastion.bastion-v2 .b2-barra {
@@ -848,6 +848,10 @@ body.en-bastion.bastion-v2 .bastion-parte {
   background: rgba(10,8,12,.72); border: 1px solid rgba(201,169,110,.4); color: var(--texto); font-size: clamp(11px, 1.8vh, 14px); letter-spacing: .06em;
 }
 .bastion-parte.en-curso { opacity: .78; }
+.bastion-parte.muchos { gap: 0; padding: 1px 4px; font-size: clamp(9.5px, 1.5vh, 13px); letter-spacing: 0; overflow-x: auto; }
+.bastion-parte.muchos b { margin-right: 2px; }
+.bastion-parte.muchos .chip { padding: 0 1px 0 0; }
+.bastion-parte.muchos .chip img { height: clamp(19px, 3.9vh, 30px); }
 .bastion-parte b { color: var(--luz); margin-right: 5px; }
 .bastion-parte .chip { position: relative; display: inline-flex; align-items: center; gap: 0; padding: 0 3px 0 1px; background: none; border: 1px solid transparent; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
 .bastion-parte .chip:hover { border-color: rgba(201,169,110,.6); }
@@ -889,6 +893,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 /* Pantalla previa: la guía de los dos bandos */
 #panel-bastion2 { justify-content: safe center; overflow-y: auto; padding: clamp(8px, 2vh, 20px) 12px; gap: clamp(4px, 1.1vh, 10px); }
 #panel-bastion2 h2, #panel-bastion2 .ayuda { margin: 0; }
+#panel-bastion2 > * { flex-shrink: 0; }   /* si no entra todo, se desplaza (los botones quedan fijos abajo); nada se encima */
 .b2-reglas { list-style: none; margin: 0; padding: 0; max-width: 860px; font-size: clamp(11px, 1.8vh, 13.5px); line-height: 1.3; }
 .b2-reglas li::before { content: "\25B8  "; color: var(--luz); }
 .b2-bandos { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; }
@@ -906,7 +911,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 .b2-detalle > img { flex: none; width: clamp(56px, 8vw, 100px); height: auto; aspect-ratio: 1; }
 .b2-detalle p { margin: 1px 0; font-size: clamp(11px, 1.8vh, 13.5px); line-height: 1.28; }
 .b2-detalle b { font-size: .9em; letter-spacing: .06em; color: var(--arena); }
-#panel-bastion2 .fila-botones { margin-top: 2px; align-items: center; }
+#panel-bastion2 .fila-botones { margin-top: 2px; align-items: center; position: sticky; bottom: 0; padding: 4px 16px; background: rgba(8,6,10,.9); }
 #panel-bastion2 [data-accion="bastion2-empezar"] { font: inherit; font-weight: 700; font-size: 17px; letter-spacing: .15em; padding: 10px 36px; border-color: var(--luz); color: var(--luz); }
 #panel-bastion2 [data-accion="bastion2-empezar"]:hover { color: var(--noche); background: var(--luz); }
 @media (max-height: 480px) {
