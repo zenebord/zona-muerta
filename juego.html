@@ -821,7 +821,7 @@ body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }
 /* En el celular la pausa sube al lado del engranaje: abajo tapaba los botones de construir */
 body.en-bastion.tactil .extras-tactiles { left: calc(var(--izq) + 50px); right: auto; top: 8px; bottom: auto; justify-content: flex-start; flex-wrap: nowrap; }
 .bastion-parte, .bastion-info, .b2-barra { display: none; }
-body.bastion-v2 .panel-bastion { --lado: clamp(40px, 5.4vw, 62px); }
+body.bastion-v2 .panel-bastion { --lado: clamp(36px, 4.95vw, 60px); }
 body.bastion-v2 .bastion-barra { display: none; }
 /* Panel: tres grupos de cuatro unidades (cada clase con su color), las herramientas y el botón de la oleada */
 body.en-bastion.bastion-v2 .b2-barra {
@@ -855,6 +855,10 @@ body.en-bastion.bastion-v2 .bastion-parte {
   background: rgba(10,8,12,.72); border: 1px solid rgba(201,169,110,.4); color: var(--texto); font-size: clamp(11px, 1.8vh, 14px); letter-spacing: .06em;
 }
 .bastion-parte.en-curso { opacity: .78; }
+.bastion-parte.muchos { gap: 0; padding: 1px 4px; font-size: clamp(9.5px, 1.5vh, 13px); letter-spacing: 0; overflow-x: auto; }
+.bastion-parte.muchos b { margin-right: 2px; }
+.bastion-parte.muchos .chip { padding: 0 1px 0 0; }
+.bastion-parte.muchos .chip img { height: clamp(19px, 3.9vh, 30px); }
 .bastion-parte b { color: var(--luz); margin-right: 5px; }
 .bastion-parte .chip { position: relative; display: inline-flex; align-items: center; gap: 0; padding: 0 3px 0 1px; background: none; border: 1px solid transparent; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
 .bastion-parte .chip:hover { border-color: rgba(201,169,110,.6); }
@@ -896,6 +900,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 /* Pantalla previa: la guía de los dos bandos */
 #panel-bastion2 { justify-content: safe center; overflow-y: auto; padding: clamp(8px, 2vh, 20px) 12px; gap: clamp(4px, 1.1vh, 10px); }
 #panel-bastion2 h2, #panel-bastion2 .ayuda { margin: 0; }
+#panel-bastion2 > * { flex-shrink: 0; }   /* si no entra todo, se desplaza (los botones quedan fijos abajo); nada se encima */
 .b2-reglas { list-style: none; margin: 0; padding: 0; max-width: 860px; font-size: clamp(11px, 1.8vh, 13.5px); line-height: 1.3; }
 .b2-reglas li::before { content: "\25B8  "; color: var(--luz); }
 .b2-bandos { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; }
@@ -913,7 +918,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 .b2-detalle > img { flex: none; width: clamp(56px, 8vw, 100px); height: auto; aspect-ratio: 1; }
 .b2-detalle p { margin: 1px 0; font-size: clamp(11px, 1.8vh, 13.5px); line-height: 1.28; }
 .b2-detalle b { font-size: .9em; letter-spacing: .06em; color: var(--arena); }
-#panel-bastion2 .fila-botones { margin-top: 2px; align-items: center; }
+#panel-bastion2 .fila-botones { margin-top: 2px; align-items: center; position: sticky; bottom: 0; padding: 4px 16px; background: rgba(8,6,10,.9); }
 #panel-bastion2 [data-accion="bastion2-empezar"] { font: inherit; font-weight: 700; font-size: 17px; letter-spacing: .15em; padding: 10px 36px; border-color: var(--luz); color: var(--luz); }
 #panel-bastion2 [data-accion="bastion2-empezar"]:hover { color: var(--noche); background: var(--luz); }
 @media (max-height: 480px) {
@@ -1345,7 +1350,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261112-2319-4721924';
+const VERSION_JUEGO = '20261112-2333-85dc783';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1563,14 +1568,14 @@ const TEXTOS = {
     'recargaTipo.cargador-pistola': 'cambio de cargador', 'recargaTipo.cargador': 'cargador extraíble', 'recargaTipo.tambor': 'bala por bala en el tambor',
     'recargaTipo.tambor-rapido': 'cargador rápido', 'recargaTipo.peine': 'con peine', 'recargaTipo.cerrojo': 'bala por bala por el cerrojo',
     'recargaTipo.palanca': 'de a una por la ventana', 'recargaTipo.cartuchos': 'cartucho por cartucho', 'recargaTipo.quiebre': 'se quiebra y se carga',
-    'recargaTipo.cohete': 'cohete nuevo', 'recargaTipo.granada': 'granada nueva', 'recargaTipo.cinta': 'cinta nueva',
+    'recargaTipo.cohete': 'cohete nuevo', 'recargaTipo.granada': 'granada nueva', 'recargaTipo.cinta': 'cinta nueva', 'recargaTipo.caja': 'caja de munición nueva',
     'grupo.5': 'Cuerpo a cuerpo', 'grupo.6': 'Legendarias',
     'hud.golpes': v => `${v.n} golpe${v.n > 1 ? 's' : ''} por zombie`, 'hud.golpesPor': v => `(${v.n} golpe${v.n > 1 ? 's' : ''} por zombie)`,
     'poder.rayo': 'llama rayos', 'poder.onda': 'onda de luz', 'poder.marea': 'ola de agua', 'poder.escudo': 'se lanza y vuelve', 'poder.lanza': 'se lanza y vuelve',
     'arma.hacha': 'Hacha de bombero', 'arma.bate': 'Bate con clavos', 'arma.mazo': 'Mazo', 'arma.tridente': 'Tridente de Poseidón', 'arma.egida': 'Égida',
     'grupo.0': 'Pistolas', 'grupo.1': 'Metralletas', 'grupo.2': 'Rifles', 'grupo.3': 'Escopetas', 'grupo.4': 'Especiales',
     'arma.recortada': 'Escopeta de dos cañones', 'arma.m79': 'Lanzagranadas M79', 'arma.bazuca': 'Bazuca M9', 'arma.granadas': 'Granadas M67', 'arma.laser': 'Láser alienígena',
-    'arma.lanzallamas': 'Lanzallamas M2', 'recargaTipo.ignicion': 'cilindro de ignición', 'unidad.fuego': v => `${v.s} s de fuego`, 'detalle.danoFuego': v => `${v.dano} por llama + quema ${v.quema}/s durante ${v.seg} s`, 'detalle.matarFuego': 'Fuego para matar un zombie', 'hud.fuegoPor': v => `(${v.s} s de fuego por zombie)`,
+    'arma.lanzallamas': 'Lanzallamas M2', 'arma.minigun': 'Minigun M134', 'arma.macheteCazador': 'Machete del cazador', 'recargaTipo.ignicion': 'cilindro de ignición', 'unidad.fuego': v => `${v.s} s de fuego`, 'detalle.danoFuego': v => `${v.dano} por llama + quema ${v.quema}/s durante ${v.seg} s`, 'detalle.matarFuego': 'Fuego para matar un zombie', 'hud.fuegoPor': v => `(${v.s} s de fuego por zombie)`,
     'dif.facil': 'Fácil', 'dif.medio': 'Medio', 'dif.dificil': 'Difícil',
     'dif.facil.desc': 'Rondas chicas que empiezan con 5 zombies lentos. Caen con menos tiros: pistola 2, metralleta 3, rifle 1.',
     'dif.medio.desc': 'Zombies normales, con la vida y la resistencia de siempre: pistola 3 tiros, metralleta 5, rifle 1.',
@@ -1733,14 +1738,14 @@ const TEXTOS = {
     'recargaTipo.cargador-pistola': 'troca de carregador', 'recargaTipo.cargador': 'carregador removível', 'recargaTipo.tambor': 'bala por bala no tambor',
     'recargaTipo.tambor-rapido': 'carregador rápido', 'recargaTipo.peine': 'com pente', 'recargaTipo.cerrojo': 'bala por bala pelo ferrolho',
     'recargaTipo.palanca': 'uma por vez pela janela', 'recargaTipo.cartuchos': 'cartucho por cartucho', 'recargaTipo.quiebre': 'abre e carrega',
-    'recargaTipo.cohete': 'foguete novo', 'recargaTipo.granada': 'granada nova', 'recargaTipo.cinta': 'fita nova',
+    'recargaTipo.cohete': 'foguete novo', 'recargaTipo.granada': 'granada nova', 'recargaTipo.cinta': 'fita nova', 'recargaTipo.caja': 'caixa de munição nova',
     'grupo.5': 'Corpo a corpo', 'grupo.6': 'Lendárias',
     'hud.golpes': v => `${v.n} golpe${v.n > 1 ? 's' : ''} por zumbi`, 'hud.golpesPor': v => `(${v.n} golpe${v.n > 1 ? 's' : ''} por zumbi)`,
     'poder.rayo': 'invoca raios', 'poder.onda': 'onda de luz', 'poder.marea': 'onda de água', 'poder.escudo': 'é lançado e volta', 'poder.lanza': 'é lançada e volta',
     'arma.hacha': 'Machado de bombeiro', 'arma.bate': 'Taco com pregos', 'arma.mazo': 'Marreta', 'arma.tridente': 'Tridente de Poseidon', 'arma.egida': 'Égide',
     'grupo.0': 'Pistolas', 'grupo.1': 'Submetralhadoras', 'grupo.2': 'Fuzis', 'grupo.3': 'Espingardas', 'grupo.4': 'Especiais',
     'arma.recortada': 'Espingarda de dois canos', 'arma.m79': 'Lança-granadas M79', 'arma.bazuca': 'Bazuca M9', 'arma.granadas': 'Granadas M67', 'arma.laser': 'Laser alienígena',
-    'arma.lanzallamas': 'Lança-chamas M2', 'recargaTipo.ignicion': 'cilindro de ignição', 'unidad.fuego': v => `${v.s} s de fogo`, 'detalle.danoFuego': v => `${v.dano} por chama + queima ${v.quema}/s por ${v.seg} s`, 'detalle.matarFuego': 'Fogo para matar um zumbi', 'hud.fuegoPor': v => `(${v.s} s de fogo por zumbi)`,
+    'arma.lanzallamas': 'Lança-chamas M2', 'arma.minigun': 'Minigun M134', 'arma.macheteCazador': 'Facão do caçador', 'recargaTipo.ignicion': 'cilindro de ignição', 'unidad.fuego': v => `${v.s} s de fogo`, 'detalle.danoFuego': v => `${v.dano} por chama + queima ${v.quema}/s por ${v.seg} s`, 'detalle.matarFuego': 'Fogo para matar um zumbi', 'hud.fuegoPor': v => `(${v.s} s de fogo por zumbi)`,
     'dif.facil': 'Fácil', 'dif.medio': 'Médio', 'dif.dificil': 'Difícil',
     'dif.facil.desc': 'Rodadas pequenas que começam com 5 zumbis lentos. Caem com menos tiros: pistola 2, submetralhadora 3, fuzil 1.',
     'dif.medio.desc': 'Zumbis normais, com a vida e a resistência de sempre: pistola 3 tiros, submetralhadora 5, fuzil 1.',
@@ -1902,14 +1907,14 @@ const TEXTOS = {
     'recargaTipo.cargador-pistola': 'magazine change', 'recargaTipo.cargador': 'detachable magazine', 'recargaTipo.tambor': 'round by round into the cylinder',
     'recargaTipo.tambor-rapido': 'speedloader', 'recargaTipo.peine': 'stripper clip', 'recargaTipo.cerrojo': 'round by round through the bolt',
     'recargaTipo.palanca': 'one at a time through the gate', 'recargaTipo.cartuchos': 'shell by shell', 'recargaTipo.quiebre': 'breaks open to load',
-    'recargaTipo.cohete': 'new rocket', 'recargaTipo.granada': 'new grenade', 'recargaTipo.cinta': 'new belt',
+    'recargaTipo.cohete': 'new rocket', 'recargaTipo.granada': 'new grenade', 'recargaTipo.cinta': 'new belt', 'recargaTipo.caja': 'new ammo box',
     'grupo.5': 'Melee', 'grupo.6': 'Legendary',
     'hud.golpes': v => `${v.n} hit${v.n > 1 ? 's' : ''} per zombie`, 'hud.golpesPor': v => `(${v.n} hit${v.n > 1 ? 's' : ''} per zombie)`,
     'poder.rayo': 'calls lightning', 'poder.onda': 'wave of light', 'poder.marea': 'tidal wave', 'poder.escudo': 'thrown, comes back', 'poder.lanza': 'thrown, comes back',
     'arma.hacha': 'Fire axe', 'arma.bate': 'Spiked bat', 'arma.mazo': 'Sledgehammer', 'arma.tridente': 'Poseidon’s trident', 'arma.egida': 'Aegis',
     'grupo.0': 'Pistols', 'grupo.1': 'SMGs', 'grupo.2': 'Rifles', 'grupo.3': 'Shotguns', 'grupo.4': 'Specials',
     'arma.recortada': 'Double-barrel shotgun', 'arma.m79': 'M79 grenade launcher', 'arma.bazuca': 'M9 bazooka', 'arma.granadas': 'M67 grenades', 'arma.laser': 'Alien laser',
-    'arma.lanzallamas': 'M2 flamethrower', 'recargaTipo.ignicion': 'ignition cylinder', 'unidad.fuego': v => `${v.s} s of fire`, 'detalle.danoFuego': v => `${v.dano} per flame + burns ${v.quema}/s for ${v.seg} s`, 'detalle.matarFuego': 'Fire to kill a zombie', 'hud.fuegoPor': v => `(${v.s} s of fire per zombie)`,
+    'arma.lanzallamas': 'M2 flamethrower', 'arma.minigun': 'M134 Minigun', 'arma.macheteCazador': 'Hunter’s machete', 'recargaTipo.ignicion': 'ignition cylinder', 'unidad.fuego': v => `${v.s} s of fire`, 'detalle.danoFuego': v => `${v.dano} per flame + burns ${v.quema}/s for ${v.seg} s`, 'detalle.matarFuego': 'Fire to kill a zombie', 'hud.fuegoPor': v => `(${v.s} s of fire per zombie)`,
     'dif.facil': 'Easy', 'dif.medio': 'Normal', 'dif.dificil': 'Hard',
     'dif.facil.desc': 'Small rounds that start with 5 slow zombies. They go down with fewer shots: pistol 2, SMG 3, rifle 1.',
     'dif.medio.desc': 'Regular zombies with their usual health and toughness: pistol 3 shots, SMG 5, rifle 1.',
@@ -2048,7 +2053,7 @@ const Idioma = (() => {
         d.nombre = t('dif.' + d.id); d.descripcion = t('dif.' + d.id + '.desc');
       }
       GRUPOS_ARMAS.forEach((g, k) => { guardarOriginal(g, ['nombre']); g.nombre = t('grupo.' + k); });
-      for (const id of ['recortada', 'm79', 'bazuca', 'granadas', 'lanzallamas', 'laser', 'hacha', 'bate', 'mazo', 'tridente', 'egida', 'cuchillo']) if (ARMAS[id]) { guardarOriginal(ARMAS[id], ['nombre']); ARMAS[id].nombre = t('arma.' + id); }
+      for (const id of ['recortada', 'm79', 'bazuca', 'granadas', 'lanzallamas', 'minigun', 'laser', 'hacha', 'bate', 'mazo', 'macheteCazador', 'tridente', 'egida', 'cuchillo']) if (ARMAS[id]) { guardarOriginal(ARMAS[id], ['nombre']); ARMAS[id].nombre = t('arma.' + id); }
     },
   };
 })();
@@ -2243,7 +2248,7 @@ const Audio_ = (() => {
   const CERROJO_MANUAL = new Set(['remington700', 'mosin', 'mauser']);
   const REVOLVERES = new Set(['magnum', 'python']);
   const QUIEBRE = new Set(['recortada', 'm79', 'mgl']);
-  const PESO = { barrett: 0.78, m2: 0.72, aa12: 0.74, saiga: 0.9, deagle: 0.9, uzi: 1.1, p90: 1.12, mp5: 1.05 };
+  const PESO = { barrett: 0.78, m2: 0.72, aa12: 0.74, saiga: 0.9, deagle: 0.9, uzi: 1.1, p90: 1.12, mp5: 1.05, minigun: 0.62 };
   function grabacionDeRecarga(evento, id) {
     const peso = PESO[id] || 1;
     switch (evento) {
@@ -2347,6 +2352,118 @@ const Audio_ = (() => {
   const PESADAS = new Set(['magnum', 'deagle', 'python', 'barrett', 'm2', 'mosin', 'svd', 'garand']);
   const LIVIANAS = new Set(['glock', 'uzi', 'p90', 'mp5', 'mauser', 'colt1911', 'ppk', 'vector', 'beretta92']);
 
+  /* ---------- Minigun M134 ----------
+   * Cada tiro es corto y seco (a 30 por segundo se encadenan en el «brrrrt»); por debajo suenan, mientras los cañones
+   * giran, el motor eléctrico (dos osciladores que suben de tono con la velocidad), el silbido de los cañones con el
+   * traqueteo de los seis al pasar, y mientras tira, un rugido grave cortado a la cadencia. Lo continuo se actualiza en
+   * cada cuadro (Audio_.minigun): si dejan de llegar llamadas (pausa, menú, otra arma) se apaga solo. */
+  function tiroMinigun() {
+    const v = 0.92 + Math.random() * 0.16;
+    ruido({ dur: 0.045, vol: 0.42, filtro: 'lowpass', freq: 5200 * v, freqFin: 520, q: 0.7, ataque: 0.0005, sat: 3, rev: interior ? 0.12 : 0.02, eco: interior ? 0.08 : 0 });
+    tono({ desde: 150 * v, hasta: 58, dur: 0.05, vol: 0.32, ataque: 0.0006, sat: 1.8 });
+  }
+  let motor = null;
+  function crearMotor() {
+    const nodos = [], nuevo = (n, arrancar = false) => { if (arrancar) nodos.push(n); return n; };
+    // Motor eléctrico: diente de sierra y su octava cuadrada, por un pasabajos
+    const zumbido = ctx.createBiquadFilter(); zumbido.type = 'lowpass'; zumbido.frequency.value = 1400; zumbido.Q.value = 2.5;
+    const o1 = nuevo(ctx.createOscillator(), true); o1.type = 'sawtooth'; o1.frequency.value = 55;
+    const o2 = nuevo(ctx.createOscillator(), true); o2.type = 'square'; o2.frequency.value = 110;
+    const g1 = ctx.createGain(); g1.gain.value = 0.55; const g2 = ctx.createGain(); g2.gain.value = 0.16;
+    o1.connect(g1); g1.connect(zumbido); o2.connect(g2); g2.connect(zumbido);
+    // Silbido de los cañones: ruido en banda que sube con la velocidad, con el traqueteo de los seis cañones al pasar
+    const aire = nuevo(ctx.createBufferSource(), true); aire.buffer = bufferRuido; aire.loop = true;
+    const banda = ctx.createBiquadFilter(); banda.type = 'bandpass'; banda.frequency.value = 300; banda.Q.value = 1.3;
+    const traqueteo = ctx.createGain(); traqueteo.gain.value = 0.55;
+    const pasoCanon = nuevo(ctx.createOscillator(), true); pasoCanon.type = 'triangle'; pasoCanon.frequency.value = 4;
+    const pasoCanonG = ctx.createGain(); pasoCanonG.gain.value = 0.45; pasoCanon.connect(pasoCanonG); pasoCanonG.connect(traqueteo.gain);
+    aire.connect(banda); banda.connect(traqueteo);
+    const salidaMotor = ctx.createGain(); salidaMotor.gain.value = 0;
+    zumbido.connect(salidaMotor); const aireG = ctx.createGain(); aireG.gain.value = 1.6; traqueteo.connect(aireG); aireG.connect(salidaMotor);
+    conectar(salidaMotor, 0.08, 0);
+    // Rugido de la ráfaga: ruido grave saturado, con un golpe por tiro (diente de sierra invertido a la cadencia)
+    const rugido = nuevo(ctx.createBufferSource(), true); rugido.buffer = bufferRuido; rugido.loop = true;
+    const grave = ctx.createBiquadFilter(); grave.type = 'lowpass'; grave.frequency.value = 1100; grave.Q.value = 0.8;
+    const golpes = ctx.createGain(); golpes.gain.value = 0.5;
+    const cadencia = nuevo(ctx.createOscillator(), true); cadencia.type = 'sawtooth'; cadencia.frequency.value = 33;
+    const cadenciaG = ctx.createGain(); cadenciaG.gain.value = -0.5; cadencia.connect(cadenciaG); cadenciaG.connect(golpes.gain);
+    rugido.connect(grave); grave.connect(golpes);
+    const salidaRafaga = ctx.createGain(); salidaRafaga.gain.value = 0;
+    saturar(golpes, 2.2).connect(salidaRafaga);
+    conectar(salidaRafaga, 0.25, 0.12);
+    const t = ctx.currentTime;
+    for (const n of nodos) n.start(t, n.buffer ? Math.random() * 1.5 : 0);
+    motor = { o1, o2, banda, pasoCanon, cadencia, salidaMotor, salidaRafaga, nodos, reloj: 0 };
+  }
+  function apagarMotor() {
+    if (!motor) return;
+    const m = motor; motor = null;
+    clearTimeout(m.reloj);
+    const t = ctx.currentTime;
+    m.salidaMotor.gain.cancelScheduledValues(t); m.salidaMotor.gain.setTargetAtTime(0, t, 0.03);
+    m.salidaRafaga.gain.cancelScheduledValues(t); m.salidaRafaga.gain.setTargetAtTime(0, t, 0.03);
+    for (const n of m.nodos) { try { n.stop(t + 0.3); } catch { /* ya parado */ } }
+  }
+  // Valor con «hombre muerto»: va hacia `valor` y, si en 0,2 s no llega otra llamada, cae a cero solo
+  function sostener(param, valor, t, subida) {
+    param.cancelScheduledValues(t);
+    param.setTargetAtTime(valor, t, subida);
+    param.setTargetAtTime(0, t + 0.2, 0.06);
+  }
+
+  /* ---------- Susurro del cazador ----------
+   * El «ch ch ch ch… ja ja ja ja» de las películas de terror, sintetizado: cuatro «ch» (un golpecito de «t» y el
+   * soplido agudo de la «sh», ruido en banda alrededor de 3 kHz) y cuatro «ja» aspiradas (aire por los formantes de una
+   * «a» susurrada, con un hilo de voz grave que cae). Todo bajito y con un eco que rebota varias veces, cada vez más
+   * oscuro, más algo de reverberación. Pasa por la mezcla de efectos: respeta el volumen y el silencio. */
+  let ecoSusurro = null;
+  function lineaSusurro() {
+    if (ecoSusurro) return ecoSusurro;
+    const entrada = ctx.createGain();
+    const retardo = ctx.createDelay(1); retardo.delayTime.value = 0.21;
+    const oscuro = ctx.createBiquadFilter(); oscuro.type = 'lowpass'; oscuro.frequency.value = 2400;
+    const vuelta = ctx.createGain(); vuelta.gain.value = 0.52;
+    const humedo = ctx.createGain(); humedo.gain.value = 0.8;
+    entrada.connect(retardo); retardo.connect(oscuro); oscuro.connect(vuelta); vuelta.connect(retardo); oscuro.connect(humedo);
+    conectar(humedo, 0.35, 0);
+    ecoSusurro = entrada;
+    return entrada;
+  }
+  function silaba(g, t0, fin, fuentes) {
+    conectar(g, 0.3, 0); g.connect(lineaSusurro());
+    for (const f of fuentes) { f.start(t0, f.buffer ? Math.random() * 1.5 : 0); f.stop(fin + 0.05); }
+  }
+  function silabaCh(t0, vol) {
+    const aire = ctx.createBufferSource(); aire.buffer = bufferRuido;
+    const agudo = ctx.createBiquadFilter(); agudo.type = 'highpass'; agudo.frequency.value = 1700;
+    const sh = ctx.createBiquadFilter(); sh.type = 'bandpass'; sh.frequency.value = 2900 + Math.random() * 600; sh.Q.value = 1.5;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.005);             // la «t»
+    g.gain.exponentialRampToValueAtTime(vol * 0.45, t0 + 0.022);
+    g.gain.exponentialRampToValueAtTime(vol * 0.7, t0 + 0.05);        // la «sh»
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.13);
+    aire.connect(agudo); agudo.connect(sh); sh.connect(g);
+    silaba(g, t0, t0 + 0.13, [aire]);
+  }
+  function silabaJa(t0, vol, altura) {
+    const dur = 0.2, mezcla = ctx.createGain();
+    const aire = ctx.createBufferSource(); aire.buffer = bufferRuido; aire.connect(mezcla);
+    const voz = ctx.createOscillator(); voz.type = 'sawtooth';
+    voz.frequency.setValueAtTime(altura, t0); voz.frequency.exponentialRampToValueAtTime(altura * 0.84, t0 + dur);
+    const vozG = ctx.createGain(); vozG.gain.value = 0.12; voz.connect(vozG); vozG.connect(mezcla);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.035);             // la «j» aspirada se abre en la «a»
+    g.gain.setValueAtTime(vol, t0 + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    for (const [fr, q, k] of [[760, 4, 2.6], [1220, 5, 2.0], [2550, 7, 1.3]]) {   // formantes de la «a»
+      const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = fr * (0.96 + Math.random() * 0.08); b.Q.value = q;
+      const bg = ctx.createGain(); bg.gain.value = k; mezcla.connect(b); b.connect(bg); bg.connect(g);
+    }
+    silaba(g, t0, t0 + dur, [aire, voz]);
+  }
+
   return {
     activar: asegurar,
     // Volúmenes de la configuración: { general, efectos, musica, silencio }
@@ -2356,6 +2473,7 @@ const Audio_ = (() => {
 
     disparo(categoria, armaId) {
       if (!asegurar()) return;
+      if (armaId === 'minigun') { tiroMinigun(); return; }   // el rugido de la ráfaga lo pone Audio_.minigun
       const pesado = PESADAS.has(armaId) ? 1.35 : LIVIANAS.has(armaId) ? 0.85 : 1;
       switch (categoria) {
         case 'pistola':       detonacion({ crack: 0.9, boom: 0.75 * pesado, boomHz: 650 / pesado, golpeVol: 0.55 * pesado, golpeHz: 190, golpeDur: 0.09 * pesado, cola: 0.22 * pesado, colaDur: 0.45 * pesado, mecanismo: armaId === 'magnum' || armaId === 'python' ? 0 : 0.07 }); break;
@@ -2579,6 +2697,31 @@ const Audio_ = (() => {
       asegurar();
       ruido({ dur: 0.9, vol: 0.55, filtro: 'lowpass', freq: 400, freqFin: 1800, ataque: 0.15, rev: 0.3 });
       ruido({ dur: 0.6, vol: 0.35, filtro: 'bandpass', freq: 2500, q: 0.8, ataque: 0.05, retraso: 0.3, rev: 0.3 });
+    },
+    // Machete del cazador: el susurro «ch ch ch ch… ja ja ja ja» (bajito, con eco). Cuándo suena lo decide
+    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
+    susurroCazador() {
+      if (!asegurar()) return;
+      const t = ctx.currentTime + 0.03, v = 0.9 + Math.random() * 0.2;
+      for (let k = 0; k < 4; k++) silabaCh(t + k * 0.165 + (Math.random() - 0.5) * 0.02, 0.2 * v * (1 - k * 0.06));
+      const t2 = t + 0.9;
+      for (let k = 0; k < 4; k++) silabaJa(t2 + k * 0.2 + (Math.random() - 0.5) * 0.02, 0.16 * v * (1 - k * 0.07), 112 - k * 4);
+    },
+    // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
+    // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
+    minigun(vel, tirando = false) {
+      const v = Math.max(0, Math.min(1, vel || 0));
+      if (v < 0.002 && !tirando) { if (motor) apagarMotor(); return; }
+      if (!asegurar()) return;
+      if (!motor) crearMotor();
+      const m = motor, t = ctx.currentTime;
+      m.o1.frequency.setTargetAtTime(48 + 230 * v, t, 0.05);
+      m.o2.frequency.setTargetAtTime(96 + 460 * v, t, 0.05);
+      m.banda.frequency.setTargetAtTime(260 + 1900 * v, t, 0.06);
+      m.pasoCanon.frequency.setTargetAtTime(Math.max(1, 33 * v), t, 0.06);   // seis cañones por vuelta: a velocidad de tiro pasan 33 por segundo
+      sostener(m.salidaMotor.gain, 0.03 + 0.12 * Math.sqrt(v), t, 0.04);
+      sostener(m.salidaRafaga.gain, tirando ? 0.3 : 0, t, tirando ? 0.008 : 0.04);
+      clearTimeout(m.reloj); m.reloj = setTimeout(apagarMotor, 1500);   // sin llamadas (pausa, menú): se liberan los nodos
     },
     // Escudo o lanza arrojados, y cuando vuelven a la mano
     lanzar(tipo) {
@@ -3140,7 +3283,12 @@ const Musica = (() => {
  *   recargaTipo    cargador-pistola | cargador | tambor | tambor-rapido | peine | cerrojo | palanca | cartuchos | quiebre | cinta | granada | ignicion
  *   recargaFinal   qué hace al terminar de poner el cargador: corredera | liberar | palmada | palmada-hk | cerrojo | ninguno
  *   recargaUnidad  qué lleva en la mano: cargador | cargador-curvo | cargador-plano | tambor-cargador | bala | cartucho | peine | speedloader | cinta | granada40 | celda | ignicion
+ *                  (cajaMinigun: la caja de la minigun, que dibuja su propio modelo en la mano; js/armas-especiales.js)
  *   balanceo       el cargador se engancha de adelante hacia atrás (AK, Saiga)
+ *   recargaTexto   cómo se llama la recarga en la ficha, si no es la de su recargaTipo (recargaTipo.<texto> en idioma.js)
+ * Armas especiales (js/armas-especiales.js):
+ *   skin           solo la tiene quien juega con ese personaje (js/skins.js): el machete del cazador
+ *   giratoria      { arranque, frenado } ms: los cañones tardan en llegar a la velocidad de tiro y en parar (minigun)
  */
 const VIDA_ZOMBIE_NORMAL = 15;
 
@@ -3195,6 +3343,12 @@ const ARMAS = {
   // zombie, que sigue quemándose quemaSeg segundos (quema por segundo). cargador = descargas; a 50 ms son 7 s de fuego.
   // Lo que se cambia al recargar es el cilindro de ignición de la punta (el combustible va en la mochila).
   lanzallamas: { id: 'lanzallamas', nombre: 'Lanzallamas M2', categoria: 'lanzallamas', fuego: true, dano: 0.4, quema: 4, quemaSeg: 3, llamas: 3, cargador: 140, cadencia: 50, recarga: 2400, automatica: true, velocidad: 8.5, alcance: 330, gravedad: 0.035, reservaInicial: 4, recargaTipo: 'ignicion', recargaFinal: 'ninguno', recargaUnidad: 'ignicion', color: '#4a5532' },
+  // Minigun M134 (EE. UU., 1963): seis cañones que gira un motor eléctrico. 7,62×51 mm, bala de fusil: un tiro por
+  // zombie, como los rifles y la M2. Al apretar, los cañones tardan 350 ms en llegar a la velocidad de tiro (sin tirar);
+  // al soltar siguen girando 1,4 s hasta parar. Cadencia de 30 ms: 2000 por minuto, la velocidad baja de la M134 (a 60
+  // cuadros por segundo sale un tiro cada dos cuadros). 300 tiros en la caja y dos cajas de repuesto; recargar es
+  // cambiar la caja, que cae al piso.
+  minigun:  { id: 'minigun',  nombre: 'Minigun M134',    categoria: 'ametralladora', dano: 15, cargador: 300, cadencia: 30, recarga: 3800, automatica: true, velocidad: 22, alcance: 1100, giratoria: { arranque: 350, frenado: 1400 }, reservaInicial: 600, recargaTipo: 'cargador', recargaFinal: 'ninguno', recargaUnidad: 'cajaMinigun', recargaTexto: 'caja', color: '#2b2d31' },
   laser:    { id: 'laser',    nombre: 'Láser alienígena', categoria: 'laser', dano: 15, cargador: 20, cadencia: 220, recarga: 2000, automatica: false, velocidad: 40, alcance: 1400, perfora: true, reservaInicial: 40, recargaTipo: 'cargador', recargaFinal: 'ninguno', recargaUnidad: 'celda', color: '#39ff14' },
 
   // --- Cuerpo a cuerpo: se empuñan; sin munición ni recarga. alcance en unidades, objetivos = a cuántos pega por golpe ---
@@ -3203,6 +3357,9 @@ const ARMAS = {
   hacha:    { id: 'hacha',    nombre: 'Hacha de bombero', categoria: 'cuerpo', cuerpo: true, dano: 15, cadencia: 720, golpe: 600, alcance: 58, objetivos: 2, empuje: 3, filo: true,  cargador: 1, automatica: true, color: '#b3261e' },
   bate:     { id: 'bate',     nombre: 'Bate con clavos',  categoria: 'cuerpo', cuerpo: true, dano: 8,  cadencia: 520, golpe: 440, alcance: 58, objetivos: 3, empuje: 5, filo: false, cargador: 1, automatica: true, color: '#9b6a3a' },
   mazo:     { id: 'mazo',     nombre: 'Mazo',             categoria: 'cuerpo', cuerpo: true, dano: 15, cadencia: 900, golpe: 760, alcance: 60, objetivos: 3, empuje: 7, filo: false, cargador: 1, automatica: true, color: '#55585e' },
+  // Machete del cazador: solo con el personaje «cazador» (skin), que lo lleva siempre. Hoja más larga que la del
+  // machete común (alcance 60 contra 52) y un golpe que voltea a un zombie (15 contra 8), un poco más lento
+  macheteCazador: { id: 'macheteCazador', nombre: 'Machete del cazador', categoria: 'cuerpo', cuerpo: true, unaMano: true, skin: 'cazador', dano: 15, cadencia: 460, golpe: 380, alcance: 60, objetivos: 2, empuje: 2.5, filo: true, cargador: 1, automatica: true, color: '#7a5a44' },
 
   // --- Legendarias (mitología): golpes con poder. Solo en las montañas ---
   mjolnir:  { id: 'mjolnir',  nombre: 'Mjölnir',              categoria: 'legendaria', cuerpo: true, legendaria: true, poder: 'rayo',  dano: 15, cadencia: 900,  golpe: 620, alcance: 54, objetivos: 3, empuje: 5, filo: false, cargador: 1, automatica: true, color: '#7d8a9a' },
@@ -3220,12 +3377,14 @@ const ARMAS_COMUNES = ['glock', 'magnum', 'colt1911', 'deagle', 'python', 'beret
   'machete', 'katana', 'hacha', 'bate', 'mazo'];
 
 // Armas especiales que solo aparecen arriba de las montañas
-const ARMAS_ESPECIALES = ['m79', 'mgl', 'bazuca', 'rpg7', 'granadas', 'lanzallamas', 'laser'];
+const ARMAS_ESPECIALES = ['m79', 'mgl', 'bazuca', 'rpg7', 'granadas', 'lanzallamas', 'minigun', 'laser'];
 // Legendarias: también en las montañas, en lugar de una especial cada tanto
 const ARMAS_LEGENDARIAS = ['mjolnir', 'excalibur', 'tridente', 'egida', 'gungnir'];
 
-// Orden fijo del inventario, para que las teclas 1…0 siempre apunten a la misma arma
+// Orden fijo del inventario, para que las teclas 1…0 siempre apunten a la misma arma. Las de un personaje (skin) no
+// salen en las cajas: van en el orden al lado de su pariente (el machete del cazador, después del machete)
 const ORDEN_INVENTARIO = [...ARMAS_COMUNES, ...ARMAS_ESPECIALES, ...ARMAS_LEGENDARIAS];
+ORDEN_INVENTARIO.splice(ORDEN_INVENTARIO.indexOf('machete') + 1, 0, 'macheteCazador');
 
 // Ranuras del teclado (1 a 7): cada tecla elige un grupo y, apretada otra vez, recorre sus armas
 const GRUPOS_ARMAS = [
@@ -7508,7 +7667,7 @@ const MISIONES = [
   { id: 'escopetazo',     nombre: 'Escopetazo',          descripcion: 'Consigue una escopeta.',                                  tipo: 'conseguir', categoria: 'escopeta', meta: 1 },
   { id: 'coleccionista',  nombre: 'Coleccionista',       descripcion: 'Consigue 3 escopetas distintas.',                               tipo: 'conseguir', categoria: 'escopeta', meta: 3 },
   { id: 'arsenal',        nombre: 'Arsenal completo',    descripcion: 'Consigue la Uzi, la AK-47, la M16, el Remington 700 y el Barrett M82.',              tipo: 'conseguir', armas: ['uzi', 'ak47', 'm16', 'remington700', 'barrett'] },
-  { id: 'artillero',      nombre: 'Artillero',           descripcion: 'Sube a una montaña, monta la M2 Browning y mata 30 zombies con ella.', tipo: 'bajas', meta: 30, categoria: 'ametralladora' },
+  { id: 'artillero',      nombre: 'Artillero',           descripcion: 'Sube a una montaña, monta la M2 Browning y mata 30 zombies con ella.', tipo: 'bajas', meta: 30, categoria: 'ametralladora', arma: 'm2' },   // la minigun también es ametralladora: no cuenta
   { id: 'tecnologia',     nombre: 'Tecnología alienígena', descripcion: 'Encuentra el láser alienígena en lo alto de una montaña.', tipo: 'conseguir', armas: ['laser'] },
   { id: 'demoledor',      nombre: 'Demoledor',           descripcion: 'Mata 15 zombies con granadas, lanzagranadas o bazuca.',  tipo: 'bajas', meta: 15, categorias: ['granada', 'lanzagranadas', 'bazuca'] },
   { id: 'relampago',      nombre: 'Relámpago',           descripcion: 'Mata 5 zombies en 30 segundos.',                          tipo: 'bajas', meta: 5,  tiempoLimite: 30 },
@@ -7651,8 +7810,10 @@ const FICHAS = {
   rpg7: ['SU', '1961', 'Ojiva de 85 mm', { es: 'Lanzagranadas antitanque reutilizable, de los más difundidos del mundo. La ojiva asoma por delante.', pt: 'Lança-granadas antitanque reutilizável, um dos mais difundidos do mundo. A ogiva fica à mostra na frente.', en: 'Reusable anti-tank grenade launcher, one of the most widespread. The warhead sits outside the muzzle.' }],
   granadas: ['US', '1968', 'Fragmentación', { es: 'Granada de mano de fragmentación: se le quita la anilla y explota a los 4 o 5 segundos.', pt: 'Granada de mão de fragmentação: tira-se o pino e explode em 4 ou 5 segundos.', en: 'Fragmentation hand grenade: pull the pin and it goes off after 4 to 5 seconds.' }],
   lanzallamas: ['US', '1943', { es: 'Combustible espesado (napalm)', pt: 'Combustível espessado (napalm)', en: 'Thickened fuel (napalm)' }, { es: 'Lanzallamas de mochila de la Segunda Guerra Mundial: dos tanques de combustible y uno de nitrógeno a presión. Tira fuego a unos 40 m durante 7 a 9 segundos.', pt: 'Lança-chamas de mochila da Segunda Guerra Mundial: dois tanques de combustível e um de nitrogênio sob pressão. Lança fogo a uns 40 m por 7 a 9 segundos.', en: 'WWII backpack flamethrower: two fuel tanks and one of pressurized nitrogen. Throws fire about 40 m for 7 to 9 seconds.' }],
+  minigun: ['US', '1963', { es: '7,62×51 mm OTAN', pt: '7,62×51 mm OTAN', en: '7.62×51 mm NATO' }, { es: 'Ametralladora rotativa de seis cañones de General Electric, movida por un motor eléctrico: tira de 2000 a 6000 disparos por minuto. Los cañones tardan un instante en arrancar y siguen girando al soltar.', pt: 'Metralhadora rotativa de seis canos da General Electric, movida por um motor elétrico: dispara de 2.000 a 6.000 tiros por minuto. Os canos demoram um instante para arrancar e continuam girando ao soltar.', en: 'General Electric six-barrel rotary machine gun driven by an electric motor: 2,000 to 6,000 rounds per minute. The barrels take a moment to spin up and keep turning after you let go.' }],
   laser: ['ALIEN', '?', 'Celda de energía', { es: 'Arma viva de origen desconocido, encontrada en lo alto de las montañas: una caracola con un ojo que parpadea, tentáculos y un núcleo que late. El rayo atraviesa todo.', pt: 'Arma viva de origem desconhecida, encontrada no alto das montanhas: uma concha com um olho que pisca, tentáculos e um núcleo que pulsa. O raio atravessa tudo.', en: 'A living weapon of unknown origin found high in the mountains: a shell with a blinking eye, tentacles and a pulsing core. The beam goes through everything.' }],
   machete: ['LA', '—', { es: 'Hoja de 45 cm', pt: 'Lâmina de 45 cm', en: '45 cm blade' }, { es: 'Hoja larga de acero para abrir monte. Liviano y rápido, se usa con una mano.', pt: 'Lâmina longa de aço para abrir mato. Leve e rápido, usa-se com uma mão.', en: 'Long steel blade for clearing brush. Light and quick, used one-handed.' }],
+  macheteCazador: ['US', '—', { es: 'Hoja de 58 cm', pt: 'Lâmina de 58 cm', en: '58 cm blade' }, { es: 'El machete del cazador enmascarado: hoja larga y vieja, con óxido, mellas y manchas que ya no salen. Tumba a un zombie de un golpe. Solo lo lleva él.', pt: 'O facão do caçador mascarado: lâmina longa e velha, com ferrugem, dentes e manchas que já não saem. Derruba um zumbi com um golpe. Só ele o carrega.', en: 'The masked hunter’s machete: a long, old blade with rust, nicks and stains that never came out. Drops a zombie in one blow. Only he carries it.' }],
   katana: ['JP', 's. XIV', { es: 'Hoja curva de 70 cm', pt: 'Lâmina curva de 70 cm', en: '70 cm curved blade' }, { es: 'Espada de un filo con la hoja curva y el mango envuelto. Es la más rápida para cortar.', pt: 'Espada de um gume com lâmina curva e cabo envolvido. É a mais rápida para cortar.', en: 'Single-edged sword with a curved blade and wrapped hilt. The fastest cutter.' }],
   hacha: ['US', 's. XIX', { es: 'Cabeza de 2,7 kg', pt: 'Cabeça de 2,7 kg', en: '2.7 kg head' }, { es: 'Hacha de bombero con filo de un lado y pico del otro. Lenta, pero parte a un zombie de un golpe.', pt: 'Machado de bombeiro com gume de um lado e ponta do outro. Lento, mas parte um zumbi com um golpe.', en: 'Firefighter axe with a blade and a pick. Slow, but splits a zombie in one blow.' }],
   bate: ['US', '—', { es: 'Fresno con clavos', pt: 'Freixo com pregos', en: 'Ash wood with nails' }, { es: 'Bate de béisbol con clavos: empuja a los zombies lejos y pega a varios a la vez.', pt: 'Taco de beisebol com pregos: empurra os zumbis para longe e acerta vários de uma vez.', en: 'Baseball bat with nails: knocks zombies back and hits several at once.' }],
@@ -9964,7 +10125,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
     // Mano libre (recarga, cerrojo, granada): sigue al antebrazo, abierta o cerrada según lo que hace (estadoArma).
     // Lo que lleva va entre los dedos: se dibuja antes que la mano para que esta lo tape un poco
     brazoConMano(ctx, hombroX, -52 + ty, e.mano.x, e.mano.y, C, L, { cierre: e.cierre ?? 0.8, dir: e.dirMano,
-      antes: () => { if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano); } });
+      antes: () => { if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano, e.cajaNueva); } });
   }
 };
 
@@ -9992,11 +10153,13 @@ function dibujarManguera(ctx, ty, x, y) {
   ctx.restore();
 }
 
-/* Lo que puede llevar la mano durante una recarga, con su forma propia */
-function dibujarUnidad(ctx, tipo, x, y, rot = 0) {
+/* Lo que puede llevar la mano durante una recarga, con su forma propia (nueva: la que trae, no la que saca) */
+function dibujarUnidad(ctx, tipo, x, y, rot = 0, nueva = false) {
   const laton = '#c9a227', cobre = '#b87333';
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
   switch (tipo) {
+    case 'cajaMinigun':   // la caja de munición de la minigun, apoyada en la palma (js/armas-especiales.js)
+      ctx.scale(CM, CM); cajaMinigun(ctx, 0, 1.6, nueva); break;
     case 'cargador':
       parte(ctx, -2, 0, 5, 11, '#222'); ctx.fillStyle = tinta(laton); ctx.fillRect(-1.5, -1.5, 4, 1.8);
       ctx.fillStyle = tinta('#444'); ctx.fillRect(-2.5, 9, 6, 2); break;
@@ -13269,6 +13432,471 @@ class ArmaLanzada {
     ctx.beginPath(); ctx.ellipse(this.x - camaraX - this.dir * (this.vuelta ? -14 : 14), this.y, 16, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
 }
+
+</script>
+  <script>
+/* ===== Armas especiales: el machete del cazador y la minigun M134 =====
+ * Machete del cazador (macheteCazador, js/armas.js): es del personaje «cazador» (js/skins.js) y de nadie más.
+ *   - Jugador.recoger lo rechaza con otro personaje y Juego.equiparArma no lo pone en la mano: no sale en las listas, ni
+ *     en el campo de pruebas, ni en el inventario de otro personaje.
+ *   - En cada cuadro se revisa el inventario: con el cazador el machete está siempre (como el cuchillo de la historia);
+ *     con otro personaje se saca, y si estaba en la mano pasa a la siguiente arma.
+ *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo (2,5 s como mínimo entre uno y otro) y, cuando
+ *     pasaron 8 s del último, al matar con él (siempre) o al pegar (4 de cada 10 golpes).
+ * Minigun M134 (minigun): seis cañones que gira un motor eléctrico.
+ *   - Estado en jugador.minigun: vel (0 quietos … 1 a velocidad de tiro), angulo (giro del grupo), calor de los cañones.
+ *   - Con el gatillo apretado los cañones arrancan (arma.giratoria.arranque ms) sin tirar; recién a velocidad tiran a su
+ *     cadencia. Al soltar siguen girando y frenan (giratoria.frenado ms). Vacía o recargando no tira; vacía, gira igual.
+ *   - Jugador.estadoArma suma e.giro, e.velGiro, e.calor, e.cinta (avance de la cinta entre tiro y tiro) y e.balas.
+ *   - El motor y el rugido suenan con Audio_.minigun(vel, tirando) en cada cuadro; cada tiro, con Audio_.disparo.
+ *   - Las vainas salen por la ventana del costado de la carcasa; la caja vacía cae al piso (CajaMinigunCae).
+ * Todo se engancha envolviendo métodos de Jugador y de Juego: jugador.js no cambia.
+ */
+
+/* ---------- Quién puede tener cada arma ---------- */
+// Personaje con el que juega (la vista previa del menú lleva el suyo en j.skin; si no, el de la configuración)
+function skinDelJugador(j) {
+  if (j && SKINS[j.skin]) return j.skin;
+  const elegida = Config.get('skin');
+  return SKINS[elegida] ? elegida : 'sobreviviente';
+}
+// ¿Puede tener esta arma? Las de un personaje (arma.skin), solo con ese personaje
+function armaPermitida(id, jugador = null) {
+  const a = ARMAS[id];
+  return !!a && (!a.skin || a.skin === skinDelJugador(jugador));
+}
+const ARMAS_DE_PERSONAJE = Object.keys(ARMAS).filter(id => ARMAS[id].skin);
+
+// Mezcla de dos colores '#rrggbb' (k de 0 a 1), en '#rrggbb' para que el acabado de pintar() sepa el material
+function mezclaHex(a, b, k) {
+  const na = parseInt(a.slice(1), 16), nb = parseInt(b.slice(1), 16), c = s => Math.round(((na >> s) & 255) + ((((nb >> s) & 255) - ((na >> s) & 255)) * k));
+  return '#' + ((1 << 24) | (c(16) << 16) | (c(8) << 8) | c(0)).toString(16).slice(1);
+}
+// Azar con semilla: las manchas, el óxido y las mellas salen iguales en cada cuadro
+function azarFijo(semilla) { let s = semilla >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function rellenar(ctx, pts, color) { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); }
+
+/* ======================= MACHETE DEL CAZADOR =======================
+ * 76 cm de punta a punta. Hoja de 58 cm de acero al carbono viejo, recta de lomo y cada vez más ancha hacia la punta
+ * (la panza llega a 7,4 cm), con la punta que sube hacia el lomo. El filo está amolado a mano y desparejo, con cuatro
+ * mellas; óxido en manchas (más en el lomo y cerca del mango), picaduras, rayones, y sangre seca en la mitad de
+ * adelante que chorreó hacia el lomo. Virola de acero oxidada; mango de madera gastada y oscura de mugre, rajado, con
+ * dos remaches a la vista, cinta aisladora que emparcha la parte de abajo (con la punta despegada) y un cordón viejo
+ * en el ojal. Origen en la mano: la hoja hacia y negativa, el filo del lado +x (va adelante en el golpe).
+ */
+const MACHETE_CAZADOR = (() => {
+  const azar = azarFijo(1980);
+  const panza = [[2.0, -2.4], [2.4, -9], [3.0, -18], [3.8, -27], [4.7, -36], [5.4, -44], [5.75, -49.5]];
+  const xFilo = y => {
+    for (let k = 0; k < panza.length - 1; k++) { const [x0, y0] = panza[k], [x1, y1] = panza[k + 1]; if (y <= y0 && y >= y1) return x0 + (x1 - x0) * (y - y0) / (y1 - y0); }
+    return y > panza[0][1] ? panza[0][0] : panza[panza.length - 1][0];
+  };
+  const mellas = [[-12.5, 0.55], [-23.5, 0.85], [-34, 0.5], [-42.5, 0.75]];   // altura y hondura de cada mella
+  const filo = [], esMella = [];
+  for (let y = -2.4; y > -49.5; y -= 1.1) {
+    filo.push([xFilo(y) + (azar() - 0.5) * 0.08, y]); esMella.push(false);
+    for (const [ym, h] of mellas) if (ym <= y && ym > y - 1.1) {
+      filo.push([xFilo(ym + 0.5), ym + 0.5], [xFilo(ym) - h, ym + 0.12], [xFilo(ym - 0.42), ym - 0.42]); esMella.push(true, true, true);
+    }
+  }
+  for (const p of [[5.75, -49.5], [5.5, -53.2], [4.6, -56.6], [3.1, -59.4], [1.1, -61.6]]) { filo.push(p); esMella.push(false); }
+  const lomo = [[0.1, -60.6], [-0.85, -58.6], [-1.45, -55.8], [-1.6, -52.6], [-1.6, -2.4]];   // la punta recortada baja al lomo
+  const hoja = [...filo, ...lomo];
+  // Bisel del filo: franja amolada, de 1,1 cm hacia adentro (en la punta se angosta)
+  const bisel = [...filo, ...filo.map(([x, y], i) => [x - (y < -55 ? 0.7 : 1.15) + (esMella[i] ? 0.35 : 0), y + (y < -58 ? 0.7 : 0)]).reverse()];
+  // Óxido: manchas de borde difuso (centro, radios, color, opacidad), la mayoría contra el lomo y cerca de la virola;
+  // adentro, un granulado de puntitos más oscuros y más claros, y picaduras
+  const oxido = [];
+  const mancha = (x, y, rx, ry, color, a) => oxido.push({ x, y, rx, ry, color, a, forma: Array.from({ length: 11 }, (_, i) => { const t = i / 11 * Math.PI * 2, k = 0.62 + azar() * 0.5; return [x + Math.cos(t) * rx * k, y + Math.sin(t) * ry * k]; }) });
+  for (let k = 0; k < 11; k++) { const y = -4 - azar() * 52; mancha(-1.2 + azar() * 0.9, y, 0.9 + azar() * 0.9, 1.6 + azar() * 3, '96,42,16', 0.42 + azar() * 0.2); }   // contra el lomo
+  for (let k = 0; k < 9; k++) { const y = -4 - azar() * 54, x = -1.2 + Math.pow(azar(), 1.6) * (xFilo(Math.max(y, -49)) + 0.4); mancha(x, y, 0.5 + azar() * 1.3, 0.5 + azar() * 1.1, azar() < 0.5 ? '120,56,22' : '150,78,32', 0.3 + azar() * 0.25); }
+  mancha(0.2, -4.6, 2.6, 2.4, '104,46,18', 0.5); mancha(1.6, -6.8, 1.4, 1.2, '150,78,32', 0.35); mancha(0.8, -57.8, 1.5, 1.8, '120,56,22', 0.38);
+  const granos = [];
+  for (const o of oxido) for (let k = 0; k < 9; k++) { const t = azar() * Math.PI * 2, d = Math.sqrt(azar()) * 0.85; granos.push([o.x + Math.cos(t) * o.rx * d, o.y + Math.sin(t) * o.ry * d, 0.05 + azar() * 0.12, azar() < 0.6 ? 'rgba(52,22,8,0.55)' : 'rgba(186,104,46,0.45)']); }
+  const rayones = Array.from({ length: 16 }, () => { const y = -5 - azar() * 50, x = -1.2 + azar() * (xFilo(Math.max(y, -49)) + 0.4), l = 1.5 + azar() * 4, a = -0.5 + azar() * 1.0; return [[x, y], [x + Math.sin(a) * l * 0.4, y - Math.cos(a) * l]]; });
+  // Sangre seca, oscura: una mancha despareja pegada al filo, en la panza (la parte que corta), salpicaduras y una
+  // chorreadura hacia el lomo
+  const sangre = [[5.1, -39.5], [5.35, -43], [5.55, -46.5], [5.6, -49.6], [5.15, -52.2], [4.2, -52.8], [3.7, -51.2], [3.95, -49], [3.55, -47.4], [4.1, -45.3], [3.9, -43.2], [4.35, -41.2]].map(([x, y]) => [x - 0.35 + (azar() - 0.5) * 0.25, y]);
+  const chorros = [[[3.8, -48.2], [2.7, -48.9], [1.7, -49.9]], [[4.1, -42.6], [3.2, -43.1]]];
+  const salpicaduras = [[2.2, -45.6, 0.28], [1.1, -44.1, 0.18], [2.9, -53.6, 0.22], [0.4, -51.8, 0.14], [3.0, -37.2, 0.16], [1.6, -55.9, 0.2], [4.3, -35.4, 0.12]];
+  const mango = suave([[-2.05, -1.3], [2.05, -1.3], [2.2, 2.6], [1.85, 5.0], [2.3, 7.6], [2.5, 11.0], [3.1, 12.5], [2.4, 13.6], [-1.0, 13.7], [-2.4, 12.6], [-2.35, 6.4], [-2.2, 2.4]], 0.7, 3);
+  return { hoja, filo, esMella, bisel, oxido, granos, rayones, sangre, chorros, salpicaduras, mango };
+})();
+
+DIBUJO_ARMAS.macheteCazador = modelo({ casquillo: null, agarre: 'cuerpo', anguloEmpunadura: 0,
+  anclas: { manoDelantera: [0, 6], cargador: [0, 3], corredera: [0, 3], expulsion: [0, 0], boca: [0.5, -61] },
+  dibujarCm(ctx) {
+    const M = MACHETE_CAZADOR, sil = Pincel.silueta;
+    // Cordón viejo en el ojal del mango (detrás del mango)
+    if (!sil) { ctx.beginPath(); ctx.ellipse(0.9, 15.1, 1.1, 2.0, -0.25, 0, Math.PI * 2); ctx.strokeStyle = '#5e4e36'; ctx.lineWidth = 0.38; ctx.stroke(); trazo(ctx, 'rgba(94,78,54,0.9)', 0.18, [[1.5, 16.9], [1.9, 17.8]]); trazo(ctx, 'rgba(94,78,54,0.9)', 0.15, [[0.9, 17.1], [0.7, 18.0]]); }
+    // Hoja
+    pintar(ctx, M.hoja, '#4b4f55', { brillo: 0.25 });
+    if (!sil) {
+      ctx.save(); rellenar(ctx, M.hoja, 'rgba(0,0,0,0)'); ctx.clip();
+      const g = ctx.createLinearGradient(-1.6, 0, 5.8, 0);   // pátina: el acero viejo se oscurece hacia el lomo
+      g.addColorStop(0, 'rgba(40,30,24,0.35)'); g.addColorStop(0.5, 'rgba(60,52,44,0.1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(-2, -62, 8.5, 61);
+      for (const o of M.oxido) {   // borde difuso: el óxido se come el acero de a poco
+        const g2 = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, Math.max(o.rx, o.ry));
+        g2.addColorStop(0, `rgba(${o.color},${o.a})`); g2.addColorStop(0.55, `rgba(${o.color},${o.a * 0.75})`); g2.addColorStop(1, `rgba(${o.color},0)`);
+        rellenar(ctx, o.forma, g2);
+      }
+      for (const [x, y, r, c] of M.granos) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill(); }
+      for (const r of M.rayones) trazo(ctx, 'rgba(215,220,226,0.16)', 0.06, r);
+      trazo(ctx, 'rgba(255,255,255,0.14)', 0.22, [[-1.35, -3], [-1.35, -53]]);   // lomo con luz
+      // Filo amolado a mano: franja más clara, desgastada, con el canto brillante cortado en las mellas
+      pintar(ctx, M.bisel, '#7d838a', { brillo: 0.35 });
+      for (const r of M.rayones.slice(0, 8)) trazo(ctx, 'rgba(255,255,255,0.12)', 0.05, [[r[0][0] + 3.5, r[0][1]], [r[0][0] + 3.9, r[0][1] - 1.6]]);
+      ctx.lineCap = 'round';
+      for (let i = 0; i < M.filo.length - 1; i++) {
+        const [ax, ay] = M.filo[i], [bx, by] = M.filo[i + 1];
+        if (M.esMella[i] || M.esMella[i + 1]) { trazo(ctx, 'rgba(30,20,14,0.7)', 0.12, [[ax, ay], [bx, by]]); continue; }
+        trazo(ctx, 'rgba(232,236,242,0.62)', 0.13, [[ax - 0.08, ay], [bx - 0.08, by]]);
+      }
+      // Sangre seca: mancha oscura con el borde apenas más rojo, chorreaduras con su gota y salpicaduras
+      rellenar(ctx, M.sangre, 'rgba(52,8,5,0.74)');
+      ctx.save(); rellenar(ctx, M.sangre, 'rgba(0,0,0,0)'); ctx.clip(); ctx.strokeStyle = 'rgba(96,18,10,0.5)'; ctx.lineWidth = 0.35; ctx.stroke(); ctx.restore();
+      for (const c of M.chorros) { trazo(ctx, 'rgba(54,8,5,0.7)', 0.2, c); const [x, y] = c[c.length - 1]; ctx.beginPath(); ctx.ellipse(x, y, 0.22, 0.3, 0.6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(50,7,4,0.78)'; ctx.fill(); }
+      for (const [x, y, r] of M.salpicaduras) { ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.8, 0.4, 0, Math.PI * 2); ctx.fillStyle = 'rgba(58,9,5,0.7)'; ctx.fill(); }
+      ctx.restore();
+    }
+    // Virola de acero, oxidada
+    pintar(ctx, RRc(-2.35, -2.6, 4.7, 1.55, 0.3), '#45484d', { brillo: 0.35 });
+    if (!sil) { rellenar(ctx, [[-1.9, -2.5], [-0.6, -2.3], [-0.9, -1.2], [-2.1, -1.3]], 'rgba(130,64,26,0.55)'); rellenar(ctx, [[1.0, -2.4], [2.0, -2.1], [1.8, -1.2], [0.7, -1.4]], 'rgba(110,52,22,0.45)'); }
+    // Mango de madera gastada
+    pintar(ctx, M.mango, '#5a3a22', { brillo: 0.12 });
+    if (!sil) {
+      ctx.save(); rellenar(ctx, M.mango, 'rgba(0,0,0,0)'); ctx.clip();
+      const g = ctx.createLinearGradient(0, -1.3, 0, 13.7);   // mugre arriba y abajo, gastado y más claro donde agarra la palma
+      g.addColorStop(0, 'rgba(22,10,4,0.45)'); g.addColorStop(0.12, 'rgba(22,10,4,0.05)'); g.addColorStop(0.35, 'rgba(255,226,186,0.1)'); g.addColorStop(0.5, 'rgba(255,226,186,0.04)'); g.addColorStop(1, 'rgba(22,10,4,0.35)');
+      ctx.fillStyle = g; ctx.fillRect(-3, -2, 7, 16);
+      for (let k = 0; k < 4; k++) trazo(ctx, 'rgba(30,14,5,0.3)', 0.1, [[-1.6 + k * 1.05, -0.8], [-1.4 + k * 1.05, 6], [-1.7 + k * 1.1, 13]]);   // veta a lo largo
+      trazo(ctx, 'rgba(12,6,2,0.7)', 0.13, [[-0.9, -0.6], [-0.4, 2.0], [-0.7, 3.4], [-0.3, 5.9]]);              // rajadura
+      ctx.restore();
+      for (const y of [1.2, 4.5]) { punto(ctx, 0.1, y, 0.55, '#3a2c18'); punto(ctx, 0.1, y, 0.42, '#8c7c50'); punto(ctx, -0.05, y - 0.12, 0.15, 'rgba(255,240,200,0.5)'); }   // remaches
+      ctx.beginPath(); ctx.arc(0.3, 12.4, 0.45, 0, Math.PI * 2); ctx.fillStyle = '#0d0a08'; ctx.fill();          // ojal del cordón
+    }
+    // Cinta aisladora que emparcha la parte de abajo del mango, con la punta despegada
+    pintar(ctx, suave([[-2.48, 7.0], [2.42, 7.2], [2.62, 11.1], [-2.5, 11.3]], 0.35, 2), '#1d1d20', { mate: true, brillo: 0.12 });
+    pintar(ctx, [[2.5, 10.4], [3.7, 11.7], [3.2, 12.0], [2.4, 11.2]], '#1d1d20', { mate: true, brillo: 0.1 });
+    if (!sil) for (let y = 7.4; y < 11; y += 0.75) trazo(ctx, 'rgba(255,255,255,0.13)', 0.07, [[-2.4, y + 0.35], [2.45, y]]);
+  } });
+
+/* ======================= MINIGUN M134 =======================
+ * Unos 80 cm de punta a punta, más la caja. Vista del lado izquierdo, la boca a la derecha, el origen arriba de la
+ * empuñadura de pistola (y hacia abajo):
+ *   - carcasa cilíndrica (gun housing) con bandas, chapa de datos, tornillos y la ventana por donde saltan las vainas;
+ *   - atrás arriba el motor eléctrico, con aletas, y su cable que baja hasta la empuñadura (ahí van las baterías);
+ *   - abajo atrás el alimentador, que toma la cinta que sube de la caja de munición (300 tiros) colgada debajo;
+ *   - asa de transporte arriba y una barra debajo de los cañones para la mano de apoyo;
+ *   - adelante el rotor y los seis cañones (54 cm) con la abrazadera del medio y la de la boca. El grupo gira de verdad:
+ *     cada cañón sube y baja según e.giro, los de atrás más oscuros; a velocidad se corren (movimiento) y, después de
+ *     tirar mucho, las bocas se ponen rojas (e.calor).
+ */
+const MINI = { eje: -5.4, radio: 3.3, x0Canon: 15.6, x1Canon: 70, abrazaderas: [[44, 2.4], [63.6, 2.8]], cajaX: -12.4, cajaW: 12.6, cajaArriba: 6.2, cajaAbajo: 15.4, pasoCinta: 1.27 };
+const MINI_VERDE = '#4c5436', MINI_NEGRO = '#2f3136';
+// Caja de munición: el ancla es el centro de abajo (x, y); con conCinta asoman dos balas de la cinta por arriba
+function cajaMinigun(ctx, x, y, conCinta) {
+  const w = MINI.cajaW, h = MINI.cajaAbajo - MINI.cajaArriba, x0 = x - w / 2, y0 = y - h, sil = Pincel.silueta;
+  if (conCinta) cintaMinigun(ctx, x0 + 1.5, y0 - 2.6, y0 + 0.3, 0, 3);
+  pintar(ctx, RRc(x0, y0, w, h, 0.7), MINI_VERDE, { brillo: 0.25 });
+  pintar(ctx, RRc(x0 - 0.25, y0 - 0.3, w + 0.5, 1.5, 0.4), mezclaHex(MINI_VERDE, '#000000', 0.15), { brillo: 0.3 });   // tapa
+  if (sil) return;
+  for (const yy of [y0 + 3.3, y0 + 6.4]) { trazo(ctx, 'rgba(0,0,0,0.35)', 0.16, [[x0 + 0.8, yy], [x0 + w - 0.8, yy]]); trazo(ctx, 'rgba(255,255,255,0.12)', 0.1, [[x0 + 0.8, yy + 0.22], [x0 + w - 0.8, yy + 0.22]]); }   // nervaduras
+  pintar(ctx, RRc(x0 + w - 1.5, y0 + 0.9, 1.1, 2.6, 0.3), '#3a3f2a');                                                // traba de la tapa
+  ctx.save(); ctx.fillStyle = 'rgba(232,206,96,0.85)'; ctx.font = '700 1.25px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('7.62 MM', x, y0 + 5.1); ctx.font = '700 0.9px sans-serif'; ctx.fillText('300 CTGS', x, y0 + 8.0); ctx.restore();
+  for (const [ax, ay] of [[x0 + 1.4, y0 + 2.2], [x0 + 3.4, y0 + 7.6], [x0 + w - 2.6, y0 + 6.9]]) { ctx.beginPath(); ctx.arc(ax, ay, 0.5 + (ax % 0.3), 0, Math.PI * 2); ctx.fillStyle = 'rgba(30,26,16,0.25)'; ctx.fill(); }   // golpes y raspones
+  trazo(ctx, 'rgba(210,205,180,0.25)', 0.08, [[x0 + 2, y0 + h - 1.2], [x0 + 5.6, y0 + h - 1.6]]);
+}
+// Cinta de balas 7,62×51 (vaina de 5,1 cm y punta de 1,9) que sube, acostadas, unidas por eslabones; desde y0 hasta y1
+// (arriba → abajo), corrida `avance` (0…1) de un paso hacia arriba; como mucho `n` balas
+function cintaMinigun(ctx, x, y0, y1, avance, n = 99) {
+  const sil = Pincel.silueta, P = MINI.pasoCinta;
+  ctx.save(); ctx.beginPath(); ctx.rect(x - 1, y0, 9, y1 - y0); ctx.clip();
+  let k = 0;
+  for (let y = y1 - 0.6 - avance * P; y > y0 - P && k < n; y -= P, k++) {
+    if (sil) { ctx.fillStyle = sil; ctx.fillRect(x, y - 0.6, 7, 1.2); continue; }
+    pintar(ctx, [[x, y - 0.6], [x + 4.0, y - 0.6], [x + 4.4, y - 0.42], [x + 5.1, y - 0.42], [x + 5.1, y + 0.42], [x + 4.4, y + 0.42], [x + 4.0, y + 0.6], [x, y + 0.6]], MAT.laton, { brillo: 0.45 });
+    pintar(ctx, [[x + 5.1, y - 0.4], [x + 6.2, y - 0.3], [x + 7.0, y], [x + 6.2, y + 0.3], [x + 5.1, y + 0.4]], MAT.cobre, { brillo: 0.4 });
+    ctx.fillStyle = 'rgba(70,46,8,0.6)'; ctx.fillRect(x + 0.3, y - 0.6, 0.12, 1.2);
+    for (const ex of [x + 0.8, x + 3.1]) { pintar(ctx, Rc(ex, y - 0.75, 0.9, 1.5), '#3b3d42', { brillo: 0.3 }); }   // eslabones
+  }
+  ctx.restore();
+}
+// Grupo de seis cañones que gira, con el rotor y las abrazaderas
+function canonesMinigun(ctx, e) {
+  const sil = Pincel.silueta, ang = e.giro || 0, vel = e.velGiro || 0, { eje, radio, x0Canon: x0, x1Canon: x1 } = MINI;
+  // Rotor: gira con los cañones (las ranuras se mueven)
+  pintar(ctx, RRc(12, eje - 5.0, x0 + 0.4 - 12, 10.0, 1.2), '#2b2d32', { brillo: 0.3 });
+  if (!sil) for (let k = 0; k < 6; k++) { const a = ang + k * Math.PI / 3 + Math.PI / 6, z = Math.sin(a); if (z > 0) trazo(ctx, `rgba(0,0,0,${0.25 + z * 0.35})`, 0.35, [[12.5, eje - 4.0 * Math.cos(a)], [x0, eje - 4.0 * Math.cos(a)]]); }
+  if (sil) {   // la sombra: el grupo entero y las abrazaderas
+    ctx.fillStyle = sil; ctx.fillRect(x0, eje - radio - 1.05, x1 - x0, (radio + 1.05) * 2);
+    for (const [ax, aw] of MINI.abrazaderas) ctx.fillRect(ax, eje - radio - 1.65, aw, (radio + 1.65) * 2);
+    return;
+  }
+  const canon = (a, alfa) => {
+    const y = eje - radio * Math.cos(a), z = Math.sin(a), luz = (z + 1) / 2;
+    ctx.globalAlpha = alfa;
+    pintar(ctx, [[x0, y - 1.05], [x1 - 1.4, y - 0.9], [x1, y - 0.9], [x1, y + 0.9], [x1 - 1.4, y + 0.9], [x0, y + 1.05]], mezclaHex('#141518', '#4e525b', luz), { brillo: 0.12 + luz * 0.25 });
+    ctx.fillStyle = `rgba(0,0,0,${0.7 - luz * 0.3})`; ctx.fillRect(x1 - 0.25, y - 0.6, 0.25, 1.2);   // la boca
+  };
+  const orden = Array.from({ length: 6 }, (_, k) => ang + k * Math.PI / 3).sort((a, b) => Math.sin(a) - Math.sin(b));
+  if (vel > 0.25) {   // a velocidad: cada cañón deja su estela hacia atrás del giro
+    const estela = Math.min(0.55, vel * 0.5);
+    for (const a of orden) { canon(a - estela, 0.28); canon(a - estela * 0.5, 0.45); }
+    const g = ctx.createLinearGradient(0, eje - radio - 1, 0, eje + radio + 1);
+    g.addColorStop(0, 'rgba(20,21,24,0)'); g.addColorStop(0.18, `rgba(60,63,70,${0.25 * vel})`); g.addColorStop(0.5, `rgba(90,94,102,${0.18 * vel})`); g.addColorStop(0.82, `rgba(30,31,35,${0.3 * vel})`); g.addColorStop(1, 'rgba(20,21,24,0)');
+    ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x0, eje - radio - 1, x1 - x0, (radio + 1) * 2);
+  }
+  for (const a of orden) canon(a, vel > 0.25 ? 0.8 : 1);
+  ctx.globalAlpha = 1;
+  // Calor: después de tirar mucho, los cañones se ponen rojos hacia la boca
+  const calor = e.calor || 0;
+  if (calor > 0.45) {
+    const k = Math.min(1, (calor - 0.45) / 0.55);
+    ctx.save(); ctx.beginPath();
+    for (const a of orden) { const y = eje - radio * Math.cos(a); ctx.rect(x0, y - 0.9, x1 - x0, 1.8); }
+    ctx.clip(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createLinearGradient(34, 0, x1, 0);
+    g.addColorStop(0, 'rgba(255,40,0,0)'); g.addColorStop(0.6, `rgba(190,28,0,${0.14 * k})`); g.addColorStop(1, `rgba(255,52,0,${0.32 * k})`);
+    ctx.fillStyle = g; ctx.fillRect(34, eje - radio - 1.2, x1 - 34, (radio + 1.2) * 2); ctx.restore();
+  }
+  // Abrazaderas: giran con el grupo (se ven pasar los tornillos)
+  for (const [ax, aw] of MINI.abrazaderas) {
+    pintar(ctx, RRc(ax, eje - radio - 1.65, aw, (radio + 1.65) * 2, 0.7), '#34363c', { brillo: 0.35 });
+    for (let k = 0; k < 3; k++) { const a = ang + Math.PI / 6 + k * Math.PI * 2 / 3, z = Math.sin(a); if (z > 0.1) { const y = eje - (radio + 0.9) * Math.cos(a); punto(ctx, ax + aw / 2, y, 0.42, mezclaHex('#2a2b30', '#8a8e96', z)); punto(ctx, ax + aw / 2 - 0.1, y - 0.12, 0.13, `rgba(255,255,255,${0.35 * z})`); } }
+  }
+}
+DIBUJO_ARMAS.minigun = modelo({ casquillo: 'bala', agarre: 'pecho', anguloEmpunadura: 0.24,
+  anclas: { manoDelantera: [25, 1.4], cargador: [MINI.cajaX, MINI.cajaAbajo], corredera: [4.8, -16.2], expulsion: [6.4, -2.4], boca: [MINI.x1Canon, MINI.eje] },
+  dibujarCm(ctx, e) {
+    const sil = Pincel.silueta, { eje } = MINI;
+    // Cable del motor: baja por detrás de la caja y entra por la base de la empuñadura (ahí van las baterías)
+    if (!sil) {
+      ctx.save(); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-14.8, -11.2); ctx.bezierCurveTo(-22.5, -9.5, -22, 16.5, -12, 15.6); ctx.bezierCurveTo(-8, 15.2, -6, 12.6, -4.6, 10.6);
+      ctx.strokeStyle = '#151517'; ctx.lineWidth = 1.15; ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 0.3; ctx.stroke(); ctx.restore();
+    }
+    // Empuñadura de pistola, con el gatillo y el guardamonte
+    empunadura(ctx, -2.4, 2.4, 10.6, 0.24, MAT.polimero, { y: 0 });
+    if (!sil) for (let k = 0; k < 5; k++) trazo(ctx, 'rgba(255,255,255,0.07)', 0.16, [[-2.6 - k * 0.45, 2.2 + k * 1.7], [1.6 - k * 0.45, 2.2 + k * 1.7]]);
+    guardamonteC(ctx, 2.6, 8.2, 0.2, 2.8, MINI_NEGRO);
+    pintar(ctx, [[4.0, 0.2], [4.8, 0.2], [5.1, 1.9], [4.6, 2.3], [4.0, 1.2]], '#1c1d20');
+    // Barra de apoyo debajo de los cañones, con su soporte al frente de la carcasa
+    pintar(ctx, RRc(9, -0.6, 3.2, 3.0, 0.4), MINI_NEGRO);
+    pintar(ctx, RRc(9, -0.1, 21, 2.2, 0.9), '#2a2c30', { brillo: 0.3 });
+    pintar(ctx, RRc(18.5, -0.45, 11.2, 2.9, 1.2), '#18191b', { mate: true, brillo: 0.15 });
+    if (!sil) for (let x = 19.6; x < 29; x += 0.9) trazo(ctx, 'rgba(255,255,255,0.09)', 0.16, [[x, -0.1], [x, 2.1]]);
+    pintar(ctx, RRc(29.6, -0.2, 1.2, 2.4, 0.5), '#2a2c30');
+    // Caja de munición colgada debajo, con la cinta que sube al alimentador
+    if (!e.sinCargador) {
+      const balas = e.balas ?? 300;
+      if (balas > 0) cintaMinigun(ctx, MINI.cajaX - 3.5, 1.4, MINI.cajaArriba + 0.4, e.cinta || 0, Math.min(6, balas));
+      cajaMinigun(ctx, MINI.cajaX, MINI.cajaAbajo, false);
+      if (!sil) { pintar(ctx, RRc(MINI.cajaX - 4.4, MINI.cajaArriba - 0.55, 8.8, 0.9, 0.3), '#2a2c30'); }   // boca de salida de la cinta
+    }
+    // Carcasa: tapa de atrás, cilindro principal con dos bandas, ventana de expulsión, chapa y tornillos
+    pintar(ctx, RRc(-15, eje - 4.4, 1.8, 8.8, 0.7), '#26282c', { brillo: 0.3 });
+    pintar(ctx, RRc(-13.5, eje - 5.6, 25.6, 11.2, 2.4), MINI_NEGRO, { brillo: 0.3 });
+    for (const [bx, bw] of [[-11.2, 1.4], [9.6, 1.6]]) pintar(ctx, RRc(bx, eje - 5.85, bw, 11.7, 0.5), '#3a3c42', { brillo: 0.4 });
+    if (!sil) {
+      ctx.fillStyle = '#0b0b0d'; ctx.fillRect(3.6, -3.3, 5.6, 1.8);                                                    // ventana de expulsión
+      trazo(ctx, 'rgba(255,255,255,0.18)', 0.1, [[3.6, -1.42], [9.2, -1.42]]);
+      pintar(ctx, RRc(-7.6, -7.4, 6.4, 3.2, 0.3), '#5a5e66', { brillo: 0.3 });                                          // chapa de datos
+      for (let k = 0; k < 3; k++) trazo(ctx, 'rgba(20,20,24,0.55)', 0.12, [[-7.0, -6.6 + k * 0.85], [-1.8 - k * 0.9, -6.6 + k * 0.85]]);
+      for (const [x, y] of [[-8.4, -7.0], [-8.4, -4.6], [-0.4, -7.0], [-0.4, -4.6], [2.6, -9.6], [7.6, -9.6], [-12.4, -1.6], [11.0, -1.6]]) tornillo(ctx, x, y, 0.3);
+      trazo(ctx, 'rgba(255,255,255,0.1)', 0.12, [[-12.4, eje - 4.9], [11.4, eje - 4.9]]);
+    }
+    // Alimentador abajo atrás: toma la cinta y la mete en la carcasa
+    pintar(ctx, RRc(-16.4, -0.6, 10.6, 2.6, 0.6), '#34373c', { brillo: 0.3 });
+    if (!sil) { tornillo(ctx, -15.2, 0.7, 0.26); tornillo(ctx, -7.0, 0.7, 0.26); }
+    // Motor eléctrico arriba atrás, sobre su soporte, con aletas y la tapa por donde sale el cable
+    pintar(ctx, Rc(-10.2, eje - 6.4, 7.2, 1.2), '#25272b');
+    pintar(ctx, RRc(-14.2, eje - 8.6, 13.4, 5.2, 2.2), '#3b3e44', { brillo: 0.35 });
+    if (!sil) for (let x = -12.4; x < -3.2; x += 0.75) trazo(ctx, 'rgba(0,0,0,0.38)', 0.16, [[x, eje - 7.9], [x, eje - 4.0]]);
+    pintar(ctx, RRc(-2.6, eje - 8.3, 1.9, 4.6, 0.6), '#2a2c31', { brillo: 0.3 });
+    pintar(ctx, RRc(-15.3, eje - 7.0, 1.4, 2.0, 0.4), '#1c1d20');
+    // Asa de transporte arriba
+    pintar(ctx, Rc(0.9, eje - 9.6, 1.2, 4.2), '#26282c'); pintar(ctx, Rc(7.9, eje - 9.6, 1.2, 4.2), '#26282c');
+    pintar(ctx, RRc(0.2, eje - 11.4, 9.6, 2.0, 0.9), '#1b1c1f', { mate: true, brillo: 0.18 });
+    // Rotor, cañones y abrazaderas
+    canonesMinigun(ctx, e);
+    // La caja en la mano de apoyo, durante la recarga, la dibuja dibujarUnidad (js/jugador-dibujo.js): va después del
+    // brazo y debajo de los dedos, como todo lo que lleva la mano; si la dibujara el arma, el brazo la taparía
+  } });
+
+/* ---------- Caja vacía que cae al piso al recargar la minigun ---------- */
+class CajaMinigunCae {
+  constructor(x, y, direccion) {
+    this.x = x; this.y = y; this.dir = direccion;
+    this.vx = -direccion * (0.3 + Math.random() * 0.4); this.vy = 0.6;
+    this.rot = 0; this.vrot = -direccion * (0.015 + Math.random() * 0.02);
+    this.vida = 4.5; this.vidaMax = this.vida; this.rebotes = 0; this.vivo = true;
+    this.profundidad = 4 + Math.random() * 6;   // dónde cae dentro de la banda de la calle
+  }
+  actualizar(dt) {
+    const paso = dt * 60;
+    this.vida -= dt; if (this.vida <= 0) { this.vivo = false; return; }
+    this.vy += 0.42 * paso; this.x += this.vx * paso; this.y += this.vy * paso; this.rot += this.vrot * paso;
+    const piso = alturaSuelo(this.x) + this.profundidad;
+    if (this.y >= piso) {
+      this.y = piso;
+      if (this.vy > 1.4 && this.rebotes < 2) {
+        const fuerza = Math.min(1, this.vy / 6);
+        this.vy = -this.vy * 0.22; this.vx *= 0.5; this.vrot *= -0.4; this.rebotes++;
+        if (this.rebotes === 1) Audio_.casquillo('tambor', !Mundo.interior && Mundo.plano || alturaSuelo(this.x) < SUELO_BASE - 1 ? 'arena' : 'asfalto', fuerza);
+      } else { this.vy = 0; this.vx *= 0.6; this.vrot = 0; this.rot *= 0.7; }   // queda apoyada de plano
+    }
+  }
+  dibujar(ctx, camaraX) {
+    const K = CM * ESCALA_JUGADOR;
+    ctx.save(); ctx.globalAlpha = Math.min(1, this.vida / 0.4);
+    ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot); ctx.scale(this.dir * K, K);
+    cajaMinigun(ctx, 0, 0, false);
+    ctx.restore();
+  }
+}
+
+/* ---------- Enganches en Jugador y Juego ---------- */
+FUERZA_RETROCESO_ARMA.minigun = 0.28;   // chico, pero con cada tiro: el arma tiembla mientras tira
+const GIRO_MAX = 26;                    // rad/s del grupo de cañones a velocidad de tiro (lo que se ve)
+const SUSURRO = { alSacar: 2500, entreGolpes: 8000, alPegar: 0.4 };
+
+function estadoMinigun(j) { return j.minigun || (j.minigun = { vel: 0, angulo: 0, calor: 0, gatillo: false, vacioAvisado: false }); }
+
+// Recoger: las armas de otro personaje no se agarran
+const recogerBase = Jugador.prototype.recoger;
+Jugador.prototype.recoger = function (armaId) {
+  if (!armaPermitida(armaId, this)) return false;
+  return recogerBase.call(this, armaId);
+};
+
+// Las armas de personaje: con el cazador, su machete está siempre en el inventario; con otro, no está
+function revisarArmasDePersonaje(j) {
+  if (!ARMAS_DE_PERSONAJE.length) return;
+  const enMano = j.inventario[j.indiceArma];
+  let cambio = false;
+  for (const id of ARMAS_DE_PERSONAJE) {
+    const k = j.inventario.indexOf(id), puede = armaPermitida(id, j);
+    if (k >= 0 && !puede) { j.inventario.splice(k, 1); cambio = true; }
+    else if (k < 0 && puede) { j.inventario.push(id); j.municion[id] = ARMAS[id].cargador; cambio = true; }
+  }
+  if (!cambio) return;
+  j.inventario.sort((a, b) => ORDEN_INVENTARIO.indexOf(a) - ORDEN_INVENTARIO.indexOf(b));   // las que no están en el orden (cuchillo) quedan primero
+  if (!j.inventario.length) { j.inventario.push(ARMA_INICIAL); j.municion[ARMA_INICIAL] = ARMAS[ARMA_INICIAL].cargador; }
+  const k = j.inventario.indexOf(enMano);
+  if (k >= 0) { j.indiceArma = k; return; }
+  // El arma de la mano ya no es suya: pasa a la que quedó en su lugar
+  j.indiceArma = Math.min(j.indiceArma, j.inventario.length - 1);
+  j.cancelarRecarga(); j.lanzado = null; j.ultimoDisparo = -1e9;
+}
+
+// Susurro del cazador, con su tiempo de espera
+function susurrar(j, juego, motivo) {
+  const espera = motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes;
+  if (j.susurroEn !== undefined && juego.ahora - j.susurroEn < espera) return;
+  j.susurroEn = juego.ahora;
+  Audio_.susurroCazador();
+}
+
+// La minigun en cada cuadro: velocidad y giro de los cañones, calor, sonido del motor y las vainas
+function actualizarMinigun(j, dt, juego, casquillosAntes) {
+  const m = estadoMinigun(j), arma = j.arma();
+  if (j.montada || j.muerto || !arma.giratoria) {   // guardada (otra arma en la mano): los cañones paran
+    if (m.vel || m.sonando) { m.vel = 0; m.sonando = false; Audio_.minigun(0); }
+    m.gatillo = false; m.calor = Math.max(0, m.calor - dt / 8);
+    return;
+  }
+  const G = arma.giratoria, apretado = m.gatillo && !j.recarga;
+  m.gatillo = false;
+  m.vel = apretado ? Math.min(1, m.vel + dt * 1000 / G.arranque) : Math.max(0, m.vel - dt * 1000 / G.frenado);
+  if (!apretado) m.vacioAvisado = false;
+  m.angulo = (m.angulo + m.vel * GIRO_MAX * dt) % (Math.PI * 2);
+  const tirando = apretado && m.vel >= 1 && j.municionActual() > 0;
+  m.calor = tirando ? Math.min(1, m.calor + dt / 7) : Math.max(0, m.calor - dt / 8);
+  if (m.vel > 0 || m.sonando) { Audio_.minigun(m.vel, tirando); m.sonando = m.vel > 0; }
+  // Las vainas saltan de la ventana del costado, de a montones: más bajas y abiertas que las de un fusil
+  for (let k = casquillosAntes; k < juego.casquillos.length; k++) {
+    const c = juego.casquillos[k];
+    if (c instanceof Casquillo && c.tipo === 'bala') { c.vx = -j.direccion * (0.5 + Math.random() * 2.2); c.vy = -(1.2 + Math.random() * 2.4); }
+  }
+}
+
+const actualizarBase = Jugador.prototype.actualizar;
+Jugador.prototype.actualizar = function (dt, entrada, juego) {
+  const casquillosAntes = juego.casquillos.length;
+  actualizarBase.call(this, dt, entrada, juego);
+  revisarArmasDePersonaje(this);
+  const id = this.montada ? null : this.inventario[this.indiceArma];
+  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) susurrar(this, juego, 'sacar');
+  this.armaAntes = id;
+  actualizarMinigun(this, dt, juego, casquillosAntes);
+};
+
+// Disparar la minigun: el gatillo hace girar los cañones; recién a velocidad sale el tiro
+const dispararBase = Jugador.prototype.disparar;
+Jugador.prototype.disparar = function (juego) {
+  const arma = this.arma();
+  if (this.montada || this.muerto || !arma.giratoria) return dispararBase.call(this, juego);
+  if (this.recarga || this.ciclo) return false;                   // las manos están ocupadas: ni gira ni tira
+  const m = estadoMinigun(this);
+  m.gatillo = true;
+  if (this.municionActual() <= 0) { if (!m.vacioAvisado) { m.vacioAvisado = true; Audio_.vacio(); } return false; }   // vacía: gira sin tirar
+  if (m.vel < 1) return false;                                     // los cañones todavía no llegaron a la velocidad de tiro
+  const tiro = dispararBase.call(this, juego);
+  if (tiro) juego.sacudida = Math.max(juego.sacudida, 1.8);
+  return tiro;
+};
+
+// Para el dibujo: giro, velocidad y calor de los cañones, avance de la cinta y balas que quedan; con los cañones
+// girando el arma tiembla un poco (y las manos con ella)
+const estadoArmaBase = Jugador.prototype.estadoArma;
+Jugador.prototype.estadoArma = function () {
+  const e = estadoArmaBase.call(this), arma = this.arma();
+  if (this.montada || !arma.giratoria) return e;
+  const m = estadoMinigun(this);
+  e.giro = m.angulo; e.velGiro = m.vel; e.calor = m.calor; e.balas = this.municionActual();
+  e.cinta = limitar((this.ahora - this.tiroEn) / arma.cadencia, 0, 1);
+  const fase = this.recarga && this.recarga.fases.find(f => this.ahora < f.hasta);
+  e.cajaNueva = !!fase && (fase.nombre === 'cadera' || fase.nombre === 'poner');   // la que trae de la cadera, con la punta de la cinta
+  if (m.vel > 0.05) {
+    const dx = Math.sin(this.ahora * 1.37) * 0.16 * m.vel, dy = Math.sin(this.ahora * 0.91) * 0.26 * m.vel;
+    e.origen = { x: e.origen.x + dx, y: e.origen.y + dy };
+    for (const k of ['apoyo', 'mano', 'reposoApoyo']) if (e[k]) e[k] = { x: e[k].x + dx, y: e[k].y + dy };
+  }
+  return e;
+};
+
+// Campo de pruebas: el machete de otro personaje no se pone en la mano
+const equiparBase = Juego.prototype.equiparArma;
+Juego.prototype.equiparArma = function (armaId) {
+  if (!armaPermitida(armaId, this.jugador)) return;
+  return equiparBase.call(this, armaId);
+};
+
+// La caja de la minigun cae entera al piso (no un cargador)
+const soltarCargadorBase = Juego.prototype.soltarCargador;
+Juego.prototype.soltarCargador = function (jugador, tipo = 'cargador', desde = null) {
+  if (tipo === 'cargador' && !jugador.montada && jugador.arma().recargaUnidad === 'cajaMinigun') {
+    const p = desde || jugador.puntoArma('cargador');
+    this.casquillos.push(new CajaMinigunCae(p.x, p.y, jugador.direccion));
+    return;
+  }
+  return soltarCargadorBase.call(this, jugador, tipo, desde);
+};
+
+// Golpe del machete del cazador: si mata (o a veces si pega), el susurro
+const golpeCuerpoBase = Juego.prototype.golpeCuerpo;
+Juego.prototype.golpeCuerpo = function (j, arma) {
+  if (!arma || arma.id !== 'macheteCazador') return golpeCuerpoBase.call(this, j, arma);
+  const tocados = this.zombiesAlAlcance(j, arma.alcance, arma.objetivos);
+  const r = golpeCuerpoBase.call(this, j, arma);
+  if (tocados.length) {
+    const mato = tocados.some(z => z.estado === 'muerto');
+    if (mato || Math.random() < SUSURRO.alPegar) susurrar(j, this, mato ? 'matar' : 'pegar');
+  }
+  return r;
+};
 
 </script>
   <script>
@@ -17851,13 +18479,17 @@ Juego.prototype.dibujarFondoBastion = function (ctx, cam = this.camaraBastion())
   <script>
 /* ===== Último bastión v2: dos bandos con contrapesos =====
  * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). Un solo nivel, La granja,
- * con el plantel completo: 12 unidades militares y 12 tipos de zombie, en tres clases por bando.
+ * con el plantel completo: 13 unidades militares en tres clases y 16 tipos de zombie en cuatro.
  *
  *   EL BASTIÓN                                              LA HORDA
- *   Infantería   soldado, francotirador, lanzallamas,       Caminantes  común, corredor, gordo, acorazado
- *                médico                                     Especiales  gritón, hinchado, dinamitero, tóxico
- *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales    jauría, toro, bandada, buitre
- *   Estructuras  muro, alambrado, búnker, señuelo           (+ el soldado contagiado y El Coloso, el jefe)
+ *   Infantería   soldado, francotirador, lanzallamas,       Caminantes   común, corredor, gordo, acorazado
+ *                médico                                     Especiales   gritón, hinchado, dinamitero, tóxico
+ *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales     jauría, toro, bandada, buitre
+ *   Estructuras  muro, alambrado, búnker, señuelo,          Acechadores  topo, lanzador, escupidor, rabioso
+ *                torre de vigía                             (+ el soldado contagiado y El Coloso, el jefe)
+ *
+ * Los acechadores son los que no vienen de frente: el topo pasa por debajo, el lanzador arroja zombies por arriba de
+ * los muros, el escupidor tira desde más lejos que la línea y el rabioso corre más rápido que las armas lentas.
  *
  * Los contrapesos no salen de una tabla de multiplicadores sino de cinco reglas que valen para todos:
  *   Blindaje   le resta puntos a cada bala (mínimo 1). No frena al francotirador, al cañón, al fuego ni a las explosiones
@@ -17890,7 +18522,7 @@ const BASTION2 = {
   clases: {
     inf: ['soldado', 'francotirador', 'lanzallamas', 'medico'],
     mec: ['torreta', 'tanque', 'mortero', 'antiaerea'],
-    est: ['muro', 'alambrado', 'bunker', 'senuelo'],
+    est: ['muro', 'alambrado', 'bunker', 'senuelo', 'vigia'],
   },
   /* Unidades. alcance, minimo y radio en px del plano (44 px = una celda). arma: 'bala' (el blindaje le resta),
    * 'pesada' (ignora el blindaje), 'fuego' (daño por segundo a todos los del cono), 'explosivo' (granada con demora)
@@ -17908,33 +18540,41 @@ const BASTION2 = {
     alambrado:     { clase: 'est', costo: 15,  tiempo: 1.5, vida: 40,  donde: 'obra', liviano: true, frena: 0.45, raspa: 0.2 },
     bunker:        { clase: 'est', costo: 120, tiempo: 12,  vida: 280, donde: 'obra', bloquea: true, capacidad: 4, masAlcance: 1.2, masCadencia: 0.8 },
     senuelo:       { clase: 'est', costo: 50,  tiempo: 2,   vida: 100, donde: 'obra', liviano: true, atrae: 5, entretiene: 5 },
+    vigia:         { clase: 'est', costo: 60,  tiempo: 4,   vida: 80,  donde: 'obra', bloquea: true, detecta: 4 },   // detecta: celdas a las que obliga a salir al topo (el tanque, a 2)
   },
   /* Zombies. vida: veces la del común de esa oleada. vel en px/s. vista, olfato: en celdas. mueve: 'camina' (por la
    * grilla), 'cuad' (cuadrúpedo: salta lo bajo y el alambrado, no entra al agua) o 'vuela'. llega (los que cazan):
    * 'derecho' (por el camino si el rodeo es corto; si no, rompiendo lo que tapa a su presa), 'rodea' (nunca rompe) o
-   * 'rompe' (nunca rodea). dano: lo que le saca al campamento si entra. conducta: js/bastion-v2-horda.js */
+   * 'rompe' (nunca rodea). dano: lo que le saca al campamento si entra. esquiva: parte de los tiros pesados (el
+   * francotirador, el cañón) que le erran. conducta: js/bastion-v2-horda.js */
   zombies: {
-    caminante:     { clase: 'cam', conducta: 'caza', vida: 1,   vel: 24, vista: 3, llega: 'derecho', paga: 3,  dano: 1, escala: 0.58 },
-    corredor:      { clase: 'cam', conducta: 'caza', vida: 0.8, vel: 46, vista: 4, llega: 'rodea',   paga: 3,  dano: 1, escala: 0.5 },
-    gordo:         { clase: 'cam', conducta: 'caza', vida: 3.2, vel: 16, vista: 2, llega: 'rompe',   paga: 7,  dano: 3, escala: 0.66, aplasta: true, mordida: 1.5 },
-    acorazado:     { clase: 'cam', conducta: 'caza', vida: 2,   vel: 20, vista: 3, llega: 'derecho', paga: 7,  dano: 2, escala: 0.6, blindaje: 2 },
-    griton:        { clase: 'esp', conducta: 'grita', vida: 0.8, vel: 26, vista: 6, paga: 6, dano: 1, escala: 0.56, grito: { radio: 5, apuro: 1.3, dura: 6, cada: 5, quieto: 1.2 } },
-    hinchado:      { clase: 'esp', conducta: 'revienta', vida: 5, vel: 14, vista: 5, paga: 7, dano: 3, escala: 0.66, estalla: { radio: 60, unidades: 90, gente: 30, zombies: 2.2 } },
-    dinamitero:    { clase: 'esp', conducta: 'demuele', vida: 0.8, vel: 50, paga: 4, dano: 2, escala: 0.52, carga: { dano: 120, radio: 40, unidades: 40, gente: 20, zombies: 1 } },
-    toxico:        { clase: 'esp', conducta: 'caza', vida: 3, vel: 18, vista: 4, llega: 'derecho', paga: 6, dano: 2, escala: 0.6, grupo: true, gas: { radio: 50, dura: 5, dano: 5, bunker: 2.3 } },
+    caminante:     { clase: 'cam', conducta: 'caza', vida: 1,   vel: 24, vista: 3, llega: 'derecho', paga: 4,  dano: 1, escala: 0.58 },
+    corredor:      { clase: 'cam', conducta: 'caza', vida: 0.8, vel: 46, vista: 4, llega: 'rodea',   paga: 4,  dano: 1, escala: 0.5 },
+    gordo:         { clase: 'cam', conducta: 'caza', vida: 3.2, vel: 16, vista: 2, llega: 'rompe',   paga: 8,  dano: 3, escala: 0.66, aplasta: true, mordida: 1.5 },
+    acorazado:     { clase: 'cam', conducta: 'caza', vida: 2,   vel: 20, vista: 3, llega: 'derecho', paga: 8,  dano: 2, escala: 0.6, blindaje: 2 },
+    griton:        { clase: 'esp', conducta: 'grita', vida: 0.8, vel: 26, vista: 6, paga: 7, dano: 1, escala: 0.56, grito: { radio: 5, apuro: 1.3, dura: 6, cada: 5, quieto: 1.2 } },
+    hinchado:      { clase: 'esp', conducta: 'revienta', vida: 5, vel: 14, vista: 5, paga: 8, dano: 3, escala: 0.66, estalla: { radio: 60, unidades: 90, gente: 30, zombies: 2.2 } },
+    dinamitero:    { clase: 'esp', conducta: 'demuele', vida: 0.8, vel: 50, paga: 5, dano: 2, escala: 0.52, carga: { dano: 120, radio: 40, unidades: 40, gente: 20, zombies: 1 } },
+    toxico:        { clase: 'esp', conducta: 'caza', vida: 3, vel: 18, vista: 4, llega: 'derecho', paga: 7, dano: 2, escala: 0.6, grupo: true, gas: { radio: 50, dura: 5, dano: 5, bunker: 2.3 } },
     perro:         { clase: 'ani', conducta: 'jauria', mueve: 'cuad', vida: 0.5, vel: 62, olfato: 6, paga: 2, dano: 1, escala: 0.74, manada: 5, cadaMordida: 600 },
-    toro:          { clase: 'ani', conducta: 'embiste', mueve: 'cuad', vida: 6, vel: 20, vista: 6, paga: 9, dano: 3, escala: 0.82, embestida: { vel: 96, largo: 6, aviso: 0.8, aturde: 2, dano: 12, quieto: 2 } },
+    toro:          { clase: 'ani', conducta: 'embiste', mueve: 'cuad', vida: 6, vel: 20, vista: 6, paga: 10, dano: 3, escala: 0.82, embestida: { vel: 96, largo: 6, aviso: 0.8, aturde: 2, dano: 12, quieto: 2 } },
     cuervo:        { clase: 'ani', conducta: 'bandada', mueve: 'vuela', vida: 0.4, vel: 55, paga: 1, dano: 1, escala: 0.8, manada: 6, pico: 2, cadaPico: 700, altura: 44 },
-    buitre:        { clase: 'ani', conducta: 'rapta', mueve: 'vuela', vida: 2.5, vel: 40, paga: 6, dano: 1, escala: 1, altura: 56 },
+    buitre:        { clase: 'ani', conducta: 'rapta', mueve: 'vuela', vida: 2.5, vel: 40, paga: 7, dano: 1, escala: 1, altura: 56 },
     soldadoZombie: { clase: 'cam', conducta: 'caza', vida: 1.5, vel: 24, vista: 3, llega: 'derecho', paga: 3, dano: 1, escala: 0.6, blindaje: 1 },
-    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 40, dano: 8, escala: 1.25, aplasta: true, mordida: 3 },
+    topo:          { clase: 'ace', conducta: 'excava', vida: 1.6, vel: 24, vista: 3, llega: 'derecho', paga: 6, dano: 2, escala: 0.58, mordida: 1.5, topo: { vel: 36, sale: 0.8, encandila: 2.5, tanque: 2 } },
+    lanzador:      { clase: 'ace', conducta: 'arroja', vida: 6, vel: 16, paga: 10, dano: 3, escala: 0.92, mordida: 1.5,
+      arroja: { alcance: 7, cada: 3.2, vuelo: 1.3, cerca: 1.6, alFondo: true, tira: ['caminante', 'corredor', 'soldadoZombie', 'rabioso'], cosa: 'cascote', golpe: { unidades: 28, gente: 12, radio: 18 } } },
+    escupidor:     { clase: 'ace', conducta: 'escupe', vida: 1.2, vel: 20, paga: 7, dano: 2, escala: 0.6, escupe: { alcance: 5, cada: 3.2, vuelo: 1, golpe: 6, charco: { radio: 22, dura: 3.5, gente: 6, cosas: 7 } } },
+    rabioso:       { clase: 'ace', conducta: 'corre', vida: 0.7, vel: 120, paga: 3, dano: 1, escala: 0.5, manada: 4, esquiva: 0.6 },
+    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.25, aplasta: true, mordida: 3,
+      arroja: { alcance: 5, cada: 5, vuelo: 1.3, cosa: 'fardo', golpe: { unidades: 60, gente: 25, radio: 30 } } },
   },
-  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'jefe'],
-  clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'] },
+  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe'],
+  clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'], ace: ['topo', 'lanzador', 'escupidor', 'rabioso'] },
   // A quién elige primero el francotirador (de más a menos peligroso)
-  peligro: ['griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo'],
+  peligro: ['lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
   /* Quién frena a quién, para las marcas del panel, las fichas y los consejos. Sale de medir cada cruce con el
-   * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6), no de una regla aparte.
+   * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6 u 8), no de una regla aparte.
    * bien: lo frena; mal: rinde poco o se pierde contra él */
   contra: {
     caminante:  { bien: ['lanzallamas', 'mortero', 'senuelo'], mal: ['tanque', 'antiaerea'] },
@@ -17949,28 +18589,33 @@ const BASTION2 = {
     toro:       { bien: ['francotirador', 'tanque', 'torreta', 'bunker'], mal: ['soldado', 'alambrado', 'medico'] },
     cuervo:     { bien: ['antiaerea', 'bunker'], mal: ['torreta', 'tanque', 'mortero', 'lanzallamas'] },
     buitre:     { bien: ['antiaerea', 'soldado', 'bunker'], mal: ['torreta', 'tanque', 'mortero', 'lanzallamas'] },
+    topo:       { bien: ['vigia', 'tanque', 'senuelo', 'lanzallamas'], mal: ['francotirador', 'mortero', 'antiaerea', 'soldado', 'muro', 'alambrado'] },
+    lanzador:   { bien: ['francotirador', 'tanque', 'bunker'], mal: ['muro', 'alambrado', 'soldado', 'mortero'] },
+    escupidor:  { bien: ['francotirador', 'tanque'], mal: ['soldado', 'torreta', 'bunker', 'lanzallamas', 'muro'] },
+    rabioso:    { bien: ['lanzallamas', 'torreta', 'alambrado'], mal: ['francotirador', 'mortero', 'tanque', 'soldado'] },
     soldadoZombie: { bien: ['francotirador', 'tanque', 'medico'], mal: ['soldado'] },
     jefe:       { bien: ['tanque', 'francotirador'], mal: ['muro', 'alambrado', 'soldado'] },
   },
-  /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena un tipo, de a pocos, para ver qué hace antes de que
-   * duela; el orden en que salen lo arma ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto
-   * paga poco (un común, $3): con lo que se junta en toda la partida alcanza para uno de cada cosa, no para todo */
+  /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena uno o dos tipos; el orden en que salen lo arma
+   * ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto paga poco (un común, $4): con lo que se
+   * junta en toda la partida alcanza para responder a cada tipo, no para tener de todo de sobra. La plata es la perilla
+   * de la dificultad: con los comunes a $3 ningún plan del simulador llega al final */
   niveles: {
     granja: {
       dinero: 220, vida: 1,
       oleadas: [
         { caminante: 18 },
-        { caminante: 22, corredor: 10 },
-        { caminante: 24, corredor: 8, acorazado: 6 },
-        { caminante: 24, corredor: 10, acorazado: 6, perro: 10 },
-        { caminante: 30, acorazado: 8, perro: 10, cuervo: 12 },
-        { caminante: 30, corredor: 14, gordo: 5, acorazado: 8, jefe: 1 },
-        { caminante: 34, corredor: 14, hinchado: 3, perro: 15, cuervo: 12 },
-        { caminante: 36, gordo: 7, acorazado: 10, hinchado: 4, dinamitero: 6 },
-        { caminante: 38, corredor: 18, griton: 3, dinamitero: 6, perro: 15, cuervo: 18 },
-        { caminante: 42, gordo: 9, acorazado: 14, griton: 3, hinchado: 5, toxico: 4 },
-        { caminante: 42, corredor: 18, dinamitero: 7, toxico: 4, perro: 15, toro: 3, buitre: 3 },
-        { caminante: 44, corredor: 16, gordo: 8, acorazado: 12, griton: 3, hinchado: 4, dinamitero: 6, toxico: 4, perro: 15, toro: 3, cuervo: 18, buitre: 3, jefe: 1 },
+        { caminante: 24, corredor: 12 },
+        { caminante: 28, corredor: 10, acorazado: 8 },
+        { caminante: 28, corredor: 12, acorazado: 8, perro: 15, escupidor: 2 },
+        { caminante: 32, acorazado: 10, perro: 10, cuervo: 18, escupidor: 3, rabioso: 4 },
+        { caminante: 32, corredor: 14, gordo: 6, acorazado: 8, escupidor: 3, rabioso: 8, jefe: 1 },
+        { caminante: 36, corredor: 14, hinchado: 3, perro: 15, cuervo: 18, rabioso: 8 },
+        { caminante: 38, gordo: 7, acorazado: 10, hinchado: 4, dinamitero: 6, topo: 3, rabioso: 8 },
+        { caminante: 40, corredor: 18, griton: 3, dinamitero: 6, perro: 15, cuervo: 18, topo: 3, lanzador: 2 },
+        { caminante: 42, gordo: 9, acorazado: 12, griton: 3, hinchado: 4, toxico: 4, lanzador: 2, escupidor: 3, rabioso: 12 },
+        { caminante: 42, corredor: 18, dinamitero: 7, toxico: 4, perro: 15, toro: 3, buitre: 3, topo: 4, escupidor: 3 },
+        { caminante: 44, corredor: 16, gordo: 8, acorazado: 12, griton: 3, hinchado: 4, dinamitero: 6, toxico: 4, perro: 15, toro: 3, cuervo: 18, buitre: 3, topo: 4, lanzador: 2, escupidor: 3, rabioso: 12, jefe: 1 },
       ],
     },
   },
@@ -18002,6 +18647,8 @@ const BastionV2 = {
     for (let k = 0; k < n('caminante'); k++) poner('caminante', (Math.floor(k * hordas / n('caminante')) + 0.5) / hordas + k * 0.0004);
     parejo('acorazado', 0.08, 0.7); parejo('gordo', 0.4, 1); parejo('griton', 0.04, 0.55);
     parejo('hinchado', 0.3, 0.9); parejo('toxico', 0.3, 0.85); parejo('toro', 0.4, 0.8); parejo('buitre', 0.45, 0.9);
+    parejo('topo', 0.2, 0.75); parejo('lanzador', 0.3, 0.8); parejo('escupidor', 0.12, 0.75);
+    tandas('rabioso', BASTION2.zombies.rabioso.manada, [0.35, 0.65, 0.9]);
     tandas('corredor', Math.ceil(n('corredor') / 2) || 1, [0.3, 0.72]);
     tandas('dinamitero', Math.ceil(n('dinamitero') / 2) || 1, [0.5, 0.82]);
     tandas('perro', BASTION2.zombies.perro.manada, [0.25, 0.6, 0.86, 0.95]);
@@ -18014,7 +18661,7 @@ const BastionV2 = {
   // y después de una horda hay un respiro
   pausa(tipo, sigue, ronda, k) {
     const base = Math.max(0.5, 1.5 - ronda * 0.08) * (0.8 + azar(k, ronda) * 0.4);
-    if (tipo === sigue) return base * ({ caminante: 0.3, corredor: 0.4, dinamitero: 0.5, perro: 0.22, cuervo: 0.2 }[tipo] || 1);
+    if (tipo === sigue) return base * ({ caminante: 0.3, corredor: 0.4, dinamitero: 0.5, perro: 0.22, cuervo: 0.2, rabioso: 0.25 }[tipo] || 1);
     return base * (tipo === 'caminante' ? 2.4 : 1);
   },
   // Las unidades del bastión son una sola tabla (BASTION.unidades): en la v2 valen las de BASTION2 y, al volver al
@@ -18065,7 +18712,7 @@ const BastionV2 = {
     this.unidades = []; this.colaCuartel = []; this.colaTaller = []; this.colaOleada = [];
     this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = BASTION2.primerDescanso; this.proximoZombie = 0;
     this.colocando = null; this.moviendo = null; this.puntero = null; this.trazos = []; this.balasBastion = [];
-    this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = [];
+    this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
     this.velocidad = 1; this.construidas = 0; this.contagiados = 0; this.entraron = {};
     this.camposLibres = new Map(); this.camposCrudos = new Map(); this.camposCuad = new Map();
     this.prepararNivelBastion();   // escenario, terreno y obstáculos de La granja (js/bastion-niveles.js)
@@ -18184,7 +18831,7 @@ const BastionV2 = {
       return suelta ? 'bastion.ocupado' : this.colaCuartel.some(o => o.c === c && o.f === f && !o.bunker) ? 'bastion.ocupado' : null;
     }
     if ((ocupa && ocupa !== mueve) || suelta) return 'bastion.ocupado';
-    if (this.zombies.some(z => { if (z.estado === 'muerto' || z.vuela) return false; const k = this.celdaDe(z.x, z.y); return k.c === c && k.f === f; })) return 'bastion.ocupado';
+    if (this.zombies.some(z => { if (z.estado === 'muerto' || z.vuela || z.enterrado) return false; const k = this.celdaDe(z.x, z.y); return k.c === c && k.f === f; })) return 'bastion.ocupado';
     if (!U.liviano) {   // lo que bloquea no puede cerrar del todo el paso al campamento
       const bloq = this.bloqueadas(c + ',' + f);
       if (mueve && mueve.bloquea) bloq.delete(mueve.c + ',' + mueve.f);
@@ -18327,7 +18974,7 @@ const BastionV2 = {
       }
       const bono = 30 + 5 * this.ronda;
       this.dinero += bono; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + BASTION2.descanso;
-      this.nubesV2 = []; this.granadasV2 = [];
+      this.nubesV2 = []; this.granadasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
       this.avisoRonda(t('bastion.oleadaSuperada', { n: this.ronda }), t('bastion.bonus', { d: bono }), 2600); Audio_.rondaSuperada();
       this.guardarPartidaV2();
     }
@@ -18398,9 +19045,9 @@ const BastionV2 = {
   envolver('moverZombiesBastion', function (dt) { this.hordaV2(dt); });                       // js/bastion-v2-horda.js
   envolver('moverUnidades', function (dt) { this.tropaV2(dt); this.efectosV2(dt); });         // js/bastion-v2-tropa.js
   envolver('panelBastion', function () { if (typeof BastionV2UI !== 'undefined') BastionV2UI.panel(this); });
-  // Teclas como el panel: 1 a 4 la infantería, Q W E R los mecanizados, A S D F las estructuras; Z vende, X repara, C mueve
+  // Teclas como el panel: 1 a 4 la infantería, Q W E R los mecanizados, A S D F G las estructuras; Z vende, X repara, C mueve
   const TECLAS = { Digit1: 'soldado', Digit2: 'francotirador', Digit3: 'lanzallamas', Digit4: 'medico', KeyQ: 'torreta', KeyW: 'tanque', KeyE: 'mortero', KeyR: 'antiaerea',
-    KeyA: 'muro', KeyS: 'alambrado', KeyD: 'bunker', KeyF: 'senuelo', KeyZ: 'vender', KeyX: 'reparar', KeyC: 'mover' };
+    KeyA: 'muro', KeyS: 'alambrado', KeyD: 'bunker', KeyF: 'senuelo', KeyG: 'vigia', KeyZ: 'vender', KeyX: 'reparar', KeyC: 'mover' };
   BastionV2.TECLAS = TECLAS;
   envolver('teclaBastion', function (codigo) {
     if (TECLAS[codigo]) { this.elegirUnidad(TECLAS[codigo]); return true; }
@@ -18442,6 +19089,15 @@ const BastionV2 = {
  *     toro        embiste en línea recta: derriba y aturde a la gente que atropella, y arranca el alambrado
  *     bandada     cuervos que vuelan sobre todo y picotean a la gente a pie; si no hay, van al campamento
  *     buitre      vuela hasta alguien a pie, lo levanta y lo suelta en medio de la horda
+ *   Acechadores no vienen de frente: cada uno evita la línea de una manera
+ *     topo        se entierra al entrar y avanza por debajo de todo, sin que se le pueda tirar; sale junto a lo que
+ *                 hay más atrás (mortero, francotirador, médico, antiaérea). La torre de vigía y el tanque lo obligan
+ *                 a salir antes, aturdido; el señuelo lo engaña y sale junto al altavoz
+ *     lanzador    agarra al zombie que tiene al lado y lo arroja por encima de los muros (va por el aire: le tiran la
+ *                 antiaérea y los fusiles); sin zombies a mano, tira cascotes
+ *     escupidor   se planta a 5 celdas, más lejos de lo que llegan el soldado y la torreta, y escupe ácido en arco
+ *     rabioso     corre al doble que un perro, en zigzag, directo al campamento; los tiros pesados le erran
+ *   El Coloso, además de romper todo, arroja fardos a lo que tiene a 5 celdas.
  * Perros y toro no cruzan el fuego del lanzallamas. El contexto K se arma una vez por cuadro (contextoV2).
  */
 const ESTILO_SOLDADO_ZOMBIE = { id: 'soldado-zombie', torso: 'chaleco', sinBandas: true, cartucheras: true, camiseta: '#5d6248', chaleco: '#9a8262', piernas: 'largo', pantalon: '#7c7a5e', accesorio: 'casco-soldado', escala: [1.02, 1.08] };
@@ -18450,6 +19106,10 @@ const ESTILO_ACORAZADO = { id: 'acorazado', torso: 'uniforme', camiseta: '#232a3
 const ESTILO_GRITON = { id: 'griton', torso: 'capucha', camiseta: '#7a2d8a', piernas: 'largo', pantalon: '#2a2530', accesorio: 'megafono', escala: [0.92, 1] };
 const ESTILO_HINCHADO = { id: 'hinchado', torso: 'desnudo', camiseta: '#a9b44a', piernas: 'short', pantalon: '#4a3f2c', hinchado: true, escala: [1.1, 1.18] };
 const ESTILO_DINAMITERO = { id: 'dinamitero', torso: 'chaleco', camiseta: '#5a5148', chaleco: '#c9541c', piernas: 'largo', pantalon: '#3c4252', accesorio: 'casco-obra', dinamita: true, escala: [0.9, 0.98] };
+const ESTILO_TOPO = { id: 'topo', torso: 'overol', camiseta: '#6a5a44', overol: '#4a463e', piernas: 'largo', pantalon: '#4a463e', accesorio: 'casco-minero', escala: [0.96, 1.04] };
+const ESTILO_LANZADOR = { id: 'lanzador', torso: 'desnudo', camiseta: '#9c9a78', piernas: 'short', pantalon: '#5a2a26', accesorio: 'vincha', numero: '#b8322a', escala: [1, 1] };
+const ESTILO_ESCUPIDOR = { id: 'escupidor', torso: 'musculosa', sinDorsal: true, camiseta: '#3a3540', piernas: 'largo', pantalon: '#2c2a30', buche: true, escala: [0.96, 1.04] };
+const ESTILO_RABIOSO = { id: 'rabioso', torso: 'remera', camiseta: '#e9e5d8', franja: '#b8322a', piernas: 'corto', pantalon: '#d8d4c6', escala: [0.84, 0.9] };
 // Los comunes no llevan la ropa de otro tipo (el gordo, el policía del acorazado, el obrero del dinamitero)
 const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'obrero'].includes(v.id));
 
@@ -18473,6 +19133,10 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
         z.pustulas = Array.from({ length: 7 }, (_, k) => ({ x: 1 + azarEntre(-6, 9), y: -52 + k * 3.4 + azarEntre(-1, 1), r: azarEntre(1.4, 2.6), fase: Math.random() * 6 })); break;
       case 'dinamitero': z = new Zombie(0, true, dif); z.estilo = ESTILO_DINAMITERO; z.colores = { ...COLORES_ZOMBIE, camiseta: ESTILO_DINAMITERO.camiseta, pantalon: ESTILO_DINAMITERO.pantalon }; z.variante.pelo = 'calvo'; z.ropa = 'comun'; break;
       case 'toxico': z = new ZombieToxico(0, dif); z.proximaEsquiva = Infinity; break;   // el de la cloaca, sin escupir ni saltar
+      case 'topo': z = zombieConEstilo(0, ESTILO_TOPO, dif); z.variante.brazoColgando = false; z.piel = '#8f9a7a'; z.dibujar = dibujarTopo; break;   // js/bastion-v2-dibujo.js
+      case 'lanzador': z = zombieConEstilo(0, ESTILO_LANZADOR, dif); z.variante.brazoColgando = false; z.piel = '#9c9a78'; z.grosorBrazos = 1.9; z.grosorPiernas = 1.45; break;
+      case 'escupidor': z = zombieConEstilo(0, ESTILO_ESCUPIDOR, dif); z.variante.brazoColgando = false; z.variante.pelo = 'ralo'; z.piel = '#b8a64a'; break;
+      case 'rabioso': z = new Zombie(0, true, dif); z.estilo = ESTILO_RABIOSO; z.colores = { ...COLORES_ZOMBIE, camiseta: ESTILO_RABIOSO.camiseta, pantalon: ESTILO_RABIOSO.pantalon }; z.variante.pelo = 'largo'; z.piel = '#a9b89a'; z.ropa = 'comun'; break;
       case 'perro': case 'toro': z = new ZombieAnimal(0, tipo, dif); break;
       case 'cuervo': case 'buitre': z = new AveBastion(tipo, dif); break;   // js/bastion-v2-dibujo.js
       default: z = zombieConEstilo(0, ESTILOS_COMUNES[Math.floor(Math.random() * ESTILOS_COMUNES.length)], dif); z.variante.pelo = ['ralo', 'calvo', 'largo'][Math.floor(Math.random() * 3)];
@@ -18512,8 +19176,8 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
 
   /* ---------- Lo que hay en el campo en este cuadro ---------- */
   P.contextoV2 = function () {
-    const K = { ahora: this.ahora, vivos: [], suelo: [], humanos: [], aPie: [], construidos: [], senuelos: [], alambres: new Map(), medicos: [], fuegos: [] };
-    for (const z of this.zombies) if (z.estado !== 'muerto') { K.vivos.push(z); if (!z.vuela) K.suelo.push(z); }
+    const K = { ahora: this.ahora, vivos: [], suelo: [], humanos: [], aPie: [], construidos: [], senuelos: [], alambres: new Map(), medicos: [], fuegos: [], vigias: [], tanques: [] };
+    for (const z of this.zombies) if (z.estado !== 'muerto' && !z.enterrado) { K.vivos.push(z); if (!z.vuela) K.suelo.push(z); }   // al topo enterrado no lo ve ni lo toca nadie
     for (const u of this.unidades) {
       if (!u.listo || u.invisible || u.llevado || u.quitada) continue;
       const U = U_(u.tipo); if (!U) continue;   // un caído no es nadie
@@ -18523,6 +19187,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
         if (U.clase === 'mec' || (u.tipo === 'bunker' && u.dentro.length)) K.humanos.push(u);
         if (u.tipo === 'bunker' && u.dentro.some(d => d.tipo === 'medico')) K.medicos.push(u);
         if (u.tipo === 'senuelo') K.senuelos.push(u); else if (u.tipo === 'alambrado') K.alambres.set(u.c + ',' + u.f, u);
+        else if (u.tipo === 'vigia') K.vigias.push(u); else if (u.tipo === 'tanque') K.tanques.push(u);
       }
       if (u.llama > 0.3) K.fuegos.push(u);   // un lanzallamas tirando (a pie o desde un búnker)
     }
@@ -18637,6 +19302,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     // Caminantes (y el tóxico): miran, cazan, rompen lo que protege a su presa y, si no ven a nadie, marchan
     caza(z, Z, dt, K) {
       const ahora = K.ahora;
+      if (Z.arroja && this.arrojarDeLejosV2(z, Z, K)) return;   // el Coloso: fardos a lo que tiene lejos
       if (z.presa && (z.presa.quitada || z.presa.llevado || (z.presa.tipo === 'bunker' && !z.presa.dentro.length))) z.presa = null;
       if (ahora >= z.miraEn && (!z.presa || (!z.fueLlamado && K.senuelos.length))) { z.miraEn = ahora + 180 + Math.random() * 120; this.mirarV2(z, Z, K); }
       const { c, f } = this.celdaDe(z.x, z.y), cc = limitar(c, 0, this.cols - 1), ff = limitar(f, 0, this.filas - 1);
@@ -18820,6 +19486,133 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
         this.aviso(t('b2.raptado'), 1500); Audio_.animalMuere(1.4);
       }
     },
+
+    // Topo: camina un trecho, se entierra y va por debajo de todo hasta lo que hay más atrás; ahí sale y caza
+    excava(z, Z, dt, K) {
+      const B = BASTION, ahora = K.ahora, T = Z.topo;
+      if (z.modoTopo === 'arriba') { CONDUCTAS.caza.call(this, z, Z, dt, K); return; }
+      if (z.modoTopo === 'sale') { z.saliendo -= dt; z.estado = 'quieto'; if (z.saliendo <= 0) { z.saliendo = 0; z.modoTopo = 'arriba'; } return; }
+      if (!z.modoTopo) {
+        if (z.x > B.baseX + (this.cols - 1.3) * B.celda[0]) { this.avanzarV2(z, Z, dt, K, this.distBastion, false, null); return; }
+        z.modoTopo = 'bajo'; z.enterrado = true; z.presa = null; this.salpicar(z.x, z.y - 4, '#6a5338', 12, 3, z.y);
+      }
+      // Lo descubren: la torre de vigía a su alcance o el tanque a dos celdas. Sale ahí mismo, encandilado
+      if (K.vigias.some(u => distPlano(u.x, u.y, z.x, z.y) < U_('vigia').detecta * CELDA) || K.tanques.some(u => distPlano(u.x, u.y, z.x, z.y) < T.tanque * CELDA)) { this.salirV2(z, T.encandila, true); return; }
+      // Adónde va: al señuelo que lo llama o, si no, a lo que más vale de lo que hay más atrás
+      if (ahora >= z.miraEn || (z.presa && z.presa.quitada)) {
+        z.miraEn = ahora + 500; let objetivo = null, dm = U_('senuelo').atrae * CELDA;
+        for (const u of K.senuelos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; objetivo = u; } }
+        if (!objetivo) {
+          const valor = { mortero: 5, francotirador: 4, medico: 4, antiaerea: 3, lanzallamas: 2 }; let pm = -Infinity;
+          for (const u of K.humanos) { const p = (valor[u.tipo] || 1) * 300 - u.x; if (p > pm) { pm = p; objetivo = u; } }
+        }
+        z.presa = objetivo;
+      }
+      const u = z.presa, { c, f } = this.celdaDe(z.x, z.y), cc = limitar(c, 0, this.cols - 1), ff = limitar(f, 0, this.filas - 1);
+      if (u && distPlano(z.x, z.y, u.x, u.y) < 32) { if (u.tipo === 'senuelo') { z.fueLlamado = true; z.entretenido = 0; } this.salirV2(z, T.sale); return; }
+      // Bajo tierra: derecho, sólo lo desvían el agua y los obstáculos del mapa
+      const campo = u ? this.campoCrudo(limitar(u.c, 0, this.cols - 1), limitar(u.f, 0, this.filas - 1)) : this.campoCrudoBase();
+      const sig = c >= this.cols ? null : this.siguienteCeldaV2(cc, ff, campo, false);
+      let tx = u ? u.x : B.baseX - 40, ty = u ? u.y : z.y;
+      if (sig && !(u && sig[0] === limitar(u.c, 0, this.cols - 1) && sig[1] === limitar(u.f, 0, this.filas - 1))) { const p = this.centroCelda(sig[0], sig[1]); tx = p.x; ty = p.y; }
+      const dx = tx - z.x, dy = ty - z.y, l = Math.hypot(dx, dy) || 1, v = Math.min(l, T.vel * dt);
+      z.x += dx / l * v; z.y += dy / l * v; z.ySuelo = z.y; z.direccion = dx < 0 ? -1 : 1; z.fase += dt * 6;
+      if (Math.random() < dt * 5) this.salpicar(z.x + (Math.random() - 0.5) * 10, z.y - 1, '#6a5338', 1, 1.2, z.y);   // la tierra que remueve
+    },
+
+    // Lanzador: marcha con la horda; cuando tiene a alguien a tiro, le arroja el zombie que tenga al lado (o un cascote)
+    arroja(z, Z, dt, K) {
+      if (this.arrojarDeLejosV2(z, Z, K)) return;
+      const cerca = K.humanos.find(u => this.alAlcanceV2(z, u));
+      if (cerca) { this.morderV2(z, cerca, dt); return; }
+      this.avanzarV2(z, Z, dt, K, this.distBastion, false, null);
+    },
+
+    // Escupidor: en cuanto tiene gente a 5 celdas se planta y la baña en ácido; no se acerca más
+    escupe(z, Z, dt, K) {
+      const ahora = K.ahora, E = Z.escupe, alcance = E.alcance * CELDA;
+      if (ahora < (z.escupeHasta || 0)) { z.estado = 'ataca'; z.bocaAbierta = 1; z.fase += dt * 2; return; }
+      z.bocaAbierta = 0;
+      if (z.presa && (z.presa.quitada || z.presa.llevado)) z.presa = null;
+      if (ahora >= z.miraEn) {
+        z.miraEn = ahora + 300; let b = null, dm = alcance;   // le escupe a la gente (y a lo que tiene gente adentro), no a un muro pelado
+        for (const u of K.humanos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; b = u; } }
+        z.presa = b;
+      }
+      const u = z.presa;
+      if (u && distPlano(z.x, z.y, u.x, u.y) <= alcance * 1.05) {
+        z.estado = 'quieto'; z.direccion = u.x < z.x ? -1 : 1;
+        if (ahora >= (z.escupeEn || 0)) {
+          z.escupeEn = ahora + E.cada * 1000 * (0.9 + Math.random() * 0.2); z.escupeHasta = ahora + 450;
+          this.arrojadosV2.push({ tipo: 'escupitajo', x0: z.x, y0: z.y, alto0: 44 * z.escala, x: u.x, y: u.y, t: 0, dur: E.vuelo, alto: 46, golpe: E.golpe, ...E.charco });
+          Audio_.escupir(200);
+        }
+        return;
+      }
+      this.avanzarV2(z, Z, dt, K, this.distBastion, false, null);
+    },
+
+    // Rabioso: derecho al campamento por el camino abierto, en zigzag, sin detenerse por nadie
+    corre(z, Z, dt, K) {
+      const B = BASTION, { c, f } = this.celdaDe(z.x, z.y), cc = limitar(c, 0, this.cols - 1), ff = limitar(f, 0, this.filas - 1);
+      let tx = B.baseX - 40, ty = z.y;
+      if (c >= this.cols) tx = B.baseX + this.cols * B.celda[0] - 12;
+      else {
+        const sig = this.siguienteCeldaV2(cc, ff, this.distBastion, false);
+        if (sig) { const p = this.centroCelda(sig[0], sig[1]); tx = p.x; ty = p.y + Math.sin(K.ahora / 95 + z.desvio * 3) * 10; }
+        else if (cc === 0) ty = this.centroCelda(0, ff).y; else tx = z.x - 30;
+      }
+      this.pasoV2(z, Z, dt, K, tx, ty, { corre: true, apretado: 0.06 });
+    },
+  };
+
+  // El que arroja (lanzador, Coloso): si tiene a alguien a tiro y ya puede, le tira algo. Devuelve si está en eso
+  P.arrojarDeLejosV2 = function (z, Z, K) {
+    const ahora = K.ahora, A = Z.arroja;
+    if (ahora < (z.lanzaHasta || 0)) { z.estado = 'ataca'; return true; }   // el gesto de lanzar
+    if (ahora < (z.lanzaEn || 0) || ahora < (z.buscaEn || 0)) return false;
+    z.buscaEn = ahora + 300;   // (aparte de miraEn: el Coloso además mira para cazar)
+    let blanco = null, dm = A.alcance * CELDA, fondo = null;
+    for (const u of K.humanos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d >= A.alcance * CELDA || d <= 1.3 * CELDA) continue; if (d < dm) { dm = d; blanco = u; } if (!fondo || u.x < fondo.x) fondo = u; }
+    const gente = !!blanco;
+    if (!blanco) for (const u of K.construidos) { if (!u.bloquea) continue; const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm && d > 1.3 * CELDA) { dm = d; blanco = u; } }
+    if (!blanco) return false;
+    z.lanzaEn = ahora + A.cada * 1000; z.lanzaHasta = ahora + 550; z.estado = 'ataca'; z.direccion = blanco.x < z.x ? -1 : 1;
+    // El lanzador prefiere arrojar al zombie que tenga al lado: cae junto a su presa, del otro lado de lo que la tape
+    if (A.tira && gente) {
+      let municion = null, dz = A.cerca * CELDA;
+      for (const o of K.suelo) { if (o === z || o.enVuelo || !A.tira.includes(o.tipoBastion) || o.aturdidoHasta > ahora) continue; const d = distPlano(o.x, o.y, z.x, z.y); if (d < dz) { dz = d; municion = o; } }
+      if (municion && A.alFondo) blanco = fondo;   // por encima de todo: junto al que está más atrás
+      const k = blanco.enCamino ? this.celdaDe(blanco.x, blanco.y) : blanco;
+      const lugar = municion && (blanco.bloquea ? [] : [[k.c, k.f]]).concat([[k.c - 1, k.f], [k.c, k.f + 1], [k.c, k.f - 1], [k.c + 1, k.f]]).find(([c, f]) => this.dentro(c, f) && !this.bloqV2.has(c + ',' + f));
+      if (lugar) {
+        const p = this.centroCelda(lugar[0], lugar[1]);
+        municion.enVuelo = { x0: municion.x, y0: municion.y, x1: p.x + (Math.random() - 0.5) * 12, y1: p.y + (Math.random() - 0.5) * 8, t: 0, dur: A.vuelo, alto: 72, presa: blanco };
+        municion.vuela = true; municion.presa = null; municion.estado = 'camina';
+        Audio_.gruñido(150, 1.8, true);
+        return true;
+      }
+    }
+    this.arrojadosV2.push({ tipo: A.cosa, x0: z.x, y0: z.y, alto0: 60 * z.escala, x: blanco.x, y: blanco.y, t: 0, dur: A.vuelo, alto: 66, ...A.golpe });
+    Audio_.gruñido(150, 2.2, true);
+    return true;
+  };
+  // El zombie arrojado: va por el aire dando vueltas (le pueden tirar la antiaérea y los fusiles) y cae lastimado y aturdido
+  P.volandoV2 = function (z, dt) {
+    const V = z.enVuelo; V.t += dt;
+    const f = Math.min(1, V.t / V.dur), lado = V.x1 < V.x0 ? -1 : 1;
+    z.x = V.x0 + (V.x1 - V.x0) * f; z.y = z.ySuelo = V.y0 + (V.y1 - V.y0) * f; z.altura = Math.sin(f * Math.PI) * V.alto; z.giro = f * Math.PI * 2 * lado; z.direccion = lado;
+    if (f < 1) return;
+    z.enVuelo = null; z.vuela = false; z.altura = 0; z.giro = 0; z.aturdidoHasta = this.ahora + 700;
+    z.presa = V.presa && !V.presa.quitada ? V.presa : null; z.miraEn = 0;
+    this.salpicar(z.x, z.y - 3, '#a89a7c', 8, 3, z.y); Audio_.cuerpoAnimalCae(1, 0.8);
+    z.recibirDano(z.vidaMax * 0.2, 0, ARMA_ALAMBRE, this);
+  };
+  // El topo sale a la superficie: tarda `seg` en terminar de salir (a tiro de todos); encandilado, además avisa
+  P.salirV2 = function (z, seg, encandilado) {
+    z.enterrado = false; z.modoTopo = 'sale'; z.saliendo = z.saleEn = seg;
+    this.salpicar(z.x, z.y - 4, '#6a5338', 14, 4, z.y); Audio_.aterrizar('tierra');
+    if (encandilado) { z.alerta = 0; z.descubierto = this.ahora + seg * 1000; }
   };
 
   // Volar: derecho hacia (tx, ty), con la altura que toque
@@ -18907,6 +19700,8 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (z.estado === 'muerto') { if (z.muerte) z.moverCadaver(dt, this); else z.tiempoMuerto += dt; continue; }
       if (z.cabezaAtras < 0) z.cabezaAtras = Math.min(0, z.cabezaAtras + dt * 1.4);
       if (z.levanta > 0) { z.levanta -= dt; z.estado = 'camina'; z.fase += dt * 2; continue; }   // recién contagiado: se incorpora
+      if (z.enVuelo) { this.volandoV2(z, dt); continue; }                                        // arrojado por un lanzador
+      if (ahora < (z.aturdidoHasta || 0)) { z.estado = 'quieto'; continue; }                     // recién cayó: se levanta
       const Z = Zs[z.tipoBastion] || Zs.caminante;
       CONDUCTAS[Z.conducta].call(this, z, Z, dt, K);
       if (z.estado === 'muerto') continue;
@@ -19045,11 +19840,12 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (z.blindaje && z.estado !== 'muerto') this.reboteV2(z, pega, dir);
       if (Math.random() < (tipo === 'torreta' ? 0.35 : 0.8)) Audio_.disparo(tipo === 'torreta' ? 'ametralladora' : 'rifle', tipo === 'torreta' ? 'm2' : 'm16');
     } else if (U.arma === 'pesada') {
-      z.recibirDano(U.dano, dir, ARMA_PESADA, this);
+      const erra = Math.random() < (BASTION2.zombies[z.tipoBastion].esquiva || 0);   // el rabioso zigzaguea: los tiros lentos le pasan al lado
+      if (erra) { pega.x += dir * 14; pega.y += 10; this.salpicar(pega.x, z.y - 2, '#a89a7c', 4, 2, z.y); } else z.recibirDano(U.dano, dir, ARMA_PESADA, this);
       this.rayosV2.push({ x0: sale.x, y0: sale.y, x1: pega.x, y1: pega.y, b0: u.y, b1: z.y, t: 0.3, dura: 0.3, grueso: tipo === 'tanque' ? 2.6 : 1.3 });
       if (tipo === 'tanque') {
         u.retroceso = 1; this.sacudida = Math.max(this.sacudida, 3);
-        this.explosiones.push(new Explosion(z.x, z.y - 12, 14)); this.explosiones.push(new Fogonazo(sale.x, sale.y, 1, 14, 'fuego'));
+        this.explosiones.push(new Explosion(pega.x, z.y - 12, 14)); this.explosiones.push(new Fogonazo(sale.x, sale.y, 1, 14, 'fuego'));
         Audio_.disparo('bazuca', 'tanque');
       } else Audio_.disparo('rifle', 'barrett');
     } else if (U.arma === 'explosivo') {
@@ -19150,7 +19946,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (distPlano(u.x, u.y, e.x, e.y) > e.radio + (u.bloquea ? 14 : 0)) continue;
       this.herirUnidadV2(u, esInf(u) ? e.gente : e.unidades, 'explosion');
     }
-    for (const z of this.zombies) if (z !== e.de && z.estado !== 'muerto' && !z.vuela && distPlano(z.x, z.y, e.x, e.y) <= e.radio) z.recibirDano(e.zombies * base, z.x >= e.x ? 1 : -1, ARMA_EXPLOSION, this);
+    for (const z of this.zombies) if (z !== e.de && z.estado !== 'muerto' && !z.vuela && !z.enterrado && distPlano(z.x, z.y, e.x, e.y) <= e.radio) z.recibirDano(e.zombies * base, z.x >= e.x ? 1 : -1, ARMA_EXPLOSION, this);
   };
   P.efectosV2 = function (dt) {
     const ahora = this.ahora, K = this.K2 || this.contextoV2();
@@ -19163,7 +19959,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       g.fin = true;
       this.explosiones.push(new Explosion(g.x, g.y - 6, g.radio * 0.8)); this.sacudida = Math.max(this.sacudida, 4); Audio_.explosion();
       for (let k = 0; k < 8; k++) this.particulas.push(new Particula(g.x + (Math.random() - 0.5) * g.radio, g.y - 2, (Math.random() - 0.5) * 4, -Math.random() * 3.5, '#6a5a44', 0.4 + Math.random() * 0.4, 2 + Math.random() * 2.5, true, g.y));
-      for (const z of this.zombies) if (z.estado !== 'muerto' && !z.vuela && distPlano(z.x, z.y, g.x, g.y) <= g.radio) z.recibirDano(g.dano, z.x >= g.x ? 1 : -1, ARMA_EXPLOSION, this);
+      for (const z of this.zombies) if (z.estado !== 'muerto' && !z.vuela && !z.enterrado && distPlano(z.x, z.y, g.x, g.y) <= g.radio) z.recibirDano(g.dano, z.x >= g.x ? 1 : -1, ARMA_EXPLOSION, this);
     }
     this.granadasV2 = this.granadasV2.filter(g => !g.fin);
     // Gas del tóxico: daña a la infantería (también vacía de a uno los búnkeres); el fuego lo enciende
@@ -19188,6 +19984,33 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       }
     }
     this.nubesV2 = this.nubesV2.filter(n => n.t < n.dura);
+    // Lo que arroja la horda: cascotes del lanzador, fardos del Coloso y escupitajos, que dejan un charco de ácido
+    for (const p of this.arrojadosV2) {
+      p.t += dt;
+      if (p.t < p.dur) continue;
+      p.fin = true;
+      const acido = p.tipo === 'escupitajo';
+      if (acido) { this.charcosV2.push({ x: p.x, y: p.y, radio: p.radio, t: 0, dura: p.dura, gente: p.gente, cosas: p.cosas }); this.salpicar(p.x, p.y - 4, '#b6e04a', 10, 3, p.y); Audio_.salpicaduraToxica(0.6); }
+      else {
+        this.sacudida = Math.max(this.sacudida, p.tipo === 'fardo' ? 5 : 3); Audio_.cuerpoAnimalCae(p.tipo === 'fardo' ? 2.2 : 1.4, 1);
+        for (let k = 0; k < 10; k++) this.particulas.push(new Particula(p.x + (Math.random() - 0.5) * p.radio, p.y - 3, (Math.random() - 0.5) * 4, -Math.random() * 3, p.tipo === 'fardo' ? '#d9b65a' : '#8a8478', 0.4 + Math.random() * 0.4, 2 + Math.random() * 2.5, true, p.y));
+      }
+      for (const u of [...this.unidades]) {
+        if (u.invisible || u.llevado || u.quitada || !U_(u.tipo)) continue;
+        if (distPlano(u.x, u.y, p.x, p.y) > p.radio + (u.bloquea ? 14 : 0)) continue;
+        this.herirUnidadV2(u, acido ? p.golpe : esInf(u) ? p.gente : p.unidades, acido ? 'acido' : 'golpe');
+      }
+    }
+    this.arrojadosV2 = this.arrojadosV2.filter(p => !p.fin);
+    for (const c of this.charcosV2) {
+      c.t += dt;
+      for (const u of [...this.unidades]) {
+        if (u.invisible || u.llevado || u.quitada || !U_(u.tipo)) continue;
+        if (distPlano(u.x, u.y, c.x, c.y) > c.radio + (u.bloquea ? 14 : 0)) continue;
+        this.herirUnidadV2(u, (esInf(u) ? c.gente : c.cosas) * dt, 'acido');
+      }
+    }
+    this.charcosV2 = this.charcosV2.filter(c => c.t < c.dura);
     // Explosiones en cola; lo que maten y estalle se encadena (hasta cuatro vueltas por cuadro)
     for (let vuelta = 0; this.pendientesV2.length && vuelta < 4; vuelta++) { const lista = this.pendientesV2; this.pendientesV2 = []; for (const e of lista) this.explotarV2(e); }
     for (const lista of [this.rayosV2, this.flakV2, this.ondasV2]) for (const x of lista) x.t += lista === this.rayosV2 ? -dt : dt;
@@ -19202,8 +20025,10 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
  * la pose quieta guardada como imagen): francotirador, lanzallamas, médico, mortero, antiaérea, alambrado, señuelo y
  * el soldado caído. Zombies: lo que se le suma al zombie de siempre (js/zombie.js) para el acorazado (casco con visor
  * y escudo), el gritón (megáfono), el hinchado (panza con pústulas) y el dinamitero (cartuchos a la espalda con la
- * mecha prendida), y las aves, que son nuevas: cuervo y buitre. Al final, lo que se pinta sobre la escena en cada
- * cuadro: fuego, gas, granadas, estelas, gritos, avisos, anillos y cursores.
+ * mecha prendida), el topo (casco de minero con su lámpara; enterrado es un montículo que avanza) y el escupidor (el
+ * buche lleno de ácido), y las aves, que son nuevas: cuervo y buitre. La torre de vigía. Al final, lo que se pinta
+ * sobre la escena en cada cuadro: fuego, gas, ácido, granadas, lo que arroja la horda, estelas, gritos, avisos,
+ * anillos y cursores.
  */
 /* ---------- Infantería: el mismo cuerpo, con el equipo de cada oficio ---------- */
 const TRAJES_BASTION = {
@@ -19528,6 +20353,48 @@ Object.assign(DibujoBastion, {
     ctx.restore();
   },
 
+  /* Torre de vigía: cuatro patas de madera con crucetas, la plataforma con baranda y techo de chapa, y el reflector
+   * que barre el piso buscando la tierra removida. No tiene gente ni armas: sólo descubre a los topos */
+  vigia(ctx, u, t) {
+    const roto = 1 - (u.vida ?? 1) / (u.vidaMax ?? 1) > 0.45, ms = t || 0;
+    if (!Pincel.silueta && u.listo !== false) {   // el haz, sobre el piso, detrás de la torre
+      const R = BASTION2.unidades.vigia.detecta * BASTION2.celda, a = ms / 900;
+      ctx.save(); ctx.scale(1, 1 / 1.3); ctx.rotate(a);
+      const g = ctx.createRadialGradient(0, 0, 8, 0, 0, R); g.addColorStop(0, 'rgba(255,244,190,0.26)'); g.addColorStop(1, 'rgba(255,244,190,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, -0.2, 0.2); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+    conSprite(ctx, 'vi' + (roto ? 'r' : ''), [-22, -60, 24, 8], g => DibujoBastion.vigiaCuerpo(g, roto));
+    if (Pincel.silueta) return;
+    const a = ms / 900, lx = 1 + Math.cos(a) * 3.2;   // el reflector gira
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const h = ctx.createRadialGradient(lx, -37, 0, lx, -37, 7); h.addColorStop(0, `rgba(255,246,200,${0.5 + 0.4 * Math.max(0, Math.sin(a))})`); h.addColorStop(1, 'rgba(255,230,150,0)');
+    ctx.fillStyle = h; ctx.beginPath(); ctx.arc(lx, -37, 7, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  },
+  vigiaCuerpo(ctx, roto) {
+    const P = PAL_BASTION, madera = '#6b4b2a', clara = '#8a6638';
+    sombraPiso(ctx, 17, 5, 0.3, 4, 1);
+    // Patas de atrás y crucetas
+    for (const x of [-7.5, 7.5]) pb(ctx, tramo(x, -5, x * 0.8, -31, 2.2, 2), ajustarColor(madera, -0.2), { sombra: 0.4, linea: 0.4 });
+    if (!Pincel.silueta) { linea(ctx, ajustarColor(madera, -0.3), 0.9, [[-7.5, -7], [6, -29]]); linea(ctx, ajustarColor(madera, -0.3), 0.9, [[7.5, -7], [-6, -29]]); }
+    // Patas de adelante
+    for (const x of [-10, 10]) pb(ctx, tramo(x, 1, x * 0.82, -31, 2.8, 2.4), madera, { sombra: 0.4, linea: 0.45, brillo: 0.2 });
+    if (!Pincel.silueta) { linea(ctx, clara, 1, [[-10, -2], [8.4, -15]]); linea(ctx, clara, 1, [[10, -2], [-8.4, -15]]); linea(ctx, clara, 1, [[-9, -16], [8, -29]]); linea(ctx, clara, 1, [[9, -16], [-8, -29]]); }
+    // Escalera de mano
+    if (!Pincel.silueta) { linea(ctx, '#3d2c18', 0.7, [[12.4, 1], [10.4, -30]]); linea(ctx, '#3d2c18', 0.7, [[15, 1], [13, -30]]); for (let k = 0; k < 7; k++) linea(ctx, '#3d2c18', 0.6, [[12.3 - k * 0.3, -3 - k * 4.2], [14.9 - k * 0.3, -3 - k * 4.2]]); }
+    // Plataforma, baranda y techo
+    caja34(ctx, -11.5, 11.5, -29, 5.6, 2.6, ajustarColor(madera, -0.1), clara);
+    if (!Pincel.silueta) for (const x of [-11, -3.6, 3.6, 11]) linea(ctx, madera, 0.9, [[x, -31.6], [x, -39.4]]);
+    pb(ctx, rr(-11.8, -40.6, 23.6, 1.6, 0.5), madera, { sombra: 0.3, linea: 0.35, brillo: 0.2 });
+    // Reflector sobre su horquilla
+    pb(ctx, rr(-0.6, -36, 1.6, 4.6, 0.4), P.aceroOsc, { sombra: 0.2, linea: 0.3, brillo: false });
+    pb(ctx, c => c.ellipse(1, -37, 3.6, 3, 0, 0, Math.PI * 2), '#4a4d52', { sombra: 0.4, brillo: 0.4, linea: 0.4 });
+    if (!Pincel.silueta) detalle(ctx, roto ? '#55504a' : '#fff3c4', circulo(1.6, -37, 1.9));
+    for (const x of [-10.6, 10.6]) pb(ctx, tramo(x, -40, x, -47.4, 1.5, 1.5), madera, { sombra: 0.3, linea: 0.35 });
+    pb(ctx, c => { c.moveTo(-14.4, -46.4); c.lineTo(14.4, -46.4); c.lineTo(11.4, -52.6); c.lineTo(-11.4, -52.6); c.closePath(); }, '#7d8388', { sombra: 0.5, brillo: 0.35 });
+    if (!Pincel.silueta) { for (let x = -10; x <= 10; x += 4) linea(ctx, 'rgba(40,44,48,0.4)', 0.4, [[x * 1.18, -46.6], [x * 0.98, -52.4]]); linea(ctx, '#2a2b2c', 0.6, [[9, -52.6], [9, -58.6]]); detalle(ctx, '#d84a3a', circulo(9, -58.6, 0.8)); }
+    if (roto && !Pincel.silueta) { linea(ctx, '#2a2018', 0.7, [[-9.4, -20], [-6, -17], [-9, -13]]); detalle(ctx, 'rgba(20,16,12,0.5)', poli([[4, -52.6], [9, -52.6], [7.6, -48.6], [3, -49.6]])); }
+  },
+
   /* Soldado caído: tendido boca arriba en su charco, con el resplandor del contagio que late cada vez más fuerte y
    * el reloj que se va llenando; cuando se completa, se levanta en contra */
   caido(ctx, u, t) {
@@ -19586,12 +20453,23 @@ Object.assign(DibujoBastion, {
       pieza(ctx, k => { k.ellipse(20.8, hy + 11.2, 1.7, 7.3, 0.06, 0, Math.PI * 2); }, c('#ece8dc'), 19, 22.6);
       pieza(ctx, redondo(11, hy + 14.2, 2.6, 5.4, 1), c('#2a2b2e'), 11, 13.6);
       if (!Pincel.silueta && !golpeado) { detalle(ctx, '#26221e', elipse(20.9, hy + 11.2, 0.9, 5.4, 0.06)); linea(ctx, 'rgba(255,240,230,0.5)', 0.5, [[10.4, hy + 10], [18.6, hy + 6.2]]); }
+    } else if (est.accesorio === 'casco-minero') {   // casco de minero abollado, con la lámpara prendida al frente
+      pieza(ctx, k => { k.moveTo(-9.4, hy + 3.4); k.quadraticCurveTo(-9.6, hy - 7.2, 1, hy - 7.4); k.quadraticCurveTo(10.6, hy - 7, 10.8, hy + 3); }, c('#c9742a'), -9.6, 10.8);
+      pieza(ctx, redondo(-10.4, hy + 1.8, 23, 1.9, 0.8), c('#a85c1c'), -10.4, 12.6);
+      pieza(ctx, redondo(7.4, hy - 4.6, 4.2, 4, 1), c('#3a3c40'), 7.4, 11.6);
+      if (!Pincel.silueta && !golpeado) {
+        linea(ctx, 'rgba(60,30,10,0.5)', 0.5, [[-5, hy - 4], [-1, hy - 6.4], [3, hy - 5]]);
+        detalle(ctx, '#fff3b0', circulo(10.4, hy - 2.6, 1.5));
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(11, hy - 2.6, 0, 11, hy - 2.6, 9); g.addColorStop(0, 'rgba(255,240,170,0.55)'); g.addColorStop(1, 'rgba(255,220,120,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(11, hy - 2.6, 9, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
     } else accesorioV1.call(this, ctx, est, golpeado);
   };
   Zombie.prototype.cuerpo = function (ctx, golpeado) {
     cuerpoV1.call(this, ctx, golpeado);
     const est = this.estilo;
-    if (!est || !(est.escudo || est.hinchado || est.dinamita)) return;
+    if (!est || !(est.escudo || est.hinchado || est.dinamita || est.buche)) return;
     // Lo de arriba va inclinado igual que el torso
     const camina = this.estado === 'camina', s = camina ? Math.sin(this.fase) : 0;
     const col = c => golpeado ? ajustarColor(c, 0.7) : c, ms = this.ahora || 0;
@@ -19629,6 +20507,18 @@ Object.assign(DibujoBastion, {
         for (const p of P) { detalle(ctx, '#e6ef7a', circulo(p.x, p.y + 6, p.r)); detalle(ctx, 'rgba(255,255,230,0.8)', circulo(p.x - p.r * 0.3, p.y + 6 - p.r * 0.3, p.r * 0.35)); }
       }
     }
+    if (est.buche) {   // el buche del escupidor: una bolsa de ácido bajo la mandíbula, que se hincha antes de escupir
+      const lleno = 1 + 0.3 * (this.bocaAbierta || 0) + 0.06 * Math.sin(ms / 240);
+      pieza(ctx, elipse(7.6, -57.4, 5.2 * lleno, 4.6 * lleno), col('#d9912a'), 2, 13.4);
+      if (!Pincel.silueta && !golpeado) {
+        detalle(ctx, 'rgba(255,236,150,0.75)', elipse(6.4, -58.6, 2 * lleno, 1.5 * lleno));
+        linea(ctx, 'rgba(110,60,10,0.6)', 0.5, [[4, -55.4], [7.6, -53.4], [11.4, -55.6]]);
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(7.6, -57.4, 0, 7.6, -57.4, 11 * lleno); g.addColorStop(0, `rgba(255,190,70,${0.3 + 0.3 * (this.bocaAbierta || 0)})`); g.addColorStop(1, 'rgba(255,150,40,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(7.6, -57.4, 11 * lleno, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        detalle(ctx, 'rgba(200,230,70,0.85)', elipse(11.4, -66, 1, 2.2, 0.3));   // la baba ácida
+      }
+    }
     if (est.escudo) {   // hombrera y escudo antidisturbios, con la ventana y las abolladuras
       pieza(ctx, elipse(6.6, -56.4, 6.2, 4.4), col('#1b2030'), 0.4, 12.8);
       pieza(ctx, k => { k.moveTo(13.4, -62); k.quadraticCurveTo(22.6, -63, 23.4, -58); k.lineTo(24.4, -27); k.quadraticCurveTo(19.4, -22.6, 14, -25.4); k.closePath(); }, col('#262d40'), 13.4, 24.4);
@@ -19646,6 +20536,33 @@ Object.assign(DibujoBastion, {
     ctx.restore();
   };
 })();
+
+/* ---------- El topo: bajo tierra sólo se ve la tierra que remueve; al salir asoma de a poco por el pozo ---------- */
+function dibujarTopo(ctx, camaraX, ahora) {
+  if (this.estado === 'muerto' || (!this.enterrado && !(this.saliendo > 0))) return Zombie.prototype.dibujar.call(this, ctx, camaraX, ahora);
+  const x = this.x - camaraX, y = this.y;
+  ctx.save(); ctx.translate(x, y);
+  // Montículo y grietas (tenue mientras avanza enterrado: se nota si uno mira)
+  const fuerza = this.enterrado ? 0.62 : 1;
+  ctx.globalAlpha = fuerza;
+  ctx.fillStyle = 'rgba(40,28,16,0.55)'; ctx.beginPath(); ctx.ellipse(0, 1, 13, 4.4, 0, 0, Math.PI * 2); ctx.fill();
+  for (const [dx, dy, r, col] of [[-6, -1.4, 5.4, '#6a5338'], [5, -1, 4.8, '#5c482f'], [0, -3, 6.4, '#7a6142'], [-2, 0.6, 4, '#5c482f']]) {
+    const bx = dx + Math.sin(ahora / 130 + dx) * (this.enterrado ? 1.2 : 0.3);
+    ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(bx, dy, r, r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(30,20,10,0.6)'; ctx.lineWidth = 0.7; ctx.beginPath();
+  for (const a of [0.3, 1.5, 2.6, 3.9, 5.2]) { ctx.moveTo(Math.cos(a) * 9, Math.sin(a) * 3); ctx.lineTo(Math.cos(a) * 15, Math.sin(a) * 5.2); }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  if (this.enterrado) return;
+  // Saliendo: el cuerpo sube recortado por el borde del pozo
+  const f = 1 - this.saliendo / (this.saleEn || 1), alto = 92 * this.escala;
+  ctx.save(); ctx.beginPath(); ctx.rect(x - 60, y - alto - 40, 120, alto + 40); ctx.clip();
+  ctx.translate(0, alto * (1 - f) * 0.92);
+  Zombie.prototype.dibujar.call(this, ctx, camaraX, ahora);
+  ctx.restore();
+}
 
 /* ---------- Aves: cuervo y buitre, de perfil, aleteando; mueren cayendo del cielo ---------- */
 const AVES_BASTION = { cuervo: { ancho: 22, alto: 14 }, buitre: { ancho: 40, alto: 24 } };
@@ -19741,7 +20658,7 @@ class AveBastion extends Zombie {
 const BastionV2Dibujo = {
   // Caja de cada unidad para retratarla: [x0, y0, x1, y1] alrededor de sus pies
   CAJAS: { soldado: [-13, -43, 27, 4], francotirador: [-15, -40, 33, 6], lanzallamas: [-15, -44, 30, 4], medico: [-13, -43, 22, 4], torreta: [-27, -39, 37, 8], tanque: [-30, -52, 58, 8],
-    mortero: [-27, -42, 30, 8], antiaerea: [-30, -56, 30, 8], muro: [-26, -35, 31, 8], alambrado: [-25, -21, 26, 8], bunker: [-29, -57, 35, 8], senuelo: [-22, -46, 26, 8] },
+    mortero: [-27, -42, 30, 8], antiaerea: [-30, -56, 30, 8], muro: [-26, -35, 31, 8], alambrado: [-25, -21, 26, 8], bunker: [-29, -57, 35, 8], senuelo: [-22, -46, 26, 8], vigia: [-24, -60, 26, 8] },
   posar(g, tipo) {
     if (tipo === 'soldado') DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0);
     else if (TRAJES_BASTION[tipo]) infanteCuerpo(g, tipo, { apunta: 0 });
@@ -19749,6 +20666,7 @@ const BastionV2Dibujo = {
     else if (tipo === 'senuelo') DibujoBastion.senueloCuerpo(g, false);
     else if (tipo === 'antiaerea') DibujoBastion.antiaereaCuerpo(g, { apunta: -0.8, rumbo: 1, vida: 1, vidaMax: 1 });
     else if (tipo === 'mortero') DibujoBastion.morteroCuerpo(g, { retroceso: 0, vida: 1, vidaMax: 1 });
+    else if (tipo === 'vigia') DibujoBastion.vigiaCuerpo(g, false);
     else DibujoBastion[tipo + 'Cuerpo'](g, { adentro: 2, vida: 1, vidaMax: 1, apunta: 0 }, 0);
   },
   // Chorro del lanzallamas: lenguas que crecen desde la boquilla hasta donde llega, en la dirección en que tira
@@ -19797,6 +20715,13 @@ const BastionV2Dibujo = {
       }
       anillo(n.x, n.y, n.radio, `rgba(195,255,95,${0.55 * a})`, [3, 4]);
     }
+    // Charcos de ácido del escupidor: una mancha que burbujea y se va apagando
+    for (const c of j.charcosV2) {
+      const a = Math.min(1, c.t * 4) * (1 - Math.max(0, c.t / c.dura - 0.7) / 0.3), P = cam.proyectar(c.x, c.y), rx = c.radio * P.s, ry = rx / 1.3 * 0.62;
+      const g = ctx.createRadialGradient(P.x, P.y, 0, P.x, P.y, rx); g.addColorStop(0, `rgba(215,235,70,${0.6 * a})`); g.addColorStop(0.7, `rgba(150,200,40,${0.45 * a})`); g.addColorStop(1, 'rgba(120,170,30,0)');
+      ctx.save(); ctx.translate(P.x, P.y); ctx.scale(1, ry / rx); ctx.translate(-P.x, -P.y); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(P.x, P.y, rx, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      for (let k = 0; k < 4; k++) { const f = ((ahora / 500 + k * 0.27 + c.x * 0.01) % 1), bx = P.x + (azar(k, 21) - 0.5) * rx * 1.3, by = P.y + (azar(k, 22) - 0.5) * ry * 1.2 - f * 5 * P.s; ctx.fillStyle = `rgba(235,250,150,${0.7 * a * (1 - f)})`; ctx.beginPath(); ctx.arc(bx, by, (1 + f * 1.6) * P.s, 0, Math.PI * 2); ctx.fill(); }
+    }
     // Lo prendido fuego y los chorros de los lanzallamas
     for (const z of j.zombies) if (z.estado !== 'muerto' && z.quemaHasta > ahora) enCamara(ctx, cam, z.x, z.y, g => Fuego.cuerpo(g, 0, z, ahora));
     for (const u of j.unidades) if (u.llama > 0.05 && !u.quitada) this.chorro(ctx, cam, u, ahora);
@@ -19810,6 +20735,28 @@ const BastionV2Dibujo = {
       ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(Math.atan2(P2.y - P.y, P2.x - P.x));
       ctx.fillStyle = '#3d4138'; ctx.beginPath(); ctx.ellipse(0, 0, 3.6 * P.s, 1.5 * P.s, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#c9a03a'; ctx.fillRect(-3.8 * P.s, -1.5 * P.s, 1.2 * P.s, 3 * P.s);
+      ctx.restore();
+    }
+    // Lo que arroja la horda, en su arco: escupitajos, cascotes del lanzador y fardos del Coloso; y dónde va a caer
+    for (const p of j.arrojadosV2) {
+      const f = Math.min(1, p.t / p.dur), x = p.x0 + (p.x - p.x0) * f, piso = p.y0 + (p.y - p.y0) * f, alto = (p.alto0 || 0) * (1 - f) + Math.sin(f * Math.PI) * (p.alto || 60);
+      const acido = p.tipo === 'escupitajo';
+      anillo(p.x, p.y, p.radio, acido ? `rgba(200,240,90,${0.25 + 0.45 * f})` : `rgba(255,170,90,${0.25 + 0.45 * f})`, [3, 4], 1.1);
+      const S = cam.proyectar(x, piso), P = cam.proyectar(x, piso, alto);
+      ctx.fillStyle = 'rgba(10,8,6,0.28)'; ctx.beginPath(); ctx.ellipse(S.x, S.y, (acido ? 3 : p.tipo === 'fardo' ? 8 : 5) * S.s, (acido ? 1.2 : 2.4) * S.s, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(f * (acido ? 2 : 7) * (p.x < p.x0 ? -1 : 1)); ctx.scale(P.s, P.s);
+      if (acido) {
+        ctx.fillStyle = 'rgba(190,230,60,0.95)'; ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(240,255,170,0.9)'; ctx.beginPath(); ctx.arc(-1, -0.8, 1.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(190,230,60,0.5)'; ctx.beginPath(); ctx.arc(5, 1.4, 1.6, 0, Math.PI * 2); ctx.arc(8, 2.4, 1, 0, Math.PI * 2); ctx.fill();
+      } else if (p.tipo === 'fardo') {   // fardo de pasto atado
+        ctx.fillStyle = '#c9a646'; ctx.strokeStyle = '#6b5420'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.roundRect(-9, -6, 18, 12, 3); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#8a6c28'; ctx.lineWidth = 0.6; ctx.beginPath(); for (const xx of [-5, 0, 5]) { ctx.moveTo(xx, -6); ctx.lineTo(xx, 6); } ctx.stroke();
+        ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-9, -2); ctx.lineTo(9, -2); ctx.moveTo(-9, 2.4); ctx.lineTo(9, 2.4); ctx.stroke();
+      } else {   // cascote
+        ctx.fillStyle = '#8a8478'; ctx.strokeStyle = '#3a362e'; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-5, -2); ctx.lineTo(-1.6, -5); ctx.lineTo(4, -3.6); ctx.lineTo(5.4, 1); ctx.lineTo(1.6, 4.6); ctx.lineTo(-4, 3.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,250,235,0.3)'; ctx.beginPath(); ctx.moveTo(-3.4, -2.2); ctx.lineTo(-1, -4); ctx.lineTo(2, -3); ctx.lineTo(-1, -1); ctx.closePath(); ctx.fill();
+      }
       ctx.restore();
     }
     // Estelas del francotirador y del cañón
@@ -19835,6 +20782,13 @@ const BastionV2Dibujo = {
       if (z.alerta > ahora && z.presa) {
         const P = cam.proyectar(z.x, z.y), y = P.y - ((z.barraAlto ?? 88 * z.escala) + 12) * P.s;
         ctx.globalAlpha = Math.min(1, (z.alerta - ahora) / 300); cartel('!', P.x, y, '#ffd23a', 14); ctx.globalAlpha = 1;
+      }
+      if (z.tipoBastion === 'rabioso' && z.estado === 'camina') {   // las rayas de la velocidad
+        const P = cam.proyectar(z.x, z.y); ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1;
+        ctx.beginPath(); for (const h of [14, 22, 30]) { const yy = P.y - h * z.escala * P.s * 1.6; ctx.moveTo(P.x + 7 * P.s, yy); ctx.lineTo(P.x + (16 + (h % 9)) * P.s, yy); } ctx.stroke();
+      }
+      if (z.descubierto > ahora) {   // el topo que descubrieron la torre de vigía o el tanque
+        const P = cam.proyectar(z.x, z.y); ctx.globalAlpha = 0.6 + 0.4 * Math.sin(ahora / 80); cartel('!', P.x, P.y - 34 * P.s, '#fff3b0', 15); ctx.globalAlpha = 1;
       }
       if (z.modo === 'aviso' || z.modo === 'carga') {
         const L = BASTION2.zombies.toro.embestida.largo * CELDA, x0 = z.modo === 'carga' ? z.cargaX0 : z.x, y0 = z.modo === 'carga' ? z.cargaY0 : z.y;
@@ -19879,6 +20833,7 @@ const BastionV2Dibujo = {
         if (U.minimo) anillo(p.x, p.y, U.minimo, 'rgba(255,190,90,0.75)', [3, 3]);          // el mortero no tira más cerca que esto
         if (U.cura) anillo(p.x, p.y, U.radio, 'rgba(140,255,150,0.7)', [5, 4]);              // hasta dónde cura el médico
         if (U.atrae) anillo(p.x, p.y, U.atrae * CELDA, 'rgba(255,230,170,0.6)', [5, 5]);     // hasta dónde llama el señuelo
+        if (U.detecta) anillo(p.x, p.y, U.detecta * CELDA, 'rgba(255,244,190,0.75)', [6, 4]);  // hasta dónde descubre la torre de vigía
       }
     }
     // Mover: a quién se eligió y si puede ir adonde está el puntero
@@ -19909,7 +20864,7 @@ const BastionV2Dibujo = {
  * renglón arriba de la barra. La guía completa (qué hace cada uno, fuerte, débil, cómo usarlo) es la pantalla previa.
  */
 const BastionV2UI = {
-  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, zombieVisto: '', zombieHasta: 0, colocandoVisto: null,
+  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null,
   // Un zombie de cada tipo para retratarlo (quieto, mirando hacia el campamento)
   zombieDeMuestra(id) {
     const P = Juego.prototype, falso = { dificultad: DIFICULTADES.medio, ronda: 1, nivelV2: { vida: 1 }, ahora: 0, vidaComunV2: P.vidaComunV2, vestirZombieV2: P.vestirZombieV2 };
@@ -19973,7 +20928,7 @@ const BastionV2UI = {
   pintar(elegida) {
     const tecla = (clave, precio) => `<button type="button" class="b2-ficha" data-ficha="${clave}"><img src="${this.retrato(clave, 56)}" alt=""><b>${t('b2.' + clave.replace(':', '.'))}</b>${precio ? `<small>${precio}</small>` : ''}</button>`;
     const fila = (clase, claves, precios) => `<div class="b2-fila"><h4>${t('b2.clase.' + clase)}</h4><div class="b2-fichas">${claves.map(k => tecla(k, precios ? '$' + BASTION2.unidades[k.slice(2)].costo : '')).join('')}</div></div>`;
-    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie', 'jefe'] : [])].map(k => 'z:' + k))).join('');
+    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani', 'ace'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie', 'jefe'] : [])].map(k => 'z:' + k))).join('');
     document.getElementById('b2-unidades').innerHTML = ['inf', 'mec', 'est'].map(c => fila(c, BASTION2.clases[c].map(k => 'u:' + k), true)).join('');
     const guardada = BastionV2.partida(), seguir = document.getElementById('b2-continuar');
     seguir.classList.toggle('oculta', !guardada);
@@ -20035,6 +20990,7 @@ const BastionV2UI = {
     if (!el || !info || !barra) return;
     const total = j.nivelV2.oleadas.length, n = j.enDescanso ? j.ronda : j.ronda - 1, ver = n < total && n >= 0 && !j.terminado;
     el.classList.toggle('oculta', !ver); el.classList.toggle('en-curso', !j.enDescanso);
+    el.classList.toggle('muchos', ver && Object.keys(j.nivelV2.oleadas[n]).length > 11);   // con muchos tipos, más chicos para que entren en el celular
     const clave = ver ? n + ':' + j.enDescanso + ':' + Idioma.actual() : '';
     const def = ver ? j.nivelV2.oleadas[n] : {}, debut = BastionV2.debut();
     let rehecho = false;
@@ -20046,10 +21002,10 @@ const BastionV2UI = {
       }).join('') : '';
     }
     // El tipo que debuta se presenta solo, una vez, al empezar el descanso
-    const estrena = ver && j.enDescanso && n > 0 ? BASTION2.ordenParte.find(k => def[k] && debut[k] === n) : null;
-    if (estrena && this.debutVisto !== n) { this.debutVisto = n; this.verZombie(estrena, 12000); }
+    if (ver && j.enDescanso && n > 0 && this.debutVisto !== n) { this.debutVisto = n; this.debutCola = BASTION2.ordenParte.filter(k => def[k] && debut[k] === n); }
+    if (this.debutCola.length && !this.zombieVisto && ver && j.enDescanso) this.verZombie(this.debutCola.shift(), 8000);   // de a uno, si son dos
     // Elegir otra cosa en la barra deja de mostrar al zombie que se había tocado
-    if (j.colocando !== this.colocandoVisto) { this.colocandoVisto = j.colocando; if (j.colocando) this.verZombie(null); }
+    if (j.colocando !== this.colocandoVisto) { this.colocandoVisto = j.colocando; if (j.colocando) { this.verZombie(null); this.debutCola = []; } }
     if (this.zombieVisto && (performance.now() > this.zombieHasta || j.terminado)) this.verZombie(null);
     const unidad = BASTION2.unidades[j.colocando] ? j.colocando : '', zombie = this.zombieVisto;
     // Renglón de arriba de la barra: el zombie que se tocó (o que debuta) o, si no, lo que se está por poner
@@ -20093,13 +21049,14 @@ const FICHAS_B2 = {
       lanzallamas: ['Lanzallamas', 'Quema a todos los que tiene a 2 celdas y los deja ardiendo.', 'Pega a todo el montón a la vez y el fuego ignora el blindaje. Perros y toro no cruzan el fuego.', 'Siempre está a la vista. No llega a lo que vuela. Hace estallar en su cara al hinchado y al dinamitero, y enciende el gas.', 'En el hueco por donde pasa la horda, detrás de un muro o de alambrado.'],
       medico: ['Médico', 'Cura a la infantería que tiene a 2 celdas. No dispara.', 'Quien cae a su lado no se contagia. Con él cerca, el gas no vacía los búnkeres.', 'No hace daño y es presa como cualquiera. No arregla máquinas ni estructuras.', 'Pegado a tu gente o dentro de un búnker, del lado del campamento.'],
       torreta: ['Torreta', 'Barre con ráfagas de ametralladora.', 'Mucho fuego: nada rápido se le escapa. Acaba con jaurías, corredores y dinamiteros.', 'Balas chicas: contra blindaje rinde la mitad. No apunta al aire. Atrae a la horda y no se mueve.', 'Detrás de alambrado o de un muro, apuntando al hueco.'],
-      tanque: ['Tanque', 'Aguanta al frente y voltea a los pesados con su cañón.', 'Tiene 400 de vida y las mordidas le hacen un tercio. Su cañón ignora el blindaje y busca al que más aguanta. El gas no le entra. Se puede mover.', 'Un solo blanco por disparo: no para una horda ni una jauría. Lo buscan el hinchado y el dinamitero. Nada contra lo que vuela. Caro.', 'De ancla al frente: la horda se frena contra él mientras lo demás dispara.'],
+      tanque: ['Tanque', 'Aguanta al frente y voltea a los pesados con su cañón.', 'Tiene 400 de vida y las mordidas le hacen un tercio. Su cañón ignora el blindaje y busca al que más aguanta. El gas no le entra. Se puede mover. Por su peso, ningún topo pasa por debajo a 2 celdas.', 'Un solo blanco por disparo: no para una horda ni una jauría. Lo buscan el hinchado y el dinamitero. Nada contra lo que vuela. Caro.', 'De ancla al frente: la horda se frena contra él mientras lo demás dispara.'],
       mortero: ['Mortero', 'Bombardea con granadas que estallan en un área.', 'Tira de 4 a 9 celdas, por encima de los muros y desde fuera de la vista. Castiga al montón que se frenó.', 'La granada tarda 1.5 segundos: falla contra lo rápido. Ciego a menos de 4 celdas. Nada contra lo que vuela.', 'Bien atrás, apuntando adonde la horda se frena: un búnker, el tanque o un señuelo.'],
       antiaerea: ['Antiaérea', 'Derriba lo que vuela con ráfagas que estallan en el aire.', 'Limpia una bandada entera y baja al buitre. Alcanza 6 celdas.', 'No baja el cañón: inútil contra lo que camina.', 'Cerca del campamento y al centro: todo lo que vuela termina pasando por ahí.'],
       muro: ['Muro', 'Bloquea el paso.', 'Barato y resistente. Desvía a los que no ven a nadie y es el escudo de quien está detrás. Perros y toro no lo pasan.', 'Lo vuela el dinamitero y lo rompe el gordo. Lo que vuela lo ignora. No se puede cerrar el paso del todo.', 'Delante de tu gente, no al lado.'],
       alambrado: ['Alambrado', 'Frena y lastima sin bloquear.', 'Los zombies lo cruzan a menos de la mitad de velocidad y pierden una quinta parte de la vida. Va en el barro. Carnada para el hinchado.', 'Se gasta: unas 20 pisadas. Los perros lo saltan, el gordo lo aplasta y el toro lo arranca.', 'Bajo el fuego de tus torretas, dos celdas delante de lo valioso.'],
       bunker: ['Búnker', 'Protege hasta a 4 de infantería, que disparan desde adentro.', 'Adentro no los muerden, ni los picotean, ni se los llevan, y tiran 20 % más lejos. Aguanta mucho y frena a la horda donde conviene.', 'Lo buscan el hinchado y el dinamitero. El gas entra. Si cae, su gente queda a pie en medio de la horda.', 'De ancla al frente, lleno de soldados; con un médico adentro si vienen tóxicos.'],
-      senuelo: ['Señuelo', 'Altavoz que llama a los caminantes.', 'Comunes, corredores y acorazados a 5 celdas dejan lo que estén haciendo, hasta de morder, y lo golpean 5 segundos. Carnada para el hinchado.', 'Se gasta: entretiene a unos 20. No engaña dos veces al mismo. No llama a animales ni a especiales, y el gordo lo aplasta.', 'Donde apuntan el mortero y las torretas, lejos de tu gente.'],
+      senuelo: ['Señuelo', 'Altavoz que llama a los caminantes.', 'Comunes, corredores y acorazados a 5 celdas dejan lo que estén haciendo, hasta de morder, y lo golpean 5 segundos. Carnada para el hinchado. El topo sale junto a él en vez de junto a tu gente.', 'Se gasta: entretiene a unos 20. No engaña dos veces al mismo. No llama a animales ni a especiales, y el gordo lo aplasta.', 'Donde apuntan el mortero y las torretas, lejos de tu gente.'],
+      vigia: ['Torre de vigía', 'Descubre a los topos enterrados a 4 celdas y los obliga a salir.', 'Barata. El topo que pasa por su zona sale encandilado, a tiro de todos, antes de llegar a lo que tienes atrás.', 'No dispara ni frena a nadie: sin armas cerca, sólo avisa. La vuelan el dinamitero y el hinchado.', 'Detrás de tu línea, cubriendo morteros, francotiradores y antiaéreas.'],
     },
     z: {
       caminante: ['Común', 'Va por el primer humano que ve a 3 celdas; si no ve a nadie, al campamento.', 'Viene de a muchos y contagia. Rompe el muro que tapa a su presa.', 'Lento y sin protección. Se amontona: el fuego y las granadas lo barren. Sigue a cualquier señuelo.', 'Mortero o lanzallamas donde se frena; señuelo para llevarlo adonde quieras.'],
@@ -20115,7 +21072,11 @@ const FICHAS_B2 = {
       cuervo: ['Bandada', 'Seis cuervos que vuelan sobre todo y ven todo el campo.', 'Pasan sobre muros, agua y obstáculos. Picotean a la gente a pie; si no hay, cada uno le saca 1 al campamento.', 'Poca vida. No pueden con búnkeres ni máquinas.', 'Antiaérea; soldados dentro de un búnker.'],
       buitre: ['Buitre', 'Vuela hasta alguien a pie, lo levanta y lo suelta en medio de la horda.', 'Primero se lleva a los que más valen: francotirador, médico, lanzallamas. Nada que camine lo alcanza.', 'Lento y de a uno. No puede con los protegidos. Blanco grande para fusiles y antiaérea.', 'Antiaérea; un soldado que cubra a tu tirador; búnker.'],
       soldadoZombie: ['Soldado zombie', 'Es tu soldado contagiado: se levanta a los 3 segundos de caer.', 'Conserva casco y chaleco: blindaje 1 y más vida que un común.', 'Sólo aparece si pierdes gente. Con un médico cerca, el que cae no se contagia.', 'No pierdas infantería: búnker, muro de escudo y médico.'],
-      jefe: ['El Coloso', 'Jefe de las oleadas 6 y 12: va derecho y rompe todo.', 'Tiene 22 veces la vida del común y muerde el triple. Si entra, le saca 8 al campamento.', 'Muy lento.', 'Fuego concentrado: tanque, francotiradores y todo lo que haya.'],
+      topo: ['Topo', 'Se entierra al entrar y avanza por debajo de todo; sale junto a lo que tienes más atrás.', 'Bajo tierra nadie le puede tirar. Pasa por debajo de muros, alambrado y unidades. Va por morteros, francotiradores, médicos y antiaéreas, y muerde el doble.', 'Al salir tarda un segundo y queda a tiro. La torre de vigía y el tanque lo obligan a salir antes, encandilado; el señuelo lo engaña.', 'Torre de vigía adelante, para que salga en tu zona de fuego; tanque; señuelo; lanzallamas junto a lo de atrás.'],
+      lanzador: ['Lanzador', 'Agarra al zombie que tiene al lado y lo arroja por encima de tus muros, hasta 7 celdas, junto a lo que tienes más atrás.', 'Tus muros no protegen de lo que cae del cielo. Si no tiene a quién arrojar, tira cascotes a lo construido. Mucha vida.', 'Lento. El arrojado cae lastimado y aturdido, y no puede con un búnker.', 'Francotiradores dentro de un búnker, o el tanque con francotiradores: lo que cae no puede con los protegidos.'],
+      escupidor: ['Escupidor', 'Se planta a 5 celdas y escupe ácido en arco: un charco que quema a la gente y a lo construido.', 'Tira desde más lejos que el soldado y la torreta, que no le llegan. El ácido desarma torretas y búnkeres.', 'Poca vida y se queda quieto: el francotirador lo baja de uno o dos tiros. El charco dura poco. Le escupe a la gente, no a un muro pelado.', 'Francotirador; el tanque, que tira tan lejos como él.'],
+      rabioso: ['Rabioso', 'Corre al doble que un perro, en zigzag, directo al campamento. No se detiene por nadie.', 'Vienen de a cuatro. El tiro del francotirador y el cañón le erran más de la mitad de las veces, y la granada nunca llega a tiempo.', 'Poca vida. El alambrado y el barro lo frenan como a todos. No ataca a tu gente.', 'Lanzallamas en fila en el paso; varias torretas con alambrado.'],
+      jefe: ['El Coloso', 'Jefe de las oleadas 6 y 12: va derecho, rompe todo y arroja fardos a lo que tiene a 5 celdas.', 'Tiene 22 veces la vida del común y muerde el triple. Sus fardos golpean a todo lo que está junto. Si entra, le saca 8 al campamento.', 'Muy lento.', 'Fuego concentrado: tanque, francotiradores y todo lo que haya. No amontones tus defensas.'],
     },
   },
   pt: {
@@ -20125,13 +21086,14 @@ const FICHAS_B2 = {
       lanzallamas: ['Lança-chamas', 'Queima todos a até 2 casas e os deixa em chamas.', 'Acerta o grupo inteiro de uma vez e o fogo ignora a blindagem. Cães e touro não cruzam o fogo.', 'Está sempre à vista. Não alcança o que voa. Faz o inchado e o dinamitador explodirem na cara dele e acende o gás.', 'No vão por onde a horda passa, atrás de um muro ou de arame farpado.'],
       medico: ['Médico', 'Cura a infantaria a até 2 casas. Não atira.', 'Quem cai ao lado dele não se contagia. Com ele por perto, o gás não esvazia os bunkers.', 'Não causa dano e é presa como qualquer um. Não conserta máquinas nem estruturas.', 'Junto do seu pessoal ou dentro de um bunker, do lado do acampamento.'],
       torreta: ['Torre', 'Varre com rajadas de metralhadora.', 'Muito fogo: nada rápido escapa. Acaba com matilhas, corredores e dinamitadores.', 'Balas pequenas: contra blindagem rende a metade. Não mira para o ar. Atrai a horda e não se move.', 'Atrás de arame farpado ou de um muro, apontando para o vão.'],
-      tanque: ['Tanque', 'Aguenta na frente e derruba os pesados com o canhão.', 'Tem 400 de vida e as mordidas fazem um terço. O canhão ignora a blindagem e busca quem mais aguenta. O gás não entra. Pode se mover.', 'Um só alvo por disparo: não para uma horda nem uma matilha. O inchado e o dinamitador o procuram. Nada contra o que voa. Caro.', 'De âncora na frente: a horda para nele enquanto o resto atira.'],
+      tanque: ['Tanque', 'Aguenta na frente e derruba os pesados com o canhão.', 'Tem 400 de vida e as mordidas fazem um terço. O canhão ignora a blindagem e busca quem mais aguenta. O gás não entra. Pode se mover. Pelo peso, nenhuma toupeira passa por baixo a até 2 casas.', 'Um só alvo por disparo: não para uma horda nem uma matilha. O inchado e o dinamitador o procuram. Nada contra o que voa. Caro.', 'De âncora na frente: a horda para nele enquanto o resto atira.'],
       mortero: ['Morteiro', 'Bombardeia com granadas que explodem em área.', 'Atira de 4 a 9 casas, por cima dos muros e de fora da visão. Castiga o grupo que parou.', 'A granada leva 1,5 segundo: erra o que é rápido. Cego a menos de 4 casas. Nada contra o que voa.', 'Bem atrás, apontando para onde a horda para: um bunker, o tanque ou uma isca.'],
       antiaerea: ['Antiaérea', 'Derruba o que voa com rajadas que explodem no ar.', 'Limpa um bando inteiro e derruba o abutre. Alcança 6 casas.', 'Não abaixa o canhão: inútil contra o que anda.', 'Perto do acampamento e no centro: tudo o que voa acaba passando por ali.'],
       muro: ['Muro', 'Bloqueia a passagem.', 'Barato e resistente. Desvia quem não vê ninguém e é o escudo de quem está atrás. Cães e touro não passam.', 'O dinamitador o explode e o gordo o quebra. O que voa o ignora. Não dá para fechar a passagem de vez.', 'Na frente do seu pessoal, não ao lado.'],
       alambrado: ['Arame farpado', 'Freia e fere sem bloquear.', 'Os zumbis o cruzam a menos da metade da velocidade e perdem um quinto da vida. Vai na lama. Isca para o inchado.', 'Gasta: umas 20 pisadas. Os cães o pulam, o gordo o esmaga e o touro o arranca.', 'Sob o fogo das suas torres, duas casas à frente do que é valioso.'],
       bunker: ['Bunker', 'Protege até 4 de infantaria, que atiram de dentro.', 'Lá dentro não são mordidos, nem bicados, nem levados, e atiram 20 % mais longe. Aguenta muito e segura a horda onde convém.', 'O inchado e o dinamitador o procuram. O gás entra. Se cair, o pessoal fica a pé no meio da horda.', 'De âncora na frente, cheio de soldados; com um médico dentro se vierem tóxicos.'],
-      senuelo: ['Isca', 'Alto-falante que chama os caminhantes.', 'Comuns, corredores e blindados a até 5 casas largam o que estiverem fazendo, até de morder, e batem nele por 5 segundos. Isca para o inchado.', 'Gasta: distrai uns 20. Não engana o mesmo duas vezes. Não chama animais nem especiais, e o gordo o esmaga.', 'Onde o morteiro e as torres apontam, longe do seu pessoal.'],
+      senuelo: ['Isca', 'Alto-falante que chama os caminhantes.', 'Comuns, corredores e blindados a até 5 casas largam o que estiverem fazendo, até de morder, e batem nele por 5 segundos. Isca para o inchado. A toupeira sai junto dele em vez de junto do seu pessoal.', 'Gasta: distrai uns 20. Não engana o mesmo duas vezes. Não chama animais nem especiais, e o gordo o esmaga.', 'Onde o morteiro e as torres apontam, longe do seu pessoal.'],
+      vigia: ['Torre de vigia', 'Descobre as toupeiras enterradas a até 4 casas e as obriga a sair.', 'Barata. A toupeira que passa pela zona dela sai ofuscada, na mira de todos, antes de chegar ao que você tem atrás.', 'Não atira nem segura ninguém: sem armas por perto, só avisa. O dinamitador e o inchado a explodem.', 'Atrás da sua linha, cobrindo morteiros, atiradores de elite e antiaéreas.'],
     },
     z: {
       caminante: ['Comum', 'Vai atrás do primeiro humano que vê a até 3 casas; se não vê ninguém, vai para o acampamento.', 'Vem em grande número e contagia. Quebra o muro que esconde a presa.', 'Lento e sem proteção. Amontoa-se: fogo e granadas o varrem. Segue qualquer isca.', 'Morteiro ou lança-chamas onde ele para; isca para levá-lo aonde quiser.'],
@@ -20147,7 +21109,11 @@ const FICHAS_B2 = {
       cuervo: ['Bando', 'Seis corvos que voam por cima de tudo e veem o campo inteiro.', 'Passam sobre muros, água e obstáculos. Bicam quem está a pé; se não houver ninguém, cada um tira 1 do acampamento.', 'Pouca vida. Não podem com bunkers nem máquinas.', 'Antiaérea; soldados dentro de um bunker.'],
       buitre: ['Abutre', 'Voa até alguém a pé, levanta-o e o solta no meio da horda.', 'Leva primeiro os que mais valem: atirador de elite, médico, lança-chamas. Nada que anda o alcança.', 'Lento e um por vez. Não pode com os protegidos. Alvo grande para fuzis e antiaérea.', 'Antiaérea; um soldado cobrindo o seu atirador; bunker.'],
       soldadoZombie: ['Soldado zumbi', 'É o seu soldado contagiado: levanta 3 segundos depois de cair.', 'Mantém capacete e colete: blindagem 1 e mais vida que um comum.', 'Só aparece se você perder gente. Com um médico por perto, quem cai não se contagia.', 'Não perca infantaria: bunker, muro de escudo e médico.'],
-      jefe: ['O Colosso', 'Chefe das ondas 6 e 12: vai reto e quebra tudo.', 'Tem 22 vezes a vida do comum e morde o triplo. Se entrar, tira 8 do acampamento.', 'Muito lento.', 'Fogo concentrado: tanque, atiradores de elite e tudo o que houver.'],
+      topo: ['Toupeira', 'Enterra-se ao entrar e avança por baixo de tudo; sai junto do que você tem mais atrás.', 'Debaixo da terra ninguém consegue atirar nela. Passa por baixo de muros, arame farpado e unidades. Vai atrás de morteiros, atiradores de elite, médicos e antiaéreas, e morde em dobro.', 'Ao sair demora um segundo e fica na mira. A torre de vigia e o tanque a obrigam a sair antes, ofuscada; a isca a engana.', 'Torre de vigia na frente, para que ela saia na sua zona de fogo; tanque; isca; lança-chamas junto do que está atrás.'],
+      lanzador: ['Arremessador', 'Agarra o zumbi ao lado e o arremessa por cima dos seus muros, até 7 casas, junto do que você tem mais atrás.', 'Seus muros não protegem do que cai do céu. Se não tiver quem arremessar, joga entulho nas construções. Muita vida.', 'Lento. O arremessado cai ferido e atordoado, e não pode com um bunker.', 'Atiradores de elite dentro de um bunker, ou o tanque com atiradores: o que cai não pode com os protegidos.'],
+      escupidor: ['Cuspidor', 'Para a 5 casas e cospe ácido em arco: uma poça que queima pessoas e construções.', 'Atira de mais longe que o soldado e a torre, que não o alcançam. O ácido desmonta torres e bunkers.', 'Pouca vida e fica parado: o atirador de elite o derruba com um ou dois tiros. A poça dura pouco. Cospe nas pessoas, não em um muro vazio.', 'Atirador de elite; o tanque, que atira tão longe quanto ele.'],
+      rabioso: ['Raivoso', 'Corre o dobro de um cão, em zigue-zague, direto para o acampamento. Não para por ninguém.', 'Vêm de quatro em quatro. O tiro do atirador de elite e o canhão erram mais da metade das vezes, e a granada nunca chega a tempo.', 'Pouca vida. O arame farpado e a lama o freiam como a todos. Não ataca o seu pessoal.', 'Lança-chamas em fila na passagem; várias torres com arame farpado.'],
+      jefe: ['O Colosso', 'Chefe das ondas 6 e 12: vai reto, quebra tudo e arremessa fardos no que estiver a até 5 casas.', 'Tem 22 vezes a vida do comum e morde o triplo. Os fardos acertam tudo o que está junto. Se entrar, tira 8 do acampamento.', 'Muito lento.', 'Fogo concentrado: tanque, atiradores de elite e tudo o que houver. Não amontoe as defesas.'],
     },
   },
   en: {
@@ -20157,13 +21123,14 @@ const FICHAS_B2 = {
       lanzallamas: ['Flamethrower', 'Burns everyone within 2 cells and leaves them on fire.', 'Hits the whole pack at once and fire ignores armor. Dogs and the bull will not cross fire.', 'Always in sight. Cannot reach what flies. Makes the bloater and the dynamiter blow up in his face, and ignites gas.', 'In the gap the horde walks through, behind a wall or barbed wire.'],
       medico: ['Medic', 'Heals infantry within 2 cells. Does not shoot.', 'Whoever falls next to him is not infected. With him nearby, gas does not empty bunkers.', 'Deals no damage and is prey like anyone else. Does not fix machines or structures.', 'Right next to your people or inside a bunker, on the camp side.'],
       torreta: ['Turret', 'Sweeps with machine-gun bursts.', 'Lots of fire: nothing fast gets away. Finishes packs, runners and dynamiters.', 'Small bullets: half effect against armor. Cannot aim at the sky. Draws the horde and does not move.', 'Behind barbed wire or a wall, aimed at the gap.'],
-      tanque: ['Tank', 'Holds the front and knocks down the heavy ones with its cannon.', 'It has 400 health and bites do a third. Its cannon ignores armor and goes for whoever has the most health. Gas cannot get in. It can move.', 'A single target per shot: it will not stop a horde or a pack. The bloater and the dynamiter go for it. Nothing against flyers. Expensive.', 'As a forward anchor: the horde stalls against it while everything else fires.'],
+      tanque: ['Tank', 'Holds the front and knocks down the heavy ones with its cannon.', 'It has 400 health and bites do a third. Its cannon ignores armor and goes for whoever has the most health. Gas cannot get in. It can move. Because of its weight, no mole gets underneath within 2 cells.', 'A single target per shot: it will not stop a horde or a pack. The bloater and the dynamiter go for it. Nothing against flyers. Expensive.', 'As a forward anchor: the horde stalls against it while everything else fires.'],
       mortero: ['Mortar', 'Shells an area with grenades.', 'Fires from 4 to 9 cells, over walls and from out of sight. Punishes the pack that stalled.', 'The shell takes 1.5 seconds: it misses fast targets. Blind under 4 cells. Nothing against flyers.', 'Far back, aimed where the horde stalls: a bunker, the tank or a decoy.'],
       antiaerea: ['Anti-air gun', 'Brings down flyers with bursts that explode in the air.', 'Clears a whole flock and brings down the vulture. Reaches 6 cells.', 'It cannot lower its barrels: useless against what walks.', 'Near the camp and in the middle: everything that flies ends up passing there.'],
       muro: ['Wall', 'Blocks the way.', 'Cheap and sturdy. Diverts those who see nobody and shields whoever is behind it. Dogs and the bull cannot get past.', 'The dynamiter blows it up and the fat one breaks it. Flyers ignore it. You cannot close the way completely.', 'In front of your people, not beside them.'],
       alambrado: ['Barbed wire', 'Slows and hurts without blocking.', 'Zombies cross it at less than half speed and lose a fifth of their health. Goes on mud. Bait for the bloater.', 'It wears out: about 20 crossings. Dogs jump it, the fat one flattens it and the bull rips it out.', 'Under your turrets’ fire, two cells ahead of what matters.'],
       bunker: ['Bunker', 'Shelters up to 4 infantry, who shoot from inside.', 'Inside they cannot be bitten, pecked or carried off, and they shoot 20% farther. Very sturdy and stalls the horde where you want.', 'The bloater and the dynamiter go for it. Gas gets in. If it falls, its people are left on foot among the horde.', 'As a forward anchor, full of riflemen; with a medic inside if toxics are coming.'],
-      senuelo: ['Decoy', 'Loudspeaker that calls walkers.', 'Walkers, runners and armored ones within 5 cells drop whatever they are doing, biting included, and hit it for 5 seconds. Bait for the bloater.', 'It wears out: it distracts about 20. It never fools the same one twice. It does not call animals or specials, and the fat one flattens it.', 'Where the mortar and the turrets aim, away from your people.'],
+      senuelo: ['Decoy', 'Loudspeaker that calls walkers.', 'Walkers, runners and armored ones within 5 cells drop whatever they are doing, biting included, and hit it for 5 seconds. Bait for the bloater. The mole surfaces next to it instead of next to your people.', 'It wears out: it distracts about 20. It never fools the same one twice. It does not call animals or specials, and the fat one flattens it.', 'Where the mortar and the turrets aim, away from your people.'],
+      vigia: ['Watchtower', 'Spots buried moles within 4 cells and forces them to surface.', 'Cheap. A mole crossing its area comes up dazzled, in everyone’s sights, before reaching what you keep in the back.', 'It does not shoot or stop anyone: with no guns nearby, it only warns. The dynamiter and the bloater blow it up.', 'Behind your line, covering mortars, snipers and anti-air guns.'],
     },
     z: {
       caminante: ['Walker', 'Goes for the first human it sees within 3 cells; if it sees nobody, for the camp.', 'Comes in numbers and infects. Breaks the wall hiding its prey.', 'Slow and unprotected. It bunches up: fire and shells sweep it. Follows any decoy.', 'Mortar or flamethrower where it stalls; a decoy to lead it wherever you want.'],
@@ -20179,7 +21146,11 @@ const FICHAS_B2 = {
       cuervo: ['Flock', 'Six crows that fly over everything and see the whole field.', 'They pass over walls, water and obstacles. They peck people on foot; if there are none, each takes 1 from the camp.', 'Little health. They can do nothing to bunkers or machines.', 'Anti-air gun; riflemen inside a bunker.'],
       buitre: ['Vulture', 'Flies to someone on foot, lifts him and drops him in the middle of the horde.', 'It takes the most valuable first: sniper, medic, flamethrower. Nothing that walks can reach it.', 'Slow and one at a time. It can do nothing to the protected. A big target for rifles and anti-air.', 'Anti-air gun; a rifleman covering your sniper; bunker.'],
       soldadoZombie: ['Zombie soldier', 'It is your infected soldier: it gets up 3 seconds after falling.', 'Keeps helmet and vest: armor 1 and more health than a walker.', 'It only shows up if you lose people. With a medic nearby, whoever falls is not infected.', 'Do not lose infantry: bunker, wall as a shield and medic.'],
-      jefe: ['The Colossus', 'Boss of waves 6 and 12: walks straight and breaks everything.', 'It has 22 times a walker’s health and bites three times as hard. If it gets in, it takes 8 from the camp.', 'Very slow.', 'Focused fire: tank, snipers and everything you have.'],
+      topo: ['Mole', 'Burrows on entering and advances under everything; it surfaces next to whatever you keep farthest back.', 'Underground nobody can shoot it. It passes under walls, barbed wire and units. It goes for mortars, snipers, medics and anti-air guns, and bites twice as hard.', 'Surfacing takes a second and leaves it exposed. The watchtower and the tank force it up early, dazzled; the decoy fools it.', 'Watchtower up front, so it surfaces in your kill zone; tank; decoy; flamethrower next to what you keep in the back.'],
+      lanzador: ['Thrower', 'Grabs the zombie next to it and throws it over your walls, up to 7 cells, next to whatever you keep farthest back.', 'Your walls do not protect from what falls from the sky. With nobody to throw, it hurls rubble at what you built. Lots of health.', 'Slow. The thrown one lands hurt and stunned, and can do nothing to a bunker.', 'Snipers inside a bunker, or the tank with snipers: what lands cannot hurt the protected.'],
+      escupidor: ['Spitter', 'Stops 5 cells away and spits acid in an arc: a puddle that burns people and buildings.', 'It shoots from farther than the rifleman and the turret, which cannot reach it. Acid takes apart turrets and bunkers.', 'Little health and it stands still: the sniper drops it in a shot or two. The puddle does not last. It spits at people, not at a bare wall.', 'Sniper; the tank, which shoots as far as it does.'],
+      rabioso: ['Rabid', 'Runs twice as fast as a dog, zigzagging, straight for the camp. It stops for nobody.', 'They come in fours. The sniper’s shot and the cannon miss more than half the time, and the shell never arrives in time.', 'Little health. Barbed wire and mud slow it like everyone else. It does not attack your people.', 'Flamethrowers in a row in its way; several turrets with barbed wire.'],
+      jefe: ['The Colossus', 'Boss of waves 6 and 12: walks straight, breaks everything and throws hay bales at whatever is within 5 cells.', 'It has 22 times a walker’s health and bites three times as hard. Its bales hit everything standing together. If it gets in, it takes 8 from the camp.', 'Very slow.', 'Focused fire: tank, snipers and everything you have. Do not pack your defenses together.'],
     },
   },
 };
@@ -20188,13 +21159,13 @@ for (const [idioma, F] of Object.entries(FICHAS_B2)) for (const clase of ['u', '
 }
 Object.assign(TEXTOS.es, {
   'menu.bastion2': 'ÚLTIMO BASTIÓN V2',
-  'bastion.alambrado': 'ALAMBRADO', 'bastion.senuelo': 'SEÑUELO', 'bastion.francotirador': 'TIRADOR', 'bastion.lanzallamas': 'LLAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTERO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.mover': 'MOVER',
+  'bastion.alambrado': 'ALAMBRADO', 'bastion.senuelo': 'SEÑUELO', 'bastion.francotirador': 'TIRADOR', 'bastion.lanzallamas': 'LLAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTERO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.vigia': 'VIGÍA', 'bastion.mover': 'MOVER',
   'b2.titulo': 'ÚLTIMO BASTIÓN V2 · DOS BANDOS', 'b2.ayuda': 'Aguanta 12 oleadas en La granja. Cada oleada trae un tipo nuevo de zombie: mira el parte y arma la respuesta.',
-  'b2.regla1': 'Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido.',
+  'b2.regla1': 'Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido. Y no todos vienen de frente.',
   'b2.regla2': 'Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.',
   'b2.regla3': 'Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.',
   'b2.horda': 'LA HORDA', 'b2.ejercito': 'EL BASTIÓN', 'b2.empezar': 'EMPEZAR', 'b2.continuar': 'SEGUIR EN LA OLEADA {ola} DE {total}',
-  'b2.clase.inf': 'Infantería', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estructuras', 'b2.clase.cam': 'Caminantes', 'b2.clase.esp': 'Especiales', 'b2.clase.ani': 'Animales',
+  'b2.clase.inf': 'Infantería', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estructuras', 'b2.clase.cam': 'Caminantes', 'b2.clase.esp': 'Especiales', 'b2.clase.ani': 'Animales', 'b2.clase.ace': 'Acechadores',
   'b2.fuerte': 'FUERTE:', 'b2.debil': 'DÉBIL:', 'b2.frenar': 'CÓMO FRENARLO:', 'b2.usar': 'CÓMO USARLO:',
   'b2.loFrena': 'LO FRENA', 'b2.noSirve': 'NO SIRVE', 'b2.frenaA': 'FRENA A', 'b2.flojoContra': 'FLOJO CONTRA', 'b2.nuevo': 'NUEVO',
   'b2.parte': 'OLEADA {n}:', 'b2.teVen': 'DESDE AQUÍ LO VEN', 'b2.blando': 'Suelo blando: aquí sólo va gente a pie, alambrado o señuelo',
@@ -20207,13 +21178,13 @@ Object.assign(TEXTOS.es, {
 });
 Object.assign(TEXTOS.pt, {
   'menu.bastion2': 'ÚLTIMO BASTIÃO V2',
-  'bastion.alambrado': 'ARAME', 'bastion.senuelo': 'ISCA', 'bastion.francotirador': 'ATIRADOR', 'bastion.lanzallamas': 'CHAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTEIRO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.mover': 'MOVER',
+  'bastion.alambrado': 'ARAME', 'bastion.senuelo': 'ISCA', 'bastion.francotirador': 'ATIRADOR', 'bastion.lanzallamas': 'CHAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTEIRO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.vigia': 'VIGIA', 'bastion.mover': 'MOVER',
   'b2.titulo': 'ÚLTIMO BASTIÃO V2 · DOIS LADOS', 'b2.ayuda': 'Aguente 12 ondas em A fazenda. Cada onda traz um tipo novo de zumbi: veja o relatório e monte a resposta.',
-  'b2.regla1': 'Nenhuma unidade serve contra tudo. A blindagem segura as balas pequenas, o que voa passa por cima dos muros e a granada erra o que é rápido.',
+  'b2.regla1': 'Nenhuma unidade serve contra tudo. A blindagem segura as balas pequenas, o que voa passa por cima dos muros e a granada erra o que é rápido. E nem todos vêm de frente.',
   'b2.regla2': 'Os zumbis veem. Vão atrás do seu pessoal e quebram o que o protege; quem cai se levanta contra você em 3 segundos.',
   'b2.regla3': 'Antes de cada onda, o relatório diz o que vem. Toque em um tipo para ver o que o segura.',
   'b2.horda': 'A HORDA', 'b2.ejercito': 'O BASTIÃO', 'b2.empezar': 'COMEÇAR', 'b2.continuar': 'CONTINUAR NA ONDA {ola} DE {total}',
-  'b2.clase.inf': 'Infantaria', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estruturas', 'b2.clase.cam': 'Caminhantes', 'b2.clase.esp': 'Especiais', 'b2.clase.ani': 'Animais',
+  'b2.clase.inf': 'Infantaria', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estruturas', 'b2.clase.cam': 'Caminhantes', 'b2.clase.esp': 'Especiais', 'b2.clase.ani': 'Animais', 'b2.clase.ace': 'Espreitadores',
   'b2.fuerte': 'FORTE:', 'b2.debil': 'FRACO:', 'b2.frenar': 'COMO PARÁ-LO:', 'b2.usar': 'COMO USAR:',
   'b2.loFrena': 'O QUE O PARA', 'b2.noSirve': 'NÃO SERVE', 'b2.frenaA': 'PARA', 'b2.flojoContra': 'FRACO CONTRA', 'b2.nuevo': 'NOVO',
   'b2.parte': 'ONDA {n}:', 'b2.teVen': 'DAQUI ELES O VEEM', 'b2.blando': 'Solo mole: aqui só vai gente a pé, arame farpado ou isca',
@@ -20226,13 +21197,13 @@ Object.assign(TEXTOS.pt, {
 });
 Object.assign(TEXTOS.en, {
   'menu.bastion2': 'LAST BASTION V2',
-  'bastion.alambrado': 'WIRE', 'bastion.senuelo': 'DECOY', 'bastion.francotirador': 'SNIPER', 'bastion.lanzallamas': 'FLAMER', 'bastion.medico': 'MEDIC', 'bastion.mortero': 'MORTAR', 'bastion.antiaerea': 'ANTI-AIR', 'bastion.mover': 'MOVE',
+  'bastion.alambrado': 'WIRE', 'bastion.senuelo': 'DECOY', 'bastion.francotirador': 'SNIPER', 'bastion.lanzallamas': 'FLAMER', 'bastion.medico': 'MEDIC', 'bastion.mortero': 'MORTAR', 'bastion.antiaerea': 'ANTI-AIR', 'bastion.vigia': 'WATCH', 'bastion.mover': 'MOVE',
   'b2.titulo': 'LAST BASTION V2 · TWO SIDES', 'b2.ayuda': 'Hold out for 12 waves at The farm. Each wave brings a new zombie type: check the report and build the answer.',
-  'b2.regla1': 'No unit works against everything. Armor stops small bullets, flyers pass over walls and shells miss fast targets.',
+  'b2.regla1': 'No unit works against everything. Armor stops small bullets, flyers pass over walls and shells miss fast targets. And not all of them come head-on.',
   'b2.regla2': 'Zombies can see. They go for your people and break whatever protects them; whoever falls gets up against you in 3 seconds.',
   'b2.regla3': 'Before each wave, the report says what is coming. Tap a type to see what stops it.',
   'b2.horda': 'THE HORDE', 'b2.ejercito': 'THE BASTION', 'b2.empezar': 'START', 'b2.continuar': 'CONTINUE AT WAVE {ola} OF {total}',
-  'b2.clase.inf': 'Infantry', 'b2.clase.mec': 'Mechanized', 'b2.clase.est': 'Structures', 'b2.clase.cam': 'Walkers', 'b2.clase.esp': 'Specials', 'b2.clase.ani': 'Animals',
+  'b2.clase.inf': 'Infantry', 'b2.clase.mec': 'Mechanized', 'b2.clase.est': 'Structures', 'b2.clase.cam': 'Walkers', 'b2.clase.esp': 'Specials', 'b2.clase.ani': 'Animals', 'b2.clase.ace': 'Stalkers',
   'b2.fuerte': 'STRONG:', 'b2.debil': 'WEAK:', 'b2.frenar': 'HOW TO STOP IT:', 'b2.usar': 'HOW TO USE IT:',
   'b2.loFrena': 'STOPPED BY', 'b2.noSirve': 'NO USE', 'b2.frenaA': 'STOPS', 'b2.flojoContra': 'WEAK AGAINST', 'b2.nuevo': 'NEW',
   'b2.parte': 'WAVE {n}:', 'b2.teVen': 'THEY SEE IT FROM HERE', 'b2.blando': 'Soft ground: only people on foot, barbed wire or a decoy can go here',
@@ -21122,7 +22093,7 @@ const Asistente = (() => {
     const lista = document.getElementById('lista-armas-prueba');
     lista.innerHTML = '';
     for (const [clave, pertenece] of GRUPOS_PRUEBA) {
-      const ids = ORDEN_INVENTARIO.filter(pertenece);
+      const ids = ORDEN_INVENTARIO.filter(id => pertenece(id) && armaPermitida(id));   // las de un personaje, solo con ese personaje
       const grupo = document.createElement('section');
       grupo.className = 'grupo-armas' + (clave === 'grupo.4' ? ' especiales' : clave === 'grupo.6' ? ' legendarias' : '');
       grupo.innerHTML = `<h3>${t(clave).toUpperCase()} <span>${ids.length}</span></h3>`;
@@ -21174,7 +22145,7 @@ const Asistente = (() => {
     if (!a.fuego) filas.push([t('detalle.cadencia'), `${Math.round(60000 / a.cadencia)}/min`]);
     const manual = MODOS_MANUALES[ACCION_MANUAL[id]];
     filas.push([t('detalle.modo'), t(manual || (a.automatica ? 'modo.auto' : a.cargador === 1 ? 'modo.tiro' : a.recargaTipo === 'tambor' || a.recargaTipo === 'tambor-rapido' ? 'modo.revolver' : 'modo.semi'))]);
-    filas.push([t('detalle.recarga'), `${(a.recarga / 1000).toLocaleString(Idioma.actual())} s · ${t('recargaTipo.' + a.recargaTipo)}`]);
+    filas.push([t('detalle.recarga'), `${(a.recarga / 1000).toLocaleString(Idioma.actual())} s · ${t('recargaTipo.' + (a.recargaTexto || a.recargaTipo))}`]);
     filas.push([t('detalle.alcance'), `${Math.round(m(a.alcance))} m`]);
     if (a.explosivo) filas.push([t('detalle.explosion'), t('detalle.radio', { m: m(a.radio).toLocaleString(Idioma.actual()) })]);
     if (a.perfora) filas.push([t('detalle.perfora'), t('detalle.perforaSi')]);
@@ -21611,6 +22582,7 @@ const Asistente = (() => {
   const aplicarSonido = () => Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
   Config.alCambiar(clave => {
     if (['general', 'efectos', 'musica', 'silencio'].includes(clave)) aplicarSonido();
+    if (clave === 'skin') renderizarArmasPrueba();   // el machete del cazador aparece o desaparece de la lista
     if (clave === 'calidad') { if (Config.get('calidad') === 'auto') { calidadAuto = 'alta'; Config.set('calidadAutoNivel', 'alta'); } ajustarResolucion(true); }   // elegir «auto» vuelve a medir desde alta
   });
   aplicarSonido();

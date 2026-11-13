@@ -3,8 +3,10 @@
  * la pose quieta guardada como imagen): francotirador, lanzallamas, médico, mortero, antiaérea, alambrado, señuelo y
  * el soldado caído. Zombies: lo que se le suma al zombie de siempre (js/zombie.js) para el acorazado (casco con visor
  * y escudo), el gritón (megáfono), el hinchado (panza con pústulas) y el dinamitero (cartuchos a la espalda con la
- * mecha prendida), y las aves, que son nuevas: cuervo y buitre. Al final, lo que se pinta sobre la escena en cada
- * cuadro: fuego, gas, granadas, estelas, gritos, avisos, anillos y cursores.
+ * mecha prendida), el topo (casco de minero con su lámpara; enterrado es un montículo que avanza) y el escupidor (el
+ * buche lleno de ácido), y las aves, que son nuevas: cuervo y buitre. La torre de vigía. Al final, lo que se pinta
+ * sobre la escena en cada cuadro: fuego, gas, ácido, granadas, lo que arroja la horda, estelas, gritos, avisos,
+ * anillos y cursores.
  */
 /* ---------- Infantería: el mismo cuerpo, con el equipo de cada oficio ---------- */
 const TRAJES_BASTION = {
@@ -329,6 +331,48 @@ Object.assign(DibujoBastion, {
     ctx.restore();
   },
 
+  /* Torre de vigía: cuatro patas de madera con crucetas, la plataforma con baranda y techo de chapa, y el reflector
+   * que barre el piso buscando la tierra removida. No tiene gente ni armas: sólo descubre a los topos */
+  vigia(ctx, u, t) {
+    const roto = 1 - (u.vida ?? 1) / (u.vidaMax ?? 1) > 0.45, ms = t || 0;
+    if (!Pincel.silueta && u.listo !== false) {   // el haz, sobre el piso, detrás de la torre
+      const R = BASTION2.unidades.vigia.detecta * BASTION2.celda, a = ms / 900;
+      ctx.save(); ctx.scale(1, 1 / 1.3); ctx.rotate(a);
+      const g = ctx.createRadialGradient(0, 0, 8, 0, 0, R); g.addColorStop(0, 'rgba(255,244,190,0.26)'); g.addColorStop(1, 'rgba(255,244,190,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, -0.2, 0.2); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+    conSprite(ctx, 'vi' + (roto ? 'r' : ''), [-22, -60, 24, 8], g => DibujoBastion.vigiaCuerpo(g, roto));
+    if (Pincel.silueta) return;
+    const a = ms / 900, lx = 1 + Math.cos(a) * 3.2;   // el reflector gira
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const h = ctx.createRadialGradient(lx, -37, 0, lx, -37, 7); h.addColorStop(0, `rgba(255,246,200,${0.5 + 0.4 * Math.max(0, Math.sin(a))})`); h.addColorStop(1, 'rgba(255,230,150,0)');
+    ctx.fillStyle = h; ctx.beginPath(); ctx.arc(lx, -37, 7, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  },
+  vigiaCuerpo(ctx, roto) {
+    const P = PAL_BASTION, madera = '#6b4b2a', clara = '#8a6638';
+    sombraPiso(ctx, 17, 5, 0.3, 4, 1);
+    // Patas de atrás y crucetas
+    for (const x of [-7.5, 7.5]) pb(ctx, tramo(x, -5, x * 0.8, -31, 2.2, 2), ajustarColor(madera, -0.2), { sombra: 0.4, linea: 0.4 });
+    if (!Pincel.silueta) { linea(ctx, ajustarColor(madera, -0.3), 0.9, [[-7.5, -7], [6, -29]]); linea(ctx, ajustarColor(madera, -0.3), 0.9, [[7.5, -7], [-6, -29]]); }
+    // Patas de adelante
+    for (const x of [-10, 10]) pb(ctx, tramo(x, 1, x * 0.82, -31, 2.8, 2.4), madera, { sombra: 0.4, linea: 0.45, brillo: 0.2 });
+    if (!Pincel.silueta) { linea(ctx, clara, 1, [[-10, -2], [8.4, -15]]); linea(ctx, clara, 1, [[10, -2], [-8.4, -15]]); linea(ctx, clara, 1, [[-9, -16], [8, -29]]); linea(ctx, clara, 1, [[9, -16], [-8, -29]]); }
+    // Escalera de mano
+    if (!Pincel.silueta) { linea(ctx, '#3d2c18', 0.7, [[12.4, 1], [10.4, -30]]); linea(ctx, '#3d2c18', 0.7, [[15, 1], [13, -30]]); for (let k = 0; k < 7; k++) linea(ctx, '#3d2c18', 0.6, [[12.3 - k * 0.3, -3 - k * 4.2], [14.9 - k * 0.3, -3 - k * 4.2]]); }
+    // Plataforma, baranda y techo
+    caja34(ctx, -11.5, 11.5, -29, 5.6, 2.6, ajustarColor(madera, -0.1), clara);
+    if (!Pincel.silueta) for (const x of [-11, -3.6, 3.6, 11]) linea(ctx, madera, 0.9, [[x, -31.6], [x, -39.4]]);
+    pb(ctx, rr(-11.8, -40.6, 23.6, 1.6, 0.5), madera, { sombra: 0.3, linea: 0.35, brillo: 0.2 });
+    // Reflector sobre su horquilla
+    pb(ctx, rr(-0.6, -36, 1.6, 4.6, 0.4), P.aceroOsc, { sombra: 0.2, linea: 0.3, brillo: false });
+    pb(ctx, c => c.ellipse(1, -37, 3.6, 3, 0, 0, Math.PI * 2), '#4a4d52', { sombra: 0.4, brillo: 0.4, linea: 0.4 });
+    if (!Pincel.silueta) detalle(ctx, roto ? '#55504a' : '#fff3c4', circulo(1.6, -37, 1.9));
+    for (const x of [-10.6, 10.6]) pb(ctx, tramo(x, -40, x, -47.4, 1.5, 1.5), madera, { sombra: 0.3, linea: 0.35 });
+    pb(ctx, c => { c.moveTo(-14.4, -46.4); c.lineTo(14.4, -46.4); c.lineTo(11.4, -52.6); c.lineTo(-11.4, -52.6); c.closePath(); }, '#7d8388', { sombra: 0.5, brillo: 0.35 });
+    if (!Pincel.silueta) { for (let x = -10; x <= 10; x += 4) linea(ctx, 'rgba(40,44,48,0.4)', 0.4, [[x * 1.18, -46.6], [x * 0.98, -52.4]]); linea(ctx, '#2a2b2c', 0.6, [[9, -52.6], [9, -58.6]]); detalle(ctx, '#d84a3a', circulo(9, -58.6, 0.8)); }
+    if (roto && !Pincel.silueta) { linea(ctx, '#2a2018', 0.7, [[-9.4, -20], [-6, -17], [-9, -13]]); detalle(ctx, 'rgba(20,16,12,0.5)', poli([[4, -52.6], [9, -52.6], [7.6, -48.6], [3, -49.6]])); }
+  },
+
   /* Soldado caído: tendido boca arriba en su charco, con el resplandor del contagio que late cada vez más fuerte y
    * el reloj que se va llenando; cuando se completa, se levanta en contra */
   caido(ctx, u, t) {
@@ -387,12 +431,23 @@ Object.assign(DibujoBastion, {
       pieza(ctx, k => { k.ellipse(20.8, hy + 11.2, 1.7, 7.3, 0.06, 0, Math.PI * 2); }, c('#ece8dc'), 19, 22.6);
       pieza(ctx, redondo(11, hy + 14.2, 2.6, 5.4, 1), c('#2a2b2e'), 11, 13.6);
       if (!Pincel.silueta && !golpeado) { detalle(ctx, '#26221e', elipse(20.9, hy + 11.2, 0.9, 5.4, 0.06)); linea(ctx, 'rgba(255,240,230,0.5)', 0.5, [[10.4, hy + 10], [18.6, hy + 6.2]]); }
+    } else if (est.accesorio === 'casco-minero') {   // casco de minero abollado, con la lámpara prendida al frente
+      pieza(ctx, k => { k.moveTo(-9.4, hy + 3.4); k.quadraticCurveTo(-9.6, hy - 7.2, 1, hy - 7.4); k.quadraticCurveTo(10.6, hy - 7, 10.8, hy + 3); }, c('#c9742a'), -9.6, 10.8);
+      pieza(ctx, redondo(-10.4, hy + 1.8, 23, 1.9, 0.8), c('#a85c1c'), -10.4, 12.6);
+      pieza(ctx, redondo(7.4, hy - 4.6, 4.2, 4, 1), c('#3a3c40'), 7.4, 11.6);
+      if (!Pincel.silueta && !golpeado) {
+        linea(ctx, 'rgba(60,30,10,0.5)', 0.5, [[-5, hy - 4], [-1, hy - 6.4], [3, hy - 5]]);
+        detalle(ctx, '#fff3b0', circulo(10.4, hy - 2.6, 1.5));
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(11, hy - 2.6, 0, 11, hy - 2.6, 9); g.addColorStop(0, 'rgba(255,240,170,0.55)'); g.addColorStop(1, 'rgba(255,220,120,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(11, hy - 2.6, 9, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
     } else accesorioV1.call(this, ctx, est, golpeado);
   };
   Zombie.prototype.cuerpo = function (ctx, golpeado) {
     cuerpoV1.call(this, ctx, golpeado);
     const est = this.estilo;
-    if (!est || !(est.escudo || est.hinchado || est.dinamita)) return;
+    if (!est || !(est.escudo || est.hinchado || est.dinamita || est.buche)) return;
     // Lo de arriba va inclinado igual que el torso
     const camina = this.estado === 'camina', s = camina ? Math.sin(this.fase) : 0;
     const col = c => golpeado ? ajustarColor(c, 0.7) : c, ms = this.ahora || 0;
@@ -430,6 +485,18 @@ Object.assign(DibujoBastion, {
         for (const p of P) { detalle(ctx, '#e6ef7a', circulo(p.x, p.y + 6, p.r)); detalle(ctx, 'rgba(255,255,230,0.8)', circulo(p.x - p.r * 0.3, p.y + 6 - p.r * 0.3, p.r * 0.35)); }
       }
     }
+    if (est.buche) {   // el buche del escupidor: una bolsa de ácido bajo la mandíbula, que se hincha antes de escupir
+      const lleno = 1 + 0.3 * (this.bocaAbierta || 0) + 0.06 * Math.sin(ms / 240);
+      pieza(ctx, elipse(7.6, -57.4, 5.2 * lleno, 4.6 * lleno), col('#d9912a'), 2, 13.4);
+      if (!Pincel.silueta && !golpeado) {
+        detalle(ctx, 'rgba(255,236,150,0.75)', elipse(6.4, -58.6, 2 * lleno, 1.5 * lleno));
+        linea(ctx, 'rgba(110,60,10,0.6)', 0.5, [[4, -55.4], [7.6, -53.4], [11.4, -55.6]]);
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(7.6, -57.4, 0, 7.6, -57.4, 11 * lleno); g.addColorStop(0, `rgba(255,190,70,${0.3 + 0.3 * (this.bocaAbierta || 0)})`); g.addColorStop(1, 'rgba(255,150,40,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(7.6, -57.4, 11 * lleno, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        detalle(ctx, 'rgba(200,230,70,0.85)', elipse(11.4, -66, 1, 2.2, 0.3));   // la baba ácida
+      }
+    }
     if (est.escudo) {   // hombrera y escudo antidisturbios, con la ventana y las abolladuras
       pieza(ctx, elipse(6.6, -56.4, 6.2, 4.4), col('#1b2030'), 0.4, 12.8);
       pieza(ctx, k => { k.moveTo(13.4, -62); k.quadraticCurveTo(22.6, -63, 23.4, -58); k.lineTo(24.4, -27); k.quadraticCurveTo(19.4, -22.6, 14, -25.4); k.closePath(); }, col('#262d40'), 13.4, 24.4);
@@ -447,6 +514,33 @@ Object.assign(DibujoBastion, {
     ctx.restore();
   };
 })();
+
+/* ---------- El topo: bajo tierra sólo se ve la tierra que remueve; al salir asoma de a poco por el pozo ---------- */
+function dibujarTopo(ctx, camaraX, ahora) {
+  if (this.estado === 'muerto' || (!this.enterrado && !(this.saliendo > 0))) return Zombie.prototype.dibujar.call(this, ctx, camaraX, ahora);
+  const x = this.x - camaraX, y = this.y;
+  ctx.save(); ctx.translate(x, y);
+  // Montículo y grietas (tenue mientras avanza enterrado: se nota si uno mira)
+  const fuerza = this.enterrado ? 0.62 : 1;
+  ctx.globalAlpha = fuerza;
+  ctx.fillStyle = 'rgba(40,28,16,0.55)'; ctx.beginPath(); ctx.ellipse(0, 1, 13, 4.4, 0, 0, Math.PI * 2); ctx.fill();
+  for (const [dx, dy, r, col] of [[-6, -1.4, 5.4, '#6a5338'], [5, -1, 4.8, '#5c482f'], [0, -3, 6.4, '#7a6142'], [-2, 0.6, 4, '#5c482f']]) {
+    const bx = dx + Math.sin(ahora / 130 + dx) * (this.enterrado ? 1.2 : 0.3);
+    ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(bx, dy, r, r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(30,20,10,0.6)'; ctx.lineWidth = 0.7; ctx.beginPath();
+  for (const a of [0.3, 1.5, 2.6, 3.9, 5.2]) { ctx.moveTo(Math.cos(a) * 9, Math.sin(a) * 3); ctx.lineTo(Math.cos(a) * 15, Math.sin(a) * 5.2); }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  if (this.enterrado) return;
+  // Saliendo: el cuerpo sube recortado por el borde del pozo
+  const f = 1 - this.saliendo / (this.saleEn || 1), alto = 92 * this.escala;
+  ctx.save(); ctx.beginPath(); ctx.rect(x - 60, y - alto - 40, 120, alto + 40); ctx.clip();
+  ctx.translate(0, alto * (1 - f) * 0.92);
+  Zombie.prototype.dibujar.call(this, ctx, camaraX, ahora);
+  ctx.restore();
+}
 
 /* ---------- Aves: cuervo y buitre, de perfil, aleteando; mueren cayendo del cielo ---------- */
 const AVES_BASTION = { cuervo: { ancho: 22, alto: 14 }, buitre: { ancho: 40, alto: 24 } };
@@ -542,7 +636,7 @@ class AveBastion extends Zombie {
 const BastionV2Dibujo = {
   // Caja de cada unidad para retratarla: [x0, y0, x1, y1] alrededor de sus pies
   CAJAS: { soldado: [-13, -43, 27, 4], francotirador: [-15, -40, 33, 6], lanzallamas: [-15, -44, 30, 4], medico: [-13, -43, 22, 4], torreta: [-27, -39, 37, 8], tanque: [-30, -52, 58, 8],
-    mortero: [-27, -42, 30, 8], antiaerea: [-30, -56, 30, 8], muro: [-26, -35, 31, 8], alambrado: [-25, -21, 26, 8], bunker: [-29, -57, 35, 8], senuelo: [-22, -46, 26, 8] },
+    mortero: [-27, -42, 30, 8], antiaerea: [-30, -56, 30, 8], muro: [-26, -35, 31, 8], alambrado: [-25, -21, 26, 8], bunker: [-29, -57, 35, 8], senuelo: [-22, -46, 26, 8], vigia: [-24, -60, 26, 8] },
   posar(g, tipo) {
     if (tipo === 'soldado') DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0);
     else if (TRAJES_BASTION[tipo]) infanteCuerpo(g, tipo, { apunta: 0 });
@@ -550,6 +644,7 @@ const BastionV2Dibujo = {
     else if (tipo === 'senuelo') DibujoBastion.senueloCuerpo(g, false);
     else if (tipo === 'antiaerea') DibujoBastion.antiaereaCuerpo(g, { apunta: -0.8, rumbo: 1, vida: 1, vidaMax: 1 });
     else if (tipo === 'mortero') DibujoBastion.morteroCuerpo(g, { retroceso: 0, vida: 1, vidaMax: 1 });
+    else if (tipo === 'vigia') DibujoBastion.vigiaCuerpo(g, false);
     else DibujoBastion[tipo + 'Cuerpo'](g, { adentro: 2, vida: 1, vidaMax: 1, apunta: 0 }, 0);
   },
   // Chorro del lanzallamas: lenguas que crecen desde la boquilla hasta donde llega, en la dirección en que tira
@@ -598,6 +693,13 @@ const BastionV2Dibujo = {
       }
       anillo(n.x, n.y, n.radio, `rgba(195,255,95,${0.55 * a})`, [3, 4]);
     }
+    // Charcos de ácido del escupidor: una mancha que burbujea y se va apagando
+    for (const c of j.charcosV2) {
+      const a = Math.min(1, c.t * 4) * (1 - Math.max(0, c.t / c.dura - 0.7) / 0.3), P = cam.proyectar(c.x, c.y), rx = c.radio * P.s, ry = rx / 1.3 * 0.62;
+      const g = ctx.createRadialGradient(P.x, P.y, 0, P.x, P.y, rx); g.addColorStop(0, `rgba(215,235,70,${0.6 * a})`); g.addColorStop(0.7, `rgba(150,200,40,${0.45 * a})`); g.addColorStop(1, 'rgba(120,170,30,0)');
+      ctx.save(); ctx.translate(P.x, P.y); ctx.scale(1, ry / rx); ctx.translate(-P.x, -P.y); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(P.x, P.y, rx, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      for (let k = 0; k < 4; k++) { const f = ((ahora / 500 + k * 0.27 + c.x * 0.01) % 1), bx = P.x + (azar(k, 21) - 0.5) * rx * 1.3, by = P.y + (azar(k, 22) - 0.5) * ry * 1.2 - f * 5 * P.s; ctx.fillStyle = `rgba(235,250,150,${0.7 * a * (1 - f)})`; ctx.beginPath(); ctx.arc(bx, by, (1 + f * 1.6) * P.s, 0, Math.PI * 2); ctx.fill(); }
+    }
     // Lo prendido fuego y los chorros de los lanzallamas
     for (const z of j.zombies) if (z.estado !== 'muerto' && z.quemaHasta > ahora) enCamara(ctx, cam, z.x, z.y, g => Fuego.cuerpo(g, 0, z, ahora));
     for (const u of j.unidades) if (u.llama > 0.05 && !u.quitada) this.chorro(ctx, cam, u, ahora);
@@ -611,6 +713,28 @@ const BastionV2Dibujo = {
       ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(Math.atan2(P2.y - P.y, P2.x - P.x));
       ctx.fillStyle = '#3d4138'; ctx.beginPath(); ctx.ellipse(0, 0, 3.6 * P.s, 1.5 * P.s, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#c9a03a'; ctx.fillRect(-3.8 * P.s, -1.5 * P.s, 1.2 * P.s, 3 * P.s);
+      ctx.restore();
+    }
+    // Lo que arroja la horda, en su arco: escupitajos, cascotes del lanzador y fardos del Coloso; y dónde va a caer
+    for (const p of j.arrojadosV2) {
+      const f = Math.min(1, p.t / p.dur), x = p.x0 + (p.x - p.x0) * f, piso = p.y0 + (p.y - p.y0) * f, alto = (p.alto0 || 0) * (1 - f) + Math.sin(f * Math.PI) * (p.alto || 60);
+      const acido = p.tipo === 'escupitajo';
+      anillo(p.x, p.y, p.radio, acido ? `rgba(200,240,90,${0.25 + 0.45 * f})` : `rgba(255,170,90,${0.25 + 0.45 * f})`, [3, 4], 1.1);
+      const S = cam.proyectar(x, piso), P = cam.proyectar(x, piso, alto);
+      ctx.fillStyle = 'rgba(10,8,6,0.28)'; ctx.beginPath(); ctx.ellipse(S.x, S.y, (acido ? 3 : p.tipo === 'fardo' ? 8 : 5) * S.s, (acido ? 1.2 : 2.4) * S.s, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(f * (acido ? 2 : 7) * (p.x < p.x0 ? -1 : 1)); ctx.scale(P.s, P.s);
+      if (acido) {
+        ctx.fillStyle = 'rgba(190,230,60,0.95)'; ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(240,255,170,0.9)'; ctx.beginPath(); ctx.arc(-1, -0.8, 1.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(190,230,60,0.5)'; ctx.beginPath(); ctx.arc(5, 1.4, 1.6, 0, Math.PI * 2); ctx.arc(8, 2.4, 1, 0, Math.PI * 2); ctx.fill();
+      } else if (p.tipo === 'fardo') {   // fardo de pasto atado
+        ctx.fillStyle = '#c9a646'; ctx.strokeStyle = '#6b5420'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.roundRect(-9, -6, 18, 12, 3); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#8a6c28'; ctx.lineWidth = 0.6; ctx.beginPath(); for (const xx of [-5, 0, 5]) { ctx.moveTo(xx, -6); ctx.lineTo(xx, 6); } ctx.stroke();
+        ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-9, -2); ctx.lineTo(9, -2); ctx.moveTo(-9, 2.4); ctx.lineTo(9, 2.4); ctx.stroke();
+      } else {   // cascote
+        ctx.fillStyle = '#8a8478'; ctx.strokeStyle = '#3a362e'; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-5, -2); ctx.lineTo(-1.6, -5); ctx.lineTo(4, -3.6); ctx.lineTo(5.4, 1); ctx.lineTo(1.6, 4.6); ctx.lineTo(-4, 3.4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,250,235,0.3)'; ctx.beginPath(); ctx.moveTo(-3.4, -2.2); ctx.lineTo(-1, -4); ctx.lineTo(2, -3); ctx.lineTo(-1, -1); ctx.closePath(); ctx.fill();
+      }
       ctx.restore();
     }
     // Estelas del francotirador y del cañón
@@ -636,6 +760,13 @@ const BastionV2Dibujo = {
       if (z.alerta > ahora && z.presa) {
         const P = cam.proyectar(z.x, z.y), y = P.y - ((z.barraAlto ?? 88 * z.escala) + 12) * P.s;
         ctx.globalAlpha = Math.min(1, (z.alerta - ahora) / 300); cartel('!', P.x, y, '#ffd23a', 14); ctx.globalAlpha = 1;
+      }
+      if (z.tipoBastion === 'rabioso' && z.estado === 'camina') {   // las rayas de la velocidad
+        const P = cam.proyectar(z.x, z.y); ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1;
+        ctx.beginPath(); for (const h of [14, 22, 30]) { const yy = P.y - h * z.escala * P.s * 1.6; ctx.moveTo(P.x + 7 * P.s, yy); ctx.lineTo(P.x + (16 + (h % 9)) * P.s, yy); } ctx.stroke();
+      }
+      if (z.descubierto > ahora) {   // el topo que descubrieron la torre de vigía o el tanque
+        const P = cam.proyectar(z.x, z.y); ctx.globalAlpha = 0.6 + 0.4 * Math.sin(ahora / 80); cartel('!', P.x, P.y - 34 * P.s, '#fff3b0', 15); ctx.globalAlpha = 1;
       }
       if (z.modo === 'aviso' || z.modo === 'carga') {
         const L = BASTION2.zombies.toro.embestida.largo * CELDA, x0 = z.modo === 'carga' ? z.cargaX0 : z.x, y0 = z.modo === 'carga' ? z.cargaY0 : z.y;
@@ -680,6 +811,7 @@ const BastionV2Dibujo = {
         if (U.minimo) anillo(p.x, p.y, U.minimo, 'rgba(255,190,90,0.75)', [3, 3]);          // el mortero no tira más cerca que esto
         if (U.cura) anillo(p.x, p.y, U.radio, 'rgba(140,255,150,0.7)', [5, 4]);              // hasta dónde cura el médico
         if (U.atrae) anillo(p.x, p.y, U.atrae * CELDA, 'rgba(255,230,170,0.6)', [5, 5]);     // hasta dónde llama el señuelo
+        if (U.detecta) anillo(p.x, p.y, U.detecta * CELDA, 'rgba(255,244,190,0.75)', [6, 4]);  // hasta dónde descubre la torre de vigía
       }
     }
     // Mover: a quién se eligió y si puede ir adonde está el puntero

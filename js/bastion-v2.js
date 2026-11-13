@@ -1,12 +1,16 @@
 /* ===== Último bastión v2: dos bandos con contrapesos =====
  * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). Un solo nivel, La granja,
- * con el plantel completo: 12 unidades militares y 12 tipos de zombie, en tres clases por bando.
+ * con el plantel completo: 13 unidades militares en tres clases y 16 tipos de zombie en cuatro.
  *
  *   EL BASTIÓN                                              LA HORDA
- *   Infantería   soldado, francotirador, lanzallamas,       Caminantes  común, corredor, gordo, acorazado
- *                médico                                     Especiales  gritón, hinchado, dinamitero, tóxico
- *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales    jauría, toro, bandada, buitre
- *   Estructuras  muro, alambrado, búnker, señuelo           (+ el soldado contagiado y El Coloso, el jefe)
+ *   Infantería   soldado, francotirador, lanzallamas,       Caminantes   común, corredor, gordo, acorazado
+ *                médico                                     Especiales   gritón, hinchado, dinamitero, tóxico
+ *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales     jauría, toro, bandada, buitre
+ *   Estructuras  muro, alambrado, búnker, señuelo,          Acechadores  topo, lanzador, escupidor, rabioso
+ *                torre de vigía                             (+ el soldado contagiado y El Coloso, el jefe)
+ *
+ * Los acechadores son los que no vienen de frente: el topo pasa por debajo, el lanzador arroja zombies por arriba de
+ * los muros, el escupidor tira desde más lejos que la línea y el rabioso corre más rápido que las armas lentas.
  *
  * Los contrapesos no salen de una tabla de multiplicadores sino de cinco reglas que valen para todos:
  *   Blindaje   le resta puntos a cada bala (mínimo 1). No frena al francotirador, al cañón, al fuego ni a las explosiones
@@ -39,7 +43,7 @@ const BASTION2 = {
   clases: {
     inf: ['soldado', 'francotirador', 'lanzallamas', 'medico'],
     mec: ['torreta', 'tanque', 'mortero', 'antiaerea'],
-    est: ['muro', 'alambrado', 'bunker', 'senuelo'],
+    est: ['muro', 'alambrado', 'bunker', 'senuelo', 'vigia'],
   },
   /* Unidades. alcance, minimo y radio en px del plano (44 px = una celda). arma: 'bala' (el blindaje le resta),
    * 'pesada' (ignora el blindaje), 'fuego' (daño por segundo a todos los del cono), 'explosivo' (granada con demora)
@@ -57,33 +61,41 @@ const BASTION2 = {
     alambrado:     { clase: 'est', costo: 15,  tiempo: 1.5, vida: 40,  donde: 'obra', liviano: true, frena: 0.45, raspa: 0.2 },
     bunker:        { clase: 'est', costo: 120, tiempo: 12,  vida: 280, donde: 'obra', bloquea: true, capacidad: 4, masAlcance: 1.2, masCadencia: 0.8 },
     senuelo:       { clase: 'est', costo: 50,  tiempo: 2,   vida: 100, donde: 'obra', liviano: true, atrae: 5, entretiene: 5 },
+    vigia:         { clase: 'est', costo: 60,  tiempo: 4,   vida: 80,  donde: 'obra', bloquea: true, detecta: 4 },   // detecta: celdas a las que obliga a salir al topo (el tanque, a 2)
   },
   /* Zombies. vida: veces la del común de esa oleada. vel en px/s. vista, olfato: en celdas. mueve: 'camina' (por la
    * grilla), 'cuad' (cuadrúpedo: salta lo bajo y el alambrado, no entra al agua) o 'vuela'. llega (los que cazan):
    * 'derecho' (por el camino si el rodeo es corto; si no, rompiendo lo que tapa a su presa), 'rodea' (nunca rompe) o
-   * 'rompe' (nunca rodea). dano: lo que le saca al campamento si entra. conducta: js/bastion-v2-horda.js */
+   * 'rompe' (nunca rodea). dano: lo que le saca al campamento si entra. esquiva: parte de los tiros pesados (el
+   * francotirador, el cañón) que le erran. conducta: js/bastion-v2-horda.js */
   zombies: {
-    caminante:     { clase: 'cam', conducta: 'caza', vida: 1,   vel: 24, vista: 3, llega: 'derecho', paga: 3,  dano: 1, escala: 0.58 },
-    corredor:      { clase: 'cam', conducta: 'caza', vida: 0.8, vel: 46, vista: 4, llega: 'rodea',   paga: 3,  dano: 1, escala: 0.5 },
-    gordo:         { clase: 'cam', conducta: 'caza', vida: 3.2, vel: 16, vista: 2, llega: 'rompe',   paga: 7,  dano: 3, escala: 0.66, aplasta: true, mordida: 1.5 },
-    acorazado:     { clase: 'cam', conducta: 'caza', vida: 2,   vel: 20, vista: 3, llega: 'derecho', paga: 7,  dano: 2, escala: 0.6, blindaje: 2 },
-    griton:        { clase: 'esp', conducta: 'grita', vida: 0.8, vel: 26, vista: 6, paga: 6, dano: 1, escala: 0.56, grito: { radio: 5, apuro: 1.3, dura: 6, cada: 5, quieto: 1.2 } },
-    hinchado:      { clase: 'esp', conducta: 'revienta', vida: 5, vel: 14, vista: 5, paga: 7, dano: 3, escala: 0.66, estalla: { radio: 60, unidades: 90, gente: 30, zombies: 2.2 } },
-    dinamitero:    { clase: 'esp', conducta: 'demuele', vida: 0.8, vel: 50, paga: 4, dano: 2, escala: 0.52, carga: { dano: 120, radio: 40, unidades: 40, gente: 20, zombies: 1 } },
-    toxico:        { clase: 'esp', conducta: 'caza', vida: 3, vel: 18, vista: 4, llega: 'derecho', paga: 6, dano: 2, escala: 0.6, grupo: true, gas: { radio: 50, dura: 5, dano: 5, bunker: 2.3 } },
+    caminante:     { clase: 'cam', conducta: 'caza', vida: 1,   vel: 24, vista: 3, llega: 'derecho', paga: 4,  dano: 1, escala: 0.58 },
+    corredor:      { clase: 'cam', conducta: 'caza', vida: 0.8, vel: 46, vista: 4, llega: 'rodea',   paga: 4,  dano: 1, escala: 0.5 },
+    gordo:         { clase: 'cam', conducta: 'caza', vida: 3.2, vel: 16, vista: 2, llega: 'rompe',   paga: 8,  dano: 3, escala: 0.66, aplasta: true, mordida: 1.5 },
+    acorazado:     { clase: 'cam', conducta: 'caza', vida: 2,   vel: 20, vista: 3, llega: 'derecho', paga: 8,  dano: 2, escala: 0.6, blindaje: 2 },
+    griton:        { clase: 'esp', conducta: 'grita', vida: 0.8, vel: 26, vista: 6, paga: 7, dano: 1, escala: 0.56, grito: { radio: 5, apuro: 1.3, dura: 6, cada: 5, quieto: 1.2 } },
+    hinchado:      { clase: 'esp', conducta: 'revienta', vida: 5, vel: 14, vista: 5, paga: 8, dano: 3, escala: 0.66, estalla: { radio: 60, unidades: 90, gente: 30, zombies: 2.2 } },
+    dinamitero:    { clase: 'esp', conducta: 'demuele', vida: 0.8, vel: 50, paga: 5, dano: 2, escala: 0.52, carga: { dano: 120, radio: 40, unidades: 40, gente: 20, zombies: 1 } },
+    toxico:        { clase: 'esp', conducta: 'caza', vida: 3, vel: 18, vista: 4, llega: 'derecho', paga: 7, dano: 2, escala: 0.6, grupo: true, gas: { radio: 50, dura: 5, dano: 5, bunker: 2.3 } },
     perro:         { clase: 'ani', conducta: 'jauria', mueve: 'cuad', vida: 0.5, vel: 62, olfato: 6, paga: 2, dano: 1, escala: 0.74, manada: 5, cadaMordida: 600 },
-    toro:          { clase: 'ani', conducta: 'embiste', mueve: 'cuad', vida: 6, vel: 20, vista: 6, paga: 9, dano: 3, escala: 0.82, embestida: { vel: 96, largo: 6, aviso: 0.8, aturde: 2, dano: 12, quieto: 2 } },
+    toro:          { clase: 'ani', conducta: 'embiste', mueve: 'cuad', vida: 6, vel: 20, vista: 6, paga: 10, dano: 3, escala: 0.82, embestida: { vel: 96, largo: 6, aviso: 0.8, aturde: 2, dano: 12, quieto: 2 } },
     cuervo:        { clase: 'ani', conducta: 'bandada', mueve: 'vuela', vida: 0.4, vel: 55, paga: 1, dano: 1, escala: 0.8, manada: 6, pico: 2, cadaPico: 700, altura: 44 },
-    buitre:        { clase: 'ani', conducta: 'rapta', mueve: 'vuela', vida: 2.5, vel: 40, paga: 6, dano: 1, escala: 1, altura: 56 },
+    buitre:        { clase: 'ani', conducta: 'rapta', mueve: 'vuela', vida: 2.5, vel: 40, paga: 7, dano: 1, escala: 1, altura: 56 },
     soldadoZombie: { clase: 'cam', conducta: 'caza', vida: 1.5, vel: 24, vista: 3, llega: 'derecho', paga: 3, dano: 1, escala: 0.6, blindaje: 1 },
-    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 40, dano: 8, escala: 1.25, aplasta: true, mordida: 3 },
+    topo:          { clase: 'ace', conducta: 'excava', vida: 1.6, vel: 24, vista: 3, llega: 'derecho', paga: 6, dano: 2, escala: 0.58, mordida: 1.5, topo: { vel: 36, sale: 0.8, encandila: 2.5, tanque: 2 } },
+    lanzador:      { clase: 'ace', conducta: 'arroja', vida: 6, vel: 16, paga: 10, dano: 3, escala: 0.92, mordida: 1.5,
+      arroja: { alcance: 7, cada: 3.2, vuelo: 1.3, cerca: 1.6, alFondo: true, tira: ['caminante', 'corredor', 'soldadoZombie', 'rabioso'], cosa: 'cascote', golpe: { unidades: 28, gente: 12, radio: 18 } } },
+    escupidor:     { clase: 'ace', conducta: 'escupe', vida: 1.2, vel: 20, paga: 7, dano: 2, escala: 0.6, escupe: { alcance: 5, cada: 3.2, vuelo: 1, golpe: 6, charco: { radio: 22, dura: 3.5, gente: 6, cosas: 7 } } },
+    rabioso:       { clase: 'ace', conducta: 'corre', vida: 0.7, vel: 120, paga: 3, dano: 1, escala: 0.5, manada: 4, esquiva: 0.6 },
+    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.25, aplasta: true, mordida: 3,
+      arroja: { alcance: 5, cada: 5, vuelo: 1.3, cosa: 'fardo', golpe: { unidades: 60, gente: 25, radio: 30 } } },
   },
-  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'jefe'],
-  clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'] },
+  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe'],
+  clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'], ace: ['topo', 'lanzador', 'escupidor', 'rabioso'] },
   // A quién elige primero el francotirador (de más a menos peligroso)
-  peligro: ['griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo'],
+  peligro: ['lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
   /* Quién frena a quién, para las marcas del panel, las fichas y los consejos. Sale de medir cada cruce con el
-   * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6), no de una regla aparte.
+   * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6 u 8), no de una regla aparte.
    * bien: lo frena; mal: rinde poco o se pierde contra él */
   contra: {
     caminante:  { bien: ['lanzallamas', 'mortero', 'senuelo'], mal: ['tanque', 'antiaerea'] },
@@ -98,28 +110,33 @@ const BASTION2 = {
     toro:       { bien: ['francotirador', 'tanque', 'torreta', 'bunker'], mal: ['soldado', 'alambrado', 'medico'] },
     cuervo:     { bien: ['antiaerea', 'bunker'], mal: ['torreta', 'tanque', 'mortero', 'lanzallamas'] },
     buitre:     { bien: ['antiaerea', 'soldado', 'bunker'], mal: ['torreta', 'tanque', 'mortero', 'lanzallamas'] },
+    topo:       { bien: ['vigia', 'tanque', 'senuelo', 'lanzallamas'], mal: ['francotirador', 'mortero', 'antiaerea', 'soldado', 'muro', 'alambrado'] },
+    lanzador:   { bien: ['francotirador', 'tanque', 'bunker'], mal: ['muro', 'alambrado', 'soldado', 'mortero'] },
+    escupidor:  { bien: ['francotirador', 'tanque'], mal: ['soldado', 'torreta', 'bunker', 'lanzallamas', 'muro'] },
+    rabioso:    { bien: ['lanzallamas', 'torreta', 'alambrado'], mal: ['francotirador', 'mortero', 'tanque', 'soldado'] },
     soldadoZombie: { bien: ['francotirador', 'tanque', 'medico'], mal: ['soldado'] },
     jefe:       { bien: ['tanque', 'francotirador'], mal: ['muro', 'alambrado', 'soldado'] },
   },
-  /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena un tipo, de a pocos, para ver qué hace antes de que
-   * duela; el orden en que salen lo arma ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto
-   * paga poco (un común, $3): con lo que se junta en toda la partida alcanza para uno de cada cosa, no para todo */
+  /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena uno o dos tipos; el orden en que salen lo arma
+   * ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto paga poco (un común, $4): con lo que se
+   * junta en toda la partida alcanza para responder a cada tipo, no para tener de todo de sobra. La plata es la perilla
+   * de la dificultad: con los comunes a $3 ningún plan del simulador llega al final */
   niveles: {
     granja: {
       dinero: 220, vida: 1,
       oleadas: [
         { caminante: 18 },
-        { caminante: 22, corredor: 10 },
-        { caminante: 24, corredor: 8, acorazado: 6 },
-        { caminante: 24, corredor: 10, acorazado: 6, perro: 10 },
-        { caminante: 30, acorazado: 8, perro: 10, cuervo: 12 },
-        { caminante: 30, corredor: 14, gordo: 5, acorazado: 8, jefe: 1 },
-        { caminante: 34, corredor: 14, hinchado: 3, perro: 15, cuervo: 12 },
-        { caminante: 36, gordo: 7, acorazado: 10, hinchado: 4, dinamitero: 6 },
-        { caminante: 38, corredor: 18, griton: 3, dinamitero: 6, perro: 15, cuervo: 18 },
-        { caminante: 42, gordo: 9, acorazado: 14, griton: 3, hinchado: 5, toxico: 4 },
-        { caminante: 42, corredor: 18, dinamitero: 7, toxico: 4, perro: 15, toro: 3, buitre: 3 },
-        { caminante: 44, corredor: 16, gordo: 8, acorazado: 12, griton: 3, hinchado: 4, dinamitero: 6, toxico: 4, perro: 15, toro: 3, cuervo: 18, buitre: 3, jefe: 1 },
+        { caminante: 24, corredor: 12 },
+        { caminante: 28, corredor: 10, acorazado: 8 },
+        { caminante: 28, corredor: 12, acorazado: 8, perro: 15, escupidor: 2 },
+        { caminante: 32, acorazado: 10, perro: 10, cuervo: 18, escupidor: 3, rabioso: 4 },
+        { caminante: 32, corredor: 14, gordo: 6, acorazado: 8, escupidor: 3, rabioso: 8, jefe: 1 },
+        { caminante: 36, corredor: 14, hinchado: 3, perro: 15, cuervo: 18, rabioso: 8 },
+        { caminante: 38, gordo: 7, acorazado: 10, hinchado: 4, dinamitero: 6, topo: 3, rabioso: 8 },
+        { caminante: 40, corredor: 18, griton: 3, dinamitero: 6, perro: 15, cuervo: 18, topo: 3, lanzador: 2 },
+        { caminante: 42, gordo: 9, acorazado: 12, griton: 3, hinchado: 4, toxico: 4, lanzador: 2, escupidor: 3, rabioso: 12 },
+        { caminante: 42, corredor: 18, dinamitero: 7, toxico: 4, perro: 15, toro: 3, buitre: 3, topo: 4, escupidor: 3 },
+        { caminante: 44, corredor: 16, gordo: 8, acorazado: 12, griton: 3, hinchado: 4, dinamitero: 6, toxico: 4, perro: 15, toro: 3, cuervo: 18, buitre: 3, topo: 4, lanzador: 2, escupidor: 3, rabioso: 12, jefe: 1 },
       ],
     },
   },
@@ -151,6 +168,8 @@ const BastionV2 = {
     for (let k = 0; k < n('caminante'); k++) poner('caminante', (Math.floor(k * hordas / n('caminante')) + 0.5) / hordas + k * 0.0004);
     parejo('acorazado', 0.08, 0.7); parejo('gordo', 0.4, 1); parejo('griton', 0.04, 0.55);
     parejo('hinchado', 0.3, 0.9); parejo('toxico', 0.3, 0.85); parejo('toro', 0.4, 0.8); parejo('buitre', 0.45, 0.9);
+    parejo('topo', 0.2, 0.75); parejo('lanzador', 0.3, 0.8); parejo('escupidor', 0.12, 0.75);
+    tandas('rabioso', BASTION2.zombies.rabioso.manada, [0.35, 0.65, 0.9]);
     tandas('corredor', Math.ceil(n('corredor') / 2) || 1, [0.3, 0.72]);
     tandas('dinamitero', Math.ceil(n('dinamitero') / 2) || 1, [0.5, 0.82]);
     tandas('perro', BASTION2.zombies.perro.manada, [0.25, 0.6, 0.86, 0.95]);
@@ -163,7 +182,7 @@ const BastionV2 = {
   // y después de una horda hay un respiro
   pausa(tipo, sigue, ronda, k) {
     const base = Math.max(0.5, 1.5 - ronda * 0.08) * (0.8 + azar(k, ronda) * 0.4);
-    if (tipo === sigue) return base * ({ caminante: 0.3, corredor: 0.4, dinamitero: 0.5, perro: 0.22, cuervo: 0.2 }[tipo] || 1);
+    if (tipo === sigue) return base * ({ caminante: 0.3, corredor: 0.4, dinamitero: 0.5, perro: 0.22, cuervo: 0.2, rabioso: 0.25 }[tipo] || 1);
     return base * (tipo === 'caminante' ? 2.4 : 1);
   },
   // Las unidades del bastión son una sola tabla (BASTION.unidades): en la v2 valen las de BASTION2 y, al volver al
@@ -214,7 +233,7 @@ const BastionV2 = {
     this.unidades = []; this.colaCuartel = []; this.colaTaller = []; this.colaOleada = [];
     this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = BASTION2.primerDescanso; this.proximoZombie = 0;
     this.colocando = null; this.moviendo = null; this.puntero = null; this.trazos = []; this.balasBastion = [];
-    this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = [];
+    this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
     this.velocidad = 1; this.construidas = 0; this.contagiados = 0; this.entraron = {};
     this.camposLibres = new Map(); this.camposCrudos = new Map(); this.camposCuad = new Map();
     this.prepararNivelBastion();   // escenario, terreno y obstáculos de La granja (js/bastion-niveles.js)
@@ -333,7 +352,7 @@ const BastionV2 = {
       return suelta ? 'bastion.ocupado' : this.colaCuartel.some(o => o.c === c && o.f === f && !o.bunker) ? 'bastion.ocupado' : null;
     }
     if ((ocupa && ocupa !== mueve) || suelta) return 'bastion.ocupado';
-    if (this.zombies.some(z => { if (z.estado === 'muerto' || z.vuela) return false; const k = this.celdaDe(z.x, z.y); return k.c === c && k.f === f; })) return 'bastion.ocupado';
+    if (this.zombies.some(z => { if (z.estado === 'muerto' || z.vuela || z.enterrado) return false; const k = this.celdaDe(z.x, z.y); return k.c === c && k.f === f; })) return 'bastion.ocupado';
     if (!U.liviano) {   // lo que bloquea no puede cerrar del todo el paso al campamento
       const bloq = this.bloqueadas(c + ',' + f);
       if (mueve && mueve.bloquea) bloq.delete(mueve.c + ',' + mueve.f);
@@ -476,7 +495,7 @@ const BastionV2 = {
       }
       const bono = 30 + 5 * this.ronda;
       this.dinero += bono; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + BASTION2.descanso;
-      this.nubesV2 = []; this.granadasV2 = [];
+      this.nubesV2 = []; this.granadasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
       this.avisoRonda(t('bastion.oleadaSuperada', { n: this.ronda }), t('bastion.bonus', { d: bono }), 2600); Audio_.rondaSuperada();
       this.guardarPartidaV2();
     }
@@ -547,9 +566,9 @@ const BastionV2 = {
   envolver('moverZombiesBastion', function (dt) { this.hordaV2(dt); });                       // js/bastion-v2-horda.js
   envolver('moverUnidades', function (dt) { this.tropaV2(dt); this.efectosV2(dt); });         // js/bastion-v2-tropa.js
   envolver('panelBastion', function () { if (typeof BastionV2UI !== 'undefined') BastionV2UI.panel(this); });
-  // Teclas como el panel: 1 a 4 la infantería, Q W E R los mecanizados, A S D F las estructuras; Z vende, X repara, C mueve
+  // Teclas como el panel: 1 a 4 la infantería, Q W E R los mecanizados, A S D F G las estructuras; Z vende, X repara, C mueve
   const TECLAS = { Digit1: 'soldado', Digit2: 'francotirador', Digit3: 'lanzallamas', Digit4: 'medico', KeyQ: 'torreta', KeyW: 'tanque', KeyE: 'mortero', KeyR: 'antiaerea',
-    KeyA: 'muro', KeyS: 'alambrado', KeyD: 'bunker', KeyF: 'senuelo', KeyZ: 'vender', KeyX: 'reparar', KeyC: 'mover' };
+    KeyA: 'muro', KeyS: 'alambrado', KeyD: 'bunker', KeyF: 'senuelo', KeyG: 'vigia', KeyZ: 'vender', KeyX: 'reparar', KeyC: 'mover' };
   BastionV2.TECLAS = TECLAS;
   envolver('teclaBastion', function (codigo) {
     if (TECLAS[codigo]) { this.elegirUnidad(TECLAS[codigo]); return true; }

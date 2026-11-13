@@ -14,7 +14,7 @@ const MISIONES = [
   { id: 'escopetazo',     nombre: 'Escopetazo',          descripcion: 'Consigue una escopeta.',                                  tipo: 'conseguir', categoria: 'escopeta', meta: 1 },
   { id: 'coleccionista',  nombre: 'Coleccionista',       descripcion: 'Consigue 3 escopetas distintas.',                               tipo: 'conseguir', categoria: 'escopeta', meta: 3 },
   { id: 'arsenal',        nombre: 'Arsenal completo',    descripcion: 'Consigue la Uzi, la AK-47, la M16, el Remington 700 y el Barrett M82.',              tipo: 'conseguir', armas: ['uzi', 'ak47', 'm16', 'remington700', 'barrett'] },
-  { id: 'artillero',      nombre: 'Artillero',           descripcion: 'Sube a una montaña, monta la M2 Browning y mata 30 zombies con ella.', tipo: 'bajas', meta: 30, categoria: 'ametralladora' },
+  { id: 'artillero',      nombre: 'Artillero',           descripcion: 'Sube a una montaña, monta la M2 Browning y mata 30 zombies con ella.', tipo: 'bajas', meta: 30, categoria: 'ametralladora', arma: 'm2' },   // la minigun también es ametralladora: no cuenta
   { id: 'tecnologia',     nombre: 'Tecnología alienígena', descripcion: 'Encuentra el láser alienígena en lo alto de una montaña.', tipo: 'conseguir', armas: ['laser'] },
   { id: 'demoledor',      nombre: 'Demoledor',           descripcion: 'Mata 15 zombies con granadas, lanzagranadas o bazuca.',  tipo: 'bajas', meta: 15, categorias: ['granada', 'lanzagranadas', 'bazuca'] },
   { id: 'relampago',      nombre: 'Relámpago',           descripcion: 'Mata 5 zombies en 30 segundos.',                          tipo: 'bajas', meta: 5,  tiempoLimite: 30 },

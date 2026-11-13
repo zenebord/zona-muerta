@@ -470,7 +470,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
     // Mano libre (recarga, cerrojo, granada): sigue al antebrazo, abierta o cerrada según lo que hace (estadoArma).
     // Lo que lleva va entre los dedos: se dibuja antes que la mano para que esta lo tape un poco
     brazoConMano(ctx, hombroX, -52 + ty, e.mano.x, e.mano.y, C, L, { cierre: e.cierre ?? 0.8, dir: e.dirMano,
-      antes: () => { if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano); } });
+      antes: () => { if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano, e.cajaNueva); } });
   }
 };
 
@@ -498,11 +498,13 @@ function dibujarManguera(ctx, ty, x, y) {
   ctx.restore();
 }
 
-/* Lo que puede llevar la mano durante una recarga, con su forma propia */
-function dibujarUnidad(ctx, tipo, x, y, rot = 0) {
+/* Lo que puede llevar la mano durante una recarga, con su forma propia (nueva: la que trae, no la que saca) */
+function dibujarUnidad(ctx, tipo, x, y, rot = 0, nueva = false) {
   const laton = '#c9a227', cobre = '#b87333';
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
   switch (tipo) {
+    case 'cajaMinigun':   // la caja de munición de la minigun, apoyada en la palma (js/armas-especiales.js)
+      ctx.scale(CM, CM); cajaMinigun(ctx, 0, 1.6, nueva); break;
     case 'cargador':
       parte(ctx, -2, 0, 5, 11, '#222'); ctx.fillStyle = tinta(laton); ctx.fillRect(-1.5, -1.5, 4, 1.8);
       ctx.fillStyle = tinta('#444'); ctx.fillRect(-2.5, 9, 6, 2); break;
