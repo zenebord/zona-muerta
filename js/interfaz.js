@@ -221,7 +221,7 @@
     const lista = document.getElementById('lista-armas-prueba');
     lista.innerHTML = '';
     for (const [clave, pertenece] of GRUPOS_PRUEBA) {
-      const ids = ORDEN_INVENTARIO.filter(pertenece);
+      const ids = ORDEN_INVENTARIO.filter(id => pertenece(id) && armaPermitida(id));   // las de un personaje, solo con ese personaje
       const grupo = document.createElement('section');
       grupo.className = 'grupo-armas' + (clave === 'grupo.4' ? ' especiales' : clave === 'grupo.6' ? ' legendarias' : '');
       grupo.innerHTML = `<h3>${t(clave).toUpperCase()} <span>${ids.length}</span></h3>`;
@@ -273,7 +273,7 @@
     if (!a.fuego) filas.push([t('detalle.cadencia'), `${Math.round(60000 / a.cadencia)}/min`]);
     const manual = MODOS_MANUALES[ACCION_MANUAL[id]];
     filas.push([t('detalle.modo'), t(manual || (a.automatica ? 'modo.auto' : a.cargador === 1 ? 'modo.tiro' : a.recargaTipo === 'tambor' || a.recargaTipo === 'tambor-rapido' ? 'modo.revolver' : 'modo.semi'))]);
-    filas.push([t('detalle.recarga'), `${(a.recarga / 1000).toLocaleString(Idioma.actual())} s · ${t('recargaTipo.' + a.recargaTipo)}`]);
+    filas.push([t('detalle.recarga'), `${(a.recarga / 1000).toLocaleString(Idioma.actual())} s · ${t('recargaTipo.' + (a.recargaTexto || a.recargaTipo))}`]);
     filas.push([t('detalle.alcance'), `${Math.round(m(a.alcance))} m`]);
     if (a.explosivo) filas.push([t('detalle.explosion'), t('detalle.radio', { m: m(a.radio).toLocaleString(Idioma.actual()) })]);
     if (a.perfora) filas.push([t('detalle.perfora'), t('detalle.perforaSi')]);
@@ -710,6 +710,7 @@
   const aplicarSonido = () => Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
   Config.alCambiar(clave => {
     if (['general', 'efectos', 'musica', 'silencio'].includes(clave)) aplicarSonido();
+    if (clave === 'skin') renderizarArmasPrueba();   // el machete del cazador aparece o desaparece de la lista
     if (clave === 'calidad') { if (Config.get('calidad') === 'auto') { calidadAuto = 'alta'; Config.set('calidadAutoNivel', 'alta'); } ajustarResolucion(true); }   // elegir «auto» vuelve a medir desde alta
   });
   aplicarSonido();

@@ -7,7 +7,12 @@
  *   recargaTipo    cargador-pistola | cargador | tambor | tambor-rapido | peine | cerrojo | palanca | cartuchos | quiebre | cinta | granada | ignicion
  *   recargaFinal   qué hace al terminar de poner el cargador: corredera | liberar | palmada | palmada-hk | cerrojo | ninguno
  *   recargaUnidad  qué lleva en la mano: cargador | cargador-curvo | cargador-plano | tambor-cargador | bala | cartucho | peine | speedloader | cinta | granada40 | celda | ignicion
+ *                  (cajaMinigun: la caja de la minigun, que dibuja su propio modelo en la mano; js/armas-especiales.js)
  *   balanceo       el cargador se engancha de adelante hacia atrás (AK, Saiga)
+ *   recargaTexto   cómo se llama la recarga en la ficha, si no es la de su recargaTipo (recargaTipo.<texto> en idioma.js)
+ * Armas especiales (js/armas-especiales.js):
+ *   skin           solo la tiene quien juega con ese personaje (js/skins.js): el machete del cazador
+ *   giratoria      { arranque, frenado } ms: los cañones tardan en llegar a la velocidad de tiro y en parar (minigun)
  */
 const VIDA_ZOMBIE_NORMAL = 15;
 
@@ -62,6 +67,12 @@ const ARMAS = {
   // zombie, que sigue quemándose quemaSeg segundos (quema por segundo). cargador = descargas; a 50 ms son 7 s de fuego.
   // Lo que se cambia al recargar es el cilindro de ignición de la punta (el combustible va en la mochila).
   lanzallamas: { id: 'lanzallamas', nombre: 'Lanzallamas M2', categoria: 'lanzallamas', fuego: true, dano: 0.4, quema: 4, quemaSeg: 3, llamas: 3, cargador: 140, cadencia: 50, recarga: 2400, automatica: true, velocidad: 8.5, alcance: 330, gravedad: 0.035, reservaInicial: 4, recargaTipo: 'ignicion', recargaFinal: 'ninguno', recargaUnidad: 'ignicion', color: '#4a5532' },
+  // Minigun M134 (EE. UU., 1963): seis cañones que gira un motor eléctrico. 7,62×51 mm, bala de fusil: un tiro por
+  // zombie, como los rifles y la M2. Al apretar, los cañones tardan 350 ms en llegar a la velocidad de tiro (sin tirar);
+  // al soltar siguen girando 1,4 s hasta parar. Cadencia de 30 ms: 2000 por minuto, la velocidad baja de la M134 (a 60
+  // cuadros por segundo sale un tiro cada dos cuadros). 300 tiros en la caja y dos cajas de repuesto; recargar es
+  // cambiar la caja, que cae al piso.
+  minigun:  { id: 'minigun',  nombre: 'Minigun M134',    categoria: 'ametralladora', dano: 15, cargador: 300, cadencia: 30, recarga: 3800, automatica: true, velocidad: 22, alcance: 1100, giratoria: { arranque: 350, frenado: 1400 }, reservaInicial: 600, recargaTipo: 'cargador', recargaFinal: 'ninguno', recargaUnidad: 'cajaMinigun', recargaTexto: 'caja', color: '#2b2d31' },
   laser:    { id: 'laser',    nombre: 'Láser alienígena', categoria: 'laser', dano: 15, cargador: 20, cadencia: 220, recarga: 2000, automatica: false, velocidad: 40, alcance: 1400, perfora: true, reservaInicial: 40, recargaTipo: 'cargador', recargaFinal: 'ninguno', recargaUnidad: 'celda', color: '#39ff14' },
 
   // --- Cuerpo a cuerpo: se empuñan; sin munición ni recarga. alcance en unidades, objetivos = a cuántos pega por golpe ---
@@ -70,6 +81,9 @@ const ARMAS = {
   hacha:    { id: 'hacha',    nombre: 'Hacha de bombero', categoria: 'cuerpo', cuerpo: true, dano: 15, cadencia: 720, golpe: 600, alcance: 58, objetivos: 2, empuje: 3, filo: true,  cargador: 1, automatica: true, color: '#b3261e' },
   bate:     { id: 'bate',     nombre: 'Bate con clavos',  categoria: 'cuerpo', cuerpo: true, dano: 8,  cadencia: 520, golpe: 440, alcance: 58, objetivos: 3, empuje: 5, filo: false, cargador: 1, automatica: true, color: '#9b6a3a' },
   mazo:     { id: 'mazo',     nombre: 'Mazo',             categoria: 'cuerpo', cuerpo: true, dano: 15, cadencia: 900, golpe: 760, alcance: 60, objetivos: 3, empuje: 7, filo: false, cargador: 1, automatica: true, color: '#55585e' },
+  // Machete del cazador: solo con el personaje «cazador» (skin), que lo lleva siempre. Hoja más larga que la del
+  // machete común (alcance 60 contra 52) y un golpe que voltea a un zombie (15 contra 8), un poco más lento
+  macheteCazador: { id: 'macheteCazador', nombre: 'Machete del cazador', categoria: 'cuerpo', cuerpo: true, unaMano: true, skin: 'cazador', dano: 15, cadencia: 460, golpe: 380, alcance: 60, objetivos: 2, empuje: 2.5, filo: true, cargador: 1, automatica: true, color: '#7a5a44' },
 
   // --- Legendarias (mitología): golpes con poder. Solo en las montañas ---
   mjolnir:  { id: 'mjolnir',  nombre: 'Mjölnir',              categoria: 'legendaria', cuerpo: true, legendaria: true, poder: 'rayo',  dano: 15, cadencia: 900,  golpe: 620, alcance: 54, objetivos: 3, empuje: 5, filo: false, cargador: 1, automatica: true, color: '#7d8a9a' },
@@ -87,12 +101,14 @@ const ARMAS_COMUNES = ['glock', 'magnum', 'colt1911', 'deagle', 'python', 'beret
   'machete', 'katana', 'hacha', 'bate', 'mazo'];
 
 // Armas especiales que solo aparecen arriba de las montañas
-const ARMAS_ESPECIALES = ['m79', 'mgl', 'bazuca', 'rpg7', 'granadas', 'lanzallamas', 'laser'];
+const ARMAS_ESPECIALES = ['m79', 'mgl', 'bazuca', 'rpg7', 'granadas', 'lanzallamas', 'minigun', 'laser'];
 // Legendarias: también en las montañas, en lugar de una especial cada tanto
 const ARMAS_LEGENDARIAS = ['mjolnir', 'excalibur', 'tridente', 'egida', 'gungnir'];
 
-// Orden fijo del inventario, para que las teclas 1…0 siempre apunten a la misma arma
+// Orden fijo del inventario, para que las teclas 1…0 siempre apunten a la misma arma. Las de un personaje (skin) no
+// salen en las cajas: van en el orden al lado de su pariente (el machete del cazador, después del machete)
 const ORDEN_INVENTARIO = [...ARMAS_COMUNES, ...ARMAS_ESPECIALES, ...ARMAS_LEGENDARIAS];
+ORDEN_INVENTARIO.splice(ORDEN_INVENTARIO.indexOf('machete') + 1, 0, 'macheteCazador');
 
 // Ranuras del teclado (1 a 7): cada tecla elige un grupo y, apretada otra vez, recorre sus armas
 const GRUPOS_ARMAS = [

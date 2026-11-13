@@ -492,14 +492,33 @@ Tiros en dificultad media:
 | Rifles | Remington 700, Barrett M82, Mosin-Nagant, M1 Garand, Dragunov SVD, Winchester 1894 | 1 |
 | Escopetas | Recortada doble caño, Mossberg 500, SPAS-12, AA-12, Saiga-12, Benelli M4, Remington 870, Winchester 1887 | 1 |
 | Ametralladora fija | M2 Browning .50, clavada en las montañas, no se puede llevar | 1 |
-| Especiales (solo en montañas) | Lanzagranadas M79, Milkor MGL (6 granadas), Bazuca M9, RPG-7, Granadas M67, Lanzallamas M2, Láser alienígena | 1 (el lanzallamas: 0,9 s de fuego) |
-| Cuerpo a cuerpo (tecla 6) | Machete y Bate con clavos (2 golpes), Katana (2, rápida), Hacha de bombero y Mazo (1, lentos; el mazo empuja lejos) | 1–2 |
+| Especiales (solo en montañas) | Lanzagranadas M79, Milkor MGL (6 granadas), Bazuca M9, RPG-7, Granadas M67, Lanzallamas M2, Minigun M134 (300 tiros), Láser alienígena | 1 (el lanzallamas: 0,9 s de fuego) |
+| Cuerpo a cuerpo (tecla 6) | Machete y Bate con clavos (2 golpes), Katana (2, rápida), Hacha de bombero y Mazo (1, lentos; el mazo empuja lejos), Machete del cazador (1; solo con el cazador enmascarado) | 1–2 |
 | Legendarias (tecla 7, solo en montañas) | Mjölnir (llama rayos sobre 4 zombies), Excalibur (onda de luz que atraviesa), Tridente de Poseidón (ola que barre), Égida (escudo que se lanza y vuelve), Gungnir (lanza que se lanza y vuelve) | 1 |
 
 Las armas cuerpo a cuerpo y las legendarias no usan munición ni se recargan: `F` da el golpe (alza el arma,
 la baja de golpe y vuelve a la guardia) y pega a los dos o tres zombies más cercanos adelante. Las de dos
 manos se toman con las dos en el mango; el machete, la Égida y Gungnir, con una. Las legendarias son de la
 mitología (nórdica, artúrica y griega); 3 de cada 10 cajas de montaña traen una.
+
+### Machete del cazador y Minigun M134
+
+Armas especiales de `js/armas-especiales.js`, que se engancha envolviendo métodos de `Jugador` y de `Juego`.
+
+- **Machete del cazador**: es del personaje enmascarado (skin `cazador`) y de nadie más. Con él está siempre en el
+  inventario, al lado del machete común; con otro personaje no aparece en ninguna lista (ni en el campo de pruebas),
+  no se puede recoger ni equipar, y si se cambia de personaje con el machete en la mano pasa a la siguiente arma. Hoja
+  de 58 cm (76 de punta a punta), vieja: óxido, cuatro mellas, sangre seca, mango rajado con cinta aisladora y un
+  cordón. Una mano, alcance 60 y daño 15: tumba a un zombie de un golpe. Suena el susurro «ch ch ch… ja ja ja» de las
+  películas de terror, sintetizado (`Audio_.susurroCazador`, sin grabaciones): al sacarlo (2,5 s como mínimo entre
+  uno y otro) y, si pasaron 8 s del último, al matar con él o en 4 de cada 10 golpes. El nombre sigue la regla de los
+  personajes: sin nombres de marcas ni de películas.
+- **Minigun M134**: seis cañones que gira un motor eléctrico, 300 tiros en la caja y dos de repuesto. Al apretar, los
+  cañones tardan 350 ms en llegar a la velocidad de tiro (giran sin tirar); después tira cada 30 ms (2000 por minuto) y
+  la vaina salta por la ventana del costado. Al soltar siguen girando 1,4 s hasta parar. Tirando mucho, las bocas se
+  ponen rojas. El motor sube y baja de tono con la velocidad y la ráfaga ruge debajo de cada tiro. Recargar es cambiar
+  la caja: la vacía cae al piso y la nueva llega con la punta de la cinta. Un tiro por zombie, como la M2; la misión
+  «Artillero» sigue contando solo la M2.
 
 ### Lanzallamas M2
 

@@ -186,7 +186,7 @@ const Audio_ = (() => {
   const CERROJO_MANUAL = new Set(['remington700', 'mosin', 'mauser']);
   const REVOLVERES = new Set(['magnum', 'python']);
   const QUIEBRE = new Set(['recortada', 'm79', 'mgl']);
-  const PESO = { barrett: 0.78, m2: 0.72, aa12: 0.74, saiga: 0.9, deagle: 0.9, uzi: 1.1, p90: 1.12, mp5: 1.05 };
+  const PESO = { barrett: 0.78, m2: 0.72, aa12: 0.74, saiga: 0.9, deagle: 0.9, uzi: 1.1, p90: 1.12, mp5: 1.05, minigun: 0.62 };
   function grabacionDeRecarga(evento, id) {
     const peso = PESO[id] || 1;
     switch (evento) {
@@ -290,6 +290,118 @@ const Audio_ = (() => {
   const PESADAS = new Set(['magnum', 'deagle', 'python', 'barrett', 'm2', 'mosin', 'svd', 'garand']);
   const LIVIANAS = new Set(['glock', 'uzi', 'p90', 'mp5', 'mauser', 'colt1911', 'ppk', 'vector', 'beretta92']);
 
+  /* ---------- Minigun M134 ----------
+   * Cada tiro es corto y seco (a 30 por segundo se encadenan en el «brrrrt»); por debajo suenan, mientras los cañones
+   * giran, el motor eléctrico (dos osciladores que suben de tono con la velocidad), el silbido de los cañones con el
+   * traqueteo de los seis al pasar, y mientras tira, un rugido grave cortado a la cadencia. Lo continuo se actualiza en
+   * cada cuadro (Audio_.minigun): si dejan de llegar llamadas (pausa, menú, otra arma) se apaga solo. */
+  function tiroMinigun() {
+    const v = 0.92 + Math.random() * 0.16;
+    ruido({ dur: 0.045, vol: 0.42, filtro: 'lowpass', freq: 5200 * v, freqFin: 520, q: 0.7, ataque: 0.0005, sat: 3, rev: interior ? 0.12 : 0.02, eco: interior ? 0.08 : 0 });
+    tono({ desde: 150 * v, hasta: 58, dur: 0.05, vol: 0.32, ataque: 0.0006, sat: 1.8 });
+  }
+  let motor = null;
+  function crearMotor() {
+    const nodos = [], nuevo = (n, arrancar = false) => { if (arrancar) nodos.push(n); return n; };
+    // Motor eléctrico: diente de sierra y su octava cuadrada, por un pasabajos
+    const zumbido = ctx.createBiquadFilter(); zumbido.type = 'lowpass'; zumbido.frequency.value = 1400; zumbido.Q.value = 2.5;
+    const o1 = nuevo(ctx.createOscillator(), true); o1.type = 'sawtooth'; o1.frequency.value = 55;
+    const o2 = nuevo(ctx.createOscillator(), true); o2.type = 'square'; o2.frequency.value = 110;
+    const g1 = ctx.createGain(); g1.gain.value = 0.55; const g2 = ctx.createGain(); g2.gain.value = 0.16;
+    o1.connect(g1); g1.connect(zumbido); o2.connect(g2); g2.connect(zumbido);
+    // Silbido de los cañones: ruido en banda que sube con la velocidad, con el traqueteo de los seis cañones al pasar
+    const aire = nuevo(ctx.createBufferSource(), true); aire.buffer = bufferRuido; aire.loop = true;
+    const banda = ctx.createBiquadFilter(); banda.type = 'bandpass'; banda.frequency.value = 300; banda.Q.value = 1.3;
+    const traqueteo = ctx.createGain(); traqueteo.gain.value = 0.55;
+    const pasoCanon = nuevo(ctx.createOscillator(), true); pasoCanon.type = 'triangle'; pasoCanon.frequency.value = 4;
+    const pasoCanonG = ctx.createGain(); pasoCanonG.gain.value = 0.45; pasoCanon.connect(pasoCanonG); pasoCanonG.connect(traqueteo.gain);
+    aire.connect(banda); banda.connect(traqueteo);
+    const salidaMotor = ctx.createGain(); salidaMotor.gain.value = 0;
+    zumbido.connect(salidaMotor); const aireG = ctx.createGain(); aireG.gain.value = 1.6; traqueteo.connect(aireG); aireG.connect(salidaMotor);
+    conectar(salidaMotor, 0.08, 0);
+    // Rugido de la ráfaga: ruido grave saturado, con un golpe por tiro (diente de sierra invertido a la cadencia)
+    const rugido = nuevo(ctx.createBufferSource(), true); rugido.buffer = bufferRuido; rugido.loop = true;
+    const grave = ctx.createBiquadFilter(); grave.type = 'lowpass'; grave.frequency.value = 1100; grave.Q.value = 0.8;
+    const golpes = ctx.createGain(); golpes.gain.value = 0.5;
+    const cadencia = nuevo(ctx.createOscillator(), true); cadencia.type = 'sawtooth'; cadencia.frequency.value = 33;
+    const cadenciaG = ctx.createGain(); cadenciaG.gain.value = -0.5; cadencia.connect(cadenciaG); cadenciaG.connect(golpes.gain);
+    rugido.connect(grave); grave.connect(golpes);
+    const salidaRafaga = ctx.createGain(); salidaRafaga.gain.value = 0;
+    saturar(golpes, 2.2).connect(salidaRafaga);
+    conectar(salidaRafaga, 0.25, 0.12);
+    const t = ctx.currentTime;
+    for (const n of nodos) n.start(t, n.buffer ? Math.random() * 1.5 : 0);
+    motor = { o1, o2, banda, pasoCanon, cadencia, salidaMotor, salidaRafaga, nodos, reloj: 0 };
+  }
+  function apagarMotor() {
+    if (!motor) return;
+    const m = motor; motor = null;
+    clearTimeout(m.reloj);
+    const t = ctx.currentTime;
+    m.salidaMotor.gain.cancelScheduledValues(t); m.salidaMotor.gain.setTargetAtTime(0, t, 0.03);
+    m.salidaRafaga.gain.cancelScheduledValues(t); m.salidaRafaga.gain.setTargetAtTime(0, t, 0.03);
+    for (const n of m.nodos) { try { n.stop(t + 0.3); } catch { /* ya parado */ } }
+  }
+  // Valor con «hombre muerto»: va hacia `valor` y, si en 0,2 s no llega otra llamada, cae a cero solo
+  function sostener(param, valor, t, subida) {
+    param.cancelScheduledValues(t);
+    param.setTargetAtTime(valor, t, subida);
+    param.setTargetAtTime(0, t + 0.2, 0.06);
+  }
+
+  /* ---------- Susurro del cazador ----------
+   * El «ch ch ch ch… ja ja ja ja» de las películas de terror, sintetizado: cuatro «ch» (un golpecito de «t» y el
+   * soplido agudo de la «sh», ruido en banda alrededor de 3 kHz) y cuatro «ja» aspiradas (aire por los formantes de una
+   * «a» susurrada, con un hilo de voz grave que cae). Todo bajito y con un eco que rebota varias veces, cada vez más
+   * oscuro, más algo de reverberación. Pasa por la mezcla de efectos: respeta el volumen y el silencio. */
+  let ecoSusurro = null;
+  function lineaSusurro() {
+    if (ecoSusurro) return ecoSusurro;
+    const entrada = ctx.createGain();
+    const retardo = ctx.createDelay(1); retardo.delayTime.value = 0.21;
+    const oscuro = ctx.createBiquadFilter(); oscuro.type = 'lowpass'; oscuro.frequency.value = 2400;
+    const vuelta = ctx.createGain(); vuelta.gain.value = 0.52;
+    const humedo = ctx.createGain(); humedo.gain.value = 0.8;
+    entrada.connect(retardo); retardo.connect(oscuro); oscuro.connect(vuelta); vuelta.connect(retardo); oscuro.connect(humedo);
+    conectar(humedo, 0.35, 0);
+    ecoSusurro = entrada;
+    return entrada;
+  }
+  function silaba(g, t0, fin, fuentes) {
+    conectar(g, 0.3, 0); g.connect(lineaSusurro());
+    for (const f of fuentes) { f.start(t0, f.buffer ? Math.random() * 1.5 : 0); f.stop(fin + 0.05); }
+  }
+  function silabaCh(t0, vol) {
+    const aire = ctx.createBufferSource(); aire.buffer = bufferRuido;
+    const agudo = ctx.createBiquadFilter(); agudo.type = 'highpass'; agudo.frequency.value = 1700;
+    const sh = ctx.createBiquadFilter(); sh.type = 'bandpass'; sh.frequency.value = 2900 + Math.random() * 600; sh.Q.value = 1.5;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.005);             // la «t»
+    g.gain.exponentialRampToValueAtTime(vol * 0.45, t0 + 0.022);
+    g.gain.exponentialRampToValueAtTime(vol * 0.7, t0 + 0.05);        // la «sh»
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.13);
+    aire.connect(agudo); agudo.connect(sh); sh.connect(g);
+    silaba(g, t0, t0 + 0.13, [aire]);
+  }
+  function silabaJa(t0, vol, altura) {
+    const dur = 0.2, mezcla = ctx.createGain();
+    const aire = ctx.createBufferSource(); aire.buffer = bufferRuido; aire.connect(mezcla);
+    const voz = ctx.createOscillator(); voz.type = 'sawtooth';
+    voz.frequency.setValueAtTime(altura, t0); voz.frequency.exponentialRampToValueAtTime(altura * 0.84, t0 + dur);
+    const vozG = ctx.createGain(); vozG.gain.value = 0.12; voz.connect(vozG); vozG.connect(mezcla);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.035);             // la «j» aspirada se abre en la «a»
+    g.gain.setValueAtTime(vol, t0 + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    for (const [fr, q, k] of [[760, 4, 2.6], [1220, 5, 2.0], [2550, 7, 1.3]]) {   // formantes de la «a»
+      const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = fr * (0.96 + Math.random() * 0.08); b.Q.value = q;
+      const bg = ctx.createGain(); bg.gain.value = k; mezcla.connect(b); b.connect(bg); bg.connect(g);
+    }
+    silaba(g, t0, t0 + dur, [aire, voz]);
+  }
+
   return {
     activar: asegurar,
     // Volúmenes de la configuración: { general, efectos, musica, silencio }
@@ -299,6 +411,7 @@ const Audio_ = (() => {
 
     disparo(categoria, armaId) {
       if (!asegurar()) return;
+      if (armaId === 'minigun') { tiroMinigun(); return; }   // el rugido de la ráfaga lo pone Audio_.minigun
       const pesado = PESADAS.has(armaId) ? 1.35 : LIVIANAS.has(armaId) ? 0.85 : 1;
       switch (categoria) {
         case 'pistola':       detonacion({ crack: 0.9, boom: 0.75 * pesado, boomHz: 650 / pesado, golpeVol: 0.55 * pesado, golpeHz: 190, golpeDur: 0.09 * pesado, cola: 0.22 * pesado, colaDur: 0.45 * pesado, mecanismo: armaId === 'magnum' || armaId === 'python' ? 0 : 0.07 }); break;
@@ -522,6 +635,31 @@ const Audio_ = (() => {
       asegurar();
       ruido({ dur: 0.9, vol: 0.55, filtro: 'lowpass', freq: 400, freqFin: 1800, ataque: 0.15, rev: 0.3 });
       ruido({ dur: 0.6, vol: 0.35, filtro: 'bandpass', freq: 2500, q: 0.8, ataque: 0.05, retraso: 0.3, rev: 0.3 });
+    },
+    // Machete del cazador: el susurro «ch ch ch ch… ja ja ja ja» (bajito, con eco). Cuándo suena lo decide
+    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
+    susurroCazador() {
+      if (!asegurar()) return;
+      const t = ctx.currentTime + 0.03, v = 0.9 + Math.random() * 0.2;
+      for (let k = 0; k < 4; k++) silabaCh(t + k * 0.165 + (Math.random() - 0.5) * 0.02, 0.2 * v * (1 - k * 0.06));
+      const t2 = t + 0.9;
+      for (let k = 0; k < 4; k++) silabaJa(t2 + k * 0.2 + (Math.random() - 0.5) * 0.02, 0.16 * v * (1 - k * 0.07), 112 - k * 4);
+    },
+    // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
+    // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
+    minigun(vel, tirando = false) {
+      const v = Math.max(0, Math.min(1, vel || 0));
+      if (v < 0.002 && !tirando) { if (motor) apagarMotor(); return; }
+      if (!asegurar()) return;
+      if (!motor) crearMotor();
+      const m = motor, t = ctx.currentTime;
+      m.o1.frequency.setTargetAtTime(48 + 230 * v, t, 0.05);
+      m.o2.frequency.setTargetAtTime(96 + 460 * v, t, 0.05);
+      m.banda.frequency.setTargetAtTime(260 + 1900 * v, t, 0.06);
+      m.pasoCanon.frequency.setTargetAtTime(Math.max(1, 33 * v), t, 0.06);   // seis cañones por vuelta: a velocidad de tiro pasan 33 por segundo
+      sostener(m.salidaMotor.gain, 0.03 + 0.12 * Math.sqrt(v), t, 0.04);
+      sostener(m.salidaRafaga.gain, tirando ? 0.3 : 0, t, tirando ? 0.008 : 0.04);
+      clearTimeout(m.reloj); m.reloj = setTimeout(apagarMotor, 1500);   // sin llamadas (pausa, menú): se liberan los nodos
     },
     // Escudo o lanza arrojados, y cuando vuelven a la mano
     lanzar(tipo) {
