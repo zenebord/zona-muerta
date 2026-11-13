@@ -817,12 +817,11 @@ body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }
 .ficha-vitrina .fv-ayuda kbd { font-size: .85em; padding: 0 4px; margin: 0 1px; }
 
 /* ===== Último bastión v2 (js/bastion-v2*.js): panel de 12 unidades, parte de la oleada, fichas y pantalla previa ===== */
-.boton.grande.bastion.v2 { border-style: dashed; }
 /* En el celular la pausa sube al lado del engranaje: abajo tapaba los botones de construir */
 body.en-bastion.tactil .extras-tactiles { left: calc(var(--izq) + 50px); right: auto; top: 8px; bottom: auto; justify-content: flex-start; flex-wrap: nowrap; }
 .bastion-parte, .bastion-info, .b2-barra, .b2-guia, .solo-b2 { display: none; }
 /* Lista de niveles: pocas tarjetas, que no se estiren a todo el ancho */
-.lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(200px, 300px)); justify-content: center; }
+.lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(200px, 270px)); justify-content: center; }
 #panel-bastion2-niveles { justify-content: safe center; overflow-y: auto; }
 #panel-bastion2-niveles > * { flex-shrink: 0; }
 #panel-bastion2-niveles .ayuda { max-width: 760px; }
@@ -948,9 +947,9 @@ body.en-bastion.bastion-v2 .bastion-info {
   #panel-bastion2-niveles { padding: 6px 12px; gap: 4px; }
   #panel-bastion2-niveles h2 { font-size: 16px; margin: 0; } #panel-bastion2-niveles .ayuda { font-size: 11px; margin: 0; }
   #panel-bastion2-niveles > .boton { padding: 4px 14px; font-size: 12px; }
-  .lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(180px, 250px)); gap: 8px; padding: 2px; }
-  .lista-bastion2 .tarjeta-mapa .vista { margin-bottom: 4px; } .lista-bastion2 .tarjeta-mapa h3 { font-size: 13px; margin: 0 10px 2px; }
-  .lista-bastion2 .tarjeta-mapa p { font-size: 11px; line-height: 1.25; margin: 0 10px; } .lista-bastion2 .tarjeta-mapa .etiqueta { margin: 4px 10px 0; font-size: 10px; }
+  .lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(150px, 196px)); gap: 8px; padding: 2px; }   /* cuatro niveles en una fila */
+  .lista-bastion2 .tarjeta-mapa .vista { margin-bottom: 4px; } .lista-bastion2 .tarjeta-mapa h3 { font-size: 12.5px; margin: 0 8px 2px; }
+  .lista-bastion2 .tarjeta-mapa { padding-bottom: 8px; } .lista-bastion2 .tarjeta-mapa p { font-size: 10.5px; line-height: 1.22; margin: 0 8px; } .lista-bastion2 .tarjeta-mapa .etiqueta { margin: 4px 8px 0; font-size: 9.5px; }
   #panel-bastion2-niveles .fila-botones { margin-top: 4px; } #panel-bastion2-niveles .fila-botones .boton { padding-top: 5px; padding-bottom: 5px; }
   #panel-bastion2 { padding-top: 4px; gap: 3px; } #panel-bastion2 h2 { font-size: 15px; } #panel-bastion2 .ayuda, .b2-reglas li:nth-child(n+2) { display: none; }
   /* En el celular el botón de volver va arriba a la derecha: abajo tapaba la ficha */
@@ -987,8 +986,7 @@ body.en-bastion.bastion-v2 .bastion-info {
       <button class="boton grande" data-accion="misiones" data-t="menu.misiones">MISIONES</button>
       <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
       <button class="boton grande ultra" data-accion="ultra" data-t="menu.ultra">DEFENSA ZOMBIE ULTRA</button>
-      <button class="boton grande bastion" data-accion="bastion" data-t="menu.bastion">ÚLTIMO BASTIÓN</button>
-      <button class="boton grande bastion v2" data-accion="bastion2" data-t="menu.bastion2">ÚLTIMO BASTIÓN V2</button>
+      <button class="boton grande bastion" data-accion="bastion2" data-t="menu.bastion">ÚLTIMO BASTIÓN</button>
       <button class="boton grande" data-accion="entrenamiento" data-t="menu.entrenamiento">ENTRENAMIENTO</button>
       <div class="fila-chica">
         <button class="boton chico" data-accion="pruebas" data-t="menu.pruebas">CAMPO DE PRUEBAS</button>
@@ -1030,26 +1028,15 @@ body.en-bastion.bastion-v2 .bastion-info {
     </div>
   </section>
 
-  <!-- ===== ÚLTIMO BASTIÓN V2: niveles disponibles (js/bastion-v2-ui.js). La guía de los dos bandos es una capa que
+  <!-- ===== ÚLTIMO BASTIÓN: niveles disponibles (js/bastion-v2-ui.js). La guía de los dos bandos es una capa que
        se abre desde acá o desde adentro de la partida: #panel-bastion2, más abajo ===== -->
   <section id="panel-bastion2-niveles" class="pantalla">
-    <h2 data-t="b2.titulo">ÚLTIMO BASTIÓN V2</h2>
+    <h2 data-t="b2.titulo">ÚLTIMO BASTIÓN</h2>
     <p class="ayuda" data-t="b2.nivAyuda">Cada nivel tiene su terreno y su horda. Aguanta todas las oleadas con el campamento en pie.</p>
     <button id="b2-continuar" class="boton oculta" data-accion="bastion2-continuar"></button>
     <div id="lista-bastion2" class="lista-mapas lista-bastion lista-bastion2"></div>
     <div class="fila-botones">
       <button class="boton chico" data-accion="bastion2-guia" data-t="b2.guia">GUÍA</button>
-      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
-    </div>
-  </section>
-
-  <!-- ===== ÚLTIMO BASTIÓN: niveles (js/bastion-niveles.js) ===== -->
-  <section id="panel-bastion-niveles" class="pantalla">
-    <h2 data-t="bniv.titulo">ÚLTIMO BASTIÓN</h2>
-    <p class="ayuda" data-t="bniv.ayuda">Aguanta 10 oleadas con el campamento en pie para ganar el nivel. Cada nivel ganado abre el siguiente.</p>
-    <button id="bastion-continuar" class="boton oculta" data-accion="bastion-continuar"></button>
-    <div id="lista-bastion" class="lista-mapas lista-bastion"></div>
-    <div class="fila-botones">
       <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
     </div>
   </section>
@@ -1316,7 +1303,7 @@ body.en-bastion.bastion-v2 .bastion-info {
       <li data-t="b2.regla1">Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido.</li>
       <li data-t="b2.regla2">Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.</li>
       <li data-t="b2.regla3">Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.</li>
-      <li data-t="b2.regla4">El terreno también juega: en el barro no entran las máquinas, y arriba de un contenedor sólo sube tu infantería, que desde ahí tira más lejos y no es alcanzada a pie.</li>
+      <li data-t="b2.regla4">El terreno manda: cada suelo aguanta lo suyo. En el barro y en la arena no entra lo pesado; arriba de un contenedor o de una cornisa sólo sube tu infantería, que desde ahí tira más lejos y no es alcanzada a pie.</li>
     </ul>
     <div class="b2-bandos">
       <div><h3 data-t="b2.horda">LA HORDA</h3><div id="b2-zombies"></div></div>
@@ -1396,7 +1383,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261113-0049-6f39d1a';
+const VERSION_JUEGO = '20261113-0135-a47fa1b';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1635,7 +1622,7 @@ const TEXTOS = {
     'aviso.calidadNormal': 'EL JUEGO IBA LENTO: BAJÉ LA CALIDAD GRÁFICA', 'aviso.calidadBaja': 'SIGUE LENTO: CALIDAD BAJA. TAMBIÉN PUEDES DESCARGAR EL JUEGO (CONFIGURACIÓN)',
     'config.tactil': 'Botones en pantalla', 'config.auto': 'Automático', 'config.si': 'Siempre', 'config.no': 'Nunca', 'config.vibracion': 'Vibración al tocar',
     'config.completa': 'Pantalla completa', 'config.restablecer': 'RESTABLECER', 'config.cerrar': 'CERRAR', 'config.probar': 'Probar',
-    'menu.bastion': 'ÚLTIMO BASTIÓN', 'controles.bastion': 'Último bastión', 'controles.bastion.texto': 'Elige abajo qué construir (o <kbd>1</kbd> a <kbd>5</kbd>) y tócalo en el campo; <kbd>6</kbd> o clic derecho vende a mitad de precio, <kbd>7</kbd> repara lo dañado (cuesta ¾ de lo roto), <kbd>Esc</kbd> suelta lo elegido y <kbd>Espacio</kbd> adelanta la oleada; <kbd>V</kbd> (o los botones de arriba a la derecha) cambia la velocidad: 1×, 2×, 5× o 10×. Los zombies muertos dan poco dinero: gástalo con cabeza; soldados y tanques se forman en el campamento y van solos a su lugar.',
+    'menu.bastion': 'ÚLTIMO BASTIÓN', 'controles.bastion': 'Último bastión', 'controles.bastion.texto': 'Elige abajo qué construir (o con <kbd>1</kbd> a <kbd>4</kbd>, <kbd>Q W E R</kbd> y <kbd>A S D F G</kbd>) y tócalo en el campo. Toca una unidad tuya para ver hasta dónde llega y venderla, repararla o moverla (<kbd>Z</kbd>, <kbd>X</kbd>, <kbd>C</kbd>). <kbd>Esc</kbd> suelta lo elegido, <kbd>Espacio</kbd> adelanta la oleada, <kbd>V</kbd> cambia la velocidad (1×, 2×, 5× o 10×) y <kbd>H</kbd> abre la guía de unidades y zombies. Cada nivel tiene su terreno: no todo se puede poner en cualquier lado.',
     'bastion.soldado': 'SOLDADO', 'bastion.torreta': 'TORRETA', 'bastion.bunker': 'BÚNKER', 'bastion.tanque': 'TANQUE', 'bastion.muro': 'MURO', 'bastion.vender': 'VENDER', 'bastion.reserva': '', 'bastion.cuartel': 'CUARTEL', 'bastion.taller': 'TALLER',
     'bastion.ola': v => `OLEADA ${v.n}`, 'bastion.vienen': v => `vienen ${v.n} zombies`, 'bastion.base': v => `CAMPAMENTO ${v.v}/${v.max}`, 'bastion.proxima': v => `OLEADA ${v.n} EN ${v.s} s · ¡YA!`, 'bastion.enCurso': v => `OLEADA ${v.n} · QUEDAN ${v.q}`,
     'bastion.aviso': 'EMPIEZAS CON 3 SOLDADOS Y 4 MUROS: NO ALCANZAN. ELIGE ABAJO QUÉ CONSTRUIR Y TÓCALO EN EL CAMPO. LOS ZOMBIES VIENEN POR LA DERECHA', 'bastion.velocidad': 'Velocidad del juego',
@@ -1804,7 +1791,7 @@ const TEXTOS = {
     'aviso.calidadNormal': 'O JOGO ESTAVA LENTO: BAIXEI A QUALIDADE GRÁFICA', 'aviso.calidadBaja': 'AINDA LENTO: QUALIDADE BAIXA. VOCÊ TAMBÉM PODE BAIXAR O JOGO (CONFIGURAÇÃO)',
     'config.tactil': 'Botões na tela', 'config.auto': 'Automático', 'config.si': 'Sempre', 'config.no': 'Nunca', 'config.vibracion': 'Vibrar ao tocar',
     'config.completa': 'Tela cheia', 'config.restablecer': 'RESTAURAR', 'config.cerrar': 'FECHAR', 'config.probar': 'Testar',
-    'menu.bastion': 'ÚLTIMO BASTIÃO', 'controles.bastion': 'Último bastião', 'controles.bastion.texto': 'Escolha embaixo o que construir (ou <kbd>1</kbd> a <kbd>5</kbd>) e toque no campo; <kbd>6</kbd> ou clique direito vende pela metade do preço, <kbd>7</kbd> conserta o que estiver danificado (custa ¾ do estrago), <kbd>Esc</kbd> solta o escolhido e <kbd>Espaço</kbd> adianta a onda; <kbd>V</kbd> (ou os botões em cima à direita) muda a velocidade: 1×, 2×, 5× ou 10×. Zumbis mortos dão pouco dinheiro: gaste com cuidado; soldados e tanques se formam no acampamento e vão sozinhos ao seu lugar.',
+    'menu.bastion': 'ÚLTIMO BASTIÃO', 'controles.bastion': 'Último bastião', 'controles.bastion.texto': 'Escolha embaixo o que construir (ou com <kbd>1</kbd> a <kbd>4</kbd>, <kbd>Q W E R</kbd> e <kbd>A S D F G</kbd>) e toque no campo. Toque em uma unidade sua para ver até onde ela alcança e vendê-la, consertá-la ou movê-la (<kbd>Z</kbd>, <kbd>X</kbd>, <kbd>C</kbd>). <kbd>Esc</kbd> solta o escolhido, <kbd>Espaço</kbd> adianta a onda, <kbd>V</kbd> muda a velocidade (1×, 2×, 5× ou 10×) e <kbd>H</kbd> abre o guia de unidades e zumbis. Cada fase tem seu terreno: nem tudo pode ser colocado em qualquer lugar.',
     'bastion.soldado': 'SOLDADO', 'bastion.torreta': 'TORRE', 'bastion.bunker': 'BUNKER', 'bastion.tanque': 'TANQUE', 'bastion.muro': 'MURO', 'bastion.vender': 'VENDER', 'bastion.reserva': '', 'bastion.cuartel': 'QUARTEL', 'bastion.taller': 'OFICINA',
     'bastion.ola': v => `ONDA ${v.n}`, 'bastion.vienen': v => `vêm ${v.n} zumbis`, 'bastion.base': v => `ACAMPAMENTO ${v.v}/${v.max}`, 'bastion.proxima': v => `ONDA ${v.n} EM ${v.s} s · JÁ!`, 'bastion.enCurso': v => `ONDA ${v.n} · FALTAM ${v.q}`,
     'bastion.aviso': 'VOCÊ COMEÇA COM 3 SOLDADOS E 4 MUROS: NÃO BASTA. ESCOLHA EMBAIXO O QUE CONSTRUIR E TOQUE NO CAMPO. OS ZUMBIS VÊM PELA DIREITA', 'bastion.velocidad': 'Velocidade do jogo',
@@ -1973,7 +1960,7 @@ const TEXTOS = {
     'aviso.calidadNormal': 'THE GAME WAS SLOW: GRAPHICS QUALITY LOWERED', 'aviso.calidadBaja': 'STILL SLOW: LOW QUALITY. YOU CAN ALSO DOWNLOAD THE GAME (SETTINGS)',
     'config.tactil': 'On-screen buttons', 'config.auto': 'Automatic', 'config.si': 'Always', 'config.no': 'Never', 'config.vibracion': 'Vibrate on tap',
     'config.completa': 'Full screen', 'config.restablecer': 'RESET', 'config.cerrar': 'CLOSE', 'config.probar': 'Test',
-    'menu.bastion': 'LAST BASTION', 'controles.bastion': 'Last bastion', 'controles.bastion.texto': 'Pick what to build below (or <kbd>1</kbd> to <kbd>5</kbd>) and tap it on the field; <kbd>6</kbd> or right click sells for half price, <kbd>7</kbd> repairs damaged buildings (costs ¾ of the damage), <kbd>Esc</kbd> drops the selection and <kbd>Space</kbd> brings the wave early; <kbd>V</kbd> (or the buttons at the top right) changes the speed: 1×, 2×, 5× or 10×. Dead zombies give little money: spend it wisely; soldiers and tanks are trained at the camp and walk to their spot.',
+    'menu.bastion': 'LAST BASTION', 'controles.bastion': 'Last bastion', 'controles.bastion.texto': 'Pick what to build below (or with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>Q W E R</kbd> and <kbd>A S D F G</kbd>) and tap it on the field. Tap one of your units to see how far it reaches and sell, repair or move it (<kbd>Z</kbd>, <kbd>X</kbd>, <kbd>C</kbd>). <kbd>Esc</kbd> drops the selection, <kbd>Space</kbd> brings the wave early, <kbd>V</kbd> changes the speed (1×, 2×, 5× or 10×) and <kbd>H</kbd> opens the guide to units and zombies. Each level has its own terrain: not everything can go everywhere.',
     'bastion.soldado': 'SOLDIER', 'bastion.torreta': 'TURRET', 'bastion.bunker': 'BUNKER', 'bastion.tanque': 'TANK', 'bastion.muro': 'WALL', 'bastion.vender': 'SELL', 'bastion.reserva': '', 'bastion.cuartel': 'BARRACKS', 'bastion.taller': 'WORKSHOP',
     'bastion.ola': v => `WAVE ${v.n}`, 'bastion.vienen': v => `${v.n} zombies coming`, 'bastion.base': v => `CAMP ${v.v}/${v.max}`, 'bastion.proxima': v => `WAVE ${v.n} IN ${v.s} s · NOW!`, 'bastion.enCurso': v => `WAVE ${v.n} · ${v.q} LEFT`,
     'bastion.aviso': 'YOU START WITH 3 SOLDIERS AND 4 WALLS: NOT ENOUGH. PICK WHAT TO BUILD BELOW AND TAP IT ON THE FIELD. ZOMBIES COME FROM THE RIGHT', 'bastion.velocidad': 'Game speed',
@@ -16889,7 +16876,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </script>
   <script>
-/* ===== Último bastión: niveles, escenarios, terreno, obstáculos y partida guardada =====
+/* ===== Último bastión: escenarios, terreno, obstáculos y partida guardada =====
+ * (Los niveles que se juegan hoy son los de BASTION2.niveles, en js/bastion-v2.js: usan estos escenarios y pueden
+ * redefinir su mapa. Lo que sigue describe el modo anterior, que quedó de base.)
  * Cada nivel son 10 oleadas fijas: se gana llegando al final con el campamento en pie, y ganar abre el siguiente.
  * El escenario tiene su fondo y su suelo, obstáculos que bloquean (árboles, autos, rocas…) y terreno que no bloquea
  * pero cambia el paso de los zombies: el agua los frena a la mitad y ahí no se construye, el barro los frena un
@@ -16909,6 +16898,9 @@ const TERRENOS_BASTION = {
   nieve:       { color: '#dfe6ec', paso: 1 },
   hielo:       { color: '#a9d3e6', paso: 1.35 },
   madera:      { color: '#7a5532', paso: 1 },
+  losa:        { color: '#a39780', paso: 1 },   // piedra firme del desierto
+  risco:       { color: '#6f7480', paso: 1 },   // pared de la montaña: no se pisa
+  cornisa:     { color: '#8d929c', paso: 1 },   // saliente del risco: ahí sube la infantería
 };
 // Rectángulos de terreno: [tipo, c0, f0, c1, f1] (inclusive). Obstáculos: [tipo, c, f]
 const NIVELES_BASTION = [
@@ -17008,32 +17000,6 @@ const PaisajeBastion = {
     N.obstaculos.forEach(([tipo, c, f], i) => enCamara(ctx, cam, B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8, k => { k.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(k, tipo, i); }));
     const q = [[-600, B.arriba - 10], [B.baseX - 10, B.arriba - 10], [B.baseX - 10, ALTO], [-600, ALTO]].map(([x, y]) => cam.proyectar(x, y));   // el campamento, apenas sugerido
     ctx.fillStyle = 'rgba(70,55,40,0.9)'; ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
-  },
-};
-
-/* ---------- Pantalla de niveles ---------- */
-const NivelesBastionUI = {
-  abrir(mostrar) {
-    const lista = document.getElementById('lista-bastion'); if (!lista) return;
-    lista.innerHTML = '';
-    const guardada = ProgresoBastion.partida();
-    const seguir = document.getElementById('bastion-continuar');
-    const nGuardado = guardada && NIVELES_BASTION.find(n => n.id === guardada.nivel);
-    seguir.classList.toggle('oculta', !nGuardado);
-    if (nGuardado) seguir.textContent = t('bniv.continuar', { nivel: t('bniv.' + guardada.nivel), ola: guardada.ronda + 1, total: OLAS_POR_NIVEL });
-    NIVELES_BASTION.forEach((N, i) => {
-      const abierto = ProgresoBastion.abierto(i), ganado = ProgresoBastion.ganado(N.id);
-      const b = document.createElement('button');
-      b.className = 'tarjeta-mapa tarjeta-bastion' + (abierto ? '' : ' cerrada') + (ganado ? ' ganada' : '');
-      b.disabled = !abierto;
-      b.dataset.nivelBastion = N.id;
-      const lienzo = document.createElement('canvas'); lienzo.width = 320; lienzo.height = 150; lienzo.className = 'vista';
-      b.appendChild(lienzo);
-      b.insertAdjacentHTML('beforeend', `<h3>${i + 1}. ${t('bniv.' + N.id)}</h3><p>${t('bniv.' + N.id + '.texto')}</p><span class="etiqueta">${!abierto ? t('bniv.cerrado') : ganado ? t('bniv.ganado') : t('bniv.olas', { n: OLAS_POR_NIVEL })}</span>`);
-      lista.appendChild(b);
-      try { PaisajeBastion.vista(lienzo, N); } catch { /* sin lienzo */ }
-    });
-    mostrar('panel-bastion-niveles');
   },
 };
 
@@ -17871,7 +17837,7 @@ PaisajeBastion.terreno = function (ctx, g, ms) {
   // Ancho de la franja del borde norte de una celda: se estira 3 por los costados sólo donde el vecino es de otro tipo (así no se pisan)
   const tramoNorte = (tipo, c, f) => { const iz = g.terrenoEn(c - 1, f) === tipo && g.terrenoEn(c - 1, f - 1) !== tipo ? 0 : 3, de = g.terrenoEn(c + 1, f) === tipo && g.terrenoEn(c + 1, f - 1) !== tipo ? 0 : 3; return [X(c) - iz, W + iz + de]; };
   const sombraOeste = (c, f, ancho = 7, a = 0.35) => { const gr = ctx.createLinearGradient(X(c), 0, X(c) + ancho, 0); gr.addColorStop(0, `rgba(8,14,18,${a})`); gr.addColorStop(1, 'rgba(8,14,18,0)'); ctx.fillStyle = gr; ctx.fillRect(X(c) - 2, Y(f), ancho + 2, H); };
-  const orden = ['banquina', 'tierra', 'pasto', 'pastoOscuro', 'arena', 'nieve', 'barro', 'asfalto', 'hielo', 'agua', 'madera'];
+  const orden = ['banquina', 'tierra', 'pasto', 'pastoOscuro', 'arena', 'nieve', 'barro', 'asfalto', 'losa', 'hielo', 'agua', 'madera', 'risco', 'cornisa'];
   for (const tipo of orden) {
     if (!tipos.has(tipo) || tipo === N.base) continue;
     const T = TERRENOS_BASTION[tipo], col = COLOR_SUELO[tipo] || T.color;
@@ -17936,6 +17902,60 @@ PaisajeBastion.terreno = function (ctx, g, ms) {
             if (g.terrenoEn(c, f - 1) === tipo && c % 2 === 0) { ctx.fillStyle = 'rgba(235,225,170,0.75)'; ctx.fillRect(X(c) + 6, Y(f) - 1, 22, 2); }   // carril
           });
           bordes(tipo, (c, f, dc, df) => { if (df) { ctx.fillStyle = 'rgba(240,240,235,0.8)'; ctx.fillRect(X(c), df < 0 ? Y(f) + 5.6 : Y(f) + H - 3.4, W, 1.4); } });
+        });
+        break;
+      }
+      case 'losa': {   // afloramiento de piedra firme, apenas levantado sobre la arena: lo único del desierto que aguanta peso
+        rellenar(zona(tipo, 3, 9), 'rgba(60,40,18,0.22)');
+        pozo34(ctx, zona(tipo, 1, 7), -2.6, () => { ctx.fillStyle = ajustarColor(col, -0.38); ctx.fillRect(0, 0, ANCHO, ALTO); }, () => {
+          ctx.fillStyle = col; ctx.fillRect(0, 0, ANCHO, ALTO);
+          celdas(tipo, (c, f, k) => {
+            for (let j = 0; j < 7; j++) { ctx.fillStyle = j % 2 ? 'rgba(255,250,235,0.13)' : 'rgba(40,30,18,0.15)'; ctx.fillRect(X(c) + azar(k * 7 + j, 471) * (W - 8), Y(f) - 2 + azar(k * 7 + j, 472) * H, 3 + azar(k + j, 473) * 7, 1.2); }
+            const x0 = X(c) + 7 + azar(k, 474) * (W - 14), y0 = Y(f) + azar(k, 475) * 8;   // una grieta por celda
+            linea(ctx, 'rgba(45,34,22,0.55)', 0.7, [[x0, y0], [x0 + 5 - azar(k, 476) * 10, y0 + 9], [x0 + 4 - azar(k, 477) * 12, y0 + 19]]);
+            if (azar(k, 478) > 0.5) { ctx.fillStyle = 'rgba(205,171,107,0.55)'; ctx.beginPath(); ctx.ellipse(X(c) + azar(k, 479) * W, Y(f) + H * (0.3 + azar(k, 480) * 0.5), 6, 2.2, 0, 0, Math.PI * 2); ctx.fill(); }   // arena que se junta arriba
+          });
+          bordes(tipo, (c, f, dc, df) => { if (df < 0) { ctx.fillStyle = 'rgba(255,250,230,0.4)'; ctx.fillRect(X(c), Y(f) - 2.6, W, 1); } if (dc < 0) { ctx.fillStyle = 'rgba(255,250,230,0.22)'; ctx.fillRect(X(c) - 1, Y(f) - 2.6, 1, H); } });
+        });
+        break;
+      }
+      case 'risco': {   // la pared de la montaña: un macizo de roca levantado, con nieve arriba. Las cornisas son parte del macizo
+        const macizo = (crece, radio) => c2 => { zona('risco', crece, radio)(c2); zona('cornisa', crece, radio)(c2); };
+        const delMacizo = (c, f) => g.terrenoEn(c, f) === 'risco' || g.terrenoEn(c, f) === 'cornisa';
+        rellenar(macizo(3.4, 9), 'rgba(20,30,45,0.3)');   // sombra al pie
+        pozo34(ctx, macizo(0.8, 8), -11, () => {   // la cara de enfrente: roca oscura con vetas
+          ctx.fillStyle = '#3b3f4a'; ctx.fillRect(0, 0, ANCHO, ALTO);
+          for (let f = 0; f < g.filas; f++) for (let c = 0; c < g.cols; c++) {
+            if (!delMacizo(c, f) || delMacizo(c, f + 1)) continue;
+            for (let j = 0; j < 5; j++) { const x = X(c) + azar(f * 64 + c + j * 7, 481) * W; ctx.fillStyle = j % 2 ? 'rgba(160,170,190,0.2)' : 'rgba(10,12,18,0.35)'; ctx.fillRect(x, Y(f) + H - 11, 1.2, 11); }
+          }
+        }, () => {   // la cima
+          ctx.fillStyle = col; ctx.fillRect(0, 0, ANCHO, ALTO);
+          for (let f = 0; f < g.filas; f++) for (let c = 0; c < g.cols; c++) {
+            if (!delMacizo(c, f)) continue;
+            const k = f * 64 + c;
+            for (let j = 0; j < 3; j++) {   // parches de nieve, corridos hacia donde no pega el viento
+              const x = X(c) + 6 + azar(k * 3 + j, 482) * (W - 12), y = Y(f) - 11 + 5 + azar(k * 3 + j, 483) * (H - 10), r = 7 + azar(k * 3 + j, 484) * 9;
+              ctx.fillStyle = 'rgba(40,48,64,0.25)'; ctx.beginPath(); ctx.ellipse(x + 1.4, y + 1.2, r, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = 'rgba(244,248,252,0.86)'; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+            }
+            linea(ctx, 'rgba(30,34,44,0.5)', 0.7, [[X(c) + azar(k, 485) * W, Y(f) - 11 + 2], [X(c) + W * 0.5, Y(f) - 11 + H * 0.45], [X(c) + azar(k, 486) * W, Y(f) - 11 + H - 2]]);   // una grieta
+            if (!delMacizo(c, f - 1)) { ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(X(c), Y(f) - 11, W, 1.2); }                                   // el filo de atrás, con luz
+            if (!delMacizo(c - 1, f)) { ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(X(c), Y(f) - 11, 1.2, H); }
+            if (!delMacizo(c + 1, f)) { ctx.fillStyle = 'rgba(15,18,26,0.3)'; ctx.fillRect(X(c) + W - 1.6, Y(f) - 11, 1.6, H); }
+          }
+        });
+        break;
+      }
+      case 'cornisa': {   // un saliente plano del macizo: piso de piedra barrida y un parapeto de piedras del lado del paso
+        celdas(tipo, (c, f, k) => {
+          const x = X(c) + 3, y = Y(f) - 11 + 3, w = W - 6, h = H - 6;
+          ctx.fillStyle = 'rgba(20,24,32,0.35)'; ctx.beginPath(); ctx.roundRect(x + 1.2, y + 1.6, w, h, 5); ctx.fill();
+          ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x, y, w, h, 5); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, 5); ctx.stroke();
+          for (let j = 0; j < 5; j++) { ctx.fillStyle = j % 2 ? 'rgba(255,255,255,0.16)' : 'rgba(30,34,44,0.16)'; ctx.fillRect(x + 4 + azar(k * 5 + j, 487) * (w - 12), y + 4 + azar(k * 5 + j, 488) * (h - 8), 4 + azar(k + j, 489) * 5, 1.1); }
+          const alPaso = g.terrenoEn(c, f + 1) !== 'risco' && g.terrenoEn(c, f + 1) !== 'cornisa' ? y + h - 4 : y + 1;   // el parapeto mira al paso
+          for (let j = 0; j < 6; j++) { const px = x + 3 + j * (w - 6) / 5; ctx.fillStyle = 'rgba(20,24,32,0.4)'; ctx.beginPath(); ctx.ellipse(px + 0.8, alPaso + 1.2, 3.2, 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = j % 2 ? '#7a7f8a' : '#666b76'; ctx.beginPath(); ctx.ellipse(px, alPaso, 3.2, 2.1, 0, 0, Math.PI * 2); ctx.fill(); }
         });
         break;
       }
@@ -18523,10 +18543,13 @@ Juego.prototype.dibujarFondoBastion = function (ctx, cam = this.camaraBastion())
 
 </script>
   <script>
-/* ===== Último bastión v2: dos bandos con contrapesos =====
- * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). El plantel completo, 13
- * unidades militares en tres clases y 16 tipos de zombie en cuatro, en dos niveles: La granja (campo abierto, toda
- * la horda) y La autopista (pasillos entre autos chocados y contenedores con techo; 11 tipos y su jefe, El Escudo).
+/* ===== Último bastión: dos bandos con contrapesos (el rediseño, «v2» en el código) =====
+ * Es el Último bastión que se juega: el modo anterior ya no está en el menú y su motor (js/estrategia.js) es la base
+ * que estos archivos envuelven. El plantel completo, 13 unidades militares en tres clases y 16 tipos de zombie en
+ * cuatro, en cuatro niveles, cada uno con un terreno que limita a su manera dónde entra cada cosa: La granja (campo
+ * abierto, toda la horda), La autopista (pasillos entre autos chocados y contenedores con techo), El desierto (arena
+ * suelta: lo pesado sólo entra en unas pocas losas de piedra) y La montaña (un paso entre riscos, con los cuellos de
+ * hielo y cornisas). Cada nivel elige su grupo de tipos y tiene su jefe.
  *
  *   EL BASTIÓN                                              LA HORDA
  *   Infantería   soldado, francotirador, lanzallamas,       Caminantes   común, corredor, gordo, acorazado
@@ -18534,7 +18557,7 @@ Juego.prototype.dibujarFondoBastion = function (ctx, cam = this.camaraBastion())
  *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales     jauría, toro, bandada, buitre
  *   Estructuras  muro, alambrado, búnker, señuelo,          Acechadores  topo, lanzador, escupidor, rabioso
  *                torre de vigía                             (+ el soldado contagiado y un jefe por nivel:
- *                                                            El Coloso y El Escudo)
+ *                                                            El Coloso, El Escudo, La Cisterna, La Sirena)
  *
  * Los acechadores son los que no vienen de frente: el topo pasa por debajo, el lanzador arroja zombies por arriba de
  * los muros, el escupidor tira desde más lejos que la línea y el rabioso corre más rápido que las armas lentas.
@@ -18545,8 +18568,10 @@ Juego.prototype.dibujarFondoBastion = function (ctx, cam = this.camaraBastion())
  *   Aire       lo que vuela pasa sobre todo; sólo le tiran los fusiles (soldado, francotirador) y la antiaérea
  *   Velocidad  cuanto más rápido el zombie, menos tiempo pasa bajo fuego: cadencia alta y alambrado
  *   Vista      el zombie va por el humano que ve; el que tira desde más lejos que esa vista, tira escondido
- *   Altura     arriba de un contenedor sólo sube la infantería: tira más lejos y a pie no la alcanzan (sí lo que
- *              vuela, escupe o arroja, el gas y las explosiones)
+ *   Altura     arriba de un contenedor o de una cornisa sólo sube la infantería: tira más lejos y a pie no la
+ *              alcanzan (sí lo que vuela, escupe o arroja, el gas y las explosiones)
+ * Además, cada suelo aguanta lo suyo (BASTION2.suelos): en el barro y en la arena no entra lo pesado, sobre el
+ * hielo sólo se para la gente a pie y el risco no se pisa.
  *
  * Los zombies se comportan como zombies: cada uno mira, caza al primer humano que ve, rompe lo que lo protege y, si
  * no ve a nadie, marcha al campamento. Cuenta como humano la infantería a pie y la gente de torretas, morteros,
@@ -18623,12 +18648,19 @@ const BASTION2 = {
     // los tiros de quien esté arriba de un contenedor)
     escudo:        { clase: 'cam', conducta: 'caza', vida: 22,  vel: 17, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.22, aplasta: true, mordida: 2.5, blindaje: 4, jefe: true,
       cubre: { radio: 2.2 } },
+    // La Cisterna, jefa de El desierto: una hinchada gigante. Va a lo construido y, donde cae, estalla a 3 celdas
+    cisterna:      { clase: 'esp', conducta: 'revienta', vida: 18, vel: 13, vista: 6, paga: 45, dano: 8, escala: 1.34, jefe: true,
+      estalla: { radio: 132, unidades: 220, gente: 60, zombies: 4 } },
+    // La Sirena, jefa de La montaña: una gritona gigante. Ve a toda tu gente esté donde esté y su grito llega a todo el
+    // campo: mientras vive, la horda entera sabe adónde ir y va apurada
+    sirena:        { clase: 'esp', conducta: 'grita', vida: 18, vel: 18, vista: 60, paga: 45, dano: 8, escala: 1.26, mordida: 2, jefe: true,
+      grito: { radio: 60, apuro: 1.35, dura: 7, cada: 6, quieto: 1.4 } },
   },
-  jefes: ['jefe', 'escudo'],
-  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe', 'escudo'],
+  jefes: ['jefe', 'escudo', 'cisterna', 'sirena'],
+  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe', 'escudo', 'cisterna', 'sirena'],
   clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'], ace: ['topo', 'lanzador', 'escupidor', 'rabioso'] },
   // A quién elige primero el francotirador (de más a menos peligroso)
-  peligro: ['lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'escudo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
+  peligro: ['sirena', 'cisterna', 'lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'escudo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
   /* Quién frena a quién, para las marcas del panel, las fichas y los consejos. Sale de medir cada cruce con el
    * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6 u 8), no de una regla aparte.
    * bien: lo frena; mal: rinde poco o se pierde contra él */
@@ -18652,12 +18684,21 @@ const BASTION2 = {
     soldadoZombie: { bien: ['francotirador', 'tanque', 'medico'], mal: ['soldado'] },
     jefe:       { bien: ['tanque', 'francotirador'], mal: ['muro', 'alambrado', 'soldado'] },
     escudo:     { bien: ['francotirador', 'tanque'], mal: ['torreta', 'soldado', 'bunker', 'muro'] },
+    cisterna:   { bien: ['francotirador', 'tanque', 'senuelo'], mal: ['lanzallamas', 'soldado', 'bunker', 'muro'] },
+    sirena:     { bien: ['francotirador', 'tanque'], mal: ['senuelo', 'soldado', 'muro'] },
   },
   /* Altura: arriba de un obstáculo con techo (el contenedor) sólo sube la infantería. Desde ahí tira más lejos y los
    * que caminan no la alcanzan; sí lo que vuela, lo que escupe o arroja, el gas y las explosiones. techos: a cuántos
    * puntos del piso queda parada */
   techos: { contenedor: 30 },
   altura: { alcance: 1.25 },
+  /* Suelos: qué aguanta cada terreno (lo que no figura es firme: entra todo).
+   *   blando  barro: sólo gente a pie, alambrado y señuelo
+   *   suelto  arena: además de eso, el tanque (lo demás se hunde)
+   *   liso    hielo: sólo gente a pie
+   *   pared   risco: nada, y nadie lo pisa
+   *   alto    cornisa: como el techo de un contenedor (techo: a cuántos puntos del piso); nadie la pisa */
+  suelos: { barro: { porte: 'blando' }, arena: { porte: 'suelto' }, hielo: { porte: 'liso' }, risco: { porte: 'pared' }, cornisa: { porte: 'alto', techo: 11 } },
   /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena uno o dos tipos; el orden en que salen lo arma
    * ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto paga poco (un común, $4): con lo que se
    * junta en toda la partida alcanza para responder a cada tipo, no para tener de todo de sobra. La plata es la perilla
@@ -18708,8 +18749,63 @@ const BASTION2 = {
         { caminante: 44, corredor: 16, acorazado: 16, hinchado: 5, dinamitero: 7, perro: 15, cuervo: 18, buitre: 3, lanzador: 3, escupidor: 4, rabioso: 8, escudo: 1 },
       ],
     },
+    /* El desierto: arena suelta, donde no se construye nada (BASTION2.suelos: sobre la arena sólo van la gente a pie, el
+     * tanque, el alambrado y el señuelo). Lo que pesa va en las losas de piedra, que son 12 celdas en seis afloramientos:
+     * no entra todo, y está donde está. Sin muros no hay embudo: se contiene con el tanque (se empieza con uno), alambrado
+     * y señuelos, en un frente ancho que el oasis parte en dos. Trae lo rápido, lo que pasa por debajo y lo que vuela, y a
+     * La Cisterna. La horda aguanta un 5 % más que en los dos primeros niveles */
+    desierto: {
+      dinero: 200, vida: 1.05, aviso: 'b2.avisoDesierto',
+      mapa: {
+        terreno: [['losa', 2, 1, 3, 1], ['losa', 2, 7, 3, 7], ['losa', 1, 4, 2, 4], ['losa', 5, 4, 6, 4], ['losa', 8, 2, 9, 2], ['losa', 8, 6, 9, 6], ['agua', 12, 3, 13, 5]],
+        obstaculos: [['cactus', 6, 0], ['roca', 10, 0], ['cactus', 5, 8], ['roca', 10, 8], ['cactus', 15, 1], ['roca', 16, 7], ['cactus', 11, 4]],
+      },
+      inicio: { tanque: [[8, 4]], soldado: [[4, 3], [4, 5], [4, 4]], alambrado: [[10, 3], [10, 4], [10, 5]] },
+      oleadas: [
+        { caminante: 20 },
+        { caminante: 22, corredor: 12 },
+        { caminante: 26, corredor: 12, rabioso: 4 },
+        { caminante: 28, corredor: 12, toro: 2, cuervo: 12 },
+        { caminante: 30, corredor: 14, hinchado: 3, topo: 3, rabioso: 8 },
+        { caminante: 30, corredor: 14, toro: 3, cuervo: 12, escupidor: 4, cisterna: 1 },
+        { caminante: 34, corredor: 16, hinchado: 4, dinamitero: 5, topo: 4, rabioso: 8 },
+        { caminante: 36, corredor: 16, toro: 4, cuervo: 18, buitre: 3, escupidor: 4 },
+        { caminante: 38, corredor: 18, hinchado: 5, dinamitero: 6, topo: 5, rabioso: 12 },
+        { caminante: 40, corredor: 18, toro: 4, cuervo: 18, buitre: 3, topo: 4, escupidor: 6 },
+        { caminante: 42, corredor: 20, hinchado: 6, dinamitero: 7, toro: 4, escupidor: 6, rabioso: 12 },
+        { caminante: 44, corredor: 20, hinchado: 6, dinamitero: 7, toro: 4, cuervo: 18, buitre: 3, topo: 6, escupidor: 6, rabioso: 12, cisterna: 1 },
+      ],
+    },
+    /* La montaña: un paso entre riscos. Más de la mitad del mapa es pared (no se pisa ni se construye). El paso se
+     * angosta dos veces a tres filas, y esos dos cuellos son hielo: ahí sólo se para la gente a pie y la horda resbala
+     * (va 35 % más rápido). Se construye en los ensanches: la plaza del medio y la retaguardia, que está pegada al
+     * campamento. Cuatro cornisas, sobre los dos cuellos, son puestos altos. Trae lo pesado, el gas, lo que embiste y lo
+     * que no viene de frente, y a La Sirena. La horda aguanta un 5 % más que en los dos primeros niveles */
+    montana: {
+      dinero: 240, vida: 1.05, aviso: 'b2.avisoMontana',
+      mapa: {
+        terreno: [['risco', 0, 0, 40, 1], ['risco', 0, 7, 40, 8], ['risco', 3, 2, 6, 2], ['risco', 3, 6, 6, 6], ['risco', 11, 2, 14, 2], ['risco', 11, 6, 14, 6],
+          ['cornisa', 4, 2, 4, 2], ['cornisa', 4, 6, 4, 6], ['cornisa', 12, 2, 12, 2], ['cornisa', 12, 6, 12, 6], ['hielo', 3, 3, 6, 5], ['hielo', 11, 3, 14, 5]],
+        obstaculos: [['pinoNevado', 0, 2], ['roca', 16, 2], ['pinoNevado', 16, 6], ['roca', 10, 2]],
+      },
+      inicio: { soldado: [[7, 3], [7, 5], [12, 2]], alambrado: [[10, 4]] },
+      oleadas: [
+        { caminante: 20 },
+        { caminante: 24, corredor: 10 },
+        { caminante: 26, corredor: 10, gordo: 3 },
+        { caminante: 28, gordo: 4, acorazado: 8, rabioso: 4 },
+        { caminante: 30, corredor: 12, acorazado: 8, toro: 2, cuervo: 12, escupidor: 2 },
+        { caminante: 30, gordo: 6, acorazado: 10, escupidor: 3, rabioso: 8, sirena: 1 },
+        { caminante: 34, corredor: 14, toxico: 3, toro: 2, cuervo: 12, topo: 3 },
+        { caminante: 36, gordo: 8, acorazado: 12, dinamitero: 5, lanzador: 2, rabioso: 8 },
+        { caminante: 38, corredor: 16, toxico: 4, toro: 3, cuervo: 18, topo: 4, lanzador: 2, escupidor: 3 },
+        { caminante: 40, gordo: 9, acorazado: 14, dinamitero: 6, toxico: 4, escupidor: 4, rabioso: 12 },
+        { caminante: 42, corredor: 18, gordo: 9, toxico: 4, toro: 3, cuervo: 18, topo: 4, lanzador: 3 },
+        { caminante: 44, corredor: 16, gordo: 10, acorazado: 14, dinamitero: 7, toxico: 4, toro: 3, cuervo: 18, topo: 4, lanzador: 3, escupidor: 4, rabioso: 12, sirena: 1 },
+      ],
+    },
   },
-  ordenNiveles: ['granja', 'autopista'],
+  ordenNiveles: ['granja', 'autopista', 'desierto', 'montana'],
 };
 // Cómo acusa cada golpe el zombie (js/zombie.js): el fuego y las púas no destellan ni empujan; la explosión lo despide
 const ARMA_BALA = { categoria: 'rifle' }, ARMA_PESADA = { categoria: 'escopeta', pesada: true };
@@ -18746,6 +18842,17 @@ const BastionV2 = {
     ProgresoBastion.escribir(this.PROGRESO, p);
   },
   oleadas(id) { return this.nivel(id).oleadas; },
+  // ¿Ese suelo no aguanta a esa unidad? Devuelve la clave del motivo, o null si la aguanta
+  noAguanta(suelo, tipo) {
+    const porte = (BASTION2.suelos[suelo] || {}).porte, U = BASTION.unidades[tipo]; if (!porte || !U) return null;
+    const aPie = U.clase === 'inf';
+    if (porte === 'pared') return 'b2.pared';
+    if (porte === 'alto') return aPie ? null : 'b2.soloInfArriba';
+    if (porte === 'liso') return aPie ? null : 'b2.liso';
+    if (porte === 'blando') return aPie || U.liviano ? null : 'b2.blando';
+    if (porte === 'suelto') return aPie || U.liviano || tipo === 'tanque' ? null : 'b2.suelto';
+    return null;
+  },
   // En qué oleada (desde 0) aparece por primera vez cada tipo en ese nivel
   debut(id) {
     const D = this.debuts = this.debuts || {};
@@ -18770,6 +18877,8 @@ const BastionV2 = {
     tandas('perro', BASTION2.zombies.perro.manada, [0.25, 0.6, 0.86, 0.95]);
     tandas('cuervo', BASTION2.zombies.cuervo.manada, [0.4, 0.7, 0.92]);
     parejo('escudo', 0.28, 0.3);   // El Escudo sale temprano: la horda marcha detrás de él
+    parejo('sirena', 0.16, 0.18);  // La Sirena también: grita toda la oleada
+    parejo('cisterna', 0.5, 0.52); // La Cisterna, en el medio de la horda
     for (let k = 0; k < n('jefe'); k++) poner('jefe', 2 + k);
     return puestos.sort((a, b) => a[0] - b[0]).map(p => p[1]);
   },
@@ -18842,11 +18951,16 @@ const BastionV2 = {
     }
     this.nivelV2 = BastionV2.nivel(this.nivelBastion.id);
     this.dinero = this.nivelV2.dinero;
-    // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa y agua profunda. Los
-    // obstáculos bajos (fardos, el tractor) los saltan los perros
+    // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa, agua profunda y la
+    // pared de la montaña. Los obstáculos bajos (fardos, el tractor, los autos) los saltan los perros
     this.crudasV2 = new Set(); this.bajasV2 = new Set();
     for (const o of this.obstaculos || []) { this.crudasV2.add(o.c + ',' + o.f); if (o.tipo === 'fardo' || o.tipo === 'tractor' || o.tipo === 'auto') this.bajasV2.add(o.c + ',' + o.f); }
-    for (let f = 0; f < this.filas; f++) for (let c = 0; c < this.cols; c++) if (this.terrenoEn(c, f) === 'agua') this.crudasV2.add(c + ',' + f);
+    this.altosV2 = (this.obstaculos || []).filter(o => BASTION2.techos[o.tipo]).map(o => ({ c: o.c, f: o.f, x: o.x, y: o.y, alto: BASTION2.techos[o.tipo], techo: true }));   // puestos altos: techos y cornisas
+    for (let f = 0; f < this.filas; f++) for (let c = 0; c < this.cols; c++) {
+      const suelo = this.terrenoEn(c, f), S = BASTION2.suelos[suelo] || {};
+      if (suelo === 'agua' || S.porte === 'pared' || S.porte === 'alto') this.crudasV2.add(c + ',' + f);   // tampoco se pisan el risco ni sus cornisas
+      if (S.techo) this.altosV2.push({ c, f, ...this.centroCelda(c, f), alto: S.techo });
+    }
     const guardada = this.opcionesEstrategia.continuar && BastionV2.partida();
     if (guardada) this.restaurarPartidaV2(guardada); else this.ejercitoInicialV2();
     this.rehacerCamino();
@@ -18940,9 +19054,9 @@ const BastionV2 = {
     return mejor;
   };
 
-  /* ---------- Altura: el techo de un contenedor ---------- */
+  /* ---------- Altura: el techo de un contenedor o una cornisa de la montaña ---------- */
   // A cuántos puntos del piso queda parado quien sube a esa celda (0: no hay techo)
-  P.alturaEn = function (c, f) { const o = this.obstaculoEn(c, f); return (o && BASTION2.techos[o.tipo]) || 0; };
+  P.alturaEn = function (c, f) { const o = this.obstaculoEn(c, f); return (o && BASTION2.techos[o.tipo]) || (BASTION2.suelos[this.terrenoEn(c, f)] || {}).techo || 0; };
   // El obstáculo con techo que está dibujado bajo ese punto de la pantalla: el toque vale por su celda (el dibujo tapa la de atrás)
   P.techoBajoV2 = function (x, y) {
     const cam = this.camaraBastion();
@@ -18965,7 +19079,7 @@ const BastionV2 = {
     }
     const suelo = this.terrenoEn(c, f);
     if (suelo === 'agua') return 'bastion.agua';
-    if (suelo === 'barro' && U.clase !== 'inf' && !U.liviano) return 'b2.blando';   // en el barro: sólo gente a pie, alambrado y señuelo
+    const hunde = BastionV2.noAguanta(suelo, tipo); if (hunde) return hunde;   // cada suelo aguanta lo suyo (BASTION2.suelos)
     if (!sinPlata && this.dinero < U.costo) return 'bastion.sinDinero';
     const ocupa = this.ocupadaPor(c, f);
     const suelta = this.unidades.find(u => u !== mueve && !u.bloquea && !u.invisible && !u.llevado && u.c === c && u.f === f && (!esInf(u) || u.listo));   // alambrado, señuelo, un caído o alguien en su puesto
@@ -19314,7 +19428,8 @@ const BastionV2 = {
  *     escupidor   se planta a 5 celdas, más lejos de lo que llegan el soldado y la torreta, y escupe ácido en arco
  *     rabioso     corre al doble que un perro, en zigzag, directo al campamento; los tiros pesados le erran
  *   Los jefes: El Coloso, además de romper todo, arroja fardos a lo que tiene a 5 celdas; El Escudo cubre de las balas
- *   tiradas desde el piso a los que marchan pegados detrás de él (z.cubierto, que se calcula en contextoV2).
+ *   tiradas desde el piso a los que marchan pegados detrás de él (z.cubierto, que se calcula en contextoV2); La
+ *   Cisterna es una hinchada gigante que estalla a 3 celdas; La Sirena, una gritona que ve y delata a todo el campo.
  * Al humano que está arriba de un contenedor (u.techo) no lo toma de presa ni lo alcanza nadie que camine; le tiran el
  * escupidor y lo que arrojan el lanzador y el Coloso, lo pican los cuervos y se lo lleva el buitre.
  * Perros y toro no cruzan el fuego del lanzallamas. El contexto K se arma una vez por cuadro (contextoV2).
@@ -19323,6 +19438,8 @@ const ESTILO_SOLDADO_ZOMBIE = { id: 'soldado-zombie', torso: 'chaleco', sinBanda
 const ESTILO_COLOSO = { id: 'coloso', torso: 'desnudo', camiseta: '#4fae2e', piernas: 'short', pantalon: '#363a5e', accesorio: 'pelo-revuelto', escala: [1, 1] };
 const ESTILO_ACORAZADO = { id: 'acorazado', torso: 'uniforme', camiseta: '#232a3a', piernas: 'largo', pantalon: '#1b202c', accesorio: 'casco-antimotin', escudo: true, hombreras: true, escala: [1.04, 1.1] };
 const ESTILO_ESCUDO = { id: 'escudo', torso: 'uniforme', camiseta: '#1c2230', piernas: 'largo', pantalon: '#161a24', accesorio: 'casco-antimotin', escudo: true, escudoGrande: true, hombreras: true, escala: [1, 1] };
+const ESTILO_CISTERNA = { id: 'cisterna', torso: 'desnudo', camiseta: '#8fa23a', piernas: 'short', pantalon: '#3d3626', hinchado: true, escala: [1, 1] };
+const ESTILO_SIRENA = { id: 'sirena', torso: 'capucha', camiseta: '#b02a3a', piernas: 'largo', pantalon: '#241c22', accesorio: 'megafono', escala: [1, 1] };
 const ESTILO_GRITON = { id: 'griton', torso: 'capucha', camiseta: '#7a2d8a', piernas: 'largo', pantalon: '#2a2530', accesorio: 'megafono', escala: [0.92, 1] };
 const ESTILO_HINCHADO = { id: 'hinchado', torso: 'desnudo', camiseta: '#a9b44a', piernas: 'short', pantalon: '#4a3f2c', hinchado: true, escala: [1.1, 1.18] };
 const ESTILO_DINAMITERO = { id: 'dinamitero', torso: 'chaleco', camiseta: '#5a5148', chaleco: '#c9541c', piernas: 'largo', pantalon: '#3c4252', accesorio: 'casco-obra', dinamita: true, escala: [0.9, 0.98] };
@@ -19345,6 +19462,9 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     switch (tipo) {
       case 'jefe': z = zombieConEstilo(0, ESTILO_COLOSO, dif); z.piel = '#4fae2e'; z.grosorBrazos = 2; z.grosorPiernas = 1.6; z.jefe = true; break;
       case 'escudo': z = zombieConEstilo(0, ESTILO_ESCUDO, dif); z.variante.brazoColgando = false; z.piel = '#5f7a4e'; z.grosorBrazos = 1.7; z.grosorPiernas = 1.5; z.jefe = true; break;
+      case 'cisterna': z = zombieConEstilo(0, ESTILO_CISTERNA, dif); z.variante.brazoColgando = false; z.piel = '#8fa23a'; z.grosorBrazos = 1.5; z.grosorPiernas = 1.6; z.jefe = true;
+        z.pustulas = Array.from({ length: 11 }, (_, k) => ({ x: 1 + azarEntre(-7, 10), y: -54 + k * 2.4 + azarEntre(-1, 1), r: azarEntre(1.8, 3.2), fase: Math.random() * 6 })); break;
+      case 'sirena': z = zombieConEstilo(0, ESTILO_SIRENA, dif); z.variante.brazoColgando = false; z.variante.pelo = 'largo'; z.piel = '#a9b890'; z.grosorBrazos = 1.3; z.grosorPiernas = 1.3; z.jefe = true; break;
       case 'soldadoZombie': z = zombieConEstilo(0, ESTILO_SOLDADO_ZOMBIE, dif); z.piel = '#8fa672'; break;
       case 'gordo': z = zombieConEstilo(0, VARIANTES_CAMINANTE.find(v => v.id === 'gordo'), dif); break;
       case 'corredor': z = new Zombie(0, true, dif); break;
@@ -21093,27 +21213,37 @@ const BastionV2Dibujo = {
       const arriba = cam.proyectar(z.x + R * 0.45, z.y - R / 1.3);
       cartel(t('b2.aCubierto'), arriba.x, arriba.y - 4, '#bcd9ff');
     }
-    // Techos: con infantería en la mano (por poner o por mover), los contenedores libres quedan marcados
+    // Lo que se tiene en la mano (por poner o por mover): dónde entra según el suelo y, si es gente, los puestos altos libres
     const enMano = j.colocando === 'mover' ? j.moviendo && (j.moviendo.tipo === 'bunker' ? j.moviendo.dentro[j.moviendo.dentro.length - 1] : j.moviendo) : null;
-    const tipoEnMano = enMano ? enMano.tipo : j.colocando, suben = !j.terminado && B.unidades[tipoEnMano] && B.unidades[tipoEnMano].clase === 'inf';
-    if (suben) for (const o of j.obstaculos || []) {
-      const alto = BASTION2.techos[o.tipo]; if (!alto || j.motivoNoColocar(tipoEnMano, o.c, o.f, true, j.colocando === 'mover' && j.moviendo && j.moviendo.tipo !== 'bunker' ? j.moviendo : null)) continue;
-      const q = [[-21, -7], [21, -7], [21, 7], [-21, 7]].map(([dx, dy]) => cam.proyectar(o.x + dx, o.y + dy / 1.3, alto)), m = cam.proyectar(o.x, o.y, alto + 9 + 3 * Math.sin(ahora / 200));
-      ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
-      ctx.fillStyle = 'rgba(120,230,120,0.3)'; ctx.fill(); ctx.strokeStyle = 'rgba(190,255,190,0.85)'; ctx.lineWidth = 1.2; ctx.stroke();
-      ctx.fillStyle = '#c8ffc8'; ctx.beginPath(); ctx.moveTo(m.x, m.y - 5 * m.s); ctx.lineTo(m.x + 4.5 * m.s, m.y + 1.5 * m.s); ctx.lineTo(m.x - 4.5 * m.s, m.y + 1.5 * m.s); ctx.closePath(); ctx.fill();
+    const tipoEnMano = enMano ? enMano.tipo : j.colocando, UM = !j.terminado && B.unidades[tipoEnMano];
+    if (UM) {
+      const no = [], si = [];
+      for (let f = 0; f < j.filas; f++) for (let c = 0; c < j.cols; c++) {
+        const suelo = j.terrenoEn(c, f), porte = (BASTION2.suelos[suelo] || {}).porte;
+        if (suelo === 'agua' || porte === 'pared' || porte === 'alto' || j.obstaculoEn(c, f)) continue;   // ahí no va nada (los puestos altos se marcan aparte)
+        (BastionV2.noAguanta(suelo, tipoEnMano) ? no : si).push([c, f]);
+      }
+      // Si casi ningún suelo lo aguanta (una torreta en la arena), se marcan las celdas donde sí entra; si no, se tachan las que no
+      if (no.length > si.length) for (const [c, f] of si) pintarCelda(c, f, 'rgba(120,230,120,0.2)', 'rgba(180,245,180,0.6)');
+      else for (const [c, f] of no) {
+        const q = pintarCelda(c, f, 'rgba(240,80,70,0.2)');
+        ctx.strokeStyle = 'rgba(240,80,70,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[2].x, q[2].y); ctx.moveTo(q[1].x, q[1].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
+      }
+      // Puestos altos libres (el techo de un contenedor, una cornisa): sólo para la gente a pie
+      const mueve = j.colocando === 'mover' && j.moviendo && j.moviendo.tipo !== 'bunker' ? j.moviendo : null;
+      if (UM.clase === 'inf') for (const a of j.altosV2 || []) {
+        if (j.motivoNoColocar(tipoEnMano, a.c, a.f, true, mueve)) continue;
+        const q = a.techo ? [[-21, -7], [21, -7], [21, 7], [-21, 7]].map(([dx, dy]) => cam.proyectar(a.x + dx, a.y + dy / 1.3, a.alto))
+          : [[0, 0], [1, 0], [1, 1], [0, 1]].map(([i, k]) => cam.proyectar(B.baseX + (a.c + i) * W, B.arriba + (a.f + k) * H, a.alto));
+        const m = cam.proyectar(a.x, a.y - (a.techo ? 0 : 8), a.alto + 9 + 3 * Math.sin(ahora / 200));
+        ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
+        ctx.fillStyle = 'rgba(120,230,120,0.3)'; ctx.fill(); ctx.strokeStyle = 'rgba(190,255,190,0.85)'; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.fillStyle = '#c8ffc8'; ctx.beginPath(); ctx.moveTo(m.x, m.y - 5 * m.s); ctx.lineTo(m.x + 4.5 * m.s, m.y + 1.5 * m.s); ctx.lineTo(m.x - 4.5 * m.s, m.y + 1.5 * m.s); ctx.closePath(); ctx.fill();
+      }
     }
 
     const U = j.colocando && B.unidades[j.colocando];
     if (U && j.puntero && !j.terminado) {
-      // Lo pesado no va en el barro: esas celdas, tachadas
-      if (U.clase !== 'inf' && !U.liviano) {
-        for (let f = 0; f < j.filas; f++) for (let c = 0; c < j.cols; c++) {
-          if (j.terrenoEn(c, f) !== 'barro') continue;
-          const q = pintarCelda(c, f, 'rgba(240,80,70,0.2)');
-          ctx.strokeStyle = 'rgba(240,80,70,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[2].x, q[2].y); ctx.moveTo(q[1].x, q[1].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
-        }
-      }
       const { c, f } = j.celdaDe(j.puntero.x, j.puntero.y);
       if (j.dentro(c, f)) {   // (el alcance de tiro en el piso lo pinta el modo de siempre)
         const p = j.centroCelda(c, f), arriba = U.clase === 'inf' && j.alturaEn(c, f);
@@ -21153,7 +21283,7 @@ const BastionV2Dibujo = {
 
 </script>
   <script>
-/* ===== Último bastión v2: lista de niveles, panel, parte de la oleada, guía y textos =====
+/* ===== Último bastión (el rediseño, «v2»): lista de niveles, panel, parte de la oleada, guía y textos =====
  * El panel de abajo tiene las 12 unidades con su retrato, agrupadas por clase (infantería, mecanizados, estructuras),
  * las tres herramientas (vender, reparar, mover) y el botón de la oleada. Arriba, el parte: qué trae la oleada que
  * viene (o la que está en curso), con el tipo que debuta marcado. Los contrapesos se ven sin tapar el campo: al elegir
@@ -21189,7 +21319,7 @@ const BastionV2UI = {
         const z = this.zombieDeMuestra(id);
         if (z.vuela) { const s = c.width / (z.E.ancho * 1.5 * z.escala); g.translate(c.width * 0.56, c.height * 0.62); g.scale(s, s); z.altura = 0; z.fase = 0.9; g.save(); z.cuerpo(g, false); g.restore(); }
         else if (z.E) { const s = c.width / (z.E.ancho * 1.75 * z.escala); g.translate(c.width * 0.6, c.height * 0.8); g.scale(s, s); z.dibujar(g, 0, 0); }
-        else { const s = c.height / (98 * z.escala); g.translate(c.width * (id === 'acorazado' || id === 'griton' ? 0.62 : id === 'escudo' ? 0.5 : 0.56), c.height * 0.95); g.scale(s, s); z.dibujar(g, 0, 0); }
+        else { const s = c.height / (98 * z.escala); g.translate(c.width * (id === 'acorazado' || id === 'griton' || id === 'sirena' ? 0.62 : id === 'escudo' ? 0.5 : 0.56), c.height * 0.95); g.scale(s, s); z.dibujar(g, 0, 0); }
       }
     } catch (e) { /* sin lienzo: queda vacío */ } finally { Lienzo.liviano = liviano; }
     return (this.retratos[k] = c.toDataURL());
@@ -21205,7 +21335,7 @@ const BastionV2UI = {
   claseDe(clave) {
     const [clase, id] = clave.split(':');
     if (clase === 'u') return BASTION2.unidades[id].clase;
-    return id === 'soldadoZombie' || id === 'jefe' ? 'cam' : BASTION2.zombies[id].clase;
+    return id === 'soldadoZombie' ? 'cam' : BASTION2.jefes.includes(id) ? 'jefe' : BASTION2.zombies[id].clase;
   },
   // Lo que dice la ficha de la guía: qué hace, fuerte, débil, cómo usarlo o frenarlo, y los contrapesos con íconos
   ficha(clave) {
@@ -21261,7 +21391,8 @@ const BastionV2UI = {
     const fuera = clave => !!vienen && clave[0] === 'z' && clave !== 'z:soldadoZombie' && !(clave.slice(2) in vienen);
     const tecla = (clave, precio) => `<button type="button" class="b2-ficha${fuera(clave) ? ' fuera' : ''}" data-ficha="${clave}"${fuera(clave) ? ` title="${t('b2.noViene')}"` : ''}><img src="${this.retrato(clave, 56)}" alt=""><b>${t('b2.' + clave.replace(':', '.'))}</b>${precio ? `<small>${precio}</small>` : ''}</button>`;
     const fila = (clase, claves, precios) => `<div class="b2-fila"><h4>${t('b2.clase.' + clase)}</h4><div class="b2-fichas">${claves.map(k => tecla(k, precios ? '$' + BASTION2.unidades[k.slice(2)].costo : '')).join('')}</div></div>`;
-    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani', 'ace'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie', ...BASTION2.jefes] : [])].map(k => 'z:' + k))).join('');
+    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani', 'ace'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie'] : [])].map(k => 'z:' + k))).join('')
+      + fila('jefe', BASTION2.jefes.map(k => 'z:' + k));   // un jefe por nivel
     document.getElementById('b2-unidades').innerHTML = ['inf', 'mec', 'est'].map(c => fila(c, BASTION2.clases[c].map(k => 'u:' + k), true)).join('');
     this.mostrarFicha(elegida);
   },
@@ -21430,6 +21561,8 @@ const FICHAS_B2 = {
       lanzador: ['Lanzador', 'Agarra al zombie que tiene al lado y lo arroja por encima de tus muros, hasta 7 celdas, junto a lo que tienes más atrás.', 'Tus muros no protegen de lo que cae del cielo. Si no tiene a quién arrojar, tira cascotes a lo construido. Mucha vida.', 'Lento. El arrojado cae lastimado y aturdido, y no puede con un búnker.', 'Francotiradores dentro de un búnker, o el tanque con francotiradores: lo que cae no puede con los protegidos.'],
       escupidor: ['Escupidor', 'Se planta a 5 celdas y escupe ácido en arco: un charco que quema a la gente y a lo construido.', 'Tira desde más lejos que el soldado y la torreta, que no le llegan. El ácido desarma torretas y búnkeres.', 'Poca vida y se queda quieto: el francotirador lo baja de uno o dos tiros. El charco dura poco. Le escupe a la gente, no a un muro pelado.', 'Francotirador; el tanque, que tira tan lejos como él.'],
       rabioso: ['Rabioso', 'Corre al doble que un perro, en zigzag, directo al campamento. No se detiene por nadie.', 'Vienen de a cuatro. El tiro del francotirador y el cañón le erran más de la mitad de las veces, y la granada nunca llega a tiempo.', 'Poca vida. El alambrado y el barro lo frenan como a todos. No ataca a tu gente.', 'Lanzallamas en fila en el paso; varias torretas con alambrado.'],
+      cisterna: ['La Cisterna', 'Jefa de El desierto (oleadas 6 y 12): una hinchada gigante que va a lo que construiste y estalla.', 'Donde cae, estalla a 3 celdas: se lleva casi todo lo construido y a toda la gente que alcance. Tiene 18 veces la vida del común.', 'Muy lenta. Si muere lejos de lo tuyo, su estallido sólo mata zombies. Va hacia lo primero construido que ve: un señuelo la aparta.', 'Mátala lejos: francotiradores y tanque desde que asoma, y un señuelo adelante, en la arena, para que estalle ahí.'],
+      sirena: ['La Sirena', 'Jefa de La montaña (oleadas 6 y 12): una gritona gigante. Ve a toda tu gente, esté donde esté, y su grito llega a todo el campo.', 'Mientras vive, cada grito le muestra tu gente a toda la horda y la apura un tercio. Nadie queda escondido. Tiene 18 veces la vida del común.', 'Se planta a gritar cada 6 segundos: avanza poco. El francotirador y el cañón la alcanzan desde lejos.', 'Mátala primero: francotiradores en las cornisas y el tanque. Mientras grita, que tu gente esté cubierta.'],
       escudo: ['El Escudo', 'Jefe de La autopista (oleadas 6 y 12): un acorazado gigante que marcha adelante y cubre a los que vienen pegados detrás.', 'Las balas chicas le hacen 1. Mientras vive, a los que cubre no les entra ninguna bala tirada desde el piso. Tiene 22 veces la vida del común y rompe todo.', 'Lento. El francotirador y el cañón le pegan de lleno. No cubre a nadie del fuego, de las granadas ni de quien tira desde arriba de un contenedor.', 'Francotiradores y tanque sobre él; lanzallamas y mortero para los que cubre, y tu gente arriba de los contenedores.'],
       jefe: ['El Coloso', 'Jefe de La granja (oleadas 6 y 12): va derecho, rompe todo y arroja fardos a lo que tiene a 5 celdas.', 'Tiene 22 veces la vida del común y muerde el triple. Sus fardos golpean a todo lo que está junto. Si entra, le saca 8 al campamento.', 'Muy lento.', 'Fuego concentrado: tanque, francotiradores y todo lo que haya. No amontones tus defensas.'],
     },
@@ -21468,6 +21601,8 @@ const FICHAS_B2 = {
       lanzador: ['Arremessador', 'Agarra o zumbi ao lado e o arremessa por cima dos seus muros, até 7 casas, junto do que você tem mais atrás.', 'Seus muros não protegem do que cai do céu. Se não tiver quem arremessar, joga entulho nas construções. Muita vida.', 'Lento. O arremessado cai ferido e atordoado, e não pode com um bunker.', 'Atiradores de elite dentro de um bunker, ou o tanque com atiradores: o que cai não pode com os protegidos.'],
       escupidor: ['Cuspidor', 'Para a 5 casas e cospe ácido em arco: uma poça que queima pessoas e construções.', 'Atira de mais longe que o soldado e a torre, que não o alcançam. O ácido desmonta torres e bunkers.', 'Pouca vida e fica parado: o atirador de elite o derruba com um ou dois tiros. A poça dura pouco. Cospe nas pessoas, não em um muro vazio.', 'Atirador de elite; o tanque, que atira tão longe quanto ele.'],
       rabioso: ['Raivoso', 'Corre o dobro de um cão, em zigue-zague, direto para o acampamento. Não para por ninguém.', 'Vêm de quatro em quatro. O tiro do atirador de elite e o canhão erram mais da metade das vezes, e a granada nunca chega a tempo.', 'Pouca vida. O arame farpado e a lama o freiam como a todos. Não ataca o seu pessoal.', 'Lança-chamas em fila na passagem; várias torres com arame farpado.'],
+      cisterna: ['A Cisterna', 'Chefe de O deserto (ondas 6 e 12): uma inchada gigante que vai até o que você construiu e explode.', 'Onde cai, explode a 3 casas: leva quase tudo o que foi construído e todo o pessoal que alcançar. Tem 18 vezes a vida do comum.', 'Muito lenta. Se morre longe do que é seu, a explosão só mata zumbis. Vai até a primeira coisa construída que vê: uma isca a desvia.', 'Mate-a longe: atiradores de elite e tanque assim que aparecer, e uma isca na frente, na areia, para que exploda ali.'],
+      sirena: ['A Sirene', 'Chefe de A montanha (ondas 6 e 12): uma gritadora gigante. Vê todo o seu pessoal, esteja onde estiver, e o grito dela alcança o campo inteiro.', 'Enquanto vive, cada grito mostra o seu pessoal a toda a horda e a apressa em um terço. Ninguém fica escondido. Tem 18 vezes a vida do comum.', 'Para para gritar a cada 6 segundos: avança pouco. O atirador de elite e o canhão a alcançam de longe.', 'Mate-a primeiro: atiradores de elite nas saliências e o tanque. Enquanto ela grita, mantenha o seu pessoal protegido.'],
       escudo: ['O Escudo', 'Chefe de A rodovia (ondas 6 e 12): um blindado gigante que marcha na frente e cobre os que vêm colados atrás.', 'As balas pequenas tiram 1. Enquanto ele vive, nenhuma bala disparada do chão entra nos que ele cobre. Tem 22 vezes a vida do comum e quebra tudo.', 'Lento. O atirador de elite e o canhão o acertam em cheio. Não cobre ninguém do fogo, das granadas nem de quem atira de cima de um contêiner.', 'Atiradores de elite e tanque nele; lança-chamas e morteiro nos que ele cobre, e o seu pessoal em cima dos contêineres.'],
       jefe: ['O Colosso', 'Chefe de A fazenda (ondas 6 e 12): vai reto, quebra tudo e arremessa fardos no que estiver a até 5 casas.', 'Tem 22 vezes a vida do comum e morde o triplo. Os fardos acertam tudo o que está junto. Se entrar, tira 8 do acampamento.', 'Muito lento.', 'Fogo concentrado: tanque, atiradores de elite e tudo o que houver. Não amontoe as defesas.'],
     },
@@ -21506,6 +21641,8 @@ const FICHAS_B2 = {
       lanzador: ['Thrower', 'Grabs the zombie next to it and throws it over your walls, up to 7 cells, next to whatever you keep farthest back.', 'Your walls do not protect from what falls from the sky. With nobody to throw, it hurls rubble at what you built. Lots of health.', 'Slow. The thrown one lands hurt and stunned, and can do nothing to a bunker.', 'Snipers inside a bunker, or the tank with snipers: what lands cannot hurt the protected.'],
       escupidor: ['Spitter', 'Stops 5 cells away and spits acid in an arc: a puddle that burns people and buildings.', 'It shoots from farther than the rifleman and the turret, which cannot reach it. Acid takes apart turrets and bunkers.', 'Little health and it stands still: the sniper drops it in a shot or two. The puddle does not last. It spits at people, not at a bare wall.', 'Sniper; the tank, which shoots as far as it does.'],
       rabioso: ['Rabid', 'Runs twice as fast as a dog, zigzagging, straight for the camp. It stops for nobody.', 'They come in fours. The sniper’s shot and the cannon miss more than half the time, and the shell never arrives in time.', 'Little health. Barbed wire and mud slow it like everyone else. It does not attack your people.', 'Flamethrowers in a row in its way; several turrets with barbed wire.'],
+      cisterna: ['The Cistern', 'Boss of The desert (waves 6 and 12): a giant bloater that walks to what you built and bursts.', 'Where it falls, it bursts 3 cells wide: it takes almost everything built and all the people it reaches. It has 18 times a walker’s health.', 'Very slow. If it dies far from your side, its blast only kills zombies. It heads for the first built thing it sees: a decoy pulls it away.', 'Kill it far away: snipers and tank as soon as it shows up, and a decoy out front, on the sand, so it bursts there.'],
+      sirena: ['The Siren', 'Boss of The mountain (waves 6 and 12): a giant screamer. She sees all your people, wherever they are, and her scream reaches the whole field.', 'While she lives, each scream shows your people to the whole horde and speeds it up by a third. No one stays hidden. She has 18 times a walker’s health.', 'She stops to scream every 6 seconds: she advances little. The sniper and the cannon reach her from far away.', 'Kill her first: snipers on the ledges and the tank. While she screams, keep your people covered.'],
       escudo: ['The Shield', 'Boss of The highway (waves 6 and 12): a giant armored one that marches in front and covers those right behind it.', 'Small bullets do 1 to it. While it lives, no bullet fired from the ground reaches those it covers. It has 22 times a walker’s health and breaks everything.', 'Slow. The sniper and the cannon hit it in full. It covers no one from fire, shells or anyone shooting from the top of a container.', 'Snipers and tank on it; flamethrower and mortar for those it covers, and your people on top of the containers.'],
       jefe: ['The Colossus', 'Boss of The farm (waves 6 and 12): walks straight, breaks everything and throws hay bales at whatever is within 5 cells.', 'It has 22 times a walker’s health and bites three times as hard. Its bales hit everything standing together. If it gets in, it takes 8 from the camp.', 'Very slow.', 'Focused fire: tank, snipers and everything you have. Do not pack your defenses together.'],
     },
@@ -21515,19 +21652,23 @@ for (const [idioma, F] of Object.entries(FICHAS_B2)) for (const clase of ['u', '
   Object.assign(TEXTOS[idioma], { [`b2.${clase}.${id}`]: nombre, [`b2.${clase}.${id}.hace`]: hace, [`b2.${clase}.${id}.fuerte`]: fuerte, [`b2.${clase}.${id}.debil`]: debil, [`b2.${clase}.${id}.uso`]: uso });
 }
 Object.assign(TEXTOS.es, {
-  'menu.bastion2': 'ÚLTIMO BASTIÓN V2',
   'bastion.alambrado': 'ALAMBRADO', 'bastion.senuelo': 'SEÑUELO', 'bastion.francotirador': 'TIRADOR', 'bastion.lanzallamas': 'LLAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTERO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.vigia': 'VIGÍA', 'bastion.mover': 'MOVER',
-  'b2.titulo': 'ÚLTIMO BASTIÓN V2', 'b2.nivAyuda': 'Cada nivel tiene su terreno y su horda. Aguanta todas las oleadas con el campamento en pie. La guía de unidades y zombies también se abre durante la partida.',
+  'b2.titulo': 'ÚLTIMO BASTIÓN', 'b2.nivAyuda': 'Cada nivel tiene su terreno y su horda. Aguanta todas las oleadas con el campamento en pie. La guía de unidades y zombies también se abre durante la partida.',
   'b2.guia': 'GUÍA', 'b2.guiaTitulo': 'GUÍA · LOS DOS BANDOS', 'b2.noViene': 'No viene en este nivel',
-  'b2.regla4': 'El terreno también juega: en el barro no entran las máquinas, y arriba de un contenedor sólo sube tu infantería, que desde ahí tira más lejos y no es alcanzada a pie.',
+  'b2.regla4': 'El terreno manda: cada suelo aguanta lo suyo. En el barro y en la arena no entra lo pesado; arriba de un contenedor o de una cornisa sólo sube tu infantería, que desde ahí tira más lejos y no es alcanzada a pie.',
+  'b2.niv.desierto': 'Arena suelta: lo pesado sólo entra en las losas de piedra, que son pocas. Sobre la arena van tu gente, el tanque (empiezas con uno), el alambrado y el señuelo: no hay muros que valgan. Jefa: La Cisterna.',
+  'b2.niv.montana': 'Un paso angosto entre riscos. Los dos cuellos son hielo: ahí no se construye y la horda resbala más rápido. Se construye en los ensanches, que son chicos; las cornisas son puestos altos. Jefa: La Sirena.',
+  'b2.avisoDesierto': 'En la arena no se construye: lo pesado va en las losas de piedra. Sobre la arena, sólo tu gente, el tanque, el alambrado y el señuelo',
+  'b2.avisoMontana': 'La roca no se pisa y en el hielo no se construye: ahí sólo se para tu gente. Las cornisas son puestos altos',
+  'b2.suelto': 'Arena suelta: aquí sólo van la gente a pie, el tanque, el alambrado y el señuelo', 'b2.liso': 'Sobre el hielo sólo se para la gente a pie', 'b2.pared': 'Ahí no se puede: es la pared de la montaña',
   'b2.niv.autopista': 'Los autos chocados arman pasillos donde la horda se junta. Arriba de los contenedores sólo sube tu infantería: tira más lejos y a pie no la alcanzan. Jefe: El Escudo.',
-  'b2.avisoAutopista': 'Arriba de los contenedores sólo sube tu infantería: tira más lejos y a pie no la alcanzan', 'b2.soloInfArriba': 'Arriba de un contenedor sólo sube la infantería', 'b2.aCubierto': 'A CUBIERTO',
+  'b2.avisoAutopista': 'Arriba de los contenedores sólo sube tu infantería: tira más lejos y a pie no la alcanzan', 'b2.soloInfArriba': 'Ahí arriba sólo sube la infantería', 'b2.aCubierto': 'A CUBIERTO',
   'b2.niv.granja': 'Campo abierto: no hay embudo. En la tierra arada no entran las máquinas y el estanque corta el paso. Viene toda la horda, con un tipo nuevo en cada oleada.',
   'b2.regla1': 'Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido. Y no todos vienen de frente.',
   'b2.regla2': 'Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.',
   'b2.regla3': 'Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.',
   'b2.horda': 'LA HORDA', 'b2.ejercito': 'EL BASTIÓN', 'b2.continuar': 'SEGUIR: {nivel} · OLEADA {ola} DE {total}',
-  'b2.clase.inf': 'Infantería', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estructuras', 'b2.clase.cam': 'Caminantes', 'b2.clase.esp': 'Especiales', 'b2.clase.ani': 'Animales', 'b2.clase.ace': 'Acechadores',
+  'b2.clase.inf': 'Infantería', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estructuras', 'b2.clase.cam': 'Caminantes', 'b2.clase.esp': 'Especiales', 'b2.clase.ani': 'Animales', 'b2.clase.ace': 'Acechadores', 'b2.clase.jefe': 'Jefes',
   'b2.fuerte': 'FUERTE:', 'b2.debil': 'DÉBIL:', 'b2.frenar': 'CÓMO FRENARLO:', 'b2.usar': 'CÓMO USARLO:',
   'b2.loFrena': 'LO FRENA', 'b2.noSirve': 'NO SIRVE', 'b2.frenaA': 'FRENA A', 'b2.flojoContra': 'FLOJO CONTRA', 'b2.nuevo': 'NUEVO',
   'b2.parte': 'OLEADA {n}:', 'b2.teVen': 'DESDE AQUÍ LO VEN', 'b2.blando': 'Suelo blando: aquí sólo va gente a pie, alambrado o señuelo',
@@ -21541,19 +21682,23 @@ Object.assign(TEXTOS.es, {
   'b2.e.atrae': 'llama a {n} celdas', 'b2.curaMedico': 'A la gente la cura el médico',
 });
 Object.assign(TEXTOS.pt, {
-  'menu.bastion2': 'ÚLTIMO BASTIÃO V2',
   'bastion.alambrado': 'ARAME', 'bastion.senuelo': 'ISCA', 'bastion.francotirador': 'ATIRADOR', 'bastion.lanzallamas': 'CHAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTEIRO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.vigia': 'VIGIA', 'bastion.mover': 'MOVER',
-  'b2.titulo': 'ÚLTIMO BASTIÃO V2', 'b2.nivAyuda': 'Cada fase tem seu terreno e sua horda. Aguente todas as ondas com o acampamento de pé. O guia de unidades e zumbis também abre durante a partida.',
+  'b2.titulo': 'ÚLTIMO BASTIÃO', 'b2.nivAyuda': 'Cada fase tem seu terreno e sua horda. Aguente todas as ondas com o acampamento de pé. O guia de unidades e zumbis também abre durante a partida.',
   'b2.guia': 'GUIA', 'b2.guiaTitulo': 'GUIA · OS DOIS LADOS', 'b2.noViene': 'Não vem nesta fase',
-  'b2.regla4': 'O terreno também joga: na lama as máquinas não entram, e em cima de um contêiner só sobe a sua infantaria, que dali atira mais longe e não é alcançada a pé.',
+  'b2.regla4': 'O terreno manda: cada solo aguenta o seu. Na lama e na areia não entra o que é pesado; em cima de um contêiner ou de uma saliência só sobe a sua infantaria, que dali atira mais longe e não é alcançada a pé.',
+  'b2.niv.desierto': 'Areia solta: o que é pesado só entra nas lajes de pedra, que são poucas. Na areia vão o seu pessoal, o tanque (você começa com um), o arame farpado e a isca: não há muro que sirva. Chefe: A Cisterna.',
+  'b2.niv.montana': 'Uma passagem estreita entre penhascos. Os dois gargalos são gelo: ali não se constrói e a horda escorrega mais rápido. Constrói-se nos alargamentos, que são pequenos; as saliências são postos altos. Chefe: A Sirene.',
+  'b2.avisoDesierto': 'Na areia não se constrói: o que é pesado vai nas lajes de pedra. Na areia, só o seu pessoal, o tanque, o arame farpado e a isca',
+  'b2.avisoMontana': 'Na rocha ninguém pisa e no gelo não se constrói: ali só o seu pessoal fica de pé. As saliências são postos altos',
+  'b2.suelto': 'Areia solta: aqui só vão gente a pé, o tanque, o arame farpado e a isca', 'b2.liso': 'No gelo só fica de pé gente a pé', 'b2.pared': 'Aí não dá: é a parede da montanha',
   'b2.niv.autopista': 'Os carros batidos formam corredores onde a horda se junta. Em cima dos contêineres só sobe a sua infantaria: atira mais longe e a pé não a alcançam. Chefe: O Escudo.',
-  'b2.avisoAutopista': 'Em cima dos contêineres só sobe a sua infantaria: atira mais longe e a pé não a alcançam', 'b2.soloInfArriba': 'Em cima de um contêiner só sobe a infantaria', 'b2.aCubierto': 'PROTEGIDOS',
+  'b2.avisoAutopista': 'Em cima dos contêineres só sobe a sua infantaria: atira mais longe e a pé não a alcançam', 'b2.soloInfArriba': 'Aí em cima só sobe a infantaria', 'b2.aCubierto': 'PROTEGIDOS',
   'b2.niv.granja': 'Campo aberto: não há funil. Na terra arada as máquinas não entram e o lago corta a passagem. Vem a horda inteira, com um tipo novo a cada onda.',
   'b2.regla1': 'Nenhuma unidade serve contra tudo. A blindagem segura as balas pequenas, o que voa passa por cima dos muros e a granada erra o que é rápido. E nem todos vêm de frente.',
   'b2.regla2': 'Os zumbis veem. Vão atrás do seu pessoal e quebram o que o protege; quem cai se levanta contra você em 3 segundos.',
   'b2.regla3': 'Antes de cada onda, o relatório diz o que vem. Toque em um tipo para ver o que o segura.',
   'b2.horda': 'A HORDA', 'b2.ejercito': 'O BASTIÃO', 'b2.continuar': 'CONTINUAR: {nivel} · ONDA {ola} DE {total}',
-  'b2.clase.inf': 'Infantaria', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estruturas', 'b2.clase.cam': 'Caminhantes', 'b2.clase.esp': 'Especiais', 'b2.clase.ani': 'Animais', 'b2.clase.ace': 'Espreitadores',
+  'b2.clase.inf': 'Infantaria', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estruturas', 'b2.clase.cam': 'Caminhantes', 'b2.clase.esp': 'Especiais', 'b2.clase.ani': 'Animais', 'b2.clase.ace': 'Espreitadores', 'b2.clase.jefe': 'Chefes',
   'b2.fuerte': 'FORTE:', 'b2.debil': 'FRACO:', 'b2.frenar': 'COMO PARÁ-LO:', 'b2.usar': 'COMO USAR:',
   'b2.loFrena': 'O QUE O PARA', 'b2.noSirve': 'NÃO SERVE', 'b2.frenaA': 'PARA', 'b2.flojoContra': 'FRACO CONTRA', 'b2.nuevo': 'NOVO',
   'b2.parte': 'ONDA {n}:', 'b2.teVen': 'DAQUI ELES O VEEM', 'b2.blando': 'Solo mole: aqui só vai gente a pé, arame farpado ou isca',
@@ -21567,19 +21712,23 @@ Object.assign(TEXTOS.pt, {
   'b2.e.atrae': 'atrai a {n} casas', 'b2.curaMedico': 'Quem cura o pessoal é o médico',
 });
 Object.assign(TEXTOS.en, {
-  'menu.bastion2': 'LAST BASTION V2',
   'bastion.alambrado': 'WIRE', 'bastion.senuelo': 'DECOY', 'bastion.francotirador': 'SNIPER', 'bastion.lanzallamas': 'FLAMER', 'bastion.medico': 'MEDIC', 'bastion.mortero': 'MORTAR', 'bastion.antiaerea': 'ANTI-AIR', 'bastion.vigia': 'WATCH', 'bastion.mover': 'MOVE',
-  'b2.titulo': 'LAST BASTION V2', 'b2.nivAyuda': 'Each level has its own terrain and its own horde. Hold out through every wave with the camp standing. The guide to units and zombies also opens during the game.',
+  'b2.titulo': 'LAST BASTION', 'b2.nivAyuda': 'Each level has its own terrain and its own horde. Hold out through every wave with the camp standing. The guide to units and zombies also opens during the game.',
   'b2.guia': 'GUIDE', 'b2.guiaTitulo': 'GUIDE · THE TWO SIDES', 'b2.noViene': 'Not in this level',
-  'b2.regla4': 'Terrain matters too: machines cannot enter mud, and only your infantry can climb a container, where they shoot farther and cannot be reached on foot.',
+  'b2.regla4': 'Terrain rules: each kind of ground holds only so much. Heavy things cannot go on mud or sand; only your infantry can climb a container or a ledge, where they shoot farther and cannot be reached on foot.',
+  'b2.niv.desierto': 'Loose sand: heavy things only fit on the stone slabs, and there are few. On the sand go your people, the tank (you start with one), barbed wire and the decoy: no wall will help. Boss: The Cistern.',
+  'b2.niv.montana': 'A narrow pass between cliffs. Both bottlenecks are ice: you cannot build there and the horde slides faster. You build in the wider spots, which are small; the ledges are high posts. Boss: The Siren.',
+  'b2.avisoDesierto': 'You cannot build on sand: heavy things go on the stone slabs. On the sand, only your people, the tank, barbed wire and the decoy',
+  'b2.avisoMontana': 'No one walks on the rock and you cannot build on the ice: only your people can stand there. The ledges are high posts',
+  'b2.suelto': 'Loose sand: only people on foot, the tank, barbed wire and the decoy can go here', 'b2.liso': 'Only people on foot can stand on the ice', 'b2.pared': 'Not there: that is the mountain wall',
   'b2.niv.autopista': 'Crashed cars form corridors where the horde bunches up. Only your infantry can climb the containers: they shoot farther and cannot be reached on foot. Boss: The Shield.',
-  'b2.avisoAutopista': 'Only your infantry can climb the containers: they shoot farther and cannot be reached on foot', 'b2.soloInfArriba': 'Only infantry can go on top of a container', 'b2.aCubierto': 'IN COVER',
+  'b2.avisoAutopista': 'Only your infantry can climb the containers: they shoot farther and cannot be reached on foot', 'b2.soloInfArriba': 'Only infantry can climb up there', 'b2.aCubierto': 'IN COVER',
   'b2.niv.granja': 'Open field: there is no funnel. Machines cannot enter the ploughed land and the pond blocks the way. The whole horde comes, with a new type every wave.',
   'b2.regla1': 'No unit works against everything. Armor stops small bullets, flyers pass over walls and shells miss fast targets. And not all of them come head-on.',
   'b2.regla2': 'Zombies can see. They go for your people and break whatever protects them; whoever falls gets up against you in 3 seconds.',
   'b2.regla3': 'Before each wave, the report says what is coming. Tap a type to see what stops it.',
   'b2.horda': 'THE HORDE', 'b2.ejercito': 'THE BASTION', 'b2.continuar': 'CONTINUE: {nivel} · WAVE {ola} OF {total}',
-  'b2.clase.inf': 'Infantry', 'b2.clase.mec': 'Mechanized', 'b2.clase.est': 'Structures', 'b2.clase.cam': 'Walkers', 'b2.clase.esp': 'Specials', 'b2.clase.ani': 'Animals', 'b2.clase.ace': 'Stalkers',
+  'b2.clase.inf': 'Infantry', 'b2.clase.mec': 'Mechanized', 'b2.clase.est': 'Structures', 'b2.clase.cam': 'Walkers', 'b2.clase.esp': 'Specials', 'b2.clase.ani': 'Animals', 'b2.clase.ace': 'Stalkers', 'b2.clase.jefe': 'Bosses',
   'b2.fuerte': 'STRONG:', 'b2.debil': 'WEAK:', 'b2.frenar': 'HOW TO STOP IT:', 'b2.usar': 'HOW TO USE IT:',
   'b2.loFrena': 'STOPPED BY', 'b2.noSirve': 'NO USE', 'b2.frenaA': 'STOPS', 'b2.flojoContra': 'WEAK AGAINST', 'b2.nuevo': 'NEW',
   'b2.parte': 'WAVE {n}:', 'b2.teVen': 'THEY SEE IT FROM HERE', 'b2.blando': 'Soft ground: only people on foot, barbed wire or a decoy can go here',
@@ -22375,7 +22524,7 @@ const Asistente = (() => {
     const resumen = t('fin.resumen', { ronda: juego.ronda, dificultad: dif, bajas: juego.bajas, tiempo, armas: juego.jugador.inventario.length });
     if (juego.resultado === 'mision-cumplida') { titulo.textContent = t('fin.cumplida'); titulo.style.color = '#4caf50'; detalle.textContent = `${misionActual.nombre}: ${misionActual.descripcion} ${resumen}`; }
     else if (juego.resultado === 'mision-fallida') { titulo.textContent = t('fin.tiempo'); titulo.style.color = '#ff8a65'; detalle.textContent = t('fin.fallida', { mision: misionActual.nombre, resumen }); }
-    else if (juego.estrategia && juego.v2) {   // último bastión v2: si se perdió, dice quiénes entraron y con qué se frenan
+    else if (juego.estrategia) {   // último bastión: si se perdió, dice quiénes entraron y con qué se frenan
       document.getElementById('panel-bastion').classList.add('oculta');
       const F = BastionV2.fin(juego, { tiempo });
       titulo.textContent = F.titulo; titulo.style.color = F.color; detalle.textContent = F.detalle;
@@ -22385,25 +22534,6 @@ const Asistente = (() => {
         const repetir = document.getElementById('fin-repetir');
         repetir.textContent = t('b2.repetir', { n: juego.ronda }); repetir.classList.remove('oculta');
         document.getElementById('fin-otra-vez').textContent = t('b2.deCero');
-      }
-    }
-    else if (juego.estrategia) {
-      document.getElementById('panel-bastion').classList.add('oculta');   // la barra de construir no va sobre el final
-      const N = juego.nivelBastion, i = NIVELES_BASTION.indexOf(N), siguiente = NIVELES_BASTION[i + 1];
-      const gano = juego.resultado === 'victoria';
-      document.getElementById('fin-siguiente').classList.toggle('oculta', !(gano && siguiente));
-      if (gano) {
-        titulo.textContent = t('fin.bastionGanado'); titulo.style.color = '#6ad06a';
-        detalle.textContent = t('fin.bastionGanadoDetalle', { nivel: t('bniv.' + N.id), olas: OLAS_POR_NIVEL, base: juego.vidaBase, max: BASTION.vidaBase, bajas: juego.bajas, tiempo })
-          + ' ' + (siguiente ? t('fin.bastionAbre', { nivel: t('bniv.' + siguiente.id) }) : t('fin.bastionTodos'));
-      } else {
-        // Récord de oleadas por nivel y dificultad
-        const clave = 'zonaMuerta.recordBastion.' + N.id + '.' + juego.dificultad.id, olas = Math.max(0, juego.ronda - 1);
-        let record = 0; try { record = parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch { /* sin almacenamiento */ }
-        const nuevo = olas > record;
-        if (nuevo) { try { localStorage.setItem(clave, String(olas)); } catch { /* ídem */ } }
-        titulo.textContent = t('fin.bastionTitulo'); titulo.style.color = '';
-        detalle.textContent = t('fin.bastionNivel', { nivel: t('bniv.' + N.id), olas, total: OLAS_POR_NIVEL }) + ' ' + t('fin.bastion', { olas, dificultad: dif, bajas: juego.bajas, unidades: juego.construidas, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
       }
     }
     else if (juego.ultra) {
@@ -22668,8 +22798,6 @@ const Asistente = (() => {
 
   /* ---- Botones (delegación por data-accion) ---- */
   document.addEventListener('click', e => {
-    const nivelB = e.target.closest('[data-nivel-bastion]');
-    if (nivelB && !nivelB.disabled) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB.dataset.nivelBastion } }); return; }
     const nivelB2 = e.target.closest('[data-nivel-bastion2]');
     if (nivelB2) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB2.dataset.nivelBastion2, v2: true } }); return; }
     const arma = e.target.closest('[data-arma]');
@@ -22689,16 +22817,11 @@ const Asistente = (() => {
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
-      case 'bastion':   NivelesBastionUI.abrir(mostrar); break;
-      case 'bastion2':  BastionV2UI.abrirNiveles(mostrar); break;   // el diseño nuevo por bandos: lista de niveles (js/bastion-v2-ui.js)
+      case 'bastion2':  BastionV2UI.abrirNiveles(mostrar); break;   // Último bastión: la lista de niveles (js/bastion-v2-ui.js)
       case 'bastion2-guia': abrirGuiaB2(); break;
       case 'bastion2-guia-cerrar': cerrarGuiaB2(); break;
       case 'bastion2-continuar': { const p = BastionV2.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, v2: true, continuar: true, dificultad: p.dificultad } }); break; }
-      case 'bastion-continuar': { const p = ProgresoBastion.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, continuar: true, dificultad: p.dificultad } }); break; }
-      case 'bastion-siguiente': {
-        if (juego.v2) { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
-        const i = NIVELES_BASTION.findIndex(n => n.id === juego.nivelBastion.id); if (NIVELES_BASTION[i + 1]) iniciar(null, { estrategia: { nivel: NIVELES_BASTION[i + 1].id } }); break;
-      }
+      case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;

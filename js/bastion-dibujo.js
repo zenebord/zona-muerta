@@ -830,7 +830,7 @@ PaisajeBastion.terreno = function (ctx, g, ms) {
   // Ancho de la franja del borde norte de una celda: se estira 3 por los costados sólo donde el vecino es de otro tipo (así no se pisan)
   const tramoNorte = (tipo, c, f) => { const iz = g.terrenoEn(c - 1, f) === tipo && g.terrenoEn(c - 1, f - 1) !== tipo ? 0 : 3, de = g.terrenoEn(c + 1, f) === tipo && g.terrenoEn(c + 1, f - 1) !== tipo ? 0 : 3; return [X(c) - iz, W + iz + de]; };
   const sombraOeste = (c, f, ancho = 7, a = 0.35) => { const gr = ctx.createLinearGradient(X(c), 0, X(c) + ancho, 0); gr.addColorStop(0, `rgba(8,14,18,${a})`); gr.addColorStop(1, 'rgba(8,14,18,0)'); ctx.fillStyle = gr; ctx.fillRect(X(c) - 2, Y(f), ancho + 2, H); };
-  const orden = ['banquina', 'tierra', 'pasto', 'pastoOscuro', 'arena', 'nieve', 'barro', 'asfalto', 'hielo', 'agua', 'madera'];
+  const orden = ['banquina', 'tierra', 'pasto', 'pastoOscuro', 'arena', 'nieve', 'barro', 'asfalto', 'losa', 'hielo', 'agua', 'madera', 'risco', 'cornisa'];
   for (const tipo of orden) {
     if (!tipos.has(tipo) || tipo === N.base) continue;
     const T = TERRENOS_BASTION[tipo], col = COLOR_SUELO[tipo] || T.color;
@@ -895,6 +895,60 @@ PaisajeBastion.terreno = function (ctx, g, ms) {
             if (g.terrenoEn(c, f - 1) === tipo && c % 2 === 0) { ctx.fillStyle = 'rgba(235,225,170,0.75)'; ctx.fillRect(X(c) + 6, Y(f) - 1, 22, 2); }   // carril
           });
           bordes(tipo, (c, f, dc, df) => { if (df) { ctx.fillStyle = 'rgba(240,240,235,0.8)'; ctx.fillRect(X(c), df < 0 ? Y(f) + 5.6 : Y(f) + H - 3.4, W, 1.4); } });
+        });
+        break;
+      }
+      case 'losa': {   // afloramiento de piedra firme, apenas levantado sobre la arena: lo único del desierto que aguanta peso
+        rellenar(zona(tipo, 3, 9), 'rgba(60,40,18,0.22)');
+        pozo34(ctx, zona(tipo, 1, 7), -2.6, () => { ctx.fillStyle = ajustarColor(col, -0.38); ctx.fillRect(0, 0, ANCHO, ALTO); }, () => {
+          ctx.fillStyle = col; ctx.fillRect(0, 0, ANCHO, ALTO);
+          celdas(tipo, (c, f, k) => {
+            for (let j = 0; j < 7; j++) { ctx.fillStyle = j % 2 ? 'rgba(255,250,235,0.13)' : 'rgba(40,30,18,0.15)'; ctx.fillRect(X(c) + azar(k * 7 + j, 471) * (W - 8), Y(f) - 2 + azar(k * 7 + j, 472) * H, 3 + azar(k + j, 473) * 7, 1.2); }
+            const x0 = X(c) + 7 + azar(k, 474) * (W - 14), y0 = Y(f) + azar(k, 475) * 8;   // una grieta por celda
+            linea(ctx, 'rgba(45,34,22,0.55)', 0.7, [[x0, y0], [x0 + 5 - azar(k, 476) * 10, y0 + 9], [x0 + 4 - azar(k, 477) * 12, y0 + 19]]);
+            if (azar(k, 478) > 0.5) { ctx.fillStyle = 'rgba(205,171,107,0.55)'; ctx.beginPath(); ctx.ellipse(X(c) + azar(k, 479) * W, Y(f) + H * (0.3 + azar(k, 480) * 0.5), 6, 2.2, 0, 0, Math.PI * 2); ctx.fill(); }   // arena que se junta arriba
+          });
+          bordes(tipo, (c, f, dc, df) => { if (df < 0) { ctx.fillStyle = 'rgba(255,250,230,0.4)'; ctx.fillRect(X(c), Y(f) - 2.6, W, 1); } if (dc < 0) { ctx.fillStyle = 'rgba(255,250,230,0.22)'; ctx.fillRect(X(c) - 1, Y(f) - 2.6, 1, H); } });
+        });
+        break;
+      }
+      case 'risco': {   // la pared de la montaña: un macizo de roca levantado, con nieve arriba. Las cornisas son parte del macizo
+        const macizo = (crece, radio) => c2 => { zona('risco', crece, radio)(c2); zona('cornisa', crece, radio)(c2); };
+        const delMacizo = (c, f) => g.terrenoEn(c, f) === 'risco' || g.terrenoEn(c, f) === 'cornisa';
+        rellenar(macizo(3.4, 9), 'rgba(20,30,45,0.3)');   // sombra al pie
+        pozo34(ctx, macizo(0.8, 8), -11, () => {   // la cara de enfrente: roca oscura con vetas
+          ctx.fillStyle = '#3b3f4a'; ctx.fillRect(0, 0, ANCHO, ALTO);
+          for (let f = 0; f < g.filas; f++) for (let c = 0; c < g.cols; c++) {
+            if (!delMacizo(c, f) || delMacizo(c, f + 1)) continue;
+            for (let j = 0; j < 5; j++) { const x = X(c) + azar(f * 64 + c + j * 7, 481) * W; ctx.fillStyle = j % 2 ? 'rgba(160,170,190,0.2)' : 'rgba(10,12,18,0.35)'; ctx.fillRect(x, Y(f) + H - 11, 1.2, 11); }
+          }
+        }, () => {   // la cima
+          ctx.fillStyle = col; ctx.fillRect(0, 0, ANCHO, ALTO);
+          for (let f = 0; f < g.filas; f++) for (let c = 0; c < g.cols; c++) {
+            if (!delMacizo(c, f)) continue;
+            const k = f * 64 + c;
+            for (let j = 0; j < 3; j++) {   // parches de nieve, corridos hacia donde no pega el viento
+              const x = X(c) + 6 + azar(k * 3 + j, 482) * (W - 12), y = Y(f) - 11 + 5 + azar(k * 3 + j, 483) * (H - 10), r = 7 + azar(k * 3 + j, 484) * 9;
+              ctx.fillStyle = 'rgba(40,48,64,0.25)'; ctx.beginPath(); ctx.ellipse(x + 1.4, y + 1.2, r, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = 'rgba(244,248,252,0.86)'; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+            }
+            linea(ctx, 'rgba(30,34,44,0.5)', 0.7, [[X(c) + azar(k, 485) * W, Y(f) - 11 + 2], [X(c) + W * 0.5, Y(f) - 11 + H * 0.45], [X(c) + azar(k, 486) * W, Y(f) - 11 + H - 2]]);   // una grieta
+            if (!delMacizo(c, f - 1)) { ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(X(c), Y(f) - 11, W, 1.2); }                                   // el filo de atrás, con luz
+            if (!delMacizo(c - 1, f)) { ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(X(c), Y(f) - 11, 1.2, H); }
+            if (!delMacizo(c + 1, f)) { ctx.fillStyle = 'rgba(15,18,26,0.3)'; ctx.fillRect(X(c) + W - 1.6, Y(f) - 11, 1.6, H); }
+          }
+        });
+        break;
+      }
+      case 'cornisa': {   // un saliente plano del macizo: piso de piedra barrida y un parapeto de piedras del lado del paso
+        celdas(tipo, (c, f, k) => {
+          const x = X(c) + 3, y = Y(f) - 11 + 3, w = W - 6, h = H - 6;
+          ctx.fillStyle = 'rgba(20,24,32,0.35)'; ctx.beginPath(); ctx.roundRect(x + 1.2, y + 1.6, w, h, 5); ctx.fill();
+          ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x, y, w, h, 5); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, 5); ctx.stroke();
+          for (let j = 0; j < 5; j++) { ctx.fillStyle = j % 2 ? 'rgba(255,255,255,0.16)' : 'rgba(30,34,44,0.16)'; ctx.fillRect(x + 4 + azar(k * 5 + j, 487) * (w - 12), y + 4 + azar(k * 5 + j, 488) * (h - 8), 4 + azar(k + j, 489) * 5, 1.1); }
+          const alPaso = g.terrenoEn(c, f + 1) !== 'risco' && g.terrenoEn(c, f + 1) !== 'cornisa' ? y + h - 4 : y + 1;   // el parapeto mira al paso
+          for (let j = 0; j < 6; j++) { const px = x + 3 + j * (w - 6) / 5; ctx.fillStyle = 'rgba(20,24,32,0.4)'; ctx.beginPath(); ctx.ellipse(px + 0.8, alPaso + 1.2, 3.2, 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = j % 2 ? '#7a7f8a' : '#666b76'; ctx.beginPath(); ctx.ellipse(px, alPaso, 3.2, 2.1, 0, 0, Math.PI * 2); ctx.fill(); }
         });
         break;
       }

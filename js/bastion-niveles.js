@@ -1,4 +1,6 @@
-/* ===== Último bastión: niveles, escenarios, terreno, obstáculos y partida guardada =====
+/* ===== Último bastión: escenarios, terreno, obstáculos y partida guardada =====
+ * (Los niveles que se juegan hoy son los de BASTION2.niveles, en js/bastion-v2.js: usan estos escenarios y pueden
+ * redefinir su mapa. Lo que sigue describe el modo anterior, que quedó de base.)
  * Cada nivel son 10 oleadas fijas: se gana llegando al final con el campamento en pie, y ganar abre el siguiente.
  * El escenario tiene su fondo y su suelo, obstáculos que bloquean (árboles, autos, rocas…) y terreno que no bloquea
  * pero cambia el paso de los zombies: el agua los frena a la mitad y ahí no se construye, el barro los frena un
@@ -18,6 +20,9 @@ const TERRENOS_BASTION = {
   nieve:       { color: '#dfe6ec', paso: 1 },
   hielo:       { color: '#a9d3e6', paso: 1.35 },
   madera:      { color: '#7a5532', paso: 1 },
+  losa:        { color: '#a39780', paso: 1 },   // piedra firme del desierto
+  risco:       { color: '#6f7480', paso: 1 },   // pared de la montaña: no se pisa
+  cornisa:     { color: '#8d929c', paso: 1 },   // saliente del risco: ahí sube la infantería
 };
 // Rectángulos de terreno: [tipo, c0, f0, c1, f1] (inclusive). Obstáculos: [tipo, c, f]
 const NIVELES_BASTION = [
@@ -117,31 +122,5 @@ const PaisajeBastion = {
     N.obstaculos.forEach(([tipo, c, f], i) => enCamara(ctx, cam, B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8, k => { k.translate(B.baseX + c * B.celda[0] + B.celda[0] / 2, B.arriba + f * B.celda[1] + B.celda[1] / 2 + 8); this.obstaculo(k, tipo, i); }));
     const q = [[-600, B.arriba - 10], [B.baseX - 10, B.arriba - 10], [B.baseX - 10, ALTO], [-600, ALTO]].map(([x, y]) => cam.proyectar(x, y));   // el campamento, apenas sugerido
     ctx.fillStyle = 'rgba(70,55,40,0.9)'; ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
-  },
-};
-
-/* ---------- Pantalla de niveles ---------- */
-const NivelesBastionUI = {
-  abrir(mostrar) {
-    const lista = document.getElementById('lista-bastion'); if (!lista) return;
-    lista.innerHTML = '';
-    const guardada = ProgresoBastion.partida();
-    const seguir = document.getElementById('bastion-continuar');
-    const nGuardado = guardada && NIVELES_BASTION.find(n => n.id === guardada.nivel);
-    seguir.classList.toggle('oculta', !nGuardado);
-    if (nGuardado) seguir.textContent = t('bniv.continuar', { nivel: t('bniv.' + guardada.nivel), ola: guardada.ronda + 1, total: OLAS_POR_NIVEL });
-    NIVELES_BASTION.forEach((N, i) => {
-      const abierto = ProgresoBastion.abierto(i), ganado = ProgresoBastion.ganado(N.id);
-      const b = document.createElement('button');
-      b.className = 'tarjeta-mapa tarjeta-bastion' + (abierto ? '' : ' cerrada') + (ganado ? ' ganada' : '');
-      b.disabled = !abierto;
-      b.dataset.nivelBastion = N.id;
-      const lienzo = document.createElement('canvas'); lienzo.width = 320; lienzo.height = 150; lienzo.className = 'vista';
-      b.appendChild(lienzo);
-      b.insertAdjacentHTML('beforeend', `<h3>${i + 1}. ${t('bniv.' + N.id)}</h3><p>${t('bniv.' + N.id + '.texto')}</p><span class="etiqueta">${!abierto ? t('bniv.cerrado') : ganado ? t('bniv.ganado') : t('bniv.olas', { n: OLAS_POR_NIVEL })}</span>`);
-      lista.appendChild(b);
-      try { PaisajeBastion.vista(lienzo, N); } catch { /* sin lienzo */ }
-    });
-    mostrar('panel-bastion-niveles');
   },
 };

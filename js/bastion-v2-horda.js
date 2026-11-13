@@ -24,7 +24,8 @@
  *     escupidor   se planta a 5 celdas, más lejos de lo que llegan el soldado y la torreta, y escupe ácido en arco
  *     rabioso     corre al doble que un perro, en zigzag, directo al campamento; los tiros pesados le erran
  *   Los jefes: El Coloso, además de romper todo, arroja fardos a lo que tiene a 5 celdas; El Escudo cubre de las balas
- *   tiradas desde el piso a los que marchan pegados detrás de él (z.cubierto, que se calcula en contextoV2).
+ *   tiradas desde el piso a los que marchan pegados detrás de él (z.cubierto, que se calcula en contextoV2); La
+ *   Cisterna es una hinchada gigante que estalla a 3 celdas; La Sirena, una gritona que ve y delata a todo el campo.
  * Al humano que está arriba de un contenedor (u.techo) no lo toma de presa ni lo alcanza nadie que camine; le tiran el
  * escupidor y lo que arrojan el lanzador y el Coloso, lo pican los cuervos y se lo lleva el buitre.
  * Perros y toro no cruzan el fuego del lanzallamas. El contexto K se arma una vez por cuadro (contextoV2).
@@ -33,6 +34,8 @@ const ESTILO_SOLDADO_ZOMBIE = { id: 'soldado-zombie', torso: 'chaleco', sinBanda
 const ESTILO_COLOSO = { id: 'coloso', torso: 'desnudo', camiseta: '#4fae2e', piernas: 'short', pantalon: '#363a5e', accesorio: 'pelo-revuelto', escala: [1, 1] };
 const ESTILO_ACORAZADO = { id: 'acorazado', torso: 'uniforme', camiseta: '#232a3a', piernas: 'largo', pantalon: '#1b202c', accesorio: 'casco-antimotin', escudo: true, hombreras: true, escala: [1.04, 1.1] };
 const ESTILO_ESCUDO = { id: 'escudo', torso: 'uniforme', camiseta: '#1c2230', piernas: 'largo', pantalon: '#161a24', accesorio: 'casco-antimotin', escudo: true, escudoGrande: true, hombreras: true, escala: [1, 1] };
+const ESTILO_CISTERNA = { id: 'cisterna', torso: 'desnudo', camiseta: '#8fa23a', piernas: 'short', pantalon: '#3d3626', hinchado: true, escala: [1, 1] };
+const ESTILO_SIRENA = { id: 'sirena', torso: 'capucha', camiseta: '#b02a3a', piernas: 'largo', pantalon: '#241c22', accesorio: 'megafono', escala: [1, 1] };
 const ESTILO_GRITON = { id: 'griton', torso: 'capucha', camiseta: '#7a2d8a', piernas: 'largo', pantalon: '#2a2530', accesorio: 'megafono', escala: [0.92, 1] };
 const ESTILO_HINCHADO = { id: 'hinchado', torso: 'desnudo', camiseta: '#a9b44a', piernas: 'short', pantalon: '#4a3f2c', hinchado: true, escala: [1.1, 1.18] };
 const ESTILO_DINAMITERO = { id: 'dinamitero', torso: 'chaleco', camiseta: '#5a5148', chaleco: '#c9541c', piernas: 'largo', pantalon: '#3c4252', accesorio: 'casco-obra', dinamita: true, escala: [0.9, 0.98] };
@@ -55,6 +58,9 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     switch (tipo) {
       case 'jefe': z = zombieConEstilo(0, ESTILO_COLOSO, dif); z.piel = '#4fae2e'; z.grosorBrazos = 2; z.grosorPiernas = 1.6; z.jefe = true; break;
       case 'escudo': z = zombieConEstilo(0, ESTILO_ESCUDO, dif); z.variante.brazoColgando = false; z.piel = '#5f7a4e'; z.grosorBrazos = 1.7; z.grosorPiernas = 1.5; z.jefe = true; break;
+      case 'cisterna': z = zombieConEstilo(0, ESTILO_CISTERNA, dif); z.variante.brazoColgando = false; z.piel = '#8fa23a'; z.grosorBrazos = 1.5; z.grosorPiernas = 1.6; z.jefe = true;
+        z.pustulas = Array.from({ length: 11 }, (_, k) => ({ x: 1 + azarEntre(-7, 10), y: -54 + k * 2.4 + azarEntre(-1, 1), r: azarEntre(1.8, 3.2), fase: Math.random() * 6 })); break;
+      case 'sirena': z = zombieConEstilo(0, ESTILO_SIRENA, dif); z.variante.brazoColgando = false; z.variante.pelo = 'largo'; z.piel = '#a9b890'; z.grosorBrazos = 1.3; z.grosorPiernas = 1.3; z.jefe = true; break;
       case 'soldadoZombie': z = zombieConEstilo(0, ESTILO_SOLDADO_ZOMBIE, dif); z.piel = '#8fa672'; break;
       case 'gordo': z = zombieConEstilo(0, VARIANTES_CAMINANTE.find(v => v.id === 'gordo'), dif); break;
       case 'corredor': z = new Zombie(0, true, dif); break;
