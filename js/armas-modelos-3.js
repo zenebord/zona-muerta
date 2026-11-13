@@ -65,7 +65,7 @@ reemplazar('glock', { casquillo: 'pistola', origen: PISTOLA,
       trazo(ctx, 'rgba(255,255,255,0.16)', 0.12, [GL(30, 146), GL(860, 146)]);
       trazo(ctx, 'rgba(70,46,16,0.3)', 0.12, [GL(600, 176), GL(673, 176)]);                                     // repisa del retén
     }
-    if (!e.sinCargador) pintar(ctx, F.base, T, { mate: true, brillo: 0.15 });
+    if (!e.sinCargador) CARGADORES.glock.dibujar(ctx, false);   // js/cargadores.js
     if (!sil) { ctx.beginPath(); ctx.arc(...GL(912, 622), 0.26, 0, Math.PI * 2); ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 0.1; ctx.stroke(); }   // argolla
     pintar(ctx, F.gatillo, '#1d1d1f', { brillo: 0.3 });
     pintar(ctx, F.reten, '#1c1c1e', { mate: true }); if (!sil) for (let k = 1; k < 6; k++) trazo(ctx, 'rgba(255,255,255,0.14)', 0.05, [GL(600 + k * 9, 288 - k * 3), GL(608 + k * 9, 318 - k * 3)]);
@@ -143,7 +143,7 @@ reemplazar('beretta92', { casquillo: 'pistola', origen: PISTOLA,
   anclas: { manoDelantera: B92(370, 250), cargador: B92(425, 320), corredera: B92(340, 70), expulsion: B92(200, 30), boca: B92(8, 38) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = B92_FORMAS, P = B92, NEGRO = '#232427', cs = e.corredera * 3;
-    if (!e.sinCargador) pintar(ctx, F.base, NEGRO, { brillo: 0.3 });
+    if (!e.sinCargador) CARGADORES.beretta92.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.armazon, NEGRO, { brillo: 0.3, huecos: [F.guardamonte] });
     pintar(ctx, F.cacha, '#18181a', { mate: true });
     cuadriculado(ctx, F.cacha, 0.22, 'rgba(255,255,255,0.1)');
@@ -185,7 +185,7 @@ reemplazar('ppk', { casquillo: 'pistola', origen: PISTOLA,
   anclas: { manoDelantera: WP(215, 260), cargador: WP(140, 410), corredera: WP(175, 65), expulsion: WP(320, 50), boca: WP(568, 60) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = WP_FORMAS, P = WP, INOX = '#aeb2b8', cs = e.corredera * 2.4;
-    if (!e.sinCargador) pintar(ctx, F.base, '#1d1d1f', { brillo: 0.25 });
+    if (!e.sinCargador) CARGADORES.ppk.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.armazon, INOX, { brillo: 0.45, huecos: [F.guardamonte] });
     pintar(ctx, F.cacha, '#1c1c1e', { mate: true });
     cuadriculado(ctx, F.cacha, 0.26, 'rgba(255,255,255,0.2)');
@@ -230,7 +230,7 @@ reemplazar('deagle', { casquillo: 'grande', origen: PISTOLA,
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = DE_FORMAS, P = DE, CR = '#c9c6bf', cs = e.corredera * 4.2;
     pintar(ctx, F.armazon, CR, { brillo: 0.55, huecos: [F.hueco] });
-    if (!e.sinCargador) pintar(ctx, F.base, CR, { brillo: 0.5 });
+    if (!e.sinCargador) CARGADORES.deagle.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.cacha, MAT.polimero, { mate: true }); punteado(ctx, F.cacha, 0.35);
     if (!sil) { trazo(ctx, 'rgba(255,255,255,0.08)', 0.3, [P(560, 280), P(592, 440)]); trazo(ctx, 'rgba(60,58,54,0.5)', 0.18, [P(290, 262), P(600, 262)]); }
     pintar(ctx, F.cola, '#b9b5ad', { brillo: 0.5 });
@@ -320,10 +320,7 @@ reemplazar('mauser', { casquillo: 'pistola', origen: PISTOLA,
     pintar(ctx, F.canon, OSCURO, { brillo: 0.45 });
     pintar(ctx, MZF([[22, 42], [24, 22], [48, 22], [50, 40]]), OSCURO);                                            // guion
     pintar(ctx, F.extension, OSCURO, { brillo: 0.35 });
-    if (!e.sinCargador) {
-      pintar(ctx, F.cargador, '#4c4a47', { brillo: 0.25 });
-      if (!sil) trazo(ctx, 'rgba(0,0,0,0.45)', 0.12, [P(400, 214), P(400, 352)]);
-    }
+    if (!e.sinCargador) CARGADORES.mauser.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.pozo, GRIS, { brillo: 0.3 });
     if (!sil) { ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 0.06; ctx.strokeRect(...P(436, 100), 86 * 0.048, 100 * 0.048); }
     pintar(ctx, F.armazon, GRIS, { brillo: 0.3, huecos: [Ec(...P(478, 173), 1.15, 1.15, 20)] });
@@ -365,7 +362,7 @@ reemplazar('uzi', { casquillo: 'pistola',
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = UZ_FORMAS, P = UZ, NEGRO = '#26272a';
     pintar(ctx, F.canon, MAT.pavonado, { brillo: 0.4 });
-    if (!e.sinCargador) pintar(ctx, F.cargador, MAT.pavonado, { brillo: 0.3 });
+    if (!e.sinCargador) CARGADORES.uzi.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.brazo, NEGRO, { brillo: 0.3 });
     if (!sil) trazo(ctx, NEGRO, 0.9, [P(520, 128), P(575, 160), P(596, 226)]);                                   // brazo curvo de la culata
     pintar(ctx, F.cantonera, NEGRO, { brillo: 0.3 });
@@ -380,7 +377,7 @@ reemplazar('uzi', { casquillo: 'pistola',
     if (!sil) for (let y = 52; y < 112; y += 6) trazo(ctx, 'rgba(255,255,255,0.07)', 0.18, [P(140, y), P(296, y)]);
     pintar(ctx, Cc(...P(160, 28), 1.1, 14), NEGRO, { huecos: [Cc(...P(160, 28), 0.5, 10)] });                  // guion con orejas
     pintar(ctx, Cc(...P(560, 26), 1.3, 14), NEGRO, { huecos: [Cc(...P(560, 26), 0.6, 10)] });                  // alza
-    const dx = -e.corredera * 5;
+    const dx = -Math.max(e.corredera, e.cerrojo || 0) * 5;   // la perilla va con el cerrojo
     pintar(ctx, Cc(P(261, 24)[0] + dx, P(261, 24)[1], 0.9, 12), '#3a3c40', { brillo: 0.35 });                  // perilla de carga
   } });
 Object.assign(DIBUJO_ARMAS.uzi, { agarre: 'pecho', anguloEmpunadura: 0.12 });   // con la culata plegada no se apoya en el hombro: adelante del pecho, una mano en el pistolete y la otra en el guardamanos
@@ -439,23 +436,12 @@ reemplazar('ak47', { casquillo: 'bala', culataCm: 27.6, anguloEmpunadura: 0.25,
     }
     pintar(ctx, suave([[4.3, 0], [5.0, 0], [5.4, 1.6], [4.9, 2.9], [4.3, 1.4]], 0.25, 2), ACERO);
     // Cargador de acero curvo con nervaduras estampadas y base
-    if (!e.sinCargador) {
-      const carg = suave([[10.0, -0.4], [16.1, -0.4], [18.2, 4.6], [21.5, 8.7], [25.0, 11.6], [20.8, 16.9], [16.8, 12.1], [12.8, 6.0]], 0.6, 5);
-      pintar(ctx, carg, '#2c2a38');
-      if (!Pincel.silueta) for (const t of [0.2, 0.42, 0.64, 0.84]) {   // nervaduras: sombra de un lado, luz del otro
-        const p0 = [10.5 + t * 5.0, 0.6], p1 = [12.8 + t * 5.4, 6.0 - t * 1.4], p2 = [16.9 + t * 4.6, 12.0 - t * 3.3];
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 0.38; ctx.beginPath(); ctx.moveTo(p0[0] + 0.14, p0[1]); ctx.quadraticCurveTo(p1[0] + 0.14, p1[1], p2[0] + 0.14, p2[1]); ctx.stroke();
-        ctx.strokeStyle = 'rgba(190,190,220,0.22)'; ctx.lineWidth = 0.16; ctx.beginPath(); ctx.moveTo(p0[0] - 0.14, p0[1]); ctx.quadraticCurveTo(p1[0] - 0.14, p1[1], p2[0] - 0.14, p2[1]); ctx.stroke();
-      }
-      pintar(ctx, suave([[20.4, 16.4], [25.0, 10.9], [25.8, 11.6], [21.2, 17.4]], 0.3, 2), ACERO);   // base
-      sombraContacto(ctx, carg, -0.4, 1.4, 0.7);
-    }
+    if (!e.sinCargador) CARGADORES.ak47.dibujar(ctx, false);   // js/cargadores.js
     // Cajón estampado: remaches de los muñones, pernos del disparador, rebaje sobre el cargador y ventana
     const cajon = suave([[-4.5, -5.3], [21.5, -5.3], [21.5, -0.4], [-4.5, 0.6]], 0.35, 3);
     pintar(ctx, cajon, PAVON);
     rebaje(ctx, suave([[11.4, -3.6], [15.2, -3.6], [15.2, -2.2], [11.4, -2.2]], 0.5, 2), 0.4);   // el rebaje del AKM
-    rebaje(ctx, Rc(10.7, -5.25, 6.1, 0.65), 0.6);                                               // ventana de expulsión
+    ventanaRecamara(ctx, RECAMARAS.ak47, e);                                                    // ventana de expulsión (js/armas-recamara.js)
     for (const [x, y] of [[-3.0, -1.4], [-1.2, -1.4], [-3.0, -3.6], [3.6, -1.6], [6.2, -1.6], [17.8, -1.0], [19.8, -1.0], [19.8, -3.6]]) remache(ctx, x, y, 0.26);
     const tapa = suave([[-4.6, -5.3], [-4.6, -5.8], [-3.2, -6.6], [20.6, -6.6], [21.1, -6.1], [21.1, -5.3]], 0.45, 4);
     pintar(ctx, tapa, TAPA);
@@ -481,8 +467,8 @@ reemplazar('ak47', { casquillo: 'bala', culataCm: 27.6, anguloEmpunadura: 0.25,
     pintar(ctx, suave([[56.4, -2.9], [56.8, -9.0], [59.0, -9.0], [59.3, -2.9]], 0.45, 3), PAVON, { huecos: [suave([[57.2, -8.5], [58.6, -8.5], [58.6, -6.4], [57.2, -6.4]], 0.35, 2)] });
     if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(57.75, -7.2, 0.3, 1.4); }   // poste del guion
     pintar(ctx, suave([[59.4, -4.4], [60.8, -4.4], [60.8, -2.8], [59.4, -2.8]], 0.3, 2), ACERO);
-    // Manija de carga (va con la corredera)
-    const dx = -e.corredera * 8;
+    // Manija de carga: va con el portacerrojo (al cargar y con cada tiro)
+    const dx = -Math.max(e.corredera, e.cerrojo || 0) * 8;
     pintar(ctx, suave([[16.6 + dx, -5.6], [19.2 + dx, -5.6], [19.4 + dx, -4.4], [16.6 + dx, -4.2]], 0.35, 3), '#302f39');
     pintar(ctx, Ec(19.5 + dx, -4.9, 0.8, 0.7, 16), '#302f39');
   } });
@@ -576,13 +562,7 @@ reemplazar('mp5', { casquillo: 'pistola', culataCm: 24, anguloEmpunadura: 0.4,
     pintar(ctx, suave([[3.7, 0.3], [4.5, 0.3], [4.9, 1.8], [4.4, 2.9], [3.8, 1.6]], 0.25, 2), '#b9bdc6');
     pintar(ctx, suave([[10.3, 0.2], [11.3, 0.4], [11.6, 3.2], [10.8, 3.3]], 0.25, 2), '#202121');
     // Cargador recto de 30, apenas curvo
-    if (!e.sinCargador) {
-      const carg = suave([[12.6, 0.2], [17.0, 0.2], [19.4, 11.8], [21.6, 17.0], [17.0, 17.9], [15.0, 11.8]], 0.6, 4);
-      pintar(ctx, carg, '#3a3b39');
-      if (!Pincel.silueta) { trazo(ctx, 'rgba(0,0,0,0.5)', 0.3, [[14.6, 1.0], [16.9, 11.8], [19.0, 16.8]]); trazo(ctx, 'rgba(255,255,255,0.12)', 0.12, [[14.3, 1.0], [16.6, 11.8], [18.7, 16.8]]); }
-      pintar(ctx, suave([[16.6, 17.4], [21.8, 16.4], [22.2, 17.4], [16.9, 18.5]], 0.3, 2), '#2a2b2a');
-      sombraContacto(ctx, carg, 0.2, 1.6, 0.65);
-    }
+    if (!e.sinCargador) CARGADORES.mp5.dibujar(ctx, false);   // js/cargadores.js
     // Manija de carga plegable sobre el tubo (se traba atrás y arriba)
     ctx.save(); ctx.translate(-e.corredera * 2.4, -e.corredera * 1.4);
     pintar(ctx, suave([[30.6, -10.6], [32.8, -10.6], [32.8, -9.1], [30.6, -9.1]], 0.5, 2), '#303233');
@@ -622,11 +602,11 @@ reemplazar('thompson', { casquillo: 'bala',
     pintar(ctx, F.armazon, NEGRO, { brillo: 0.3 });
     if (!sil) { trazo(ctx, NEGRO, 0.45, [P(274, 64), P(276, 76), P(290, 80), P(302, 76), P(304, 64)]); trazo(ctx, MAT.acero, 0.35, [P(290, 62), P(292, 74)]); }   // guardamonte y cola
     pintar(ctx, F.pistolete, MAT.madera, { lustre: true });
-    if (!e.sinCargador) { pintar(ctx, F.tambor, '#1d1e21', { brillo: 0.4 }); if (!sil) trazo(ctx, 'rgba(255,255,255,0.12)', 0.3, [P(230, 55), P(230, 140)]); }
+    if (!e.sinCargador) CARGADORES.thompson.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.cajon, NEGRO, { brillo: 0.35 });
     if (!sil) trazo(ctx, 'rgba(255,255,255,0.12)', 0.3, [P(240, 18), P(436, 18)]);
     pintar(ctx, THF([[395, 12], [400, 3], [438, 3], [440, 12]]), MAT.pavonado);                              // alza
-    const dx = -e.corredera * 6;
+    const dx = -Math.max(e.corredera, e.cerrojo || 0) * 6;   // la perilla va con el cerrojo
     pintar(ctx, Cc(P(280, 9)[0] + dx, P(280, 9)[1], 0.7, 12), MAT.acero, { brillo: 0.4 });                  // perilla de carga
   } });
 DIBUJO_ARMAS.thompson.culataCm = 38;
@@ -651,11 +631,7 @@ reemplazar('vector', { casquillo: 'pistola',
     pintar(ctx, suave([[36.4, -3.3], [62.2, -3.3], [62.2, 1.3], [36.4, 1.3]], 0.8, 3), '#2b2c30', { brillo: 0.4 });
     trazo(ctx, 'rgba(255,255,255,0.14)', 0.3, [[37.2, -2.2], [61.6, -2.2]]);
     // Cargador largo
-    if (!e.sinCargador) {
-      pintar(ctx, suave([[13.8, 11.2], [18.2, 11.2], [17.2, 24.4], [12.6, 24.4]], 0.5, 3), P);
-      trazo(ctx, 'rgba(255,255,255,0.06)', 0.3, [[15.4, 12.0], [14.8, 23.6]]);
-      pintar(ctx, suave(Rc(12.3, 23.6, 5.2, 1.4), 0.4, 2), '#2a2b2f');
-    }
+    if (!e.sinCargador) CARGADORES.vector.dibujar(ctx, false);   // js/cargadores.js
     // Bloque inferior en «V» con el guardamonte grande (el hueco llega hasta abajo)
     pintar(ctx, suave([[1.0, -2.0], [23.4, -2.0], [23.6, 1.8], [20.4, 11.4], [-0.6, 11.4], [-0.6, 9.6], [0.6, 0.0]], 0.7, 3), P,
       { mate: true, huecos: [suave([[9.2, -1.8], [2.0, -1.8], [1.0, 1.0], [0.4, 4.0], [0.0, 9.8], [4.8, 9.9], [8.8, 2.2]], 0.7, 3)] });
@@ -736,15 +712,7 @@ reemplazar('p90', { casquillo: 'pistola',
     pintar(ctx, suave(PNF([[436, 1018], [446, 1016], [447, 1034], [440, 1036], [436, 1030]]), 0.3, 2), '#1c1d20');   // disparador
     pintar(ctx, suave(PNF([[438, 1027], [468, 1025], [468, 1031], [438, 1033]]), 0.2, 2), '#2a2c30');                // selector
     // Cargador translúcido con las balas acostadas adentro
-    if (!e.sinCargador) {
-      pintar(ctx, F.cargador, '#8e877a', { brillo: 0.35 });
-      if (!sil) {
-        ctx.fillStyle = 'rgba(40,34,26,0.45)'; const [a, b] = P(222, 936), [c, d] = P(540, 948); ctx.fillRect(a, b, c - a, d - b);
-        for (let x = 230; x < 536; x += 6.5) trazo(ctx, 'rgba(201,162,39,0.35)', 0.12, [P(x, 937), P(x, 947)]);
-        trazo(ctx, 'rgba(255,255,255,0.3)', 0.2, [P(220, 927), P(542, 927)]);
-      }
-      pintar(ctx, F.reten, OSC, { brillo: 0.3 });
-    }
+    if (!e.sinCargador) CARGADORES.p90.dibujar(ctx, false);   // js/cargadores.js
     // Mira réflex en su arco
     pintar(ctx, F.mira, GRIS, { brillo: 0.3, huecos: [F.ventana] });
     pintar(ctx, F.caja, OSC, { brillo: 0.35 });
@@ -1104,10 +1072,7 @@ reemplazar('aa12', { casquillo: 'escopeta',
     const sil = Pincel.silueta, F = AA_FORMAS, P = AA, NEGRO = '#26272a', METAL = '#8a8d92';
     pintar(ctx, F.canon, METAL, { brillo: 0.5 });
     pintar(ctx, suave(AAF([[118, 78], [132, 78], [132, 100], [118, 100]]), 0.3, 2), '#5d6065');
-    if (!e.sinCargador) {
-      pintar(ctx, F.cargador, '#6b6e72', { mate: true, brillo: 0.18 });
-      if (!sil) for (const x of [312, 324, 336]) trazo(ctx, 'rgba(0,0,0,0.22)', 0.3, [P(x, 112), P(x, 222)]);
-    }
+    if (!e.sinCargador) CARGADORES.aa12.dibujar(ctx, false);   // js/cargadores.js
     pintar(ctx, F.cuerpo, NEGRO, { mate: true, brillo: 0.16 });
     pintar(ctx, F.cantonera, '#151617', { mate: true });
     pintar(ctx, F.ventana, '#141516', { brillo: 0.12 });
@@ -1189,11 +1154,11 @@ reemplazar('benelli', { casquillo: 'escopeta',
     if (!sil) for (let x = 308; x < 408; x += 7) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(...P(x, 20), 3 * 0.137, 5 * 0.137); }
     pintar(ctx, F.alza, NEGRO, { huecos: [Cc(...P(277, 22), 0.4, 10)] });
     if (!sil) {
-      ctx.fillStyle = '#0a0a0c'; ctx.fillRect(...P(300, 36), 95 * 0.137, 6 * 0.137);                                // ventana
       trazo(ctx, NEGRO, 0.45, [P(268, 74), P(268, 86), P(275, 92), P(298, 92), P(304, 82), P(304, 74)]);              // guardamonte
       trazo(ctx, MAT.acero, 0.4, [P(283, 76), P(287, 88)]);
     }
-    const dx = -e.corredera * 5;
+    ventanaRecamara(ctx, RECAMARAS.benelli, e);
+    const dx = -Math.max(e.corredera, e.cerrojo || 0) * 5;   // la manija va con el cerrojo
     pintar(ctx, suave(BM4F([[388, 33], [403, 33], [404, 47], [388, 47]]).map(([x, y]) => [x + dx, y]), 0.3, 2), MAT.acero);   // manija de carga
   } });
 DIBUJO_ARMAS.benelli.culataCm = 33;
@@ -1614,10 +1579,7 @@ reemplazar('m16', { casquillo: 'bala',
     }
     // Pistolete y cargador recto de 20
     pintar(ctx, F.pistolete, N, { mate: true }); punteado(ctx, F.pistolete, 0.5, 'rgba(255,255,255,0.07)');
-    if (!e.sinCargador) {
-      pintar(ctx, F.cargador, '#5d6268', { mate: true, brillo: 0.15 });
-      if (!sil) for (const x of [428, 446, 464]) trazo(ctx, 'rgba(0,0,0,0.3)', 0.3, [M16(x, 196), M16(x + 12, 292)]);
-    }
+    if (!e.sinCargador) CARGADORES.m16.dibujar(ctx, false);   // js/cargadores.js
     // Cajón inferior: pozo del cargador, guardamonte, cola del disparador, selector, retén y pernos
     pintar(ctx, F.inferior, GRIS2);
     pintar(ctx, F.guardamonte, GRIS2, { huecos: [F.guardamonteHueco] });
@@ -1781,7 +1743,7 @@ const SP_FORMAS = {
 reemplazar('spas12', { casquillo: 'escopeta',
   anclas: { manoDelantera: SP(415, 1175), cargador: SP(215, 1160), corredera: SP(415, 1175), expulsion: SP(225, 1130), boca: SP(650, 1127) },
   dibujarCm(ctx, e) {
-    const sil = Pincel.silueta, F = SP_FORMAS, P = SP, NEGRO = '#2a2b2e', b = e.bombeo * 8;
+    const sil = Pincel.silueta, F = SP_FORMAS, P = SP, NEGRO = '#2a2b2e', b = e.bombeo * 8, cb = Math.max(e.bombeo, e.cerrojo || 0) * 8;
     pintar(ctx, F.tubo, '#2b2d31', { brillo: 0.4 });
     pintar(ctx, F.canon, '#2b2d31', { brillo: 0.45 });
     pintar(ctx, F.aro, '#26282c', { brillo: 0.4 });
@@ -1795,11 +1757,8 @@ reemplazar('spas12', { casquillo: 'escopeta',
     pintar(ctx, [P(142, 1162), P(146, 1162), P(148, 1174), P(144, 1182), P(142, 1172)], MAT.acero);                       // disparador
     for (const [x, y] of [[84, 1232], [109, 1173], [132, 1148], [128, 1150]]) punto(ctx, ...P(x, y), 0.3, '#5a5d63');
     pintar(ctx, F.cajon, '#383b40', { brillo: 0.35 });
-    if (!sil) { ctx.fillStyle = '#0a0a0c'; const [a, c] = P(200, 1123), [d, f] = P(252, 1136); ctx.fillRect(a, c, d - a, f - c); }   // ventana
-    ctx.save(); if (!sil) { const [a, c] = P(200, 1123), [d, f] = P(252, 1136); ctx.beginPath(); ctx.rect(a, c, d - a, f - c); ctx.clip(); }
-    pintar(ctx, SPF([[200 - b / 0.141, 1124], [252 - b / 0.141, 1124], [252 - b / 0.141, 1135], [200 - b / 0.141, 1135]]), '#b9c0c8', { brillo: 0.6 });   // cerrojo cromado
-    ctx.restore();
-    pintar(ctx, suave(SPF([[236 - b / 0.141, 1150], [248 - b / 0.141, 1132], [252 - b / 0.141, 1134], [241 - b / 0.141, 1152]]), 0.2, 2), MAT.acero);   // manija
+    ventanaRecamara(ctx, RECAMARAS.spas12, e);                                                                             // ventana con el cerrojo cromado
+    pintar(ctx, suave(SPF([[236 - cb / 0.141, 1150], [248 - cb / 0.141, 1132], [252 - cb / 0.141, 1134], [241 - cb / 0.141, 1152]]), 0.2, 2), MAT.acero);   // manija
     // Culata plegada por encima
     pintar(ctx, F.brazo, '#3c3f44', { brillo: 0.3, huecos: [F.ranura, ...[[245, 1098], [264, 1098], [282, 1098]].map(([x, y]) => Cc(...P(x, y), 0.8, 14))] });
     pintar(ctx, F.gancho, '#7d7a62', { brillo: 0.3 });
@@ -1822,7 +1781,7 @@ DIBUJO_ARMAS.spas12.culataCm = 33.2;   // culatín a la medida real
 reemplazar('svd', { casquillo: 'bala',
   anclas: { manoDelantera: [38, -4.2], cargador: [10, -1.6], corredera: [18.4, -5.6], expulsion: [13, -6.6], boca: [87.6, -6.2] },
   dibujarCm(ctx, e) {
-    const sil = Pincel.silueta, c = e.corredera * 8;
+    const sil = Pincel.silueta, c = Math.max(e.corredera, e.cerrojo || 0) * 8;   // la manija va con el portacerrojo
     // Culata esqueleto: lomo, culatín, barra inferior y pistolete forman el hueco para el pulgar
     pintar(ctx, suave([[-4.8, -7.6], [-32.4, -7.2], [-33.6, -6.6], [-33.6, 8.4], [-32.4, 9.4], [-29.4, 9.4], [-6.0, 9.0], [-2.2, 9.0], [-1.2, 8.0], [0.8, 0.8], [1.0, -1.8], [-4.8, -1.8]], 0.8, 4), MAT.madera,
       { huecos: [suave([[-6.6, -4.2], [-27.6, -4.0], [-28.6, -3.0], [-28.4, 5.6], [-27.2, 6.4], [-7.8, 6.4], [-6.2, 5.2], [-4.4, -2.0]], 1.6, 5)] });
@@ -1831,12 +1790,7 @@ reemplazar('svd', { casquillo: 'bala',
     tornillo(ctx, -24.6, -8.8, 0.3); tornillo(ctx, -15.2, -8.8, 0.3);
     pintar(ctx, suave([[-34.6, -7.0], [-33.4, -7.0], [-33.4, 9.4], [-34.4, 9.2], [-34.8, 1.2]], 0.4, 2), MAT.acero);   // cantonera
     // Cargador de 10 con nervios de refuerzo
-    if (!e.sinCargador) {
-      pintar(ctx, suave([[6.8, -2.0], [12.8, -2.0], [13.4, 2.6], [14.8, 8.0], [14.6, 9.0], [9.2, 9.8], [8.6, 9.2], [7.6, 4.0], [6.8, 0.6]], 0.5, 3), MAT.pavonado);
-      pintar(ctx, suave([[8.4, 0.2], [11.8, 0.2], [12.6, 4.0], [13.4, 7.8], [9.8, 8.4], [9.0, 4.2]], 0.5, 3), '#1b1c20', { mate: true });
-      if (!sil) for (let k = 0; k < 5; k++) trazo(ctx, 'rgba(255,255,255,0.09)', 0.3, [[8.8 + k * 0.25, 1.0 + k * 1.5], [12.0 + k * 0.3, 1.0 + k * 1.5]]);
-      pintar(ctx, suave([[8.8, 9.2], [14.8, 8.4], [15.0, 9.2], [9.2, 10.2]], 0.3, 2), MAT.acero);
-    }
+    if (!e.sinCargador) CARGADORES.svd.dibujar(ctx, false);   // js/cargadores.js
     // Montura lateral de la mira (del lado izquierdo: asoma por encima del cajón)
     pintar(ctx, suave([[2.4, -11.2], [15.6, -11.2], [15.6, -8.0], [14.0, -7.2], [3.2, -7.2], [2.4, -8.0]], 0.5, 3), '#1d1e22');
     trazo(ctx, '#3a3c42', 0.5, [[3.6, -9.6], [0.6, -8.6]]);                                                     // palanca de la montura
@@ -1844,8 +1798,7 @@ reemplazar('svd', { casquillo: 'bala',
     pintar(ctx, suave([[-4.8, -1.8], [-4.8, -6.8], [22.6, -6.8], [23.4, -6.0], [23.4, -1.8]], 0.4, 2), MAT.pavonado, { brillo: 0.3 });
     pintar(ctx, suave([[-4.4, -6.6], [-4.4, -7.6], [-3.4, -8.4], [20.6, -8.4], [21.4, -7.6], [21.4, -6.6]], 0.6, 3), MAT.pavonado, { brillo: 0.45 });
     pintar(ctx, Cc(-4.6, -7.4, 0.45, 10), MAT.acero);                                                           // botón de la tapa
-    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(9.4, -6.6, 7.8, 1.2); }
-    ctx.save(); ctx.beginPath(); ctx.rect(9.4, -6.6, 7.8, 1.2); ctx.clip(); pintar(ctx, Rc(9.4 - c, -6.5, 9, 1.0), MAT.acero); ctx.restore();
+    ventanaRecamara(ctx, RECAMARAS.svd, e);
     pintar(ctx, suave([[17.4 - c, -6.4], [19.8 - c, -6.4], [20.2 - c, -5.6], [19.8 - c, -4.8], [17.4 - c, -4.8]], 0.4, 2), MAT.acero);   // manija
     pintar(ctx, suave([[-3.4, -5.4], [9.0, -5.6], [9.2, -4.9], [-2.6, -4.3], [-2.6, -2.6], [-3.6, -2.8]], 0.3, 2), MAT.acero);   // palanca de seguro
     for (const [x, y] of [[0.6, -3.2], [4.0, -3.0], [19.6, -3.0], [21.6, -2.6], [14.8, -2.6]]) punto(ctx, x, y, 0.22, '#4a4c52');
@@ -1929,14 +1882,11 @@ reemplazar('barrett', { casquillo: 'grande',
     if (!sil) { trazo(ctx, CH, 0.5, [P(486, 768), P(486, 779), P(496, 783), P(508, 779)]); trazo(ctx, MAT.acero, 0.4, [P(497, 768), P(498, 776)]); }   // guardamonte y disparador
     pintar(ctx, F.inferior, CH, { brillo: 0.25 });
     for (const [x, y] of [[560, 770], [400, 745]]) tornillo(ctx, ...P(x, y), 0.32);
-    if (!e.sinCargador) {
-      pintar(ctx, F.cargador, OSC, { brillo: 0.3 });
-      if (!sil) for (const y of [775, 788]) trazo(ctx, 'rgba(255,255,255,0.08)', 0.4, [P(412, y), P(472, y + 9)]);
-    }
+    if (!e.sinCargador) CARGADORES.barrett.dibujar(ctx, false);   // js/cargadores.js
     // Cajón superior con las ventanas ovaladas (se ve el cañón adentro) y la manija de carga
     pintar(ctx, F.superior, CH, { brillo: 0.35, huecos: [[281, 701], [300, 704], [317, 707], [333, 710], [347, 712], [360, 715]].map(([x, y]) => suave(BRF([[x - 6, y - 3], [x + 6, y - 1], [x + 6, y + 3], [x - 6, y + 1]]), 0.8, 3)) });
     if (!sil) { trazo(ctx, 'rgba(255,255,255,0.1)', 0.3, [P(265, 694), P(655, 764)]); trazo(ctx, 'rgba(0,0,0,0.45)', 0.2, [P(380, 706), P(380, 738)]); }
-    pintar(ctx, suave(BRF([[412 + dx / 0.2316, 724], [432 + dx / 0.2316, 728], [432 + dx / 0.2316, 734], [412 + dx / 0.2316, 730]]), 0.4, 2), MAT.acero);   // manija de carga
+    pintar(ctx, suave(BRF([[412 - dx / 0.2316, 724], [432 - dx / 0.2316, 728], [432 - dx / 0.2316, 734], [412 - dx / 0.2316, 730]]), 0.4, 2), MAT.acero);   // manija de carga (el calco está espejado: x de la foto crece hacia la culata)
     if (!sil) trazo(ctx, '#202227', 0.2, [P(300, 712), P(330, 728), P(360, 740), P(372, 746)]);                   // cable
     // Mira telescópica en dos anillas
     for (const x of [450, 500]) { pintar(ctx, suave(BRF([[x - 5, 698], [x + 5, 700], [x + 5, 722], [x - 5, 720]]), 0.3, 2), OSC); pintar(ctx, suave(BRF([[x - 8, 716], [x + 8, 719], [x + 8, 724], [x - 8, 721]]), 0.3, 2), OSC); }
@@ -1957,7 +1907,7 @@ DIBUJO_ARMAS.barrett.culataCm = 42.6;
 reemplazar('saiga', { casquillo: 'escopeta',
   anclas: { manoDelantera: [33.6, 4.2], cargador: [11, -1.6], corredera: [19, -5.2], expulsion: [14, -6.6], boca: [62, -5.4] },
   dibujarCm(ctx, e) {
-    const sil = Pincel.silueta, P = MAT.polimero, A = MAT.aleacion, c = e.corredera * 8;
+    const sil = Pincel.silueta, P = MAT.polimero, A = MAT.aleacion, c = Math.max(e.corredera, e.cerrojo || 0) * 8;
     // Culata plegable: bisagra, tubo superior, tirante y apoyo de goma
     pintar(ctx, suave(Rc(-7.6, -7.0, 3.2, 5.0), 0.5, 2), MAT.pavonado);
     pintar(ctx, suave([[-7.4, -6.2], [-30.0, -4.6], [-30.0, -2.8], [-7.4, -4.4]], 0.8, 3), MAT.pavonado, { brillo: 0.4 });
@@ -1965,12 +1915,7 @@ reemplazar('saiga', { casquillo: 'escopeta',
     pintar(ctx, suave([[-29.4, -6.6], [-32.4, -6.8], [-33.2, -5.6], [-33.0, 6.2], [-32.0, 7.2], [-29.2, 6.6], [-28.8, 2.0]], 0.8, 4), MAT.goma);
     rayas(ctx, -32.4, -30.0, -5.6, 6.0, 0.6, 'rgba(255,255,255,0.05)', 0.18);
     // Cargador de 8: recto, ancho, con nervios y tapa
-    if (!e.sinCargador) {
-      const car = suave([[6.8, -2.0], [15.0, -2.0], [16.8, 13.6], [16.4, 14.6], [8.6, 15.4], [7.8, 14.4]], 0.6, 3);
-      pintar(ctx, car, P, { mate: true });
-      if (!sil) for (let k = 0; k < 6; k++) trazo(ctx, 'rgba(255,255,255,0.08)', 0.35, [[8.0 + k * 0.2, 1.5 + k * 2.1], [15.4 + k * 0.22, 0.8 + k * 2.1]]);
-      pintar(ctx, suave([[7.8, 14.0], [16.6, 13.2], [16.8, 14.8], [8.2, 15.6]], 0.3, 2), '#2a2b2f');
-    }
+    if (!e.sinCargador) CARGADORES.saiga.dibujar(ctx, false);   // js/cargadores.js
     // Pistolete nervado y guardamonte
     const grip = suave([[-1.0, -2.0], [2.8, -2.0], [1.8, 3.0], [1.2, 8.6], [0.4, 9.4], [-2.6, 9.0], [-2.8, 8.0], [-1.8, 2.8]], 0.7, 4);
     pintar(ctx, grip, P, { mate: true });
@@ -1980,8 +1925,7 @@ reemplazar('saiga', { casquillo: 'escopeta',
     // Cajón tipo AK: tapa redondeada, ventana con el portacerrojo, manija, palanca de seguro y remaches
     pintar(ctx, suave([[-4.6, -2.0], [-4.6, -6.6], [24.0, -6.6], [24.0, -2.0]], 0.4, 2), MAT.pavonado, { brillo: 0.3 });
     pintar(ctx, suave([[-4.2, -6.4], [-4.2, -7.4], [-3.2, -8.2], [22.8, -8.2], [23.6, -7.4], [23.6, -6.4]], 0.6, 3), MAT.pavonado, { brillo: 0.45 });
-    if (!sil) { ctx.fillStyle = '#0b0b0d'; ctx.fillRect(9.6, -6.4, 8.2, 1.2); }
-    ctx.save(); ctx.beginPath(); ctx.rect(9.6, -6.4, 8.2, 1.2); ctx.clip(); pintar(ctx, Rc(9.6 - c, -6.3, 9, 1.0), MAT.acero); ctx.restore();
+    ventanaRecamara(ctx, RECAMARAS.saiga, e);
     pintar(ctx, suave([[17.8 - c, -6.2], [20.2 - c, -6.2], [20.6 - c, -5.4], [20.2 - c, -4.6], [17.8 - c, -4.6]], 0.4, 2), MAT.acero);
     pintar(ctx, suave([[-3.4, -5.4], [9.0, -5.6], [9.2, -4.9], [-2.6, -4.3], [-2.6, -2.6], [-3.6, -2.8]], 0.3, 2), MAT.acero);
     for (const [x, y] of [[0.6, -3.2], [4.0, -3.0], [21.6, -3.0], [22.8, -4.8]]) punto(ctx, x, y, 0.22, '#4a4c52');

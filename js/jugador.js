@@ -29,6 +29,11 @@ const mezclaPose = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y
 const CICLO_PISTOLA = 70;           // ms que tarda la corredera de la pistola en ir atrás y volver después de cada tiro
 const PAUSA_MONTAR = 400;          // ms de más entre meter el cargador y tirar de la corredera o la manija (arma vacía)
 const ACCION_MANUAL = { remington700: 'cerrojo', mosin: 'cerrojo', mossberg: 'bombeo', rem870: 'bombeo', winchester1894: 'palanca', winchester1887: 'palanca' };
+// Las que se recargan solas (fusiles, metralletas, escopetas semiautomáticas): con cada tiro el cerrojo va atrás, la
+// recámara queda abierta un instante (por ahí sale la vaina) y vuelve con otra bala. Nunca dura más que un tiro.
+const CICLO_CERROJO = 130;          // ms del cerrojo atrás y adelante (js/armas-recamara.js dibuja la ventana)
+const recargaSola = (arma, d) => !!(d && d.casquillo) && arma.recargaTipo !== 'cargador-pistola' && !ACCION_MANUAL[arma.id];
+const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].ciclo) || CICLO_CERROJO, arma.cadencia * 0.75);
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
@@ -76,6 +81,8 @@ class Jugador {
     this.sinCargador = false;          // el arma está sin cargador, a mitad de la recarga
     this.golpeEn = -1000;              // momento en que algo encastró: el arma rebota un poquito
     this.ultimoDisparo = -10000;       // bien atrás, para poder disparar desde el primer cuadro
+    this.tiroEn = -10000;              // último tiro de verdad (el gatillo en vacío no mueve el cerrojo)
+    this.vainaPendiente = null;        // la vaina del último tiro, que sale cuando el cerrojo llega atrás
     this.invulnerableHasta = 0;
     this.montada = null;               // ametralladora fija que está usando, si hay
     this.fase = 0; this.retroceso = 0; this.caminando = false;
@@ -100,6 +107,12 @@ class Jugador {
     const paso = dt * 60;
     this.ahora = juego.ahora;
     this.caminando = false;
+    // La vaina del último tiro sale por la ventana cuando la corredera o el cerrojo llegaron atrás
+    const vaina = this.vainaPendiente;
+    if (vaina && this.ahora >= vaina.en) {
+      this.vainaPendiente = null;
+      if (!this.montada && this.arma().id === vaina.arma) { const p = this.puntoArma('expulsion'); juego.casquillos.push(new Casquillo(p.x, p.y, this.direccion, vaina.tipo)); }
+    }
     // Golpe cuerpo a cuerpo en curso: pega en su momento y termina
     const g = this.golpeActual;
     if (g) {
@@ -205,12 +218,18 @@ class Jugador {
     if (this.municionActual() <= 0) { Audio_.vacio(); this.ultimoDisparo = ahora; return false; }
     if (!this.montada && arma.categoria === 'granada') { this.ultimoDisparo = ahora; this.iniciarLanzamiento(juego, arma); return true; }
     if (this.montada) this.montada.municion--; else this.municion[arma.id]--;
-    this.ultimoDisparo = ahora;
+    this.ultimoDisparo = ahora; this.tiroEn = ahora;
     this.retroceso = 1;
     const boca = this.puntoArma('boca'), expulsion = this.puntoArma('expulsion');
     const accion = this.montada ? null : ACCION_MANUAL[arma.id];
     const tipoCasquillo = this.montada ? 'grande' : DIBUJO_ARMAS[arma.id].casquillo;
-    juego.dispararArma(arma, boca.x, boca.y, this.direccion, tipoCasquillo && !accion ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null);
+    // La vaina no sale en el momento del tiro sino cuando la corredera (pistolas) o el cerrojo llegan atrás y la
+    // recámara queda abierta; las de acción manual la escupen al accionar (iniciarCiclo); la M2, enseguida
+    if (!this.montada && tipoCasquillo && !accion) {
+      const retraso = arma.recargaTipo === 'cargador-pistola' ? 20 : cicloCerrojo(arma) * 0.3;
+      this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id };
+    }
+    juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null);
     Audio_.disparo(arma.categoria, arma.id);
     if (accion) this.iniciarCiclo(juego, arma, accion, tipoCasquillo);
     return true;
@@ -311,15 +330,16 @@ class Jugador {
     switch (tipo) {
       case 'cargador-pistola':
         // Saca el vacío tirando hacia abajo, lo suelta (cae al piso), trae uno nuevo del portacargador y lo mete
-        l.fase('sacar', 300, { a: 'cargador', llegada: 0.5, incl: -0.3, presionar: 5, mano: [['cargador', 0.55, 1]], eventos: [[0.55, quitar(null)]] });
-        l.fase('soltar', 140, { a: 'cargador', offset: { x: 0, y: 5 }, alInicio: soltarDeLaMano('cargadorPistola') });
+        // El cargador sale y entra a lo largo de la empuñadura (eje: js/cargadores.js); la mano lo suelta recién puesto
+        l.fase('sacar', 300, { a: 'agarreCargador', eje: true, llegada: 0.5, incl: -0.3, presionar: 8, mano: [['cargador', 0.55, 1]], eventos: [[0.55, quitar(null)]] });
+        l.fase('soltar', 140, { a: 'agarreCargador', eje: true, offset: { x: 0, y: 9 }, alInicio: soltarDeLaMano('cargadorPistola') });
         l.fase('cadera', 340, { a: 'cadera', mano: [['cargador', 0.55, 1]] });
-        l.fase('poner', 300, { a: 'cargador', mano: [['cargador', 0, 0.9]], alTerminar: llenar('cargador-poner') });
+        l.fase('poner', 300, { a: 'agarreCargador', eje: true, llegada: 0.55, offset: { x: 0, y: 8 }, presionar: -8, mano: [['cargador', 0, 1]], alTerminar: llenar('cargador-poner') });
         let montar = false;
         if (trabada && arma.recargaFinal === 'liberar') l.fase('liberar', 170, { a: 'corredera', llegada: 0.6, co: 0, snap: 0, eventos: [[0.6, s('liberar')]] });
         else if (trabada) {   // pausa con la mano en el cargador recién puesto y después tira de la corredera
           montar = true;
-          l.fase('esperar', 300, { a: 'cargador' });
+          l.fase('esperar', 300, { a: 'agarreCargador' });
           l.fase('corredera', 380, { a: 'corredera', llegada: 0.45, co: 0, snap: 0.55, tiron: 1.9, incl: -0.1, eventos: [[0.55, s('corredera')]] });
         }
         l.fase('volver', 170, { a: 'arma', incl: 0 });
@@ -329,18 +349,22 @@ class Jugador {
       case 'cargador': case 'ignicion': {   // ignicion: el lanzallamas cambia el cilindro de ignición de la punta (no cae al piso)
         const suelta = unidad === 'celda' || unidad === 'ignicion' ? null : unidad === 'tambor-cargador' ? 'tambor' : 'cargador';
         if (arma.recargaFinal === 'palmada-hk') l.fase('trabar', 320, { a: 'corredera', llegada: 0.4, co: 1, eventos: [[0.5, s('cerrojo-abrir')]] });
+        // Con su cargador (js/cargadores.js) la mano lo agarra donde corresponde y lo saca y lo mete a lo largo de su eje
+        const conCargador = !!CARGADORES[arma.id], dondeAgarra = conCargador ? 'agarreCargador' : 'cargador', sal = conCargador ? CARGADORES[arma.id].salida ?? 1 : 1;
         if (suelta) {   // tira el cargador hacia abajo, lo suelta y cae al piso; la mano va vacía al portacargador
-          l.fase('sacar', 320, { a: 'cargador', llegada: 0.5, incl: -0.2, presionar: 6, mano: [[unidad, 0.55, 1]], eventos: [[0.55, quitar(null)]] });
-          l.fase('soltar', 140, { a: 'cargador', offset: { x: 0, y: 6 }, alInicio: soltarDeLaMano(suelta) });
+          l.fase('sacar', 320, { a: dondeAgarra, eje: conCargador, llegada: 0.5, incl: -0.2, presionar: 6 * sal, mano: [[unidad, 0.55, 1]], eventos: [[0.55, quitar(null)]] });
+          l.fase('soltar', 140, { a: dondeAgarra, eje: conCargador, offset: { x: 0, y: 7 * sal }, alInicio: soltarDeLaMano(suelta) });
         } else l.fase('sacar', 300, { a: 'cargador', llegada: 0.55, incl: -0.2, eventos: [[0.8, quitar(null)]] });
         l.fase('cadera', 380, { a: 'cadera', mano: [[unidad, 0.5, 1]] });
-        l.fase('poner', 360, { a: 'cargador', mano: [[unidad, 0, 0.9]], rotMano: arma.balanceo ? [0.75, 0] : null, alTerminar: llenar(unidad === 'celda' ? 'celda' : 'cargador-poner') });
+        l.fase('poner', 360, conCargador
+          ? { a: 'agarreCargador', eje: true, llegada: 0.55, offset: { x: 0, y: 7 }, presionar: -7, mano: [[unidad, 0, 1]], rotMano: arma.balanceo ? [0.5, 0] : null, alTerminar: llenar('cargador-poner') }
+          : { a: 'cargador', mano: [[unidad, 0, 0.9]], alTerminar: llenar(unidad === 'celda' ? 'celda' : 'cargador-poner') });
         const fin = arma.recargaFinal;
         if (fin === 'palmada-hk') l.fase('palmada', 200, { a: 'corredera', llegada: 0.6, co: 0, snap: 0, eventos: [[0.6, s('palmada-hk')]] });
         else if (fin === 'palmada' && vacio) l.fase('palmada', 200, { a: 'corredera', llegada: 0.65, tiron: -2, eventos: [[0.65, s('palmada')]] });
         // Metralletas y fusiles vacíos: pausa con la mano en el cargador antes de tirar de la manija (más lento)
         const montar = fin === 'cerrojo' && vacio && (arma.categoria === 'metralleta' || arma.categoria === 'rifle');
-        if (montar) l.fase('esperar', 300, { a: 'cargador' });
+        if (montar) l.fase('esperar', 300, { a: dondeAgarra });
         if (fin === 'cerrojo' && vacio) l.fase('cerrojo', montar ? 420 : 320, { a: 'corredera', llegada: 0.4, pulso: { que: 'corredera', recorrido: 0 }, eventos: [[0.45, s('cerrojo')]] });
         l.fase('volver', 200, { a: 'arma', incl: 0 });
         l.ajustar(T + (montar ? PAUSA_MONTAR : 0));
@@ -500,7 +524,7 @@ class Jugador {
     const empuje = this.retroceso * this.fuerzaRetroceso();
     const retroX = empuje * (corta ? 2.4 : 3.2), retroY = empuje * (corta ? 1.6 : 0.4);
     const e = { origen: { x: base.x - retroX, y: base.y - retroY }, retroX, retroY, empuje, incl: 0, apunta: 0, apoyo: null, mano: null, manoGatillo: { x: 0, y: 0 },
-      sinCargador: this.sinCargador, corredera: 0, abierto: 0, bombeo: 0, palanca: 0, tapa: 0, peine: null, enMano: null, rotMano: 0, mirar: 0 };
+      sinCargador: this.sinCargador, corredera: 0, cerrojo: 0, recamara: null, abierto: 0, bombeo: 0, palanca: 0, tapa: 0, peine: null, enMano: null, rotMano: 0, mirar: 0 };
     if (arma.cuerpo && !this.montada) {
       // Cuerpo a cuerpo: guardia → alzar (38 %) → bajar rápido (hasta el 55 %, ahí pega) → volver a la guardia
       const guardia = arma.unaMano ? GOLPE.guardiaUnaMano : GOLPE.guardia, fin = arma.poder === 'escudo' || arma.poder === 'lanza' ? GOLPE.lanzar : GOLPE.golpe;
@@ -521,7 +545,18 @@ class Jugador {
     if (!this.montada && arma.recargaTipo === 'cargador-pistola' && municion === 0) e.corredera = 1;   // corredera trabada atrás
     if (!this.montada && arma.recargaTipo === 'cargador-pistola' && !this.recarga) {                    // con cada tiro va atrás y escupe la vaina
       const t = ahora - this.ultimoDisparo;
-      if (t >= 0 && t < CICLO_PISTOLA) e.corredera = Math.max(e.corredera, t < 20 ? t / 20 : 1 - (t - 20) / (CICLO_PISTOLA - 20));
+      if (t >= 0 && t < CICLO_PISTOLA) {
+        e.corredera = Math.max(e.corredera, t < 20 ? t / 20 : 1 - (t - 20) / (CICLO_PISTOLA - 20));
+        e.recamara = t < 20 ? 'sale' : municion > 0 ? 'entra' : null;   // a los 20 ms la vaina sale (vainaPendiente)
+      }
+    }
+    if (!this.montada && !this.recarga && recargaSola(arma, d)) {   // fusiles, metralletas y semiautomáticas: el cerrojo va y vuelve
+      const t = ahora - this.tiroEn, dur = cicloCerrojo(arma);
+      if (t >= 0 && t < dur) {
+        const p = t / dur;   // abre rápido (con la vaina servida), queda atrás (ahí la escupe) y cierra con la bala nueva
+        e.cerrojo = p < 0.28 ? suavizar(p / 0.28) : p < 0.5 ? 1 : 1 - suavizar((p - 0.5) / 0.5);
+        e.recamara = p < 0.3 ? 'sale' : p >= 0.5 && municion > 0 ? 'entra' : null;
+      }
     }
     if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
     e.sinPasador = !!this.pasadorFuera;
@@ -551,6 +586,9 @@ class Jugador {
       if (f.pulso) {                                                     // cerrojo, bomba o palanca que va y vuelve
         const v = Math.sin(q * Math.PI);
         e[f.pulso.que] = Math.max(e[f.pulso.que] || 0, v);
+        // Por la ventana: al accionar después de un tiro sale la vaina (hasta la mitad) y después entra otra bala;
+        // al cargar la primera, la recámara estaba vacía y solo entra
+        e.recamara = this.ciclo === linea && q < 0.5 ? 'sale' : q >= 0.5 && municion > 0 ? 'entra' : null;
         if (f.pulso.que === 'palanca') e.manoGatillo = { x: 2 * v, y: 5 * v };
       }
       if (this.recarga) { const t = Math.min(ahora - linea.inicio, linea.fin - ahora); e.mirar = suavizar(limitar(t / 200, 0, 1)); }
@@ -569,6 +607,11 @@ class Jugador {
       if (nombre === 'cadera') return { x: CADERA.x, y: CADERA.y };
       if (nombre === 'frente') return { x: 19, y: -58 };                 // brazo de apoyo estirado adelante, para el lanzamiento
       if (nombre === 'anilla') return enArma({ x: 0.3 * CM, y: -5.6 * CM });
+      if (nombre === 'agarreCargador') {   // donde la mano agarra el cargador puesto (js/cargadores.js)
+        const M = CARGADORES[arma.id];
+        if (M) return enArma({ x: M.agarre[0] * CM, y: M.agarre[1] * CM });
+        nombre = 'cargador';
+      }
       const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave];
       if (!movil) return enArma(ancla);
       const [dx, dy] = movil(e);
@@ -579,8 +622,10 @@ class Jugador {
     if (!linea) { e.mano = e.apoyo; return e; }
 
     // 3) La mano: sale de donde terminó la fase anterior, llega al destino y después hace la acción
+    const ejeCargador = (() => { const M = CARGADORES[arma.id], [ex, ey] = M ? M.eje : [0, 1]; return [ex * c - ey * s, ex * s + ey * c]; })();
     const desplazamiento = (fase, avance) => {
       let x = fase.offset ? fase.offset.x : 0, y = (fase.offset ? fase.offset.y : 0) + (fase.presionar || 0) * avance;
+      if (fase.eje) { const d = y; x = ejeCargador[0] * d; y = ejeCargador[1] * d; }   // el cargador sale y entra a lo largo de su eje
       if (fase.tiron) x -= fase.tiron * Math.sin(avance * Math.PI);
       if (fase.pulso && fase.pulso.recorrido) x -= fase.pulso.recorrido * Math.sin(avance * Math.PI);
       return { x, y };
@@ -594,9 +639,34 @@ class Jugador {
     const o0 = { x: f.offset ? f.offset.x : 0, y: f.offset ? f.offset.y : 0 }, oq = desplazamiento(f, q);
     e.mano = { x: inicio.x + (destino.x + o0.x - inicio.x) * pm + (oq.x - o0.x), y: inicio.y + (destino.y + o0.y - inicio.y) * pm + (oq.y - o0.y) };
 
-    if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && p < hasta) { e.enMano = objeto; break; }
+    if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
+    e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
     if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q }; }
+
+    // 4) Cómo va la mano: abierta mientras viaja vacía o suelta algo, se cierra al agarrar, cerrada mientras sostiene;
+    // y hacia dónde apunta (e.dirMano, en el marco del cuerpo; null: sigue al antebrazo). El dibujo limita cuánto
+    // dobla la muñeca, así que el que gira es el brazo entero.
+    const cerrar = (desde, k) => desde + (0.85 - desde) * suavizar(limitar(k, 0, 1));
+    const objeto = e.enMano;
+    if (objeto) {
+      const chico = objeto === 'bala' || objeto === 'cartucho' || objeto === 'granada40' || objeto === 'speedloader' || objeto === 'pasador';
+      e.cierre = chico ? 0.62 : 0.82;                                  // pinza para lo chico, puño para cargadores y cohetes
+      e.dirMano = e.incl - (chico ? 0.55 : 0.1);                       // la punta de los dedos hacia el arma
+    } else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) {
+      e.cierre = 0.1; e.dirMano = null;                                // abre la mano: suelta el cargador o la granada
+    } else if (pm < 1) {
+      e.cierre = 0.3; e.dirMano = null;                                // viajando: mano entreabierta, sigue al brazo
+    } else if (f.a === 'cadera') {
+      e.cierre = cerrar(0.25, (p - 0.35) / 0.15); e.dirMano = 1.35;     // dedos hacia abajo, al portacargador
+    } else if (f.a === 'corredera') {
+      const palmea = /palmada|liberar/.test(f.nombre);
+      e.cierre = palmea ? 0.05 : cerrar(0.3, pAccion / 0.25); e.dirMano = palmea ? e.incl - 0.4 : null;
+    } else if (f.a === 'cargador') {
+      e.cierre = cerrar(0.3, pAccion / 0.3); e.dirMano = e.incl - 0.1;   // agarra el cargador o la boca del arma
+    } else {
+      e.cierre = 0.7; e.dirMano = null;
+    }
     return e;
   }
 

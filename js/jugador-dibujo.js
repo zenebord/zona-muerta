@@ -128,7 +128,8 @@ function piernaArticulada(ctx, hx, hy, a, doblez, color, C) {
 
 // Brazo en dos tramos de largo fijo (cinemática inversa): el codo cae donde corresponde según dónde esté la mano.
 // Con C.antebrazo, manga larga hasta el guante (camisa de combate) y parche en el hombro si hay C.parche; si no, arremangada.
-function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
+// Dónde cae el codo para que la mano (muñeca) llegue a (mx, my), con el codo hacia abajo
+function codoBrazo(hx, hy, mx, my, L1, L2) {
   const dx = mx - hx, dy = my - hy, d = Math.hypot(dx, dy) || 0.001;
   let l1 = L1, l2 = L2;
   if (d > (L1 + L2) * 0.995) { const k = d / ((L1 + L2) * 0.995); l1 *= k; l2 *= k; }   // si no llega, se estira apenas
@@ -136,8 +137,12 @@ function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
   // Sin esto, el único modo de que entre es doblar el codo hasta el cinturón
   else if (d < (L1 + L2) * 0.8) { const k = Math.max(0.5, d / ((L1 + L2) * 0.8)); l1 *= k; l2 *= k; }
   const a = Math.acos(limitar((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1)), base = Math.atan2(dy, dx);
-  const cx = hx + Math.cos(base + a) * l1, cy = hy + Math.sin(base + a) * l1;                // codo hacia abajo
-  const larga = !!C.antebrazo, angAnte = Math.atan2(my - cy, mx - cx);
+  const cx = hx + Math.cos(base + a) * l1, cy = hy + Math.sin(base + a) * l1;
+  return { cx, cy, ante: Math.atan2(my - cy, mx - cx) };
+}
+function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
+  const { cx, cy, ante: angAnte } = codoBrazo(hx, hy, mx, my, L1, L2);
+  const larga = !!C.antebrazo;
   // Antebrazo: más grueso cerca del codo
   const ante = tramo(cx, cy, mx, my, 5.2, 4.2, 0.5);
   pintura(ctx, ante, larga ? C.antebrazo : C.piel, { sombra: 0.8 });
@@ -177,51 +182,104 @@ function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
     ctx.restore();
   }
   pintura(ctx, c => c.arc(hx, hy, 3.6, 0, Math.PI * 2), C.chaqueta, { contorno: false, sombra: 0.7 });   // hombro redondo
+  return { cx, cy, ante: angAnte };
 }
 
-// Mano con guante táctico: dedos cerrados, pulgar, nudillera dura y puño elastizado
-function manoConGuante(ctx, x, y, C) {
-  const G = C.guante;
-  pintura(ctx, c => c.roundRect(x - 3.6, y + 2, 7.2, 2.2, 0.8), ajustarColor(G, 0.12), { sombra: 0.4, brillo: false, linea: 0.35 });   // puño
-  pintura(ctx, c => c.roundRect(x - 3.6, y - 3.2, 7.4, 6.4, 2.4), G, { sombra: 0.8, brillo: 0.3 });
-  pintura(ctx, c => c.ellipse(x - 2.9, y - 1.4, 1.7, 2.5, -0.5, 0, Math.PI * 2), ajustarColor(G, 0.06), { sombra: 0.4, brillo: 0.25, linea: 0.35 });   // pulgar
-  pintura(ctx, c => c.roundRect(x - 1.8, y - 2.6, 4.6, 2, 0.8), ajustarColor(G, 0.2), { sombra: 0.4, brillo: 0.3, linea: 0.35 });   // nudillera
-  if (!Pincel.silueta) for (let k = 0; k < 3; k++) raya(ctx, ajustarColor(G, -0.35), 0.35, [[x - 1.4 + k * 1.6, y + 0.2], [x - 1.2 + k * 1.6, y + 2.2]]);   // dedos
+/* ---------- Manos ----------
+ * Todas las manos son la misma mano con guante, empuñe lo que empuñe: mismo color (C.guante), mismo trazo que el resto
+ * del cuerpo (pintura), mismas medidas, el puño elastizado y la nudillera dura. Antes cada agarre tenía su dibujo, con
+ * degradados y contornos distintos, y la mano cambiaba de color y de forma al pasar del arma a la recarga.
+ * Mano libre: la palma en el origen, los dedos hacia +x y el lado de la palma hacia +y; la muñeca en (-MANO.muneca, 0).
+ * Sigue al antebrazo (la muñeca dobla como mucho MANO.dobla: lo demás lo gira el brazo) y se abre o se cierra: abierta
+ * (cierre 0) cuando llega a algo, suelta o palmea; a medias cuando sostiene algo; cerrada (1) cuando empuña un mango.
+ */
+const MANO = { muneca: 2.3, dobla: 0.85 };
+const TRAZO_MANO = { sombra: 0.5, brillo: 0.25, linea: 0.4 };
+const tonosGuante = G => ({ base: G, punio: ajustarColor(G, 0.12), nudillo: ajustarColor(G, 0.2), dedo: ajustarColor(G, 0.05), palma: ajustarColor(G, -0.1), pliegue: ajustarColor(G, -0.35) });
+const normalizarAng = a => Math.atan2(Math.sin(a), Math.cos(a));
+
+function manoLibre(ctx, x, y, ang, cierre, C, op = {}) {
+  const T = tonosGuante(C.guante), k = limitar(cierre, 0, 1), m = MANO.muneca;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang); if (op.espejo) ctx.scale(1, -1);
+  // Dedos en dos tramos que se doblan hacia la palma: estirados, en C (sostienen algo) o en puño, con la punta abajo
+  const a1 = k * 1.45, a2 = a1 + k * 1.8, bx = 1.3, by = -0.45;
+  const x1 = bx + Math.cos(a1) * 2.1, y1 = by + Math.sin(a1) * 2.1, x2 = x1 + Math.cos(a2) * 2.2, y2 = y1 + Math.sin(a2) * 2.2;
+  pintura(ctx, c => c.roundRect(-m - 2.2, -2.45, 2.5, 4.9, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });   // puño elastizado
+  pintura(ctx, c => c.roundRect(-m - 0.2, -2.55, m + 3.2, 4.9, 1.9), T.base, TRAZO_MANO);                                  // dorso y palma
+  pintura(ctx, tramo(x1, y1, x2, y2, 2.2, 1.8), T.dedo, TRAZO_MANO);
+  pintura(ctx, tramo(bx, by, x1, y1, 2.6, 2.2), T.dedo, TRAZO_MANO);
+  if (!Pincel.silueta) for (const s of [-0.45, 0.45]) {   // los dedos de al lado, asomando
+    const nx = -Math.sin(a1), ny = Math.cos(a1), mx = -Math.sin(a2), my = Math.cos(a2);
+    raya(ctx, T.pliegue, 0.3, [[bx + 0.5 + nx * s, by + ny * s], [x1 + nx * s, y1 + ny * s], [x1 + (x2 - x1) * 0.8 + mx * s * 0.8, y1 + (y2 - y1) * 0.8 + my * s * 0.8]]);
+  }
+  pintura(ctx, c => c.roundRect(-0.9, -2.75, 2.9, 1.6, 0.7), T.nudillo, { sombra: 0.4, brillo: 0.3, linea: 0.35 });        // nudillera
+  if (op.pulgar !== false) {   // pulgar de este lado: abierto se separa, cerrado cruza por delante de los dedos
+    const p1 = 0.7 - k * 1.05, p2 = p1 - k * 0.45, px = -1.2, py = 1.35;
+    const qx = px + Math.cos(p1) * 2.0, qy = py + Math.sin(p1) * 2.0;
+    pintura(ctx, tramo(px, py, qx, qy, 1.9, 1.5), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });
+    pintura(ctx, tramo(qx, qy, qx + Math.cos(p2) * 1.5, qy + Math.sin(p2) * 1.5, 1.5, 1.2), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });
+  }
+  ctx.restore();
 }
+// Brazo y mano libre: la palma en (px, py) apuntando a pose.dir (o siguiendo al antebrazo); el brazo llega a la muñeca.
+// pose.antes(dir) dibuja lo que lleva en la mano, entre el brazo y los dedos
+function brazoConMano(ctx, hx, hy, px, py, C, L = [13.5, 13], pose = {}) {
+  const k0 = codoBrazo(hx, hy, px, py, L[0], L[1]);
+  const quiere = pose.dir ?? k0.ante + 0.12;   // suelta, la mano cae un poco
+  const dir = k0.ante + limitar(normalizarAng(quiere - k0.ante), -MANO.dobla, MANO.dobla);
+  brazoDetallado(ctx, hx, hy, px - Math.cos(dir) * MANO.muneca, py - Math.sin(dir) * MANO.muneca, C, L[0], L[1]);
+  if (pose.antes) pose.antes(dir);
+  manoLibre(ctx, px, py, dir, pose.cierre ?? 0.9, C, pose);
+  return dir;
+}
+// La mano de siempre, cerrada y con los dedos para arriba (escaleras, sogas, la M2): ahora es la misma mano libre
+function manoConGuante(ctx, x, y, C, ang = -Math.PI / 2, cierre = 1) { manoLibre(ctx, x, y, ang, cierre, C); }
 
 /* ---------- Manos que agarran el arma ----------
  * Mano del gatillo: la palma queda del otro lado de la empuñadura (se dibuja antes que el arma); de este lado
  * se ven el pulgar cruzando por arriba, los tres dedos envolviendo el frente y el índice en el disparador.
- * El eje de la empuñadura baja inclinado hacia atrás según `ang`. */
+ * El eje de la empuñadura baja inclinado hacia atrás según `ang`. Mismo guante y mismo trazo que la mano libre. */
 function manoGatilloPalma(ctx, x, y, ang, C) {
+  const T = tonosGuante(C.guante);
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-  pieza(ctx, redondo(-2.0, 0.2, 3.9, 5.0, 1.6), ajustarColor(C.guante, -0.18), -2, 1.9);
+  pintura(ctx, c => c.roundRect(-2.4, 2.6, 4.6, 2.3, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });   // puño elastizado
+  pintura(ctx, redondo(-2.0, -0.2, 3.9, 4.6, 1.6), T.palma, TRAZO_MANO);
   ctx.restore();
 }
 function manoGatilloDedos(ctx, x, y, ang, C) {
+  const T = tonosGuante(C.guante);
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-  pieza(ctx, redondo(-2.0, -0.3, 3.4, 1.35, 0.6), C.guante, -2, 1.4);                                     // pulgar por arriba
-  for (let k = 0; k < 3; k++) pieza(ctx, redondo(0.5, 1.8 + k * 1.25, 2.1, 1.15, 0.55), ajustarColor(C.guante, 0.04 * k), 0.5, 2.6);   // dedos sobre el frente
+  for (let k = 2; k >= 0; k--) pintura(ctx, redondo(0.5, 1.8 + k * 1.25, 2.2, 1.2, 0.55), T.dedo, { sombra: 0.35, brillo: 0.2, linea: 0.32 });   // dedos sobre el frente
+  pintura(ctx, redondo(-2.1, -0.35, 3.5, 1.45, 0.65), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });               // pulgar por arriba
   ctx.restore();
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang * 0.25);
-  pieza(ctx, redondo(0.4, 0.5, 2.7, 0.95, 0.45), ajustarColor(C.guante, 0.06), 0.4, 3.1);               // índice en el disparador
+  pintura(ctx, redondo(0.4, 0.5, 2.8, 1.0, 0.45), T.dedo, { sombra: 0.35, brillo: 0.2, linea: 0.32 });                // índice en el disparador
   ctx.restore();
 }
-// Mano de apoyo en un arma larga: la palma sostiene el guardamanos desde abajo y los dedos suben por este costado
-function manoGuardamanos(ctx, x, y, C) {
-  pieza(ctx, redondo(x - 2.7, y + 0.5, 5.4, 2.5, 1.1), ajustarColor(C.guante, -0.08), x - 2.7, x + 2.7);
+// Mano de apoyo en un arma larga: la palma sostiene el guardamanos desde abajo y los dedos suben por este costado;
+// el puño elastizado sigue al antebrazo (angAnte)
+function manoGuardamanos(ctx, x, y, C, angAnte = -0.8) {
+  const T = tonosGuante(C.guante);
+  ctx.save(); ctx.translate(x - 2.4, y + 2.6); ctx.rotate(angAnte);
+  pintura(ctx, c => c.roundRect(-2.6, -2.3, 2.6, 4.6, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });
+  ctx.restore();
+  pintura(ctx, redondo(x - 2.9, y + 0.3, 5.8, 2.8, 1.2), T.palma, TRAZO_MANO);
   for (let k = 0; k < 4; k++) {
-    const fx = x - 2.0 + k * 1.3;
-    pieza(ctx, poli(segmento(fx - 0.3, y + 1.7, fx + 0.2, y - 1.3, 1.15, 1.0)), ajustarColor(C.guante, 0.05), fx - 0.9, fx + 0.8);
+    const fx = x - 2.1 + k * 1.35;
+    pintura(ctx, poli(segmento(fx - 0.3, y + 1.9, fx + 0.2, y - 1.3, 1.25, 1.05)), T.dedo, { sombra: 0.3, brillo: 0.2, linea: 0.32 });
   }
+  pintura(ctx, c => c.roundRect(x - 2.4, y + 1.4, 5.1, 1.3, 0.6), T.nudillo, { sombra: 0.3, brillo: 0.25, linea: 0.32 });   // nudillera
 }
 // Mano de apoyo en una pistola: envuelve los dedos de la otra mano, con el pulgar estirado sobre el armazón
 function manoEnvolvente(ctx, x, y, ang, C) {
+  const T = tonosGuante(C.guante);
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-  pieza(ctx, redondo(-1.5, -1.8, 4.1, 4.8, 1.6), C.guante, -1.5, 2.6);
-  for (let k = 0; k < 3; k++) detalle(ctx, ajustarColor(C.guante, 0.32), c => c.rect(0.3, -0.7 + k * 1.3, 2.1, 0.35));
+  pintura(ctx, c => c.roundRect(-2.4, 2.4, 4.4, 2.3, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });
+  pintura(ctx, redondo(-1.6, -1.8, 4.2, 4.9, 1.6), T.base, TRAZO_MANO);
+  for (let k = 0; k < 3; k++) raya(ctx, T.pliegue, 0.3, [[0.4, -0.5 + k * 1.3], [2.3, -0.5 + k * 1.3]]);   // dedos
+  pintura(ctx, c => c.roundRect(-1.2, -1.9, 2.6, 1.3, 0.6), T.nudillo, { sombra: 0.3, brillo: 0.25, linea: 0.32 });
   ctx.restore();
-  pieza(ctx, redondo(x - 0.6, y - 2.9, 3.6, 1.15, 0.5), ajustarColor(C.guante, 0.08), x - 0.6, x + 3);
+  pintura(ctx, redondo(x - 0.6, y - 2.9, 3.7, 1.25, 0.55), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });   // pulgar sobre el armazón
 }
 
 Jugador.prototype.dibujar = function (ctx, camaraX, ahora) {
@@ -341,19 +399,18 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
 
   // Cuerpo a tierra: suelta el arma y se tapa la cabeza con las dos manos
   if (tapa && !this.montada) {
-    manoConGuante(ctx, gatillo.x, gatillo.y, Clejos);
-    brazoDetallado(ctx, 4, -52 + ty, 6, -81 + ty, C);
-    manoConGuante(ctx, 6, -81 + ty, C);
+    manoLibre(ctx, gatillo.x, gatillo.y, -2.3, 0.55, Clejos);
+    brazoConMano(ctx, 4, -52 + ty, 6, -81 + ty, C, undefined, { cierre: 0.55, dir: -2.3 });
     return;
   }
 
   if (this.montada) {
     // Mano del gatillo fija en las empuñaduras (su brazo va detrás del torso); el brazo izquierdo sigue la recarga de la cinta
-    manoConGuante(ctx, gatillo.x, gatillo.y, Clejos);
+    manoLibre(ctx, gatillo.x, gatillo.y, -Math.PI / 2, 0.95, Clejos);
     const apoyo = tapa ? { x: 4, y: -82 + ty } : { x: e.mano.x / ESCALA_JUGADOR, y: e.mano.y / ESCALA_JUGADOR };   // la M2 está en el mundo, sin agrandar
-    brazoDetallado(ctx, 4 - golpe, -52 + ty, apoyo.x, apoyo.y, C);
-    manoConGuante(ctx, apoyo.x, apoyo.y, C);
-    if (e.enMano) dibujarUnidad(ctx, e.enMano, apoyo.x, apoyo.y, e.rotMano);
+    const recargaM2 = !!this.recarga;
+    brazoConMano(ctx, 4 - golpe, -52 + ty, apoyo.x, apoyo.y, C, undefined, { cierre: recargaM2 ? e.cierre ?? 0.8 : 0.95, dir: recargaM2 ? e.dirMano : -Math.PI / 2,
+      antes: () => { if (e.enMano) dibujarUnidad(ctx, e.enMano, apoyo.x, apoyo.y, e.rotMano); } });
     return;
   }
 
@@ -362,16 +419,14 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
     // Cuerpo a cuerpo: el arma, encima el puño derecho cerrado en el mango; el izquierdo también en el mango
     // (dos manos) o en guardia delante del pecho (una mano)
     ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); ctx.restore();
-    manoConGuante(ctx, gatillo.x, gatillo.y, Clejos);
+    manoLibre(ctx, gatillo.x, gatillo.y, e.incl - Math.PI / 2, 1, Clejos);   // el mango pasa por el puño
     const hombro = 3 - golpe;
     if (!arma.unaMano && !e.sinCargador) {
-      brazoDetallado(ctx, hombro, -52 + ty, e.mano.x, e.mano.y, C);
-      manoConGuante(ctx, e.mano.x, e.mano.y, C);
+      brazoConMano(ctx, hombro, -52 + ty, e.mano.x, e.mano.y, C, undefined, { cierre: 1, dir: e.incl - Math.PI / 2 });
     } else {
       const g = this.golpeActual, p = g ? limitar((this.ahora - g.inicio) / g.dur, 0, 1) : 0;
       const guardia = { x: 9 - Math.sin(p * Math.PI) * 6, y: -42 + ty - Math.sin(p * Math.PI) * 4 };   // contrapeso del golpe
-      brazoDetallado(ctx, hombro, -52 + ty, guardia.x, guardia.y, C);
-      manoConGuante(ctx, guardia.x, guardia.y, C);
+      brazoConMano(ctx, hombro, -52 + ty, guardia.x, guardia.y, C, undefined, { cierre: 0.85 });
     }
     return;
   }
@@ -384,7 +439,16 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const estilo = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'libre' : 'guardamanos';
   // Mano del gatillo: la palma va del otro lado de la empuñadura, detrás del arma
   if (d.agarre !== 'mano') manoGatilloPalma(ctx, gatillo.x, gatillo.y, angMano, Clejos);
-  else manoConGuante(ctx, gatillo.x, gatillo.y + 1, Clejos);
+  // El cargador que lleva la mano de apoyo es el de esta arma (js/cargadores.js), girado como el arma y con el agarre
+  // en la mano: va antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
+  const cargadorEnMano = e.enMano && ES_CARGADOR.has(e.enMano) && CARGADORES[arma.id];
+  const dibujarCargadorEnMano = () => {
+    ctx.save(); ctx.translate(e.mano.x, e.mano.y); ctx.rotate(e.incl + e.rotMano); ctx.scale(CM, CM); ctx.translate(-cargadorEnMano.agarre[0], -cargadorEnMano.agarre[1]);
+    dibujarCargadorSuelto(ctx, cargadorEnMano, e.cargadorNuevo);
+    ctx.restore();
+  };
+  if (cargadorEnMano && !cargadorEnMano.encima) dibujarCargadorEnMano();
+  else manoLibre(ctx, gatillo.x, gatillo.y + 1, angMano - Math.PI / 2, 0.95, Clejos);
   ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); ctx.restore();
   if (e.peine) dibujarPeineEnArma(ctx, e.peine);
   if (d.agarre !== 'mano') manoGatilloDedos(ctx, gatillo.x, gatillo.y, angMano, Clejos);
@@ -397,16 +461,16 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
     let atras = 0;
     while (atras < 12 && Math.hypot(reposo.x - ax * atras - 2.4 - (hombroX + golpe), reposo.y - ay * atras + 2.6 - (-52 + ty)) > alcance) atras += 0.5;
     const mano = { x: e.mano.x - ax * atras, y: e.mano.y - ay * atras };   // mismo lugar del arma: se mueve con ella
-    brazoDetallado(ctx, hombroX, -52 + ty, mano.x - 2.4, mano.y + 2.6, C, ...L);
-    manoGuardamanos(ctx, mano.x, mano.y, C);
+    const b = brazoDetallado(ctx, hombroX, -52 + ty, mano.x - 2.4, mano.y + 2.6, C, ...L);
+    manoGuardamanos(ctx, mano.x, mano.y, C, b.ante);
   } else if (agarrando && estilo === 'envuelve') {
     brazoDetallado(ctx, hombroX, -52 + ty, e.mano.x - Math.sin(angMano) * 1.4, e.mano.y + Math.cos(angMano) * 1.9, C, ...L);
     manoEnvolvente(ctx, e.mano.x, e.mano.y, angMano, C);
   } else {
-    brazoDetallado(ctx, hombroX, -52 + ty, e.mano.x, e.mano.y, C, ...L);
-    // Lo que lleva en la mano va entre los dedos: se dibuja antes que la mano para que esta lo tape un poco
-    if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano);
-    manoConGuante(ctx, e.mano.x, e.mano.y, C);
+    // Mano libre (recarga, cerrojo, granada): sigue al antebrazo, abierta o cerrada según lo que hace (estadoArma).
+    // Lo que lleva va entre los dedos: se dibuja antes que la mano para que esta lo tape un poco
+    brazoConMano(ctx, hombroX, -52 + ty, e.mano.x, e.mano.y, C, L, { cierre: e.cierre ?? 0.8, dir: e.dirMano,
+      antes: () => { if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano); } });
   }
 };
 
@@ -513,20 +577,20 @@ function dibujarColgado(ctx, j, S, C) {
     const T = j.trepa, peldanos = Math.abs(T.y1 - T.y0) / 12, c = Math.sin(T.f * peldanos * Math.PI);   // un ciclo cada dos barrotes
     const sube = Math.max(0, c), baja = Math.max(0, -c);
     piernaArticulada(ctx, -2, -34, 0.35 + 0.75 * baja, 0.45 + 1.1 * baja, pantalonLejos, C);
-    brazoDetallado(ctx, -3, -53, 7, -74 - 9 * baja, Clejos); manoConGuante(ctx, 7, -74 - 9 * baja, Clejos);
+    brazoConMano(ctx, -3, -53, 7, -74 - 9 * baja, Clejos, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
     dibujarTorso(ctx, S, C, 0);
     ctx.save(); ctx.translate(2, -62); ctx.rotate(-0.18); ctx.translate(0, 62);   // mira hacia arriba
     dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
     piernaArticulada(ctx, 3, -34, 0.35 + 0.75 * sube, 0.45 + 1.1 * sube, C.pantalon, C);
-    brazoDetallado(ctx, 4, -52, 8, -74 - 9 * sube, C); manoConGuante(ctx, 8, -74 - 9 * sube, C);
+    brazoConMano(ctx, 4, -52, 8, -74 - 9 * sube, C, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
     return;
   }
   // Colgado de la soga
   const vaiven = Math.sin(j.ahora / 260) * 0.12;
   piernaArticulada(ctx, -2, -34, 0.1 + vaiven, 0.35, pantalonLejos, C);
-  brazoDetallado(ctx, -3, -53, 0, -78, Clejos); manoConGuante(ctx, 0, -78, Clejos);
+  brazoConMano(ctx, -3, -53, 0, -78, Clejos, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
   dibujarTorso(ctx, S, C, 0);
   ctx.save(); ctx.translate(1, -62); ctx.rotate(-0.12); ctx.translate(0, 62); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
   piernaArticulada(ctx, 3, -34, 0.25 + vaiven, 0.5, C.pantalon, C);
-  brazoDetallado(ctx, 4, -52, 1, -70, C); manoConGuante(ctx, 1, -70, C);
+  brazoConMano(ctx, 4, -52, 1, -70, C, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
 }
