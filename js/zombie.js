@@ -422,7 +422,11 @@ class Zombie {
       case 'chaleco':   // chaleco de obra naranja con bandas reflectivas
         pieza(ctx, poli([[-9.6, hemY + 1], [-10.6, -54], [-4, -58], [-2, -58], [-2.4, hemY + 1.6]]), col(est.chaleco), -10.6, -2);
         pieza(ctx, poli([[3.4, -58], [6, -58], [9.8, -53], [10.6, -44], [9, hemY + 1], [3.6, hemY + 1.6]]), col(est.chaleco), 3.4, 10.6);
-        if (!golpeado) for (const y of [-46, -40]) { linea(ctx, '#eef0e8', 1.3, [[-10.2, y], [-2.2, y]]); linea(ctx, '#eef0e8', 1.3, [[3.6, y], [10.2, y]]); }
+        if (!golpeado && !est.sinBandas) for (const y of [-46, -40]) { linea(ctx, '#eef0e8', 1.3, [[-10.2, y], [-2.2, y]]); linea(ctx, '#eef0e8', 1.3, [[3.6, y], [10.2, y]]); }
+        if (!golpeado && est.cartucheras) {   // portaplacas de soldado: cintas para enganchar y dos portacargadores
+          for (const y of [-52, -48.6]) { linea(ctx, ajustarColor(est.chaleco, -0.3), 0.5, [[-10, y], [-2.6, y]]); linea(ctx, ajustarColor(est.chaleco, -0.3), 0.5, [[3.8, y], [10, y]]); }
+          for (const x of [4.2, 7.4]) pieza(ctx, redondo(x, -45, 2.8, 5.4, 0.6), col(ajustarColor(est.chaleco, -0.16)), x, x + 2.8);
+        }
         break;
       case 'uniforme':  // botones (dobles en la chaqueta de cocinero), bolsillo y placa
         if (golpeado) break;
@@ -450,6 +454,11 @@ class Zombie {
   accesorio(ctx, est, golpeado) {
     const hy = -79, c = col => golpeado ? ajustarColor(col, 0.7) : col;
     switch (est.accesorio) {
+      case 'casco-soldado':   // casco de combate con funda, borde y barbijo suelto (el soldado contagiado del último bastión)
+        pieza(ctx, k => { k.moveTo(-9.6, hy + 4.4); k.quadraticCurveTo(-10.4, hy - 7.4, 0.6, hy - 7.6); k.quadraticCurveTo(10.4, hy - 7.2, 10.8, hy + 2.6); k.lineTo(10.8, hy + 4); k.quadraticCurveTo(0, hy + 2.6, -9.6, hy + 4.4); }, c('#5b6340'), -10.4, 10.8);
+        pieza(ctx, redondo(-10.2, hy + 2.4, 21.4, 2, 0.9), c('#454c30'), -10.2, 11.2);
+        if (!Pincel.silueta && !golpeado) { linea(ctx, 'rgba(30,34,20,0.5)', 0.5, [[-6, hy - 3.6], [-1, hy - 6], [5, hy - 5.4]]); linea(ctx, '#3b3a2c', 0.9, [[-6.4, hy + 4.4], [-5, hy + 12], [-1, hy + 15.4]]); }
+        break;
       case 'casco-obra':
         pieza(ctx, k => { k.moveTo(-9, hy + 3); k.quadraticCurveTo(-9, hy - 7, 1, hy - 7); k.quadraticCurveTo(10.4, hy - 7, 10.6, hy + 3); }, c('#e8b21c'), -9, 10.6);
         pieza(ctx, redondo(-10, hy + 1.6, 22.4, 1.8, 0.8), c('#d9a214'), -10, 12.4);

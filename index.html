@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=400d6cbe86">
+  <link rel="stylesheet" href="css/estilos.css?v=d7cfdcf074">
 </head>
 <body>
 
@@ -33,6 +33,7 @@
       <button class="boton grande" data-accion="torreta" data-t="menu.torreta">DEFENSA ZOMBIE</button>
       <button class="boton grande ultra" data-accion="ultra" data-t="menu.ultra">DEFENSA ZOMBIE ULTRA</button>
       <button class="boton grande bastion" data-accion="bastion" data-t="menu.bastion">ÚLTIMO BASTIÓN</button>
+      <button class="boton grande bastion v2" data-accion="bastion2" data-t="menu.bastion2">ÚLTIMO BASTIÓN V2</button>
       <button class="boton grande" data-accion="entrenamiento" data-t="menu.entrenamiento">ENTRENAMIENTO</button>
       <div class="fila-chica">
         <button class="boton chico" data-accion="pruebas" data-t="menu.pruebas">CAMPO DE PRUEBAS</button>
@@ -70,6 +71,27 @@
       </button>
     </div>
     <div class="fila-botones">
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
+  </section>
+
+  <!-- ===== ÚLTIMO BASTIÓN V2: la horda y el ejército del nivel, con sus fichas (js/bastion-v2-ui.js) ===== -->
+  <section id="panel-bastion2" class="pantalla">
+    <h2 data-t="b2.titulo">ÚLTIMO BASTIÓN V2 · LA GRANJA</h2>
+    <p class="ayuda" data-t="b2.ayuda">Versión de prueba del diseño nuevo. Aguanta 10 oleadas con el campamento en pie.</p>
+    <ul class="b2-reglas">
+      <li data-t="b2.regla1">Los zombies ven. Si alguien de tu gente entra en su vista, dejan el camino y van por él.</li>
+      <li data-t="b2.regla2">Si está detrás de un muro o dentro de un búnker o una torreta, primero rompen eso.</li>
+      <li data-t="b2.regla3">Soldado que cae, se contagia: a los 3 segundos se levanta en tu contra.</li>
+    </ul>
+    <div class="b2-bandos">
+      <div><h3 data-t="b2.horda">LA HORDA</h3><div id="b2-zombies" class="b2-fichas"></div></div>
+      <div><h3 data-t="b2.ejercito">TU EJÉRCITO</h3><div id="b2-unidades" class="b2-fichas"></div></div>
+    </div>
+    <div id="b2-detalle" class="b2-detalle"></div>
+    <div class="fila-botones">
+      <button class="boton" data-accion="bastion2-empezar" data-t="b2.empezar">EMPEZAR</button>
+      <button id="b2-continuar" class="boton chico oculta" data-accion="bastion2-continuar"></button>
       <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
     </div>
   </section>
@@ -159,12 +181,16 @@
     <!-- Último bastión: dinero, oleada y vida del campamento arriba; qué construir y la próxima oleada abajo -->
     <div id="panel-bastion" class="panel-bastion">
       <div class="bastion-estado"><span id="bastion-dinero">$ 300</span><span id="bastion-ola"></span><span id="bastion-base"></span></div>
+      <div id="bastion-parte" class="bastion-parte oculta"></div>
+      <div id="bastion-info" class="bastion-info oculta"></div>
       <div class="bastion-barra">
       <button type="button" data-unidad="soldado"><b data-t="bastion.soldado">SOLDADO</b><small>$50 · 4 s</small><span class="cola"></span><span class="avance"></span><kbd>1</kbd></button>
       <button type="button" data-unidad="torreta"><b data-t="bastion.torreta">TORRETA</b><small>$150 · 8 s</small><span class="cola"></span><span class="avance"></span><kbd>2</kbd></button>
       <button type="button" data-unidad="bunker"><b data-t="bastion.bunker">BÚNKER</b><small>$150 · 12 s</small><span class="cola"></span><span class="avance"></span><kbd>3</kbd></button>
       <button type="button" data-unidad="tanque"><b data-t="bastion.tanque">TANQUE</b><small>$375 · 15 s</small><span class="cola"></span><span class="avance"></span><kbd>4</kbd></button>
       <button type="button" data-unidad="muro"><b data-t="bastion.muro">MURO</b><small>$35 · 2 s</small><span class="cola"></span><span class="avance"></span><kbd>5</kbd></button>
+      <button type="button" class="solo-v2" data-unidad="alambrado"><b data-t="bastion.alambrado">ALAMBRADO</b><small>$15 · 1.5 s</small><span class="cola"></span><span class="avance"></span><kbd>5</kbd></button>
+      <button type="button" class="solo-v2" data-unidad="senuelo"><b data-t="bastion.senuelo">SEÑUELO</b><small>$30 · 2 s</small><span class="cola"></span><span class="avance"></span><kbd>6</kbd></button>
       <button type="button" data-unidad="vender"><b data-t="bastion.vender">VENDER</b><small>½</small><span class="cola"></span><span class="avance"></span><kbd>6</kbd></button>
       <button type="button" data-unidad="reparar"><b data-t="bastion.reparar">REPARAR</b><small data-t="bastion.repararCosto">¾ del daño</small><span class="cola"></span><span class="avance"></span><kbd>7</kbd></button>
         <button type="button" id="bastion-oleada" class="bastion-oleada"></button>
@@ -251,7 +277,8 @@
       <h2 id="fin-titulo">TE DEVORARON</h2>
       <p id="fin-detalle"></p>
       <button id="fin-siguiente" class="boton chico oculta" data-accion="bastion-siguiente" data-t="fin.siguienteNivel">SIGUIENTE NIVEL</button>
-      <button class="boton chico" data-accion="reintentar" data-t="fin.otraVez">OTRA VEZ</button>
+      <button id="fin-repetir" class="boton chico oculta" data-accion="bastion2-continuar"></button>
+      <button id="fin-otra-vez" class="boton chico" data-accion="reintentar" data-t="fin.otraVez">OTRA VEZ</button>
       <button class="boton chico" data-accion="al-menu" data-t="fin.menu">MENÚ</button>
     </div>
   </section>
@@ -401,7 +428,7 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=46a7278739"></script>
+  <script src="js/version.js?v=8b451c987f"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
@@ -426,7 +453,7 @@
   <script src="js/jugador.js?v=775b0d85fd"></script>
   <script src="js/jugador-dibujo.js?v=ef183c5d05"></script>
   <script src="js/skins.js?v=bb15d2f4a1"></script>
-  <script src="js/zombie.js?v=2bb1a10dc7"></script>
+  <script src="js/zombie.js?v=5cdbe41b47"></script>
   <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
   <script src="js/objetos.js?v=275f01f475"></script>
   <script src="js/juego.js?v=3d0e76a5d5"></script>
@@ -435,13 +462,15 @@
   <script src="js/escenario-historia.js?v=3224c7c117"></script>
   <script src="js/zombies-autoctonos.js?v=56e35bef1c"></script>
   <script src="js/historia.js?v=8bffdb3dff"></script>
-  <script src="js/estrategia.js?v=56d0cfa854"></script>
+  <script src="js/estrategia.js?v=1bde96bf1b"></script>
   <script src="js/bastion-niveles.js?v=d6caba82aa"></script>
   <script src="js/bastion-dibujo.js?v=10ecca945c"></script>
   <script src="js/bastion-camara.js?v=dc719e0691"></script>
+  <script src="js/bastion-v2.js?v=2f3e7bc635"></script>
+  <script src="js/bastion-v2-ui.js?v=8955e546a4"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=7bcf596264"></script>
-  <script src="js/interfaz.js?v=a764c50037"></script>
+  <script src="js/interfaz.js?v=7110f46e03"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>
