@@ -23,12 +23,16 @@
  *                 antiaérea y los fusiles); sin zombies a mano, tira cascotes
  *     escupidor   se planta a 5 celdas, más lejos de lo que llegan el soldado y la torreta, y escupe ácido en arco
  *     rabioso     corre al doble que un perro, en zigzag, directo al campamento; los tiros pesados le erran
- *   El Coloso, además de romper todo, arroja fardos a lo que tiene a 5 celdas.
+ *   Los jefes: El Coloso, además de romper todo, arroja fardos a lo que tiene a 5 celdas; El Escudo cubre de las balas
+ *   tiradas desde el piso a los que marchan pegados detrás de él (z.cubierto, que se calcula en contextoV2).
+ * Al humano que está arriba de un contenedor (u.techo) no lo toma de presa ni lo alcanza nadie que camine; le tiran el
+ * escupidor y lo que arrojan el lanzador y el Coloso, lo pican los cuervos y se lo lleva el buitre.
  * Perros y toro no cruzan el fuego del lanzallamas. El contexto K se arma una vez por cuadro (contextoV2).
  */
 const ESTILO_SOLDADO_ZOMBIE = { id: 'soldado-zombie', torso: 'chaleco', sinBandas: true, cartucheras: true, camiseta: '#5d6248', chaleco: '#9a8262', piernas: 'largo', pantalon: '#7c7a5e', accesorio: 'casco-soldado', escala: [1.02, 1.08] };
 const ESTILO_COLOSO = { id: 'coloso', torso: 'desnudo', camiseta: '#4fae2e', piernas: 'short', pantalon: '#363a5e', accesorio: 'pelo-revuelto', escala: [1, 1] };
 const ESTILO_ACORAZADO = { id: 'acorazado', torso: 'uniforme', camiseta: '#232a3a', piernas: 'largo', pantalon: '#1b202c', accesorio: 'casco-antimotin', escudo: true, hombreras: true, escala: [1.04, 1.1] };
+const ESTILO_ESCUDO = { id: 'escudo', torso: 'uniforme', camiseta: '#1c2230', piernas: 'largo', pantalon: '#161a24', accesorio: 'casco-antimotin', escudo: true, escudoGrande: true, hombreras: true, escala: [1, 1] };
 const ESTILO_GRITON = { id: 'griton', torso: 'capucha', camiseta: '#7a2d8a', piernas: 'largo', pantalon: '#2a2530', accesorio: 'megafono', escala: [0.92, 1] };
 const ESTILO_HINCHADO = { id: 'hinchado', torso: 'desnudo', camiseta: '#a9b44a', piernas: 'short', pantalon: '#4a3f2c', hinchado: true, escala: [1.1, 1.18] };
 const ESTILO_DINAMITERO = { id: 'dinamitero', torso: 'chaleco', camiseta: '#5a5148', chaleco: '#c9541c', piernas: 'largo', pantalon: '#3c4252', accesorio: 'casco-obra', dinamita: true, escala: [0.9, 0.98] };
@@ -50,6 +54,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     let z;
     switch (tipo) {
       case 'jefe': z = zombieConEstilo(0, ESTILO_COLOSO, dif); z.piel = '#4fae2e'; z.grosorBrazos = 2; z.grosorPiernas = 1.6; z.jefe = true; break;
+      case 'escudo': z = zombieConEstilo(0, ESTILO_ESCUDO, dif); z.variante.brazoColgando = false; z.piel = '#5f7a4e'; z.grosorBrazos = 1.7; z.grosorPiernas = 1.5; z.jefe = true; break;
       case 'soldadoZombie': z = zombieConEstilo(0, ESTILO_SOLDADO_ZOMBIE, dif); z.piel = '#8fa672'; break;
       case 'gordo': z = zombieConEstilo(0, VARIANTES_CAMINANTE.find(v => v.id === 'gordo'), dif); break;
       case 'corredor': z = new Zombie(0, true, dif); break;
@@ -74,7 +79,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
   P.vestirZombieV2 = function (z, tipo) {
     const Z = Zs[tipo];
     z.tipoBastion = tipo;
-    z.escala = Z.escala * (tipo === 'jefe' ? 1 : 0.94 + Math.random() * 0.12);
+    z.escala = Z.escala * (Z.jefe ? 1 : 0.94 + Math.random() * 0.12);
     if (z.E) { z.ancho = z.E.ancho * z.escala; z.alto = z.E.alto * z.escala; } else { z.ancho = 26 * z.escala; z.alto = 64 * z.escala; }
     z.vidaMax = z.vida = Math.max(1, Math.round(this.vidaComunV2() * Z.vida));
     z.vel = Z.vel * this.dificultad.velocidad * AJUSTE.velocidadZombie * (0.9 + Math.random() * 0.2);
@@ -102,12 +107,20 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
 
   /* ---------- Lo que hay en el campo en este cuadro ---------- */
   P.contextoV2 = function () {
-    const K = { ahora: this.ahora, vivos: [], suelo: [], humanos: [], aPie: [], construidos: [], senuelos: [], alambres: new Map(), medicos: [], fuegos: [], vigias: [], tanques: [] };
-    for (const z of this.zombies) if (z.estado !== 'muerto' && !z.enterrado) { K.vivos.push(z); if (!z.vuela) K.suelo.push(z); }   // al topo enterrado no lo ve ni lo toca nadie
+    const K = { ahora: this.ahora, vivos: [], suelo: [], humanos: [], aPie: [], arriba: [], construidos: [], senuelos: [], alambres: new Map(), medicos: [], fuegos: [], vigias: [], tanques: [], escudos: [] };
+    for (const z of this.zombies) if (z.estado !== 'muerto' && !z.enterrado) {   // al topo enterrado no lo ve ni lo toca nadie
+      K.vivos.push(z); z.cubierto = false;
+      if (!z.vuela) { K.suelo.push(z); if ((Zs[z.tipoBastion] || {}).cubre) K.escudos.push(z); }
+    }
+    // A cubierto: los que marchan pegados detrás de un Escudo (más lejos del campamento que él)
+    for (const e of K.escudos) { const R = Zs[e.tipoBastion].cubre.radio * CELDA; for (const z of K.suelo) if (z !== e && z.x > e.x - 4 && distPlano(z.x, z.y, e.x, e.y) < R) z.cubierto = true; }
     for (const u of this.unidades) {
       if (!u.listo || u.invisible || u.llevado || u.quitada) continue;
       const U = U_(u.tipo); if (!U) continue;   // un caído no es nadie
-      if (U.clase === 'inf') { K.humanos.push(u); K.aPie.push(u); if (u.tipo === 'medico') K.medicos.push(u); }
+      if (U.clase === 'inf') {   // humanos: a quién se puede ir a morder. Al que está arriba de un contenedor, a pie no se lo alcanza
+        u.techo = u.enCamino ? 0 : this.alturaEn(u.c, u.f);
+        (u.techo ? K.arriba : K.humanos).push(u); K.aPie.push(u); if (u.tipo === 'medico') K.medicos.push(u);
+      }
       else {
         K.construidos.push(u);
         if (U.clase === 'mec' || (u.tipo === 'bunker' && u.dentro.length)) K.humanos.push(u);
@@ -117,6 +130,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       }
       if (u.llama > 0.3) K.fuegos.push(u);   // un lanzallamas tirando (a pie o desde un búnker)
     }
+    K.blancos = K.arriba.length ? K.humanos.concat(K.arriba) : K.humanos;   // a quién se le puede tirar de lejos: también a los de arriba
     return K;
   };
 
@@ -143,7 +157,8 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     if (mejor) { z.presa = mejor; z.alerta = ahora + 900; }
   };
   P.alAlcanceV2 = function (z, u) {
-    const k = z.tipoBastion === 'jefe' ? 1.5 : 1;
+    if (u.techo && !z.vuela) return false;
+    const k = (Zs[z.tipoBastion] || {}).jefe ? 1.5 : 1;
     if (u.bloquea) return Math.abs(z.x - u.x) < 36 * k && Math.abs(z.y - u.y) < 26 * k;   // pegado a la celda que ocupa
     return distPlano(z.x, z.y, u.x, u.y) < (esInf(u) ? 20 : 16) * k;
   };
@@ -295,7 +310,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (z.presa && (z.presa.quitada || z.presa.llevado || !esInf(z.presa))) z.presa = null;
       if (!z.presa && ahora >= z.miraEn) {
         z.miraEn = ahora + 200 + Math.random() * 150; let mejor = null, dm = Z.olfato * CELDA;
-        for (const u of K.aPie) { if (z.inalcanzable && z.inalcanzable.get(u) > ahora) continue; const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; mejor = u; } }
+        for (const u of K.aPie) { if (u.techo || (z.inalcanzable && z.inalcanzable.get(u) > ahora)) continue; const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; mejor = u; } }
         z.presa = mejor;
       }
       const { c, f } = this.celdaDe(z.x, z.y), cc = limitar(c, 0, this.cols - 1), ff = limitar(f, 0, this.filas - 1);
@@ -339,7 +354,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
         }
         z.x = nx; z.y = z.ySuelo = ny;
         for (const u of K.aPie) {   // atropella: derriba y aturde
-          if (z.golpeados.has(u) || u.quitada || distPlano(z.x, z.y, u.x, u.y) > 20) continue;
+          if (z.golpeados.has(u) || u.quitada || u.techo || distPlano(z.x, z.y, u.x, u.y) > 20) continue;
           z.golpeados.add(u); u.aturdidoHasta = ahora + E.aturde * 1000; this.herirUnidadV2(u, E.dano, 'golpe');
           this.salpicar(u.x, u.y - 14, '#a89a7c', 8, 3, u.y); Audio_.golpeCuerpo('carne', true);
         }
@@ -351,7 +366,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (this.huirDelFuegoV2(z, Z, dt, K)) return;
       if (ahora >= z.miraEn) {
         z.miraEn = ahora + 300; let mejor = null, dm = Z.vista * CELDA;
-        for (const u of K.aPie) { const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; mejor = u; } }
+        for (const u of K.aPie) { if (u.techo) continue; const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; mejor = u; } }
         if (mejor && dm < 24) { this.morderV2(z, mejor, dt); return; }   // lo tiene encima: lo cornea
         if (mejor) {
           const dx = mejor.x - z.x, dy = mejor.y - z.y, l = Math.hypot(dx, dy) || 1;
@@ -462,7 +477,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (z.presa && (z.presa.quitada || z.presa.llevado)) z.presa = null;
       if (ahora >= z.miraEn) {
         z.miraEn = ahora + 300; let b = null, dm = alcance;   // le escupe a la gente (y a lo que tiene gente adentro), no a un muro pelado
-        for (const u of K.humanos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; b = u; } }
+        for (const u of K.blancos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; b = u; } }
         z.presa = b;
       }
       const u = z.presa;
@@ -499,7 +514,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     if (ahora < (z.lanzaEn || 0) || ahora < (z.buscaEn || 0)) return false;
     z.buscaEn = ahora + 300;   // (aparte de miraEn: el Coloso además mira para cazar)
     let blanco = null, dm = A.alcance * CELDA, fondo = null;
-    for (const u of K.humanos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d >= A.alcance * CELDA || d <= 1.3 * CELDA) continue; if (d < dm) { dm = d; blanco = u; } if (!fondo || u.x < fondo.x) fondo = u; }
+    for (const u of K.blancos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d >= A.alcance * CELDA || d <= 1.3 * CELDA) continue; if (d < dm) { dm = d; blanco = u; } if (!u.techo && (!fondo || u.x < fondo.x)) fondo = u; }
     const gente = !!blanco;
     if (!blanco) for (const u of K.construidos) { if (!u.bloquea) continue; const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm && d > 1.3 * CELDA) { dm = d; blanco = u; } }
     if (!blanco) return false;
@@ -508,7 +523,8 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     if (A.tira && gente) {
       let municion = null, dz = A.cerca * CELDA;
       for (const o of K.suelo) { if (o === z || o.enVuelo || !A.tira.includes(o.tipoBastion) || o.aturdidoHasta > ahora) continue; const d = distPlano(o.x, o.y, z.x, z.y); if (d < dz) { dz = d; municion = o; } }
-      if (municion && A.alFondo) blanco = fondo;   // por encima de todo: junto al que está más atrás
+      if (municion && A.alFondo && fondo) blanco = fondo;   // por encima de todo: junto al que está más atrás
+      if (blanco.techo) municion = null;                    // arriba de un contenedor no cae nadie: le tira un cascote
       const k = blanco.enCamino ? this.celdaDe(blanco.x, blanco.y) : blanco;
       const lugar = municion && (blanco.bloquea ? [] : [[k.c, k.f]]).concat([[k.c - 1, k.f], [k.c, k.f + 1], [k.c, k.f - 1], [k.c + 1, k.f]]).find(([c, f]) => this.dentro(c, f) && !this.bloqV2.has(c + ',' + f));
       if (lugar) {
@@ -555,10 +571,10 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     if (!u || u.quitada) return;
     u.llevado = null; u.soltadoPor = z;
     let { c, f } = this.celdaDe(z.x, z.y); c = limitar(c, 0, this.cols - 1); f = limitar(f, 0, this.filas - 1);
-    if (this.motivoNoColocar(u.tipo, c, f, true, u) || this.ocupadaPor(c, f)) {   // no cabe ahí: a la celda libre más cercana
+    if (this.motivoNoColocar(u.tipo, c, f, true, u) || this.ocupadaPor(c, f) || this.alturaEn(c, f)) {   // no cabe ahí (o es un techo): a la celda libre más cercana
       let mejor = null, dm = Infinity;
       for (let ff = 0; ff < this.filas; ff++) for (let cc = 0; cc < this.cols; cc++) {
-        const d = Math.hypot(cc - c, ff - f); if (d < dm && !this.motivoNoColocar(u.tipo, cc, ff, true, u) && !this.ocupadaPor(cc, ff)) { dm = d; mejor = [cc, ff]; }
+        const d = Math.hypot(cc - c, ff - f); if (d < dm && !this.motivoNoColocar(u.tipo, cc, ff, true, u) && !this.ocupadaPor(cc, ff) && !this.alturaEn(cc, ff)) { dm = d; mejor = [cc, ff]; }
       }
       if (mejor) [c, f] = mejor;
     }
@@ -600,7 +616,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
   P.alCaerZombieV2 = function (z, arma) {
     const Z = Zs[z.tipoBastion]; if (!Z) return;
     if (Z.estalla) this.pendientesV2.push({ x: z.x, y: z.y, ...Z.estalla, de: z });
-    if (Z.carga && (z.detona || (arma && (arma.fuego || arma.explosivo) && !arma.alambre))) {   // la dinamita estalla contra el muro, o si lo mató el fuego o una explosión
+    if (Z.carga && (z.detona || (arma && (arma.fuego || arma.explosivo) && !arma.alambre && !arma.rebote))) {   // la dinamita estalla contra el muro, o si lo mató el fuego o una explosión
       this.pendientesV2.push({ x: z.x, y: z.y, radio: Z.carga.radio, unidades: Z.carga.unidades, gente: Z.carga.gente, zombies: Z.carga.zombies, directo: z.detona, danoDirecto: Z.carga.dano, de: z });
     }
     if (Z.gas) { this.nubesV2.push({ x: z.x, y: z.y, t: 0, ...Z.gas }); Audio_.salpicaduraToxica(1); }
@@ -629,6 +645,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
       if (z.enVuelo) { this.volandoV2(z, dt); continue; }                                        // arrojado por un lanzador
       if (ahora < (z.aturdidoHasta || 0)) { z.estado = 'quieto'; continue; }                     // recién cayó: se levanta
       const Z = Zs[z.tipoBastion] || Zs.caminante;
+      if (z.presa && z.presa.techo && !z.vuela && Z.conducta !== 'escupe') z.presa = null;   // se subió a un contenedor: a pie no se lo alcanza
       CONDUCTAS[Z.conducta].call(this, z, Z, dt, K);
       if (z.estado === 'muerto') continue;
       if (z.x < B.baseX - 30) { this.entrarAlCampamentoV2(z, Z); continue; }

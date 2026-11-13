@@ -46,6 +46,7 @@
         if (u.obra >= 1) { u.listo = true; u.vida = u.vidaMax; this.construidas++; Audio_.recarga('cerrar'); }
         continue;
       }
+      if (u.techo || u.techoVisto) { const va = u.techo || 0, d = va - (u.techoVisto || 0); u.techoVisto = Math.abs(d) < 1 ? va : (u.techoVisto || 0) + Math.sign(d) * Math.min(Math.abs(d), dt * 110); }   // trepa (o baja) en un instante
       const aturdido = ahora < (u.aturdidoHasta || 0);   // derribado por el toro o soltado por el buitre: no hace nada
       if (u.enCamino && !aturdido) {   // caminando (o manejando) hasta su lugar
         const vel = U.vel || 62, dx = u.destino.x - u.x, dy = u.destino.y - u.y, d = Math.hypot(dx, dy);
@@ -79,6 +80,7 @@
     let mejor = null, pm = -Infinity;
     for (const z of K.vivos) {
       if (z.estado === 'muerto' || (z.vuela ? !(U.aire || U.soloAire) : U.soloAire)) continue;
+      if (z.cubierto && !u.techo && U.arma !== 'explosivo') continue;   // detrás de El Escudo no entra una bala tirada desde el piso (sí desde arriba de un contenedor)
       const d = distPlano(z.x, z.y, u.x, u.y);
       if (d > alcance || d < (U.minimo || 0)) continue;
       let p;
@@ -99,7 +101,7 @@
     if (U.cura) { this.curarV2(u, U, dt, K, enBunker); return; }
     if (!U.alcance) return;   // muro, alambrado, señuelo
     q.enfriado = (q.enfriado || 0) - dt;
-    const alcance = U.alcance * (enBunker ? Bk.masAlcance : 1);
+    const alcance = U.alcance * (enBunker ? Bk.masAlcance : 1) * (u.techo ? BASTION2.altura.alcance : 1);   // desde un búnker o desde arriba de un contenedor se tira más lejos
     if (U.arma === 'fuego') { this.quemarV2(u, U, dt, K, alcance, enBunker); return; }
     if (q.enfriado > 0.3 && U.cadencia >= 1) return;   // las armas lentas no buscan blanco hasta que están por tirar
     const z = this.blancoV2(u, U, alcance, K);
@@ -109,7 +111,7 @@
       const lado = esInf(u) ? u.mira || 1 : 1;
       if (U.soloAire || u.tipo === 'mortero') u.rumbo = z.x < u.x ? -1 : 1;
       u.apunta = U.soloAire ? limitar(Math.atan2(-(pecho(z) + 10), Math.max(12, Math.abs(z.x - u.x))), -1.3, -0.25)
-        : limitar(Math.atan2((z.y - pecho(z)) - (u.y - 20), Math.max(20, (z.x - u.x) * lado)), -0.5, 0.5);
+        : limitar(Math.atan2((z.y - pecho(z)) - (u.y - 20 - (u.techo || 0)), Math.max(20, (z.x - u.x) * lado)), -0.5, 0.5);
     }
     if (q.enfriado > 0) return;
     q.enfriado = U.cadencia * (enBunker ? Bk.masCadencia : 1) * (0.85 + Math.random() * 0.3);
@@ -117,9 +119,11 @@
     if (enBunker) { u.fuegoK = u.fuegoK || []; u.fuegoK[plaza] = 1; }
     const lado = esInf(u) ? u.mira || 1 : 1, tipo = enBunker ? q.tipo : u.tipo;
     const sale = enBunker ? { x: u.x - 9 + plaza * 6, y: u.y - 17 } : BOCAS[u.tipo](u, lado);
+    if (u.techo) sale.y -= u.techo;
     const pega = { x: z.x + (Math.random() - 0.5) * 4, y: z.y - pecho(z) }, dir = z.x >= u.x ? 1 : -1;
     if (U.arma === 'bala') {
-      z.recibirDano(Math.max(1, U.dano - (z.blindaje || 0)), dir, ARMA_BALA, this);   // el blindaje le resta a cada bala
+      const neto = U.dano - (z.blindaje || 0);   // el blindaje le resta a cada bala; la que no lo pasa, rebota
+      z.recibirDano(Math.max(1, neto), dir, neto > 0 ? ARMA_BALA : ARMA_REBOTE, this);
       this.trazos.push({ x0: sale.x, y0: sale.y, x1: pega.x, y1: pega.y, b0: u.y, b1: z.y, t: 0.06 });
       if (z.blindaje && z.estado !== 'muerto') this.reboteV2(z, pega, dir);
       if (Math.random() < (tipo === 'torreta' ? 0.35 : 0.8)) Audio_.disparo(tipo === 'torreta' ? 'ametralladora' : 'rifle', tipo === 'torreta' ? 'm2' : 'm16');

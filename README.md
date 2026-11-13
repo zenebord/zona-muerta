@@ -232,9 +232,13 @@ GPU), por las unidades y los zombies escalados.
 
 ### Último bastión v2: dos bandos con contrapesos (prueba del diseño nuevo)
 
-Botón aparte en el menú («ÚLTIMO BASTIÓN V2»), con un solo nivel (La granja, 12 oleadas) y partida guardada propia. Es
-la prueba del rediseño por bandos: el plantel completo, 13 unidades contra 16 tipos de zombie, donde ninguna unidad
-sirve contra todo y no todos los zombies vienen de frente. El modo de siempre no cambia: los archivos `js/bastion-v2*.js` envuelven los métodos de
+Botón aparte en el menú («ÚLTIMO BASTIÓN V2»). Al entrar se ve la lista de niveles (hoy dos: La granja y La autopista,
+12 oleadas cada uno, los dos abiertos) y la partida guardada, si hay. Es la prueba del rediseño por bandos: el plantel
+completo, 13 unidades contra 16 tipos de zombie y un jefe por nivel, donde ninguna unidad sirve contra todo y no todos
+los zombies vienen de frente. La guía de los dos bandos (qué hace cada uno, fuerte, débil, cómo usarlo) no es una
+pantalla previa: es una capa que se abre desde la lista de niveles o desde adentro de la partida, con el botón **GUÍA**
+o la tecla `H`, y deja el juego en pausa mientras se lee; en partida, los tipos que no vienen en ese nivel quedan
+apagados. El modo de siempre no cambia: los archivos `js/bastion-v2*.js` envuelven los métodos de
 `js/estrategia.js` y lo nuevo corre sólo si `juego.v2`.
 
 | Archivo | Qué tiene |
@@ -243,9 +247,9 @@ sirve contra todo y no todos los zombies vienen de frente. El modo de siempre no
 | `js/bastion-v2-horda.js` | Cómo se crea y cómo se porta cada tipo de zombie |
 | `js/bastion-v2-tropa.js` | Armas y oficios de cada unidad, explosiones, gas y granadas |
 | `js/bastion-v2-dibujo.js` | El dibujo de lo nuevo: unidades, zombies, aves y efectos |
-| `js/bastion-v2-ui.js` | Panel, parte de la oleada, marcas de contrapeso, pantalla previa y textos |
+| `js/bastion-v2-ui.js` | Lista de niveles, panel, parte de la oleada, marcas de contrapeso, guía y textos |
 
-Los contrapesos salen de cinco reglas que valen para todos, no de una tabla de multiplicadores:
+Los contrapesos salen de seis reglas que valen para todos, no de una tabla de multiplicadores:
 
 - **Blindaje**: le resta puntos a cada bala, con un mínimo de 1 (al acorazado, 2: la torreta le hace la mitad y el fusil,
   un tercio). No frena al francotirador, al cañón, al fuego ni a las explosiones.
@@ -255,6 +259,12 @@ Los contrapesos salen de cinco reglas que valen para todos, no de una tabla de m
   y la antiaérea, que no puede tirarle a nada más.
 - **Velocidad**: cuanto más rápido el zombie, menos tiempo pasa bajo fuego: cadencia alta y alambrado.
 - **Vista**: cada zombie va por el primer humano que ve. El que tira desde más lejos que esa vista, tira escondido.
+- **Altura**: arriba de un obstáculo con techo (`BASTION2.techos`: el contenedor) sólo sube la infantería, de a uno.
+  Desde ahí tira 25 % más lejos y los que caminan no la alcanzan ni la toman de presa; sí la alcanzan lo que vuela
+  (bandada, buitre), el escupidor, lo que arrojan el lanzador y el Coloso, el gas y las explosiones.
+
+La bala que no pasa el blindaje (la torreta contra el acorazado, casi todo contra El Escudo) rebota: saca 1 punto, sin
+destello ni empujón.
 
 **El Bastión** (alcances en celdas de 44 px):
 
@@ -301,15 +311,32 @@ a la infantería, al tanque o al último que entró a un búnker, también en pl
 
 Los acechadores son los que no vienen de frente: el topo pasa por debajo de la línea, el lanzador por arriba, el
 escupidor tira desde más lejos y el rabioso corre más rápido que las armas lentas. El soldado que cae se levanta a los
-3 s como soldado zombie (blindaje 1), salvo que lo haya matado una explosión o tenga un médico cerca. El Coloso (vida
-×22) es el jefe de las oleadas 6 y 12: rompe todo y arroja fardos a lo que tiene a 5 celdas.
+3 s como soldado zombie (blindaje 1), salvo que lo haya matado una explosión o tenga un médico cerca.
+
+Cada nivel tiene su jefe, en las oleadas 6 y 12 (vida ×22 los dos, rompen todo): **El Coloso**, en La granja, arroja
+fardos a lo que tiene a 5 celdas; **El Escudo**, en La autopista, es un acorazado gigante (blindaje 4: las balas chicas
+le hacen 1) que sale adelante y **cubre** a los que marchan pegados detrás de él, a 2,2 celdas: mientras vive, a esos
+no les entra ninguna bala tirada desde el piso. Les llegan el fuego, las granadas y los tiros de quien está arriba de
+un contenedor; a él, el francotirador y el cañón.
+
+**Niveles** (`BASTION2.niveles`, en el orden de `BASTION2.ordenNiveles`). Cada nivel usa el escenario del modo de
+siempre con ese nombre (`BastionV2.escenario`) y puede redefinir su mapa (`mapa`: terreno y obstáculos), con qué se
+empieza (`inicio`) y el aviso inicial. Los tipos de zombie son siempre los mismos: cada nivel elige un grupo.
+
+| Nivel | Terreno que manda | Horda | Jefe |
+|---|---|---|---|
+| 1. La granja | Campo abierto, sin embudo. Tierra arada (suelo blando: sólo infantería, alambrado y señuelo) y un estanque | Los 16 tipos, uno o dos nuevos por oleada | El Coloso |
+| 2. La autopista | Dos líneas de autos chocados arman pasillos (en la de cerca, 4 pasos; en la de lejos, 2, y el del sur es barro: no se cierra con un muro). Cuatro contenedores con techo. Los perros saltan los autos | 11 tipos: común, corredor, acorazado, hinchado, dinamitero, jauría, bandada, buitre, escupidor, lanzador y rabioso (bajo el asfalto no hay topos) | El Escudo |
+
+El progreso (`zonaMuerta.bastion2.progreso`) guarda qué niveles se ganaron; la partida guardada es una sola, la última,
+y recuerda su nivel. Al ganar, la pantalla de fin ofrece el nivel siguiente.
 
 **Información sin tapar el campo.** Cada oleada estrena un tipo y el parte de arriba dice qué viene, con el debutante
 marcado. Al elegir una unidad, en el parte quedan en verde los zombies que frena y en rojo aquellos contra los que
 rinde poco; al tocar un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven
-(`BASTION2.contra`). De texto hay un solo renglón arriba de la barra; la guía completa (qué hace cada uno, fuerte,
-débil, cómo usarlo) es la pantalla previa. La partida se guarda al empezar cada oleada: al perder, la pantalla de fin
-dice quiénes entraron, con qué se los frena, y ofrece repetir esa oleada con todo como estaba.
+(`BASTION2.contra`). De texto hay un solo renglón arriba de la barra; la guía completa se abre aparte (botón GUÍA o
+`H`). La partida se guarda al empezar cada oleada: al perder, la pantalla de fin dice quiénes entraron, con qué se los
+frena, y ofrece repetir esa oleada con todo como estaba.
 
 **Elegir una unidad del campo.** Con la mano vacía, tocar una unidad la elige (`unidadBajoV2`, `elegirDelCampoV2`): en
 el campo se ve hasta dónde llega desde donde está (el arma, el mínimo del mortero, la cura, el llamado del señuelo, lo
@@ -321,9 +348,9 @@ Tocarla de nuevo, tocar el suelo, el botón derecho o `Esc` la sueltan. Sin unid
 como antes (se elige la herramienta y después a quién).
 
 Teclas: `1` a `4` la infantería, `Q W E R` los mecanizados, `A S D F G` las estructuras; `Z` vende (75 % en el descanso,
-50 % en la oleada), `X` repara, `C` mueve (sobre la unidad elegida, si hay una).
+50 % en la oleada), `X` repara, `C` mueve (sobre la unidad elegida, si hay una); `H` abre la guía.
 
-**Balance medido** con bots que juegan con el código real, en dificultad media. Cruce por cruce (una defensa de un solo
+**Balance medido en La granja** con bots que juegan con el código real, en dificultad media. Cruce por cruce (una defensa de un solo
 tipo y unos $300 contra una tanda de un solo tipo, en la oleada 6 los doce primeros y en la 8 los acechadores;
 campamento que queda sobre 15 y parte de la defensa en pie):
 
@@ -362,6 +389,25 @@ La plata por zombie es la perilla de la dificultad: con las pagas de antes (un c
 con las actuales (un común, $4, y un poco más por los demás) gana el que se adapta. El resultado es brusco, no gradual: en los planes que pierden, el campamento suele estar entero hasta la
 oleada 8 o 9 y la defensa se derrumba en una sola oleada, porque cada baja se levanta en contra. No está medido con
 jugadores.
+
+**Balance medido en La autopista**, igual (dificultad media, partidas enteras):
+
+| Plan | Resultado |
+|---|---|
+| No construir | pierde en la oleada 2 |
+| Sólo torretas | pierde 4 de 4, en la 5 |
+| Embudo como en la granja, sin usar los techos (una línea de autos cerrada salvo un pasillo, lanzallamas en el hueco, francotiradores y mortero atrás, en el piso) | pierde 6 de 6, en la 10 u 11 |
+| El plan adaptado con los mismos francotiradores en el piso en vez de en los techos | pierde 8 de 8, en la 6 o 7 |
+| Adaptado al nivel: francotiradores arriba de los dos contenedores de cerca, los dos pasillos abiertos con lanzallamas detrás y alambrado delante, las banquinas cerradas, mortero, dos antiaéreas y tanque de ancla | gana 9 de 12 |
+
+El plan adaptado sin francotiradores pierde 5 de 5 en la oleada 6 (no hay con qué frenar a El Escudo); sin antiaéreas,
+5 de 5 en la 11 o 12 (la bandada); sin mortero gana 1 de 5; sin tanque, 4 de 5; sin lanzallamas, 5 de 5. En fácil el
+adaptado y el embudo ganan 5 de 5 sin perder campamento; en difícil el adaptado gana 1 de 5. Contra El Escudo con 14
+comunes detrás, en la oleada 6 y con unos $300: 3 francotiradores o un tanque lo frenan sin perder campamento; 3
+lanzallamas matan a los que cubre pero caen (campamento 5); 2 torretas, 6 soldados, un búnker con 4 soldados, 2
+morteros u 8 muros no lo paran (campamento 0 a 4). Cuatro soldados arriba de los contenedores matan a los 14 que cubre
+sin recibir un golpe, pero el jefe entra igual. Como en La granja, el resultado es brusco: las partidas del plan
+adaptado terminan con el campamento entero o se pierden de golpe en la oleada 12.
 
 Rendimiento: con 87 zombies de todos los tipos y 26 unidades, 0,8 ms de lógica y 13,6 ms de dibujo por cuadro (Chrome
 de escritorio, lienzo a escala 2). No está medido en un celular.

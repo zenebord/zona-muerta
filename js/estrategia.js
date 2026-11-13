@@ -480,7 +480,7 @@ Object.assign(Juego.prototype, {
     // Todo lo que hay en el campo, de atrás hacia adelante, cada cosa en su punto proyectado y a su escala; los zombies
     // aparecen de a poco en la niebla (en perspectiva, la esquina de atrás a la derecha deja ver más allá del campo)
     const cosas = [], entrada = xD + 36, aEscala = (x, y, fn) => { const P = cam.proyectar(x, y); ctx.save(); ctx.translate(P.x, P.y); ctx.scale(P.s, P.s); fn(); ctx.restore(); };
-    for (const u of this.unidades) if (!u.invisible) cosas.push([u.y, () => aEscala(u.x, u.y, () => this.dibujarUnidad(ctx, u))]);
+    for (const u of this.unidades) if (!u.invisible) cosas.push([u.y + (u.techo ? 0.5 : 0), () => aEscala(u.x, u.y, () => this.dibujarUnidad(ctx, u))]);   // (techo: en la v2, parado arriba de un contenedor: se pinta después que él)
     for (const o of this.obstaculos || []) cosas.push([o.y, () => aEscala(o.x, o.y, () => PaisajeBastion.obstaculo(ctx, o.tipo, o.semilla))]);
     for (const z of this.zombies) cosas.push([z.y, () => { ctx.save(); const a = limitar((entrada - z.x) / 32, 0, 1); if (a < 1) ctx.globalAlpha = a; enCamara(ctx, cam, z.x, z.y, g => z.dibujar(g, 0, ms)); ctx.restore(); }]);
     cosas.sort((a, b) => a[0] - b[0]);

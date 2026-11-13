@@ -71,7 +71,7 @@
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
     juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
-    if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? 'b2.aviso' : 'bastion.aviso'), 7000);
+    if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? juego.nivelV2.aviso || 'b2.aviso' : 'bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
     ultimo = performance.now();
@@ -129,6 +129,8 @@
       document.getElementById('panel-bastion').classList.add('oculta');
       const F = BastionV2.fin(juego, { tiempo });
       titulo.textContent = F.titulo; titulo.style.color = F.color; detalle.textContent = F.detalle;
+      const L = BastionV2.niveles();   // al ganar, si hay otro nivel después, se ofrece
+      document.getElementById('fin-siguiente').classList.toggle('oculta', !(juego.resultado === 'victoria' && L[L.indexOf(juego.nivelBastion.id) + 1]));
       if (juego.resultado !== 'victoria' && BastionV2.partida()) {   // se puede repetir la oleada perdida, con todo como estaba al empezarla
         const repetir = document.getElementById('fin-repetir');
         repetir.textContent = t('b2.repetir', { n: juego.ronda }); repetir.classList.remove('oculta');
@@ -375,6 +377,7 @@
     Musica.detener(0.8);
     juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');
     capaPruebas.classList.add('oculta');
+    guiaB2Abierta = pausaPorGuia = false; BastionV2UI.cerrarGuia();
     mostrar('menu-principal');
   }
 
@@ -417,6 +420,8 @@
   document.addEventListener('click', e => {
     const nivelB = e.target.closest('[data-nivel-bastion]');
     if (nivelB && !nivelB.disabled) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB.dataset.nivelBastion } }); return; }
+    const nivelB2 = e.target.closest('[data-nivel-bastion2]');
+    if (nivelB2) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB2.dataset.nivelBastion2, v2: true } }); return; }
     const arma = e.target.closest('[data-arma]');
     if (arma && juego) {
       if (menuPruebasAbierto) mostrarDetalleArma(arma.dataset.arma);   // primero la ficha; USAR la equipa
@@ -435,11 +440,15 @@
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
       case 'bastion':   NivelesBastionUI.abrir(mostrar); break;
-      case 'bastion2':  BastionV2UI.abrir(mostrar); break;   // versión de prueba del diseño nuevo (js/bastion-v2.js)
-      case 'bastion2-empezar': iniciar(null, { estrategia: { nivel: 'granja', v2: true } }); break;
+      case 'bastion2':  BastionV2UI.abrirNiveles(mostrar); break;   // el diseño nuevo por bandos: lista de niveles (js/bastion-v2-ui.js)
+      case 'bastion2-guia': abrirGuiaB2(); break;
+      case 'bastion2-guia-cerrar': cerrarGuiaB2(); break;
       case 'bastion2-continuar': { const p = BastionV2.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, v2: true, continuar: true, dificultad: p.dificultad } }); break; }
       case 'bastion-continuar': { const p = ProgresoBastion.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, continuar: true, dificultad: p.dificultad } }); break; }
-      case 'bastion-siguiente': { const i = NIVELES_BASTION.findIndex(n => n.id === juego.nivelBastion.id); if (NIVELES_BASTION[i + 1]) iniciar(null, { estrategia: { nivel: NIVELES_BASTION[i + 1].id } }); break; }
+      case 'bastion-siguiente': {
+        if (juego.v2) { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
+        const i = NIVELES_BASTION.findIndex(n => n.id === juego.nivelBastion.id); if (NIVELES_BASTION[i + 1]) iniciar(null, { estrategia: { nivel: NIVELES_BASTION[i + 1].id } }); break;
+      }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;
@@ -487,6 +496,7 @@
   document.addEventListener('keydown', e => {
     if (configAbierta) { if (e.code === 'Escape') { if (Asistente.abierto()) Asistente.cerrar(); else cerrarConfig(); } return; }
     if (personajesAbierto) { if (e.code === 'Escape') cerrarPersonajes(); return; }
+    if (guiaB2Abierta) { if (e.code === 'Escape' || (e.code === 'KeyH' && !e.repeat)) cerrarGuiaB2(); return; }
     if (TECLAS_BLOQUEADAS.has(e.code)) e.preventDefault();
     if (!juego) return;
     if (juego.enTienda) { if ((e.code === 'Escape' || e.code === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
@@ -511,6 +521,7 @@
       else if (e.code === 'Escape') alternarMenuPruebas();
       return;
     }
+    if (juego.estrategia && juego.v2 && e.code === 'KeyH' && !e.repeat && !juego.terminado) { abrirGuiaB2(); return; }   // la guía de los dos bandos
     if (juego.estrategia && e.code === 'Escape' && !pausado && juego.cancelarColocacion()) return;   // Esc primero suelta lo que se iba a construir
     if (e.code === 'KeyP' || e.code === 'Escape') { alternarPausa(); return; }
     if (pausado || juego.terminado) return;
@@ -595,6 +606,21 @@
   window.ZonaMuerta = { juego: () => juego, iniciar, salir: () => salirAlMenu(), pausar: () => { if (juego && !pausado && !juego.terminado) alternarPausa(); } };
 
   /* ---- Configuración ---- */
+  /* ---- Guía del último bastión v2 (js/bastion-v2-ui.js): se abre desde la lista de niveles o desde la partida ---- */
+  let guiaB2Abierta = false, pausaPorGuia = false;
+  function abrirGuiaB2() {
+    if (guiaB2Abierta) return;
+    guiaB2Abierta = true;
+    if (juego && !pausado && !juego.terminado) { pausaPorGuia = true; pausado = true; Musica.pausar(true); }   // como la configuración: si pausó ella, al cerrar sigue
+    BastionV2UI.abrirGuia(juego);
+  }
+  function cerrarGuiaB2() {
+    if (!guiaB2Abierta) return;
+    guiaB2Abierta = false;
+    BastionV2UI.cerrarGuia();
+    if (pausaPorGuia) { pausaPorGuia = false; pausado = false; Musica.pausar(false); ultimo = performance.now(); }
+  }
+
   const capaConfig = document.getElementById('capa-config');
   let configAbierta = false, pausaPorConfig = false, focoAntes = null;
   function abrirConfig() {
