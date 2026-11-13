@@ -887,6 +887,14 @@ body.en-bastion.bastion-v2 .bastion-info {
 .b2-barra button.bien::after, .b2-barra button.mal::after { position: absolute; top: 0; right: 2px; font-size: 11px; font-weight: 700; line-height: 1.1; }
 .b2-barra button.bien::after { content: "\2713"; color: #9fe89f; }
 .b2-barra button.mal::after { content: "\2715"; color: #ff9c88; }
+/* Una unidad elegida en el campo: su botón queda marcado y las herramientas dicen qué harían con ella (las que no aplican, apagadas) */
+.b2-barra button.suya { border-color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,.8); }
+.b2-barra button.herr.accion:not(.elegida) { border-color: var(--luz); box-shadow: inset 0 0 0 1px var(--luz); background: rgba(64,46,22,.95); }
+.b2-barra button.herr.accion:not(.elegida) small { color: #9fe89f; }
+.b2-barra button.herr.accion[data-unidad="reparar"]:not(.elegida) small { color: #bfe3ff; }
+.b2-barra button.herr.accion.caro small { color: #ff9c88; }
+.b2-barra button.herr.no { opacity: .36; }
+.bastion-info.suya { border-color: rgba(255,255,255,.65); }
 .b2-detalle h3 { margin: 0 0 1px; font-size: clamp(12px, 2vh, 15px); letter-spacing: .08em; color: var(--luz); }
 .b2-detalle h3 small { color: var(--texto); font-size: .85em; }
 .b2-detalle h3 em { font-style: normal; font-weight: 400; font-size: .72em; letter-spacing: .1em; text-transform: uppercase; opacity: .65; margin-left: 6px; }
@@ -1350,7 +1358,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261112-2334-85dc783';
+const VERSION_JUEGO = '20261113-0013-9855e6d';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -18711,7 +18719,7 @@ const BastionV2 = {
     this.vidaBase = B.vidaBase;
     this.unidades = []; this.colaCuartel = []; this.colaTaller = []; this.colaOleada = [];
     this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = BASTION2.primerDescanso; this.proximoZombie = 0;
-    this.colocando = null; this.moviendo = null; this.puntero = null; this.trazos = []; this.balasBastion = [];
+    this.colocando = null; this.moviendo = null; this.elegidaV2 = null; this.unMovimiento = false; this.puntero = null; this.trazos = []; this.balasBastion = [];
     this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
     this.velocidad = 1; this.construidas = 0; this.contagiados = 0; this.entraron = {};
     this.camposLibres = new Map(); this.camposCrudos = new Map(); this.camposCuad = new Map();
@@ -18867,19 +18875,24 @@ const BastionV2 = {
     const lista = this.unidades.filter(u => u.c === c && u.f === f && !u.invisible && !u.llevado && u.tipo !== 'caido' && U_(u.tipo));
     return lista.find(u => u.bloquea) || lista.find(u => !esInf(u)) || lista.find(u => u.listo && !u.enCamino) || null;
   };
-  envolver('vender', function (x, y) {
-    const { c, f } = this.celdaDe(x, y), u = this.unidadEnV2(c, f);
-    if (!u) return false;
-    const devuelve = u.listo ? Math.round(u.costo * (this.enDescanso ? BASTION2.vender.descanso : BASTION2.vender.oleada)) : u.costo;
+  // Lo que devuelve vender una unidad: ¾ en el descanso, ½ en plena oleada; lo que todavía está en obra, todo
+  P.valorVentaV2 = function (u) { return u.listo ? Math.round(u.costo * (this.enDescanso ? BASTION2.vender.descanso : BASTION2.vender.oleada)) : u.costo; };
+  P.venderUnidadV2 = function (u) {
+    const devuelve = this.valorVentaV2(u);
     this.quitarUnidad(u); this.dinero += devuelve;
     this.aviso(t('bastion.vendido', { d: devuelve }), 1200); Audio_.recarga('tapa');
     return true;
+  };
+  envolver('vender', function (x, y) {
+    const { c, f } = this.celdaDe(x, y), u = this.unidadEnV2(c, f);
+    return u ? this.venderUnidadV2(u) : false;
   });
   envolver('aReparar', function (c, f) { return this.unidades.find(u => u.c === c && u.f === f && !u.invisible && u.listo && u.vida < u.vidaMax - 0.5 && U_(u.tipo) && !esInf(u)) || null; });   // a la gente la cura el médico
   envolver('quitarUnidad', function (u, destruida) {
     u.quitada = true;   // los zombies que la tenían de presa la sueltan
     const dentro = u.dentro || []; u.dentro = []; u.adentro = 0;
-    if (this.moviendo === u) this.moviendo = null;
+    if (this.moviendo === u) this.soltarMoverV2();
+    if (this.elegidaV2 === u) this.elegidaV2 = null;
     v1.quitarUnidad.call(this, u, destruida && !esInf(u));
     dentro.forEach((d, k) => {   // los de adentro del búnker salen a pie, cada uno con su oficio
       const s = this.nuevaUnidadV2(d.tipo, u.c, u.f, { x: u.x - 10 + k * 6, y: u.y + 6 }); s.vida = d.vida ?? s.vida;
@@ -18907,13 +18920,30 @@ const BastionV2 = {
   });
 
   /* ---------- Mover: la infantería y el tanque cambian de lugar (también en plena oleada; van expuestos) ---------- */
+  const HERRAMIENTAS = ['vender', 'reparar', 'mover'];
   envolver('elegirUnidad', function (tipo) {
-    this.moviendo = null;
+    const herr = HERRAMIENTAS.includes(tipo), u = this.elegidaVivaV2();
+    if (herr && u && (!this.colocando || this.unMovimiento)) {   // con una unidad elegida en el campo, las herramientas actúan sobre ella
+      const movia = this.unMovimiento; this.soltarMoverV2();
+      if (!(movia && tipo === 'mover')) this.accionElegidaV2(tipo, u);   // «mover» de nuevo: se queda donde estaba
+      this.panelBastion(); return;
+    }
+    this.moviendo = null; this.unMovimiento = false;
+    if (!herr) this.elegidaV2 = null;   // va a construir: suelta a la que tenía elegida
     if (tipo !== 'mover') return v1.elegirUnidad.call(this, tipo);
     this.colocando = this.colocando === 'mover' ? null : 'mover';
     this.panelBastion();
   });
-  envolver('cancelarColocacion', function () { this.moviendo = null; return v1.cancelarColocacion.call(this); });
+  envolver('cancelarColocacion', function () {
+    this.moviendo = null; this.unMovimiento = false;
+    if (v1.cancelarColocacion.call(this)) return true;
+    if (!this.elegidaV2) return false;
+    this.elegidaV2 = null; this.panelBastion(); return true;   // sin nada en la mano, Esc (o el botón derecho) suelta a la unidad elegida
+  });
+  // Termina un «mover»; si se había pedido desde una unidad elegida, la barra vuelve a quedar libre
+  P.soltarMoverV2 = function () { this.moviendo = null; if (this.unMovimiento) { this.unMovimiento = false; if (this.colocando === 'mover') this.colocando = null; } };
+  // ¿Se puede cambiar de lugar? La gente a pie que ya está en su puesto, el tanque, y un búnker con gente (sale el último que entró)
+  P.seMueveV2 = function (u) { return !!u && u.listo && !u.invisible && !u.llevado && !u.quitada && ((esInf(u) && !u.enCamino) || u.tipo === 'tanque' || (u.tipo === 'bunker' && u.dentro.length > 0)); };
   // ¿A quién se puede mover de esa celda? Alguien a pie, el tanque o el último que entró a un búnker
   P.movibleEnV2 = function (c, f) {
     const en = this.unidades.filter(u => u.c === c && u.f === f && u.listo && !u.invisible && !u.llevado);
@@ -18926,8 +18956,7 @@ const BastionV2 = {
       this.moviendo = u; Audio_.recarga('cerrojo'); return;
     }
     let u = this.moviendo;
-    if (u.quitada) { this.moviendo = null; return; }
-    if (u.c === c && u.f === f) { this.moviendo = null; return; }   // tocar de nuevo el mismo lugar lo suelta
+    if (u.quitada || (u.c === c && u.f === f)) { this.soltarMoverV2(); this.panelBastion(); return; }   // ya no está, o se tocó de nuevo su lugar: se suelta
     const tipo = u.tipo === 'bunker' ? u.dentro[u.dentro.length - 1].tipo : u.tipo;
     const motivo = this.motivoNoColocar(tipo, c, f, true, u.tipo === 'bunker' ? null : u);
     if (motivo) { this.aviso(t(motivo), 1400); Audio_.vacio(); return; }
@@ -18940,14 +18969,63 @@ const BastionV2 = {
     u.c = c; u.f = f; u.destino = this.centroCelda(c, f); u.enCamino = true; u.esperaBunker = null;
     u.destinoBunker = esInf(u) && destino && destino.tipo === 'bunker' ? destino : null;
     if (u.bloquea) this.rehacerCamino();
-    this.moviendo = null; Audio_.recarga('tapa');
+    this.soltarMoverV2(); Audio_.recarga('tapa'); this.panelBastion();
+  };
+
+  /* ---------- Elegir una unidad del campo: se ve hasta dónde llega y, en la barra, qué se puede hacer con ella ---------- */
+  // Lo que hay bajo el puntero: lo que ocupa esa celda o, si no, alguien que va de camino y pasa cerca
+  P.unidadBajoV2 = function (x, y) {
+    const { c, f } = this.celdaDe(x, y), enCelda = this.dentro(c, f) ? this.unidadEnV2(c, f) : null;
+    if (enCelda) return enCelda;
+    let mejor = null, dm = 20;
+    for (const u of this.unidades) {
+      if (!u.enCamino || u.invisible || u.llevado || u.quitada || !U_(u.tipo)) continue;
+      const d = distPlano(x, y, u.x, u.y - 10);
+      if (d < dm) { dm = d; mejor = u; }
+    }
+    return mejor;
+  };
+  // La unidad elegida, mientras siga en pie y en el campo (si cae, se la llevan o entra a un búnker, se suelta sola)
+  P.elegidaVivaV2 = function () {
+    const u = this.elegidaV2;
+    if (u && (u.quitada || u.llevado || u.tipo === 'caido' || !this.unidades.includes(u))) this.elegidaV2 = null;
+    if (this.unMovimiento && this.colocando !== 'mover') this.unMovimiento = false;
+    if (this.unMovimiento && (!this.moviendo || this.moviendo.quitada)) this.soltarMoverV2();
+    return this.elegidaV2 || null;
+  };
+  // Tocar una unidad la elige; tocarla de nuevo, o tocar el suelo, la suelta
+  P.elegirDelCampoV2 = function (u) {
+    const antes = this.elegidaVivaV2();
+    this.elegidaV2 = u && u !== antes ? u : null;
+    this.panelBastion();
+  };
+  // Qué se puede hacer con una unidad: lo que devuelve venderla, lo que cuesta repararla (0: no hay nada que reparar) y si se mueve
+  P.accionesV2 = function (u) {
+    const rota = u.listo && !esInf(u) && u.vida < u.vidaMax - 0.5;
+    return { vender: this.valorVentaV2(u), reparar: rota ? this.costoReparar(u) : 0, mover: this.seMueveV2(u) };
+  };
+  P.accionElegidaV2 = function (tipo, u) {
+    if (tipo === 'vender') { this.venderUnidadV2(u); return; }
+    if (tipo === 'reparar') {
+      if (this.aReparar(u.c, u.f) === u) this.reparar(u.c, u.f);
+      else { this.aviso(t(esInf(u) ? 'b2.curaMedico' : 'bastion.nadaQueReparar'), 1100); Audio_.vacio(); }
+      return;
+    }
+    if (!this.seMueveV2(u)) { this.aviso(t('b2.nadaQueMover'), 1100); Audio_.vacio(); return; }
+    this.colocando = 'mover'; this.moviendo = u; this.unMovimiento = true; Audio_.recarga('cerrojo');   // falta tocar adónde va
   };
   envolver('punteroBastion', function (x, y, tipo, boton) {
-    if (this.colocando !== 'mover') return v1.punteroBastion.call(this, x, y, tipo, boton);
+    if (this.colocando !== 'mover') {
+      if (tipo === 'down' && !this.terminado && !this.colocando && (boton !== 2 || this.elegidaVivaV2())) {   // sin nada en la mano: el toque elige (el botón derecho suelta)
+        const p = this.camaraBastion().desproyectar(x, y); this.puntero = p;
+        this.elegirDelCampoV2(boton === 2 ? null : this.unidadBajoV2(p.x, p.y)); return;
+      }
+      return v1.punteroBastion.call(this, x, y, tipo, boton);
+    }
     ({ x, y } = this.camaraBastion().desproyectar(x, y));
     this.puntero = { x, y };
     if (tipo !== 'down' || this.terminado) return;
-    if (boton === 2) { if (this.moviendo) this.moviendo = null; else this.cancelarColocacion(); return; }
+    if (boton === 2) { if (this.moviendo && !this.unMovimiento) this.moviendo = null; else this.cancelarColocacion(); return; }
     const { c, f } = this.celdaDe(x, y);
     if (this.dentro(c, f)) this.tocarMoverV2(c, f);
   });
@@ -19785,7 +19863,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     if (!b.listo || b.dentro.length >= U_('bunker').capacidad) return false;
     b.dentro.push({ tipo: u.tipo, vida: u.vida, enfriado: Math.random() * 0.4 }); b.adentro = b.dentro.length;
     u.quitada = true; this.unidades = this.unidades.filter(x => x !== u);
-    if (this.moviendo === u) this.moviendo = null;
+    if (this.moviendo === u) this.soltarMoverV2();
     Audio_.recarga('cerrar');
     return true;
   };
@@ -19914,7 +19992,7 @@ const ESTILOS_COMUNES = VARIANTES_CAMINANTE.filter(v => !['gordo', 'policia', 'o
     if (esInf(u)) {   // cae: se contagia, salvo que lo haya volado una explosión o tenga un médico al lado
       const salvado = this.medicoCercaV2(u.x, u.y, u);
       u.quitada = true; u.vida = 0; this.unidades = this.unidades.filter(x => x !== u);
-      if (this.moviendo === u) this.moviendo = null;
+      if (this.moviendo === u) this.soltarMoverV2();
       this.salpicar(u.x, u.y - 14, '#8b0f0f', 12, 3, u.y); Audio_.jugadorHerido();
       if (causa === 'explosion') { this.aviso(t('b2.baja'), 1300); return; }
       if (salvado) { this.aviso(t('b2.sinContagio'), 1500); return; }
@@ -20703,6 +20781,23 @@ const BastionV2Dibujo = {
       if (relleno) { ctx.fillStyle = relleno; ctx.fill(); } if (borde) { ctx.strokeStyle = borde; ctx.lineWidth = 1.2; ctx.stroke(); }
       return q;
     };
+    // Hasta dónde llega una unidad de ese tipo parada en (x, y). op.tiro: también el alcance del arma (por op.factor si
+    // tira desde un búnker); op.teVen: desde dónde la ve un zombie común
+    const radios = (tipo, x, y, op = {}) => {
+      const U = B.unidades[tipo]; if (!U) return;
+      if (op.teVen && (U.clase === 'inf' || U.clase === 'mec' || tipo === 'bunker')) {
+        const radio = BASTION2.zombies.caminante.vista * CELDA;
+        anillo(x, y, radio, 'rgba(255,120,95,0.8)', [2, 4]);
+        const arriba = cam.proyectar(x, y - radio / 1.3), abajo = cam.proyectar(x, y + radio / 1.3);
+        cartel(t('b2.teVen'), arriba.x, arriba.y > 46 ? arriba.y - 5 : abajo.y + 11, '#ff9c88');
+      }
+      if (op.tiro && U.alcance) anillo(x, y, U.alcance * (op.factor || 1), U.soloAire ? 'rgba(150,215,255,0.9)' : 'rgba(255,230,170,0.9)', [6, 5], 1.6);   // el arma (celeste: sólo le tira a lo que vuela)
+      if (U.minimo) anillo(x, y, U.minimo, 'rgba(255,190,90,0.75)', [3, 3]);          // el mortero no tira más cerca que esto
+      if (U.cura) anillo(x, y, U.radio, 'rgba(140,255,150,0.7)', [5, 4]);              // hasta dónde cura el médico
+      if (U.atrae) anillo(x, y, U.atrae * CELDA, 'rgba(255,230,170,0.6)', [5, 5]);     // hasta dónde llama el señuelo
+      if (U.detecta) anillo(x, y, U.detecta * CELDA, 'rgba(255,244,190,0.75)', [6, 4]);  // hasta dónde descubre la torre de vigía
+      if (tipo === 'tanque') anillo(x, y, BASTION2.zombies.topo.topo.tanque * CELDA, 'rgba(255,244,190,0.5)', [2, 5]);   // por su peso, ningún topo pasa por debajo
+    };
 
     // Gas del tóxico: nubes verdes que giran sobre el piso, y el borde hasta donde daña
     for (const n of j.nubesV2) {
@@ -20822,30 +20917,31 @@ const BastionV2Dibujo = {
         }
       }
       const { c, f } = j.celdaDe(j.puntero.x, j.puntero.y);
-      if (j.dentro(c, f)) {
-        const p = j.centroCelda(c, f);
-        if (U.clase === 'inf' || U.clase === 'mec' || j.colocando === 'bunker') {   // desde dónde lo ve un zombie común
-          const radio = BASTION2.zombies.caminante.vista * CELDA;
-          anillo(p.x, p.y, radio, 'rgba(255,120,95,0.8)', [2, 4]);
-          const arriba = cam.proyectar(p.x, p.y - radio / 1.3), abajo = cam.proyectar(p.x, p.y + radio / 1.3);
-          cartel(t('b2.teVen'), arriba.x, arriba.y > 46 ? arriba.y - 5 : abajo.y + 11, '#ff9c88');
-        }
-        if (U.minimo) anillo(p.x, p.y, U.minimo, 'rgba(255,190,90,0.75)', [3, 3]);          // el mortero no tira más cerca que esto
-        if (U.cura) anillo(p.x, p.y, U.radio, 'rgba(140,255,150,0.7)', [5, 4]);              // hasta dónde cura el médico
-        if (U.atrae) anillo(p.x, p.y, U.atrae * CELDA, 'rgba(255,230,170,0.6)', [5, 5]);     // hasta dónde llama el señuelo
-        if (U.detecta) anillo(p.x, p.y, U.detecta * CELDA, 'rgba(255,244,190,0.75)', [6, 4]);  // hasta dónde descubre la torre de vigía
-      }
+      if (j.dentro(c, f)) { const p = j.centroCelda(c, f); radios(j.colocando, p.x, p.y, { teVen: true }); }   // (el alcance de tiro lo pinta el modo de siempre)
     }
-    // Mover: a quién se eligió y si puede ir adonde está el puntero
+    // La unidad elegida en el campo: una marca a sus pies y hasta dónde llega desde donde está
+    const elegida = j.elegidaVivaV2(), moviendo = j.colocando === 'mover' ? j.moviendo : null;
+    if (elegida && elegida !== moviendo && !j.terminado) {
+      const late = 0.55 + 0.35 * Math.sin(ahora / 160);
+      if (elegida.bloquea && !elegida.enCamino) pintarCelda(elegida.c, elegida.f, 'rgba(255,255,255,0.1)', `rgba(255,255,255,${late})`);   // lo que ocupa su celda: la celda
+      else anillo(elegida.x, elegida.y, 15, `rgba(255,255,255,${late})`, null, 2);                                                      // quien camina: a sus pies
+      if (elegida.tipo === 'bunker') for (const tipo of new Set(elegida.dentro.map(d => d.tipo))) radios(tipo, elegida.x, elegida.y, { tiro: true, factor: B.unidades.bunker.masAlcance });   // desde adentro tiran más lejos
+      else if (elegida.listo) radios(elegida.tipo, elegida.x, elegida.y, { tiro: true });
+    }
+    // Mover: a quién se eligió, si puede ir adonde está el puntero y hasta dónde llegaría desde ahí
     if (j.colocando === 'mover' && !j.terminado) {
       const u = j.moviendo, pc = j.puntero ? j.celdaDe(j.puntero.x, j.puntero.y) : null;
       if (u && !u.quitada) {
-        anillo(u.x, u.y, 15, `rgba(255,255,255,${0.6 + 0.4 * Math.sin(ahora / 120)})`, null, 2);
+        anillo(u.x, u.y, u.bloquea ? 23 : 15, `rgba(255,255,255,${0.6 + 0.4 * Math.sin(ahora / 120)})`, null, 2);
         if (pc && j.dentro(pc.c, pc.f) && !(pc.c === u.c && pc.f === u.f)) {
           const tipo = u.tipo === 'bunker' ? u.dentro[u.dentro.length - 1].tipo : u.tipo, ok = !j.motivoNoColocar(tipo, pc.c, pc.f, true, u.tipo === 'bunker' ? null : u);
           pintarCelda(pc.c, pc.f, ok ? 'rgba(120,230,120,0.28)' : 'rgba(240,80,70,0.3)');
           const a = cam.proyectar(u.x, u.y), d = j.centroCelda(pc.c, pc.f), b = cam.proyectar(d.x, d.y);
           ctx.strokeStyle = ok ? 'rgba(200,255,200,0.7)' : 'rgba(255,150,140,0.6)'; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
+          if (ok) {
+            const alBunker = (j.ocupadaPor(pc.c, pc.f) || {}).tipo === 'bunker';   // la gente que entra a un búnker tira más lejos y no queda a la vista
+            radios(tipo, d.x, d.y, { tiro: true, teVen: !alBunker, factor: alBunker ? B.unidades.bunker.masAlcance : 1 });
+          }
         }
       } else if (pc && j.dentro(pc.c, pc.f)) pintarCelda(pc.c, pc.f, j.movibleEnV2(pc.c, pc.f) ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.4)');
     }
@@ -20862,9 +20958,11 @@ const BastionV2Dibujo = {
  * una unidad, en el parte quedan marcados los zombies que frena (verde) y contra los que rinde poco (rojo); al tocar
  * un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven. De texto, un solo
  * renglón arriba de la barra. La guía completa (qué hace cada uno, fuerte, débil, cómo usarlo) es la pantalla previa.
+ * Tocar una unidad del campo la elige: se ve hasta dónde llega (lo pinta js/bastion-v2-dibujo.js), su botón queda marcado
+ * y las herramientas pasan a decir qué harían con ella (vender +$, reparar −$, mover); el renglón cuenta cómo está.
  */
 const BastionV2UI = {
-  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null,
+  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null, suyaVista: null,
   // Un zombie de cada tipo para retratarlo (quieto, mirando hacia el campamento)
   zombieDeMuestra(id) {
     const P = Juego.prototype, falso = { dificultad: DIFICULTADES.medio, ronda: 1, nivelV2: { vida: 1 }, ahora: 0, vidaComunV2: P.vidaComunV2, vestirZombieV2: P.vestirZombieV2 };
@@ -20960,14 +21058,20 @@ const BastionV2UI = {
     document.getElementById('bastion-ola').textContent = t('bastion.olaDe', { n: Math.max(1, j.ronda), total });
     const base = document.getElementById('bastion-base');
     base.textContent = t('bastion.base', { v: j.vidaBase, max: B.vidaBase }); base.classList.toggle('peligro', j.vidaBase <= B.vidaBase * 0.3);
+    // Con una unidad elegida en el campo, su botón queda marcado y cada herramienta dice qué pasa si se la toca
+    const suya = j.elegidaVivaV2(), A = suya && (!j.colocando || j.unMovimiento) ? j.accionesV2(suya) : null;
     for (const b of barra.querySelectorAll('[data-unidad]')) {
       const tipo = b.dataset.unidad, U = B.unidades[tipo];
       b.classList.toggle('elegida', j.colocando === tipo);
       if (!U) {   // herramientas
         if (b.dataset.idioma !== idioma) { b.dataset.idioma = idioma; b.querySelector('b').textContent = t('bastion.' + tipo); }
-        b.querySelector('small').textContent = tipo === 'vender' ? (j.enDescanso ? '¾' : '½') : tipo === 'reparar' ? '¾' : '';
+        const sirve = !!A && (tipo === 'vender' || (tipo === 'reparar' ? A.reparar > 0 : A.mover));
+        b.classList.toggle('accion', sirve); b.classList.toggle('no', !!A && !sirve); b.classList.toggle('caro', sirve && tipo === 'reparar' && j.dinero < A.reparar);
+        const chico = A ? (!sirve || tipo === 'mover' ? '' : tipo === 'vender' ? '+$' + A.vender : '−$' + A.reparar) : tipo === 'vender' ? (j.enDescanso ? '¾' : '½') : tipo === 'reparar' ? '¾' : '';
+        const small = b.querySelector('small'); if (small.textContent !== chico) small.textContent = chico;
         continue;
       }
+      b.classList.toggle('suya', !!suya && suya.tipo === tipo);
       if (b.dataset.idioma !== idioma) { b.dataset.idioma = idioma; b.title = t('b2.u.' + tipo); const img = b.querySelector('img'); img.src = this.retrato('u:' + tipo, 40); img.alt = t('b2.u.' + tipo); }
       const precio = '$' + U.costo, chico = b.querySelector('small'); if (chico.textContent !== precio) chico.textContent = precio;   // (el panel del modo de siempre también escribe en los botones que comparten nombre)
       b.classList.toggle('caro', j.dinero < U.costo);
@@ -21006,25 +21110,41 @@ const BastionV2UI = {
     if (this.debutCola.length && !this.zombieVisto && ver && j.enDescanso) this.verZombie(this.debutCola.shift(), 8000);   // de a uno, si son dos
     // Elegir otra cosa en la barra deja de mostrar al zombie que se había tocado
     if (j.colocando !== this.colocandoVisto) { this.colocandoVisto = j.colocando; if (j.colocando) { this.verZombie(null); this.debutCola = []; } }
+    const suya = j.elegidaVivaV2();   // elegir una unidad del campo, lo mismo
+    if (suya !== this.suyaVista) { this.suyaVista = suya; if (suya) { this.verZombie(null); this.debutCola = []; } }
     if (this.zombieVisto && (performance.now() > this.zombieHasta || j.terminado)) this.verZombie(null);
-    const unidad = BASTION2.unidades[j.colocando] ? j.colocando : '', zombie = this.zombieVisto;
-    // Renglón de arriba de la barra: el zombie que se tocó (o que debuta) o, si no, lo que se está por poner
-    const claveInfo = (zombie ? 'z:' + zombie : unidad ? 'u:' + unidad : '') + ':' + Idioma.actual();
-    info.classList.toggle('oculta', !zombie && !unidad);
+    const unidad = BASTION2.unidades[j.colocando] ? j.colocando : '', zombie = this.zombieVisto, enCampo = !unidad && suya ? suya : null;
+    // Renglón de arriba de la barra: el zombie que se tocó (o que debuta); si no, lo que se está por poner; si no, la unidad elegida en el campo
+    const claveInfo = (zombie ? 'z:' + zombie : unidad ? 'u:' + unidad : enCampo ? 'e:' + this.estadoDe(enCampo) : '') + ':' + Idioma.actual();
+    info.classList.toggle('oculta', !zombie && !unidad && !enCampo);
     if (claveInfo !== this.infoDe || rehecho) {
       this.infoDe = claveInfo;
       if (zombie) info.innerHTML = `<b>${t('b2.z.' + zombie)}</b>${debut[zombie] === n && n > 0 ? ` <i class="b2-nuevo">${t('b2.nuevo')}</i>` : ''} ${t('b2.z.' + zombie + '.hace')} ${t('b2.z.' + zombie + '.fuerte')}`;
       else if (unidad) info.innerHTML = `<b>${t('b2.u.' + unidad)}</b> ${t('b2.u.' + unidad + '.hace')} ${t('b2.u.' + unidad + '.uso')}`;
-      info.classList.toggle('zombie', !!zombie);
-      // Marcas: con un zombie a la vista, en la barra (qué lo frena y qué no sirve); con una unidad elegida, en el parte
-      const CZ = zombie ? BASTION2.contra[zombie] : null;
+      else if (enCampo) info.innerHTML = this.renglonDe(enCampo);
+      info.classList.toggle('zombie', !!zombie); info.classList.toggle('suya', !zombie && !!enCampo);
+      // Marcas: con un zombie a la vista, en la barra (qué lo frena y qué no sirve); con una unidad (por poner o elegida), en el parte
+      const CZ = zombie ? BASTION2.contra[zombie] : null, marca = zombie ? '' : unidad || (enCampo ? enCampo.tipo : '');
       for (const b of barra.querySelectorAll('[data-unidad]')) { const u = b.dataset.unidad; b.classList.toggle('bien', !!CZ && CZ.bien.includes(u)); b.classList.toggle('mal', !!CZ && CZ.mal.includes(u)); }
       for (const c of el.querySelectorAll('.chip')) {
         const C = BASTION2.contra[c.dataset.fichaZ];
         c.classList.toggle('vista', c.dataset.fichaZ === zombie);
-        c.classList.toggle('bien', !zombie && !!unidad && C.bien.includes(unidad)); c.classList.toggle('mal', !zombie && !!unidad && C.mal.includes(unidad));
+        c.classList.toggle('bien', !!marca && C.bien.includes(marca)); c.classList.toggle('mal', !!marca && C.mal.includes(marca));
       }
     }
+  },
+  // Lo que cambia en el renglón de una unidad elegida (para no reescribirlo en cada pasada)
+  estadoDe(u) { return [u.tipo, Math.ceil(u.vida), u.listo ? 1 : 0, u.dentro ? u.dentro.length : ''].join(':'); },
+  // El renglón de una unidad elegida en el campo: cómo está, hasta dónde llega y qué hace
+  renglonDe(u) {
+    const U = BASTION2.unidades[u.tipo], k = 'b2.u.' + u.tipo;
+    const celdas = px => String(Math.round(px / BASTION2.celda * 2) / 2).replace('.', Idioma.actual() === 'en' ? '.' : ',');
+    const datos = [t('b2.e.vida', { v: Math.ceil(u.vida), max: u.vidaMax })];
+    if (!u.listo) datos.push(t('b2.e.obra'));
+    else if (u.tipo === 'bunker') datos.push(t('b2.e.adentro', { n: u.dentro.length, max: U.capacidad }));
+    else if (U.alcance) datos.push(U.minimo ? t('b2.e.alcanceDe', { min: celdas(U.minimo), n: celdas(U.alcance) }) : t('b2.e.alcance', { n: celdas(U.alcance) }));
+    else if (U.atrae) datos.push(t('b2.e.atrae', { n: U.atrae }));   // (el médico y la torre de vigía ya dicen su distancia en lo que hacen)
+    return `<b>${t(k)}</b> ${datos.join(' · ')} · ${t(k + '.hace')}`;
   },
   // Deja a la vista un zombie del parte por ms milisegundos (null: ninguno)
   verZombie(tipo, ms = 9000) { this.zombieVisto = tipo || ''; this.zombieHasta = tipo ? performance.now() + ms : 0; },
@@ -21175,6 +21295,8 @@ Object.assign(TEXTOS.es, {
   'b2.finGanado': 'Resististe las {olas} oleadas de {nivel} con el campamento en {base}/{max}: {bajas} zombies muertos y {contagiados} soldados contagiados, en {tiempo}.',
   'b2.finPerdido': 'El campamento de {nivel} cayó en la oleada {ola} de {total}. Entraron: {lista}. Soldados contagiados: {contagiados}. Tiempo: {tiempo}.',
   'b2.consejo': 'Contra {tipo} sirve: {con}.',
+  'b2.e.vida': 'vida {v}/{max}', 'b2.e.obra': 'en obra', 'b2.e.adentro': 'adentro {n}/{max}', 'b2.e.alcance': 'alcance {n} celdas', 'b2.e.alcanceDe': 'alcance de {min} a {n} celdas',
+  'b2.e.atrae': 'llama a {n} celdas', 'b2.curaMedico': 'A la gente la cura el médico',
 });
 Object.assign(TEXTOS.pt, {
   'menu.bastion2': 'ÚLTIMO BASTIÃO V2',
@@ -21194,6 +21316,8 @@ Object.assign(TEXTOS.pt, {
   'b2.finGanado': 'Você resistiu às {olas} ondas de {nivel} com o acampamento em {base}/{max}: {bajas} zumbis mortos e {contagiados} soldados contagiados, em {tiempo}.',
   'b2.finPerdido': 'O acampamento de {nivel} caiu na onda {ola} de {total}. Entraram: {lista}. Soldados contagiados: {contagiados}. Tempo: {tiempo}.',
   'b2.consejo': 'Contra {tipo} serve: {con}.',
+  'b2.e.vida': 'vida {v}/{max}', 'b2.e.obra': 'em obra', 'b2.e.adentro': 'dentro {n}/{max}', 'b2.e.alcance': 'alcance {n} casas', 'b2.e.alcanceDe': 'alcance de {min} a {n} casas',
+  'b2.e.atrae': 'atrai a {n} casas', 'b2.curaMedico': 'Quem cura o pessoal é o médico',
 });
 Object.assign(TEXTOS.en, {
   'menu.bastion2': 'LAST BASTION V2',
@@ -21213,6 +21337,8 @@ Object.assign(TEXTOS.en, {
   'b2.finGanado': 'You held out for the {olas} waves of {nivel} with the camp at {base}/{max}: {bajas} zombies killed and {contagiados} soldiers infected, in {tiempo}.',
   'b2.finPerdido': 'The camp at {nivel} fell on wave {ola} of {total}. They got in: {lista}. Soldiers infected: {contagiados}. Time: {tiempo}.',
   'b2.consejo': 'Against {tipo}, use: {con}.',
+  'b2.e.vida': 'health {v}/{max}', 'b2.e.obra': 'being built', 'b2.e.adentro': 'inside {n}/{max}', 'b2.e.alcance': 'range {n} cells', 'b2.e.alcanceDe': 'range {min} to {n} cells',
+  'b2.e.atrae': 'lures within {n} cells', 'b2.curaMedico': 'People are healed by the medic',
 });
 // Los textos con {llaves} toman sus valores al pedirlos (t('b2.parte', { n: 3 }))
 for (const idioma of ['es', 'pt', 'en']) for (const k of Object.keys(TEXTOS[idioma])) {

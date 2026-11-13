@@ -232,7 +232,7 @@ const BastionV2 = {
     this.vidaBase = B.vidaBase;
     this.unidades = []; this.colaCuartel = []; this.colaTaller = []; this.colaOleada = [];
     this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = BASTION2.primerDescanso; this.proximoZombie = 0;
-    this.colocando = null; this.moviendo = null; this.puntero = null; this.trazos = []; this.balasBastion = [];
+    this.colocando = null; this.moviendo = null; this.elegidaV2 = null; this.unMovimiento = false; this.puntero = null; this.trazos = []; this.balasBastion = [];
     this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
     this.velocidad = 1; this.construidas = 0; this.contagiados = 0; this.entraron = {};
     this.camposLibres = new Map(); this.camposCrudos = new Map(); this.camposCuad = new Map();
@@ -388,19 +388,24 @@ const BastionV2 = {
     const lista = this.unidades.filter(u => u.c === c && u.f === f && !u.invisible && !u.llevado && u.tipo !== 'caido' && U_(u.tipo));
     return lista.find(u => u.bloquea) || lista.find(u => !esInf(u)) || lista.find(u => u.listo && !u.enCamino) || null;
   };
-  envolver('vender', function (x, y) {
-    const { c, f } = this.celdaDe(x, y), u = this.unidadEnV2(c, f);
-    if (!u) return false;
-    const devuelve = u.listo ? Math.round(u.costo * (this.enDescanso ? BASTION2.vender.descanso : BASTION2.vender.oleada)) : u.costo;
+  // Lo que devuelve vender una unidad: ¾ en el descanso, ½ en plena oleada; lo que todavía está en obra, todo
+  P.valorVentaV2 = function (u) { return u.listo ? Math.round(u.costo * (this.enDescanso ? BASTION2.vender.descanso : BASTION2.vender.oleada)) : u.costo; };
+  P.venderUnidadV2 = function (u) {
+    const devuelve = this.valorVentaV2(u);
     this.quitarUnidad(u); this.dinero += devuelve;
     this.aviso(t('bastion.vendido', { d: devuelve }), 1200); Audio_.recarga('tapa');
     return true;
+  };
+  envolver('vender', function (x, y) {
+    const { c, f } = this.celdaDe(x, y), u = this.unidadEnV2(c, f);
+    return u ? this.venderUnidadV2(u) : false;
   });
   envolver('aReparar', function (c, f) { return this.unidades.find(u => u.c === c && u.f === f && !u.invisible && u.listo && u.vida < u.vidaMax - 0.5 && U_(u.tipo) && !esInf(u)) || null; });   // a la gente la cura el médico
   envolver('quitarUnidad', function (u, destruida) {
     u.quitada = true;   // los zombies que la tenían de presa la sueltan
     const dentro = u.dentro || []; u.dentro = []; u.adentro = 0;
-    if (this.moviendo === u) this.moviendo = null;
+    if (this.moviendo === u) this.soltarMoverV2();
+    if (this.elegidaV2 === u) this.elegidaV2 = null;
     v1.quitarUnidad.call(this, u, destruida && !esInf(u));
     dentro.forEach((d, k) => {   // los de adentro del búnker salen a pie, cada uno con su oficio
       const s = this.nuevaUnidadV2(d.tipo, u.c, u.f, { x: u.x - 10 + k * 6, y: u.y + 6 }); s.vida = d.vida ?? s.vida;
@@ -428,13 +433,30 @@ const BastionV2 = {
   });
 
   /* ---------- Mover: la infantería y el tanque cambian de lugar (también en plena oleada; van expuestos) ---------- */
+  const HERRAMIENTAS = ['vender', 'reparar', 'mover'];
   envolver('elegirUnidad', function (tipo) {
-    this.moviendo = null;
+    const herr = HERRAMIENTAS.includes(tipo), u = this.elegidaVivaV2();
+    if (herr && u && (!this.colocando || this.unMovimiento)) {   // con una unidad elegida en el campo, las herramientas actúan sobre ella
+      const movia = this.unMovimiento; this.soltarMoverV2();
+      if (!(movia && tipo === 'mover')) this.accionElegidaV2(tipo, u);   // «mover» de nuevo: se queda donde estaba
+      this.panelBastion(); return;
+    }
+    this.moviendo = null; this.unMovimiento = false;
+    if (!herr) this.elegidaV2 = null;   // va a construir: suelta a la que tenía elegida
     if (tipo !== 'mover') return v1.elegirUnidad.call(this, tipo);
     this.colocando = this.colocando === 'mover' ? null : 'mover';
     this.panelBastion();
   });
-  envolver('cancelarColocacion', function () { this.moviendo = null; return v1.cancelarColocacion.call(this); });
+  envolver('cancelarColocacion', function () {
+    this.moviendo = null; this.unMovimiento = false;
+    if (v1.cancelarColocacion.call(this)) return true;
+    if (!this.elegidaV2) return false;
+    this.elegidaV2 = null; this.panelBastion(); return true;   // sin nada en la mano, Esc (o el botón derecho) suelta a la unidad elegida
+  });
+  // Termina un «mover»; si se había pedido desde una unidad elegida, la barra vuelve a quedar libre
+  P.soltarMoverV2 = function () { this.moviendo = null; if (this.unMovimiento) { this.unMovimiento = false; if (this.colocando === 'mover') this.colocando = null; } };
+  // ¿Se puede cambiar de lugar? La gente a pie que ya está en su puesto, el tanque, y un búnker con gente (sale el último que entró)
+  P.seMueveV2 = function (u) { return !!u && u.listo && !u.invisible && !u.llevado && !u.quitada && ((esInf(u) && !u.enCamino) || u.tipo === 'tanque' || (u.tipo === 'bunker' && u.dentro.length > 0)); };
   // ¿A quién se puede mover de esa celda? Alguien a pie, el tanque o el último que entró a un búnker
   P.movibleEnV2 = function (c, f) {
     const en = this.unidades.filter(u => u.c === c && u.f === f && u.listo && !u.invisible && !u.llevado);
@@ -447,8 +469,7 @@ const BastionV2 = {
       this.moviendo = u; Audio_.recarga('cerrojo'); return;
     }
     let u = this.moviendo;
-    if (u.quitada) { this.moviendo = null; return; }
-    if (u.c === c && u.f === f) { this.moviendo = null; return; }   // tocar de nuevo el mismo lugar lo suelta
+    if (u.quitada || (u.c === c && u.f === f)) { this.soltarMoverV2(); this.panelBastion(); return; }   // ya no está, o se tocó de nuevo su lugar: se suelta
     const tipo = u.tipo === 'bunker' ? u.dentro[u.dentro.length - 1].tipo : u.tipo;
     const motivo = this.motivoNoColocar(tipo, c, f, true, u.tipo === 'bunker' ? null : u);
     if (motivo) { this.aviso(t(motivo), 1400); Audio_.vacio(); return; }
@@ -461,14 +482,63 @@ const BastionV2 = {
     u.c = c; u.f = f; u.destino = this.centroCelda(c, f); u.enCamino = true; u.esperaBunker = null;
     u.destinoBunker = esInf(u) && destino && destino.tipo === 'bunker' ? destino : null;
     if (u.bloquea) this.rehacerCamino();
-    this.moviendo = null; Audio_.recarga('tapa');
+    this.soltarMoverV2(); Audio_.recarga('tapa'); this.panelBastion();
+  };
+
+  /* ---------- Elegir una unidad del campo: se ve hasta dónde llega y, en la barra, qué se puede hacer con ella ---------- */
+  // Lo que hay bajo el puntero: lo que ocupa esa celda o, si no, alguien que va de camino y pasa cerca
+  P.unidadBajoV2 = function (x, y) {
+    const { c, f } = this.celdaDe(x, y), enCelda = this.dentro(c, f) ? this.unidadEnV2(c, f) : null;
+    if (enCelda) return enCelda;
+    let mejor = null, dm = 20;
+    for (const u of this.unidades) {
+      if (!u.enCamino || u.invisible || u.llevado || u.quitada || !U_(u.tipo)) continue;
+      const d = distPlano(x, y, u.x, u.y - 10);
+      if (d < dm) { dm = d; mejor = u; }
+    }
+    return mejor;
+  };
+  // La unidad elegida, mientras siga en pie y en el campo (si cae, se la llevan o entra a un búnker, se suelta sola)
+  P.elegidaVivaV2 = function () {
+    const u = this.elegidaV2;
+    if (u && (u.quitada || u.llevado || u.tipo === 'caido' || !this.unidades.includes(u))) this.elegidaV2 = null;
+    if (this.unMovimiento && this.colocando !== 'mover') this.unMovimiento = false;
+    if (this.unMovimiento && (!this.moviendo || this.moviendo.quitada)) this.soltarMoverV2();
+    return this.elegidaV2 || null;
+  };
+  // Tocar una unidad la elige; tocarla de nuevo, o tocar el suelo, la suelta
+  P.elegirDelCampoV2 = function (u) {
+    const antes = this.elegidaVivaV2();
+    this.elegidaV2 = u && u !== antes ? u : null;
+    this.panelBastion();
+  };
+  // Qué se puede hacer con una unidad: lo que devuelve venderla, lo que cuesta repararla (0: no hay nada que reparar) y si se mueve
+  P.accionesV2 = function (u) {
+    const rota = u.listo && !esInf(u) && u.vida < u.vidaMax - 0.5;
+    return { vender: this.valorVentaV2(u), reparar: rota ? this.costoReparar(u) : 0, mover: this.seMueveV2(u) };
+  };
+  P.accionElegidaV2 = function (tipo, u) {
+    if (tipo === 'vender') { this.venderUnidadV2(u); return; }
+    if (tipo === 'reparar') {
+      if (this.aReparar(u.c, u.f) === u) this.reparar(u.c, u.f);
+      else { this.aviso(t(esInf(u) ? 'b2.curaMedico' : 'bastion.nadaQueReparar'), 1100); Audio_.vacio(); }
+      return;
+    }
+    if (!this.seMueveV2(u)) { this.aviso(t('b2.nadaQueMover'), 1100); Audio_.vacio(); return; }
+    this.colocando = 'mover'; this.moviendo = u; this.unMovimiento = true; Audio_.recarga('cerrojo');   // falta tocar adónde va
   };
   envolver('punteroBastion', function (x, y, tipo, boton) {
-    if (this.colocando !== 'mover') return v1.punteroBastion.call(this, x, y, tipo, boton);
+    if (this.colocando !== 'mover') {
+      if (tipo === 'down' && !this.terminado && !this.colocando && (boton !== 2 || this.elegidaVivaV2())) {   // sin nada en la mano: el toque elige (el botón derecho suelta)
+        const p = this.camaraBastion().desproyectar(x, y); this.puntero = p;
+        this.elegirDelCampoV2(boton === 2 ? null : this.unidadBajoV2(p.x, p.y)); return;
+      }
+      return v1.punteroBastion.call(this, x, y, tipo, boton);
+    }
     ({ x, y } = this.camaraBastion().desproyectar(x, y));
     this.puntero = { x, y };
     if (tipo !== 'down' || this.terminado) return;
-    if (boton === 2) { if (this.moviendo) this.moviendo = null; else this.cancelarColocacion(); return; }
+    if (boton === 2) { if (this.moviendo && !this.unMovimiento) this.moviendo = null; else this.cancelarColocacion(); return; }
     const { c, f } = this.celdaDe(x, y);
     if (this.dentro(c, f)) this.tocarMoverV2(c, f);
   });
