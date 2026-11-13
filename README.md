@@ -230,44 +230,103 @@ en Chrome sin GPU); por cuadro solo se pintan fogonazos, humo, bandera, reflecto
 cámara le suma algo al cuadro: en una batalla chica (6 unidades, 4 o 5 zombies), de 5,2–6,0 ms a 6,4–7,9 ms (Chrome sin
 GPU), por las unidades y los zombies escalados.
 
-### Último bastión v2 (prueba del diseño nuevo)
+### Último bastión v2: dos bandos con contrapesos (prueba del diseño nuevo)
 
-Botón aparte en el menú («ÚLTIMO BASTIÓN V2»), con un solo nivel (La granja, 10 oleadas) y partida guardada propia. Es
-la prueba del rediseño por bandos: `js/bastion-v2.js` envuelve los métodos de `js/estrategia.js` (lo nuevo corre sólo
-si `juego.v2`) y el modo de siempre queda igual. La pantalla previa con las fichas de cada tipo, el dibujo de lo nuevo
-y los textos están en `js/bastion-v2-ui.js`.
+Botón aparte en el menú («ÚLTIMO BASTIÓN V2»), con un solo nivel (La granja, 12 oleadas) y partida guardada propia. Es
+la prueba del rediseño por bandos: el plantel completo, 12 unidades contra 12 tipos de zombie, donde ninguna unidad
+sirve contra todo. El modo de siempre no cambia: los archivos `js/bastion-v2*.js` envuelven los métodos de
+`js/estrategia.js` y lo nuevo corre sólo si `juego.v2`.
 
-Los zombies ven, cazan y contagian: cada uno mira a su alrededor (en celdas de 44 px) y va por el primer humano que
-ve, que puede ser un soldado a pie, una torreta (por su artillero) o un búnker con gente. Si no ve a nadie, marcha al
-campamento por el camino abierto.
+| Archivo | Qué tiene |
+|---|---|
+| `js/bastion-v2.js` | Los números de los dos bandos (`BASTION2`), las oleadas, colocar, vender, mover y guardar |
+| `js/bastion-v2-horda.js` | Cómo se crea y cómo se porta cada tipo de zombie |
+| `js/bastion-v2-tropa.js` | Armas y oficios de cada unidad, explosiones, gas y granadas |
+| `js/bastion-v2-dibujo.js` | El dibujo de lo nuevo: unidades, zombies, aves y efectos |
+| `js/bastion-v2-ui.js` | Panel, parte de la oleada, marcas de contrapeso, pantalla previa y textos |
 
-| Zombie | Ve | Cómo llega a su presa | Paga |
-|---|---|---|---|
-| Común | 3 celdas | Por el camino si el rodeo es corto; si no, derecho, rompiendo lo que la tapa | $5 |
-| Corredor | 4 | Rodea buscando el hueco y nunca rompe; sin hueco, sigue de largo | $6 |
-| Gordo | 2 | Nunca rodea: va derecho y rompe toda construcción. Aplasta alambrado y señuelo | $12 |
-| El Coloso | 3 | Como el gordo. Es el jefe de las oleadas 5 y 10 | $72 |
-| Soldado zombie | 3 | Como el común, con blindaje 1 (cada bala le saca 1 menos). Es un soldado propio contagiado | $6 |
+Los contrapesos salen de cinco reglas que valen para todos, no de una tabla de multiplicadores:
 
-- **Contagio**: el soldado que cae se levanta a los 3 s como soldado zombie. La torreta rota deja a su artillero a pie,
-  con media vida.
-- **Unidades**: soldado, torreta, búnker ($120 y cadencia 0,45, en vez de $150 y 0,65), muro y dos nuevas que no cierran
-  el paso. **Alambrado** ($15): frena al 45 %, le saca 20 % de la vida a cada zombie que lo cruza (hasta 50 % entre
-  todos los alambrados), aguanta 20 pisadas y el gordo lo aplasta. **Señuelo** ($50): comunes y corredores a 5 celdas
-  dejan lo que estén haciendo, también de morder, y lo golpean 5 s; engaña una vez a cada zombie y aguanta a unos 20.
-  El tanque no está en este nivel.
-- **Terreno**: en el barro sólo van soldados, alambrado y señuelo; el estanque no se cruza ni se construye.
-- **Oleadas escritas** (`BASTION2.niveles.granja.oleadas`), sin sorteo, con el parte de la próxima oleada durante el
-  descanso. Vender devuelve 75 % en el descanso y 50 % con la oleada en marcha. Teclas: `1` a `6` eligen, `7` vende y
-  `8` repara.
-- **Repetir la oleada**: la partida se guarda al empezar cada oleada (`zonaMuerta.bastion2.partida`). Al perder, la
-  pantalla de fin dice quiénes entraron al campamento y ofrece «REPETIR LA OLEADA n», con todo como estaba al
-  empezarla, o «DESDE EL PRINCIPIO». Al repetir, adelantar la oleada no paga premio.
+- **Blindaje**: le resta puntos a cada bala, con un mínimo de 1 (al acorazado, 2: la torreta le hace la mitad y el fusil,
+  un tercio). No frena al francotirador, al cañón, al fuego ni a las explosiones.
+- **Área**: el fuego y las explosiones pegan a todos los que están juntos; la granada del mortero tarda 1,5 s en caer
+  donde estaba el blanco, así que falla contra lo rápido.
+- **Aire**: lo que vuela pasa sobre todo. Sólo le tiran los fusiles (soldado, francotirador, también desde un búnker)
+  y la antiaérea, que no puede tirarle a nada más.
+- **Velocidad**: cuanto más rápido el zombie, menos tiempo pasa bajo fuego: cadencia alta y alambrado.
+- **Vista**: cada zombie va por el primer humano que ve. El que tira desde más lejos que esa vista, tira escondido.
 
-Balance medido con bots que juegan con el código real (dificultad media, 6 corridas por caso): sin construir se pierde
-en la oleada 3 o 4; con soldados sueltos, en la 8 o 9 y con unos 29 contagiados; con torretas a los costados del carril
-o con búnkeres llenos se gana 6 de 6 con el campamento en 15/15. Con la vida de los zombies ×1,2, las torretas ganan 2
-de 6 y los búnkeres 6 de 6. No está medido con jugadores.
+**El Bastión** (alcances en celdas de 44 px):
+
+| Clase | Unidad | $ | Vida | Qué hace |
+|---|---|---|---|---|
+| Infantería | Soldado raso | 50 | 30 | Fusil: 3 por bala cada 0,65 s a 4 celdas. Le tira también a lo que vuela |
+| | Francotirador | 120 | 20 | 45 cada 3 s a 7,7 celdas, al más peligroso. Ignora el blindaje |
+| | Lanzallamas | 110 | 45 | 14 por segundo a todos los del cono, a 2 celdas, y los deja prendidos. Perros y toro no cruzan el fuego |
+| | Médico | 90 | 25 | Cura 4 por segundo a la infantería a 2 celdas. Quien cae a su lado no se contagia; con él cerca el gas no vacía los búnkeres |
+| Mecanizados | Torreta | 150 | 90 | 2 por bala cada 0,13 s a 4,4 celdas. No apunta al aire |
+| | Tanque | 375 | 400 | Cañón de 70 cada 1,8 s a 5 celdas, al que más vida tiene. Las mordidas le hacen un tercio. Se mueve |
+| | Mortero | 130 | 60 | 14 en un radio de 40 px cada 3,5 s, de 4 a 9 celdas, adonde hay más juntos |
+| | Antiaérea | 140 | 80 | 6 en un radio de 34 px cada 0,4 s a 6 celdas, sólo a lo que vuela |
+| Estructuras | Muro | 35 | 150 | Bloquea el paso (nunca del todo) y es el escudo de quien está detrás |
+| | Alambrado | 15 | 40 | No bloquea: frena al 45 % y saca 20 % de la vida. Aguanta 20 pisadas |
+| | Búnker | 120 | 280 | Refugio para 4 de infantería de cualquier oficio, que tiran desde adentro con 20 % más de alcance |
+| | Señuelo | 50 | 100 | Llama a los caminantes a 5 celdas, que lo golpean 5 s. Una vez por zombie |
+
+La infantería se forma en el cuartel de a uno y camina a su puesto (uno por celda); en el barro sólo van la infantería,
+el alambrado y el señuelo. Al romperse una máquina queda un soldado a pie, herido. **Mover** (tecla `C`) cambia de lugar
+a la infantería, al tanque o al último que entró a un búnker, también en plena oleada.
+
+**La Horda** (vida: veces la de un común de esa oleada, que crece 17 % por oleada):
+
+| Clase | Zombie | Vida | px/s | Qué hace |
+|---|---|---|---|---|
+| Caminantes | Común | 1 | 24 | Ve a 3 celdas. Entra en hordas de 6. Rodea si el rodeo es corto; si no, rompe lo que tapa a su presa |
+| | Corredor | 0,8 | 46 | Ve a 4. Rodea buscando el hueco y nunca rompe |
+| | Gordo | 3,2 | 16 | Ve a 2. Nunca rodea: rompe toda construcción. Aplasta alambrado y señuelo |
+| | Acorazado | 2 | 20 | Como el común, con casco y escudo: blindaje 2 |
+| Especiales | Gritón | 0,8 | 26 | Ve a 6 y grita: los zombies a 5 celdas van por los humanos que él ve y se apuran 30 % |
+| | Hinchado | 5 | 14 | Camina a lo construido más cercano (a 5 celdas) y estalla al tocarlo o al morir: radio 60 px, también mata zombies |
+| | Dinamitero | 0,8 | 50 | Corre derecho al campamento y le saca 120 a la primera construcción que le corta el paso |
+| | Tóxico | 3 | 18 | Caza donde hay más gente junta. Al morir deja 5 s de gas: daña a la infantería y vacía los búnkeres de a uno |
+| Animales | Jauría | 0,5 | 62 | Cinco perros que huelen a la gente a pie a 6 celdas, rodean y saltan el alambrado, los fardos y el tractor |
+| | Toro | 6 | 20 | Ve a 6. Avisa, embiste en línea recta (96 px/s) y aturde 2 s a quien atropella; después queda quieto 2 s |
+| | Bandada | 0,4 | 55 | Seis cuervos que vuelan: picotean a la gente a pie o, si no hay, le sacan 1 cada uno al campamento |
+| | Buitre | 2,5 | 40 | Vuela hasta alguien a pie (primero el francotirador), lo levanta y lo suelta junto al caminante más cercano |
+
+El soldado que cae se levanta a los 3 s como soldado zombie (blindaje 1), salvo que lo haya matado una explosión o
+tenga un médico cerca. El Coloso (vida ×22) es el jefe de las oleadas 6 y 12.
+
+**Información sin tapar el campo.** Cada oleada estrena un tipo y el parte de arriba dice qué viene, con el debutante
+marcado. Al elegir una unidad, en el parte quedan en verde los zombies que frena y en rojo aquellos contra los que
+rinde poco; al tocar un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven
+(`BASTION2.contra`). De texto hay un solo renglón arriba de la barra; la guía completa (qué hace cada uno, fuerte,
+débil, cómo usarlo) es la pantalla previa. La partida se guarda al empezar cada oleada: al perder, la pantalla de fin
+dice quiénes entraron, con qué se los frena, y ofrece repetir esa oleada con todo como estaba.
+
+Teclas: `1` a `4` la infantería, `Q W E R` los mecanizados, `A S D F` las estructuras; `Z` vende (75 % en el descanso,
+50 % en la oleada), `X` repara, `C` mueve.
+
+**Balance medido** con bots que juegan con el código real, en dificultad media. Cruce por cruce (una defensa de un solo
+tipo y unos $300 contra una tanda de un solo tipo en la oleada 6; campamento que queda sobre 15 y parte de la defensa
+en pie):
+
+| Tanda | Lo que frena | Lo que no |
+|---|---|---|
+| 10 acorazados | 3 francotiradores 15 y 100 %; 3 lanzallamas 15 y 100 % | 2 torretas 1 y 0 %; 6 soldados 0 y 0 %; búnker con 4: 0 y 0 % |
+| 20 corredores | 2 torretas con 3 alambrados 15 y 87 % (sin alambrado, 56 %) | 6 soldados 4 y 0 %, con 6 contagiados |
+| 15 perros | 3 lanzallamas 15 y 100 %; 2 torretas 12 y 100 % | 6 soldados 4 y 0 %; 2 antiaéreas 0 (ni los miran) |
+| 3 toros | 3 francotiradores 15 y 100 %; 3 lanzallamas 15 y 100 % | 6 soldados 0 y 0 % |
+| 18 cuervos | 2 antiaéreas 15; búnker con 4 soldados 12 | 2 torretas 0; tanque 0; 2 morteros 0 |
+
+La partida entera (6 corridas por plan): no construir pierde en la oleada 2 o 3; sólo soldados, en la 4; sólo torretas,
+en la 10 u 11, por los cuervos. Un plan que responde a cada debut (búnker de ancla, torretas con alambrado,
+francotiradores, antiaérea, mortero, tanque, médico) gana 5 de 6 con el campamento en 10,5 de 15; el mismo plan sin
+mortero gana 2 de 6 y sin torretas, ninguna. En fácil gana 4 de 4 sin recibir un golpe y en difícil pierde en la 11.
+No está medido con jugadores.
+
+Rendimiento: con 87 zombies de todos los tipos y 26 unidades, 0,8 ms de lógica y 13,6 ms de dibujo por cuadro (Chrome
+de escritorio, lienzo a escala 2). No está medido en un celular.
 
 ## Publicar
 

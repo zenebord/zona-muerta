@@ -1,116 +1,19 @@
-/* ===== Último bastión v2: dibujo de lo nuevo, pantalla previa, parte de la oleada y textos =====
- * Alambrado, señuelo y soldado caído se dibujan como las demás unidades (js/bastion-dibujo.js): pies en (0, 0), el
- * centro de la celda, y la pose quieta guardada como imagen. La pantalla previa muestra la horda y el ejército del
- * nivel con sus fichas (lo que hace cada uno, dónde es fuerte, dónde es débil y cómo se usa o se frena).
+/* ===== Último bastión v2: panel, parte de la oleada, fichas, pantalla previa y textos =====
+ * El panel de abajo tiene las 12 unidades con su retrato, agrupadas por clase (infantería, mecanizados, estructuras),
+ * las tres herramientas (vender, reparar, mover) y el botón de la oleada. Arriba, el parte: qué trae la oleada que
+ * viene (o la que está en curso), con el tipo que debuta marcado. Los contrapesos se ven sin tapar el campo: al elegir
+ * una unidad, en el parte quedan marcados los zombies que frena (verde) y contra los que rinde poco (rojo); al tocar
+ * un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven. De texto, un solo
+ * renglón arriba de la barra. La guía completa (qué hace cada uno, fuerte, débil, cómo usarlo) es la pantalla previa.
  */
-Object.assign(DibujoBastion, {
-  /* Alambrado: tres caballetes de madera en X unidos por un travesaño, hilos de púas tensados y dos rollos de
-   * concertina. No bloquea: los zombies lo cruzan despacio y lo van rompiendo (se cae un caballete, se cortan hilos) */
-  alambrado(ctx, u) {
-    const d = 1 - (u.vida ?? 1) / (u.vidaMax ?? 1), nivel = d > 0.65 ? 2 : d > 0.35 ? 1 : 0;
-    conSprite(ctx, 'al' + nivel, [-25, -19, 26, 8], g => DibujoBastion.alambradoCuerpo(g, nivel));
-  },
-  alambradoCuerpo(ctx, nivel = 0) {
-    const madera = '#5f4226';
-    sombraPiso(ctx, 23, 4.6, 0.26, 0, 2);
-    // Rollo de concertina: vueltas de alambre con sus púas; salta: las vueltas que ya arrancaron
-    const rollo = (y, alto, x0, x1, alfa, salta) => {
-      if (Pincel.silueta) return;
-      ctx.lineWidth = 0.55;
-      for (let k = 0, n = 11; k < n; k++) {
-        if (salta && salta(k)) continue;
-        const x = x0 + (x1 - x0) * k / (n - 1);
-        ctx.strokeStyle = `rgba(150,157,164,${alfa})`; ctx.beginPath(); ctx.ellipse(x, y, 3.4, alto, 0.22, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = `rgba(222,227,232,${alfa})`; ctx.fillRect(x - 0.5, y - alto - 0.6, 1, 1.2); ctx.fillRect(x + 2.7, y - 0.5, 1.2, 1);
-      }
-    };
-    rollo(-9, 6.2, -20, 20, 0.5, nivel === 2 ? k => k > 2 && k < 6 : null);                               // el de atrás
-    pb(ctx, tramo(-17, -7.5, 17, -7.5, 1.7, 1.7), ajustarColor(madera, -0.14), { sombra: 0.3, linea: 0.35, brillo: 0.15 });   // travesaño
-    [-17, 0, 17].forEach((x, i) => {
-      if ((nivel >= 1 && i === 2) || (nivel === 2 && i === 0)) {   // caballete partido: queda en el piso
-        pb(ctx, tramo(x - 6, 2.2, x + 6, 0.8, 2.1, 1.9), madera, { sombra: 0.3, linea: 0.4 }); return;
-      }
-      pb(ctx, tramo(x - 5.5, 3, x + 4.5, -16.5, 2.9, 2.3), madera, { sombra: 0.4, linea: 0.45, brillo: 0.2 });
-      pb(ctx, tramo(x + 5.5, 3, x - 4.5, -16.5, 2.9, 2.3), ajustarColor(madera, 0.12), { sombra: 0.4, linea: 0.45, brillo: 0.25 });
-    });
-    if (!Pincel.silueta) for (const y of nivel === 0 ? [-14, -10, -5] : nivel === 1 ? [-14, -5] : [-5]) {   // hilos tensados, con púas
-      ctx.strokeStyle = '#8e959c'; ctx.lineWidth = 0.55; ctx.beginPath();
-      ctx.moveTo(-20, y + 0.6); ctx.quadraticCurveTo(-8.5, y + 2.2, 0, y + 0.4); ctx.quadraticCurveTo(8.5, y + 2.2, 20, y + 0.6); ctx.stroke();
-      for (let x = -17; x <= 17; x += 4.25) {
-        const yy = y + 0.5 + 1.3 * Math.sin((x + 20) / 20 * Math.PI) ** 2;
-        linea(ctx, '#dde2e7', 0.45, [[x - 0.8, yy - 0.9], [x + 0.8, yy + 0.9]]); linea(ctx, '#dde2e7', 0.45, [[x - 0.8, yy + 0.9], [x + 0.8, yy - 0.9]]);
-      }
-    }
-    rollo(-3.4, 5.2, -21, 21, 0.7, nivel >= 1 ? k => k === 7 || k === 8 : null);                          // el de adelante
-  },
-
-  /* Señuelo: trípode con dos bocinas, el amplificador, la luz de sirena y la batería al pie. La luz y las ondas de
-   * sonido se pintan por cuadro; el resto, de la caché. Roto (a media vida) queda con la cabeza torcida */
-  senuelo(ctx, u, t) {
-    const roto = 1 - (u.vida ?? 1) / (u.vidaMax ?? 1) > 0.5, ms = t || 0;
-    conSprite(ctx, 'se' + (roto ? 'r' : ''), [-18, -45, 20, 8], g => DibujoBastion.senueloCuerpo(g, roto));
-    if (Pincel.silueta) return;
-    if (Math.sin(ms / 160) > 0) {   // luz de la sirena
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const g = ctx.createRadialGradient(0, -38, 0, 0, -38, 7); g.addColorStop(0, 'rgba(255,90,70,0.85)'); g.addColorStop(1, 'rgba(255,60,40,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -38, 7, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    }
-    for (let k = 0; k < 3; k++) {   // ondas de sonido que salen de las dos bocinas
-      const f = (ms / 900 + k / 3) % 1, r = 5 + f * 15;
-      ctx.strokeStyle = `rgba(255,236,170,${0.55 * (1 - f)})`; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(15, -34, r, -0.7, 0.7); ctx.stroke();
-      ctx.beginPath(); ctx.arc(-11, -34, r * 0.7, Math.PI - 0.6, Math.PI + 0.6); ctx.stroke();
-    }
-  },
-  senueloCuerpo(ctx, roto) {
-    const P = PAL_BASTION;
-    sombraPiso(ctx, 13, 3.4, 0.3, 1, 2);
-    caja34(ctx, -10, -2, 4, 4.5, 5.5, '#2b2e32', '#3e4247');   // batería
-    if (!Pincel.silueta) { detalle(ctx, '#c0392b', circulo(-8, -6.6, 0.8)); detalle(ctx, '#17181a', circulo(-4.2, -6.6, 0.8)); linea(ctx, '#17181a', 0.6, [[-8, -6.6], [-5.4, -13], [-0.6, -19]]); }
-    for (const [px, py, col] of [[-8.5, 1, P.aceroOsc], [8.5, 1, P.aceroOsc], [1, 4.4, P.acero]]) pb(ctx, tramo(0, -27, px, py, 1.3, 1.5), col, { sombra: 0.3, linea: 0.35, brillo: 0.3 });   // trípode
-    pb(ctx, tramo(0, -26, 0, -33, 1.6, 1.6), P.acero, { sombra: 0.3, linea: 0.35 });   // mástil
-    ctx.save(); ctx.translate(0, -34); if (roto) ctx.rotate(-0.3);
-    // Bocinas: la grande mira al campo y la chica, hacia el campamento
-    const bocina = (s, largo, boca) => {
-      pb(ctx, c => { c.moveTo(s * 3, -1.8); c.lineTo(s * (3 + largo), -boca); c.quadraticCurveTo(s * (4.8 + largo), 0, s * (3 + largo), boca); c.lineTo(s * 3, 1.6); c.closePath(); }, '#8d939a', { sombra: 0.5, brillo: 0.45, linea: 0.4 });
-      if (!Pincel.silueta) { ctx.fillStyle = '#26282c'; ctx.beginPath(); ctx.ellipse(s * (3.4 + largo), 0, 1.3, boca * 0.82, 0, 0, Math.PI * 2); ctx.fill(); }
-    };
-    bocina(-1, 6.5, 3.8); bocina(1, 10, 5.6);
-    pb(ctx, rr(-3.4, -3, 6.8, 5.4, 1), P.od, { sombra: 0.4, linea: 0.4, brillo: 0.25 });                       // amplificador
-    pb(ctx, c => { c.arc(0, -3, 1.8, Math.PI, 0); c.closePath(); }, '#8a211b', { sombra: 0.2, linea: 0.35, brillo: 0.45 });   // luz de sirena, apagada
-    if (roto && !Pincel.silueta) linea(ctx, 'rgba(20,20,22,0.7)', 0.5, [[5, -3], [8, 0.4], [7, 3.4]]);            // abolladura
-    ctx.restore();
-  },
-
-  /* Soldado caído: tendido boca arriba en su charco, con el resplandor del contagio que late cada vez más fuerte y
-   * el reloj que se va llenando; cuando se completa, se levanta en contra (lo saca y lo cambia js/bastion-v2.js) */
-  caido(ctx, u, t) {
-    const f = Math.min(1, (u.t || 0) / BASTION2.contagio), pulso = 0.5 + 0.5 * Math.sin((t || 0) / 110);
-    if (!Pincel.silueta) { ctx.fillStyle = 'rgba(90,8,8,0.55)'; ctx.beginPath(); ctx.ellipse(-13, 1.5, 16, 3.8, 0, 0, Math.PI * 2); ctx.fill(); }
-    ctx.save(); ctx.translate(3, -2.6); ctx.rotate(-Math.PI / 2 + 0.07);
-    conSprite(ctx, '34' + 'sa0.00', [-11, -42, 26, 3], g => DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0));
-    ctx.restore();
-    if (Pincel.silueta) return;
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(-14, -4, 0, -14, -4, 24); g.addColorStop(0, `rgba(150,255,90,${0.14 + 0.3 * f * pulso})`); g.addColorStop(1, 'rgba(150,255,90,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(-14, -4, 26, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    ctx.lineWidth = 2.2; ctx.strokeStyle = 'rgba(10,8,6,0.65)'; ctx.beginPath(); ctx.arc(-14, -18, 4.6, 0, Math.PI * 2); ctx.stroke();
-    ctx.lineWidth = 1.6; ctx.strokeStyle = '#b6ff5c'; ctx.beginPath(); ctx.arc(-14, -18, 4.6, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); ctx.stroke();
-  },
-});
-
 const BastionV2UI = {
-  retratos: {}, parteDe: '', infoDe: '',
+  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, zombieVisto: '', zombieHasta: 0, colocandoVisto: null,
   // Un zombie de cada tipo para retratarlo (quieto, mirando hacia el campamento)
   zombieDeMuestra(id) {
-    const dif = DIFICULTADES.medio, variante = v => VARIANTES_CAMINANTE.find(x => x.id === v);
-    let z;
-    if (id === 'jefe') { z = zombieConEstilo(0, ESTILO_COLOSO, dif); z.piel = '#4fae2e'; z.grosorBrazos = 2; z.grosorPiernas = 1.6; z.jefe = true; }
-    else if (id === 'soldadoZombie') { z = zombieConEstilo(0, ESTILO_SOLDADO_ZOMBIE, dif); z.piel = '#8fa672'; }
-    else if (id === 'gordo') z = zombieConEstilo(0, variante('gordo'), dif);
-    else if (id === 'corredor') z = new Zombie(0, true, dif);
-    else z = zombieConEstilo(0, variante('camisa-roja'), dif);
-    z.escala = BASTION.zombies[id].escala; z.direccion = -1; z.x = 0; z.y = z.ySuelo = 0; z.fase = 1.2; z.variante.brazoColgando = false;
+    const P = Juego.prototype, falso = { dificultad: DIFICULTADES.medio, ronda: 1, nivelV2: { vida: 1 }, ahora: 0, vidaComunV2: P.vidaComunV2, vestirZombieV2: P.vestirZombieV2 };
+    const z = P.crearZombieV2.call(falso, id, DIFICULTADES.medio);
+    z.escala = BASTION2.zombies[id].escala; z.direccion = -1; z.x = 0; z.y = z.ySuelo = 0; z.fase = 1.2; z.estado = 'camina';
+    if (z.variante) z.variante.brazoColgando = false;
     return z;
   },
   // Retrato de una unidad ('u:muro') o de un zombie ('z:gordo') como imagen, del tamaño pedido en px de pantalla
@@ -121,23 +24,44 @@ const BastionV2UI = {
     Lienzo.liviano = false;
     try {
       if (clase === 'u') {
-        const [x0, y0, x1, y1] = { soldado: [-13, -43, 27, 4], torreta: [-27, -39, 37, 8], bunker: [-29, -57, 35, 8], muro: [-26, -35, 31, 8], alambrado: [-25, -21, 26, 8], senuelo: [-22, -46, 26, 8] }[id];
-        const s = c.width / Math.max(x1 - x0, y1 - y0) * 0.94;
+        const [x0, y0, x1, y1] = BastionV2Dibujo.CAJAS[id], s = c.width / Math.max(x1 - x0, y1 - y0) * 0.94;
         g.translate(c.width / 2, c.height / 2); g.scale(s, s); g.translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
-        if (id === 'soldado') DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0);
-        else if (id === 'alambrado') DibujoBastion.alambradoCuerpo(g, 0);
-        else if (id === 'senuelo') DibujoBastion.senueloCuerpo(g, false);
-        else DibujoBastion[id + 'Cuerpo'](g, { adentro: 2, vida: 1, vidaMax: 1, apunta: 0 }, 0);
+        BastionV2Dibujo.posar(g, id);
       } else {
-        const z = this.zombieDeMuestra(id), s = c.height / (96 * z.escala);
-        g.translate(c.width * 0.56, c.height * 0.95); g.scale(s, s);
-        z.dibujar(g, 0, 0);
+        const z = this.zombieDeMuestra(id);
+        if (z.vuela) { const s = c.width / (z.E.ancho * 1.5 * z.escala); g.translate(c.width * 0.56, c.height * 0.62); g.scale(s, s); z.altura = 0; z.fase = 0.9; g.save(); z.cuerpo(g, false); g.restore(); }
+        else if (z.E) { const s = c.width / (z.E.ancho * 1.75 * z.escala); g.translate(c.width * 0.6, c.height * 0.8); g.scale(s, s); z.dibujar(g, 0, 0); }
+        else { const s = c.height / (98 * z.escala); g.translate(c.width * (id === 'acorazado' || id === 'griton' ? 0.62 : 0.56), c.height * 0.95); g.scale(s, s); z.dibujar(g, 0, 0); }
       }
-    } catch { /* sin lienzo: queda vacío */ } finally { Lienzo.liviano = liviano; }
+    } catch (e) { /* sin lienzo: queda vacío */ } finally { Lienzo.liviano = liviano; }
     return (this.retratos[k] = c.toDataURL());
   },
+  // Íconos de unidades o de zombies en fila (para «lo frena», «frena a»)
+  iconos(clase, ids, lado = 26) { return ids.map(id => `<img class="b2-ico" src="${this.retrato(clase + ':' + id, lado)}" alt="${t('b2.' + clase + '.' + id)}" title="${t('b2.' + clase + '.' + id)}">`).join(''); },
+  // A quién frena una unidad y contra quién rinde poco, según BASTION2.contra
+  contraDe(unidad) {
+    const bien = [], mal = [];
+    for (const z of BASTION2.ordenParte) { const C = BASTION2.contra[z]; if (C.bien.includes(unidad)) bien.push(z); if (C.mal.includes(unidad)) mal.push(z); }
+    return { bien, mal };
+  },
+  claseDe(clave) {
+    const [clase, id] = clave.split(':');
+    if (clase === 'u') return BASTION2.unidades[id].clase;
+    return id === 'soldadoZombie' || id === 'jefe' ? 'cam' : BASTION2.zombies[id].clase;
+  },
+  // Lo que dice la ficha de la guía: qué hace, fuerte, débil, cómo usarlo o frenarlo, y los contrapesos con íconos
+  ficha(clave) {
+    const [clase, id] = clave.split(':'), k = 'b2.' + clase + '.' + id, esZ = clase === 'z';
+    const C = esZ ? BASTION2.contra[id] : this.contraDe(id);
+    const contras = `<p class="b2-contras"><span><b class="mas">${t(esZ ? 'b2.loFrena' : 'b2.frenaA')}</b> ${this.iconos(esZ ? 'u' : 'z', C.bien)}</span>` +
+      (C.mal.length ? `<span><b class="menos">${t(esZ ? 'b2.noSirve' : 'b2.flojoContra')}</b> ${this.iconos(esZ ? 'u' : 'z', C.mal)}</span>` : '') + '</p>';
+    const precio = esZ ? '' : ` <small>$${BASTION2.unidades[id].costo}</small>`;
+    return `<img src="${this.retrato(clave, 112)}" alt=""><div><h3>${t(k)}${precio} <em>${t('b2.clase.' + this.claseDe(clave))}</em></h3><p>${t(k + '.hace')}</p>` +
+      `<p><b class="mas">${t('b2.fuerte')}</b> ${t(k + '.fuerte')}</p><p><b class="menos">${t('b2.debil')}</b> ${t(k + '.debil')}</p>` +
+      `<p><b>${t(esZ ? 'b2.frenar' : 'b2.usar')}</b> ${t(k + '.uso')}</p>${contras}</div>`;
+  },
 
-  /* ---------- Pantalla previa: la horda y el ejército del nivel, con sus fichas ---------- */
+  /* ---------- Pantalla previa: los dos bandos por clase, con sus fichas ---------- */
   abrir(mostrar) {
     BastionV2.ajustarUnidades(true);   // los precios de la v2, también antes de empezar
     this.pintar('z:caminante');
@@ -145,220 +69,280 @@ const BastionV2UI = {
   },
   // Las fichas de los dos bandos y el detalle de la elegida (se arma de nuevo si cambia el idioma con la pantalla abierta)
   pintar(elegida) {
-    const ficha = (clave, nombre, precio) => `<button type="button" class="b2-ficha" data-ficha="${clave}"><img src="${this.retrato(clave, 72)}" alt=""><b>${nombre}</b>${precio ? `<small>${precio}</small>` : ''}</button>`;
-    document.getElementById('b2-zombies').innerHTML = ['caminante', 'corredor', 'gordo', 'jefe', 'soldadoZombie'].map(k => ficha('z:' + k, t('b2.z.' + k))).join('');
-    document.getElementById('b2-unidades').innerHTML = BASTION2.orden.map(k => ficha('u:' + k, t('b2.u.' + k), '$' + BASTION.unidades[k].costo)).join('');
+    const tecla = (clave, precio) => `<button type="button" class="b2-ficha" data-ficha="${clave}"><img src="${this.retrato(clave, 56)}" alt=""><b>${t('b2.' + clave.replace(':', '.'))}</b>${precio ? `<small>${precio}</small>` : ''}</button>`;
+    const fila = (clase, claves, precios) => `<div class="b2-fila"><h4>${t('b2.clase.' + clase)}</h4><div class="b2-fichas">${claves.map(k => tecla(k, precios ? '$' + BASTION2.unidades[k.slice(2)].costo : '')).join('')}</div></div>`;
+    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie', 'jefe'] : [])].map(k => 'z:' + k))).join('');
+    document.getElementById('b2-unidades').innerHTML = ['inf', 'mec', 'est'].map(c => fila(c, BASTION2.clases[c].map(k => 'u:' + k), true)).join('');
     const guardada = BastionV2.partida(), seguir = document.getElementById('b2-continuar');
     seguir.classList.toggle('oculta', !guardada);
-    if (guardada) seguir.textContent = t('b2.continuar', { ola: guardada.ronda + 1, total: BASTION2.niveles.granja.oleadas.length });
+    if (guardada) seguir.textContent = t('b2.continuar', { ola: guardada.ronda + 1, total: BastionV2.oleadas().length });
     this.mostrarFicha(elegida);
   },
   mostrarFicha(clave) {
-    const [clase, id] = clave.split(':'), k = 'b2.' + clase + '.' + id;
     document.querySelectorAll('.b2-ficha').forEach(b => b.classList.toggle('elegida', b.dataset.ficha === clave));
-    document.getElementById('b2-detalle').innerHTML =
-      `<img src="${this.retrato(clave, 112)}" alt=""><div><h3>${t(k)}</h3><p>${t(k + '.hace')}</p>` +
-      `<p><b class="mas">${t('b2.fuerte')}</b> ${t(k + '.fuerte')}</p><p><b class="menos">${t('b2.debil')}</b> ${t(k + '.debil')}</p>` +
-      `<p><b>${t(clase === 'z' ? 'b2.frenar' : 'b2.usar')}</b> ${t(k + '.uso')}</p></div>`;
+    document.getElementById('b2-detalle').innerHTML = this.ficha(clave);
   },
 
-  /* ---------- En la partida: parte de la próxima oleada y qué hace lo que se está por poner ---------- */
+  /* ---------- El panel de la partida ---------- */
+  armarPanel() {
+    const panel = document.getElementById('panel-bastion'); if (!panel || document.getElementById('b2-barra')) return;
+    const teclas = Object.fromEntries(Object.entries(BastionV2.TECLAS).map(([codigo, tipo]) => [tipo, codigo.replace(/^(Digit|Key)/, '')]));
+    const boton = tipo => `<button type="button" data-unidad="${tipo}"><img alt=""><small></small><span class="cola"></span><span class="avance"></span><kbd>${teclas[tipo] || ''}</kbd></button>`;
+    const herramienta = tipo => `<button type="button" class="herr" data-unidad="${tipo}"><b></b><small></small><kbd>${teclas[tipo] || ''}</kbd></button>`;
+    const barra = document.createElement('div'); barra.id = 'b2-barra'; barra.className = 'b2-barra';
+    barra.innerHTML = ['inf', 'mec', 'est'].map(c => `<div class="b2-grupo ${c}">${BASTION2.clases[c].map(boton).join('')}</div>`).join('') +
+      `<div class="b2-grupo herr">${['vender', 'reparar', 'mover'].map(herramienta).join('')}</div><button type="button" id="b2-oleada" class="b2-oleada"></button>`;
+    panel.appendChild(barra);
+    barra.querySelector('#b2-oleada').addEventListener('click', () => { const j = window.ZonaMuerta && ZonaMuerta.juego(); if (j && j.estrategia) j.oleadaYa(); });
+  },
+  panel(j) {
+    this.armarPanel();
+    const B = BASTION, barra = document.getElementById('b2-barra'); if (!barra) return;
+    const total = j.nivelV2.oleadas.length, idioma = Idioma.actual();
+    document.getElementById('bastion-dinero').textContent = '$ ' + j.dinero;
+    document.getElementById('bastion-ola').textContent = t('bastion.olaDe', { n: Math.max(1, j.ronda), total });
+    const base = document.getElementById('bastion-base');
+    base.textContent = t('bastion.base', { v: j.vidaBase, max: B.vidaBase }); base.classList.toggle('peligro', j.vidaBase <= B.vidaBase * 0.3);
+    for (const b of barra.querySelectorAll('[data-unidad]')) {
+      const tipo = b.dataset.unidad, U = B.unidades[tipo];
+      b.classList.toggle('elegida', j.colocando === tipo);
+      if (!U) {   // herramientas
+        if (b.dataset.idioma !== idioma) { b.dataset.idioma = idioma; b.querySelector('b').textContent = t('bastion.' + tipo); }
+        b.querySelector('small').textContent = tipo === 'vender' ? (j.enDescanso ? '¾' : '½') : tipo === 'reparar' ? '¾' : '';
+        continue;
+      }
+      if (b.dataset.idioma !== idioma) { b.dataset.idioma = idioma; b.title = t('b2.u.' + tipo); const img = b.querySelector('img'); img.src = this.retrato('u:' + tipo, 40); img.alt = t('b2.u.' + tipo); }
+      const precio = '$' + U.costo, chico = b.querySelector('small'); if (chico.textContent !== precio) chico.textContent = precio;   // (el panel del modo de siempre también escribe en los botones que comparten nombre)
+      b.classList.toggle('caro', j.dinero < U.costo);
+      const cola = U.donde === 'cuartel' ? j.colaCuartel : U.donde === 'taller' ? j.colaTaller : null;
+      const enCola = cola ? cola.filter(o => o.tipo === tipo).length : 0;
+      b.querySelector('.cola').textContent = enCola ? '×' + enCola : '';
+      const avance = cola && cola[0] && cola[0].tipo === tipo ? Math.min(1, (cola[0].hecho || 0) / U.tiempo) : 0;
+      b.querySelector('.avance').style.width = Math.round(avance * 100) + '%';
+    }
+    for (const b of document.querySelectorAll('#panel-bastion [data-velocidad]')) b.classList.toggle('elegida', +b.dataset.velocidad === j.velocidad);
+    const ola = document.getElementById('b2-oleada');
+    if (j.enDescanso) { ola.disabled = false; ola.textContent = t('bastion.proxima', { n: j.ronda + 1, s: Math.max(0, Math.ceil(j.descansoHasta - j.tiempoJugado)) }); }
+    else { ola.disabled = true; ola.textContent = t('bastion.enCurso', { n: j.ronda, q: j.porAparecer + j.zombies.filter(z => z.estado !== 'muerto').length }); }
+    this.parte(j);
+  },
+
+  /* ---------- Parte de la oleada, renglón de información y marcas de contrapeso ---------- */
   parte(j) {
-    const el = document.getElementById('bastion-parte'), info = document.getElementById('bastion-info');
-    if (!el || !info) return;
-    const total = j.nivelV2.oleadas.length, ver = j.enDescanso && j.ronda < total && !j.terminado;
-    el.classList.toggle('oculta', !ver);
-    const clave = ver ? j.ronda + ':' + Idioma.actual() : '';
+    const el = document.getElementById('bastion-parte'), info = document.getElementById('bastion-info'), barra = document.getElementById('b2-barra');
+    if (!el || !info || !barra) return;
+    const total = j.nivelV2.oleadas.length, n = j.enDescanso ? j.ronda : j.ronda - 1, ver = n < total && n >= 0 && !j.terminado;
+    el.classList.toggle('oculta', !ver); el.classList.toggle('en-curso', !j.enDescanso);
+    const clave = ver ? n + ':' + j.enDescanso + ':' + Idioma.actual() : '';
+    const def = ver ? j.nivelV2.oleadas[n] : {}, debut = BastionV2.debut();
+    let rehecho = false;
     if (clave !== this.parteDe) {
-      this.parteDe = clave;
-      const def = ver ? j.nivelV2.oleadas[j.ronda] : {};
-      el.innerHTML = ver ? `<b>${t('b2.parte', { n: j.ronda + 1 })}</b>` + ['caminante', 'corredor', 'gordo', 'jefe'].filter(k => def[k]).map(k => `<span class="chip" title="${t('b2.z.' + k)}"><img src="${this.retrato('z:' + k, 44)}" alt="${t('b2.z.' + k)}"><i>×${def[k]}</i></span>`).join('') : '';
+      this.parteDe = clave; rehecho = true;
+      el.innerHTML = ver ? `<b>${t('b2.parte', { n: n + 1 })}</b>` + BASTION2.ordenParte.filter(k => def[k]).map(k => {
+        const nuevo = debut[k] === n && n > 0;
+        return `<button type="button" class="chip${nuevo ? ' nuevo' : ''}" data-ficha-z="${k}" title="${t('b2.z.' + k)}"><img src="${this.retrato('z:' + k, 44)}" alt="${t('b2.z.' + k)}"><i>×${def[k]}</i>${nuevo ? `<u>${t('b2.nuevo')}</u>` : ''}</button>`;
+      }).join('') : '';
     }
-    const tipo = BASTION2.orden.includes(j.colocando) ? j.colocando : '', claveInfo = tipo + ':' + Idioma.actual();
-    info.classList.toggle('oculta', !tipo);
-    if (claveInfo !== this.infoDe) { this.infoDe = claveInfo; info.textContent = tipo ? t('b2.u.' + tipo) + ': ' + t('b2.u.' + tipo + '.hace') + ' ' + t('b2.u.' + tipo + '.uso') : ''; }
-  },
-
-  /* ---------- Sobre la escena: el «te vi», desde dónde ven a lo que se va a poner y las celdas de barro ---------- */
-  encima(j) {
-    const ctx = j.ctx, cam = j.camaraBastion(), ahora = j.ahora, B = BASTION, [W, H] = B.celda;
-    ctx.save(); ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
-    ctx.textAlign = 'center'; ctx.lineJoin = 'round';
-    // El zombie que acaba de ver a alguien
-    ctx.font = 'bold 14px "Trebuchet MS", sans-serif';
-    for (const z of j.zombies) {
-      if (z.estado === 'muerto' || !(z.alerta > ahora) || !z.presa) continue;
-      const P = cam.proyectar(z.x, z.y), y = P.y - (70 * z.escala + 12) * P.s;
-      ctx.globalAlpha = Math.min(1, (z.alerta - ahora) / 300);
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(20,8,6,0.85)'; ctx.strokeText('!', P.x, y); ctx.fillStyle = '#ffd23a'; ctx.fillText('!', P.x, y);
-    }
-    ctx.globalAlpha = 1;
-    const U = j.colocando && B.unidades[j.colocando];
-    if (U && j.puntero && !j.terminado) {
-      const celda = (c, f) => [[0, 0], [1, 0], [1, 1], [0, 1]].map(([i, k]) => cam.proyectar(B.baseX + (c + i) * W, B.arriba + (f + k) * H));
-      // Lo pesado no va en el barro: esas celdas, tachadas
-      if (j.colocando !== 'soldado' && !U.liviano) {
-        ctx.fillStyle = 'rgba(240,80,70,0.2)'; ctx.strokeStyle = 'rgba(240,80,70,0.5)'; ctx.lineWidth = 1;
-        for (let f = 0; f < j.filas; f++) for (let c = 0; c < j.cols; c++) {
-          if (j.terrenoEn(c, f) !== 'barro') continue;
-          const q = celda(c, f);
-          ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[2].x, q[2].y); ctx.moveTo(q[1].x, q[1].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
-        }
-      }
-      const { c, f } = j.celdaDe(j.puntero.x, j.puntero.y);
-      if (j.dentro(c, f)) {
-        const p = j.centroCelda(c, f);
-        const anillo = (radio, color, guion) => {
-          ctx.strokeStyle = color; ctx.lineWidth = 1.3; ctx.setLineDash(guion); ctx.beginPath();
-          for (let i = 0; i <= 56; i++) { const a = i / 56 * Math.PI * 2, q = cam.proyectar(p.x + Math.cos(a) * radio, p.y + Math.sin(a) * radio / 1.3); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
-          ctx.stroke(); ctx.setLineDash([]);
-        };
-        if (j.colocando === 'soldado' || j.colocando === 'torreta' || j.colocando === 'bunker') {   // desde dónde lo ve un zombie común
-          const radio = BASTION2.zombies.caminante.vista * BASTION2.celda;
-          anillo(radio, 'rgba(255,120,95,0.8)', [2, 4]);
-          const arriba = cam.proyectar(p.x, p.y - radio / 1.3), abajo = cam.proyectar(p.x, p.y + radio / 1.3), yT = arriba.y > 46 ? arriba.y - 5 : abajo.y + 11;   // arriba del anillo; si no entra, abajo
-          ctx.font = 'bold 9px "Trebuchet MS", sans-serif'; ctx.lineWidth = 2.6; ctx.strokeStyle = 'rgba(20,8,6,0.8)'; ctx.strokeText(t('b2.teVen'), arriba.x, yT); ctx.fillStyle = '#ff9c88'; ctx.fillText(t('b2.teVen'), arriba.x, yT);
-        }
-        if (U.atrae) anillo(U.atrae * BASTION2.celda, 'rgba(255,230,170,0.6)', [5, 5]);   // hasta dónde llama el señuelo
+    // El tipo que debuta se presenta solo, una vez, al empezar el descanso
+    const estrena = ver && j.enDescanso && n > 0 ? BASTION2.ordenParte.find(k => def[k] && debut[k] === n) : null;
+    if (estrena && this.debutVisto !== n) { this.debutVisto = n; this.verZombie(estrena, 12000); }
+    // Elegir otra cosa en la barra deja de mostrar al zombie que se había tocado
+    if (j.colocando !== this.colocandoVisto) { this.colocandoVisto = j.colocando; if (j.colocando) this.verZombie(null); }
+    if (this.zombieVisto && (performance.now() > this.zombieHasta || j.terminado)) this.verZombie(null);
+    const unidad = BASTION2.unidades[j.colocando] ? j.colocando : '', zombie = this.zombieVisto;
+    // Renglón de arriba de la barra: el zombie que se tocó (o que debuta) o, si no, lo que se está por poner
+    const claveInfo = (zombie ? 'z:' + zombie : unidad ? 'u:' + unidad : '') + ':' + Idioma.actual();
+    info.classList.toggle('oculta', !zombie && !unidad);
+    if (claveInfo !== this.infoDe || rehecho) {
+      this.infoDe = claveInfo;
+      if (zombie) info.innerHTML = `<b>${t('b2.z.' + zombie)}</b>${debut[zombie] === n && n > 0 ? ` <i class="b2-nuevo">${t('b2.nuevo')}</i>` : ''} ${t('b2.z.' + zombie + '.hace')} ${t('b2.z.' + zombie + '.fuerte')}`;
+      else if (unidad) info.innerHTML = `<b>${t('b2.u.' + unidad)}</b> ${t('b2.u.' + unidad + '.hace')} ${t('b2.u.' + unidad + '.uso')}`;
+      info.classList.toggle('zombie', !!zombie);
+      // Marcas: con un zombie a la vista, en la barra (qué lo frena y qué no sirve); con una unidad elegida, en el parte
+      const CZ = zombie ? BASTION2.contra[zombie] : null;
+      for (const b of barra.querySelectorAll('[data-unidad]')) { const u = b.dataset.unidad; b.classList.toggle('bien', !!CZ && CZ.bien.includes(u)); b.classList.toggle('mal', !!CZ && CZ.mal.includes(u)); }
+      for (const c of el.querySelectorAll('.chip')) {
+        const C = BASTION2.contra[c.dataset.fichaZ];
+        c.classList.toggle('vista', c.dataset.fichaZ === zombie);
+        c.classList.toggle('bien', !zombie && !!unidad && C.bien.includes(unidad)); c.classList.toggle('mal', !zombie && !!unidad && C.mal.includes(unidad));
       }
     }
-    ctx.restore();
   },
+  // Deja a la vista un zombie del parte por ms milisegundos (null: ninguno)
+  verZombie(tipo, ms = 9000) { this.zombieVisto = tipo || ''; this.zombieHasta = tipo ? performance.now() + ms : 0; },
 };
-document.addEventListener('click', e => { const b = e.target.closest('[data-ficha]'); if (b) BastionV2UI.mostrarFicha(b.dataset.ficha); });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-ficha]'); if (b) { BastionV2UI.mostrarFicha(b.dataset.ficha); return; }
+  const chip = e.target.closest('[data-ficha-z]');   // tocar un tipo del parte lo deja a la vista; tocarlo de nuevo lo saca
+  if (chip) { BastionV2UI.verZombie(BastionV2UI.zombieVisto === chip.dataset.fichaZ ? null : chip.dataset.fichaZ); const j = window.ZonaMuerta && ZonaMuerta.juego(); if (j && j.v2) j.panelBastion(); }
+});
 Idioma.alCambiar(() => {   // con la pantalla previa abierta, las fichas pasan al idioma nuevo
   const panel = document.getElementById('panel-bastion2'), elegida = document.querySelector('.b2-ficha.elegida');
   if (panel && panel.classList.contains('visible')) BastionV2UI.pintar(elegida ? elegida.dataset.ficha : 'z:caminante');
 });
 
-/* ---------- Textos (español de México, portugués de Brasil e inglés) ---------- */
+/* ---------- Textos ---------- */
+// Fichas: [nombre, qué hace, fuerte, débil, cómo usarlo (unidades) o cómo frenarlo (zombies)]
+const FICHAS_B2 = {
+  es: {
+    u: {
+      soldado: ['Soldado raso', 'Dispara un fusil de alcance medio.', 'Barato y rápido de formar. Le tira a lo que camina y a lo que vuela. Llena los búnkeres.', 'Lo ven enseguida y aguanta poco. Contra blindaje, sus balas hacen un tercio.', 'Nunca suelto en primera línea: detrás de un muro o dentro de un búnker.'],
+      francotirador: ['Francotirador', 'Abate de un tiro fuerte y lejano cada 3 segundos.', 'Dispara desde fuera de la vista de casi todos. Ignora el blindaje y elige solo al más peligroso. También baja buitres.', 'Un blanco a la vez: la horda le pasa por encima. Aguanta muy poco. Lo delata el gritón, lo huelen los perros y se lo lleva el buitre.', 'Lejos del frente, con algo que lo cubra, o dentro de un búnker.'],
+      lanzallamas: ['Lanzallamas', 'Quema a todos los que tiene a 2 celdas y los deja ardiendo.', 'Pega a todo el montón a la vez y el fuego ignora el blindaje. Perros y toro no cruzan el fuego.', 'Siempre está a la vista. No llega a lo que vuela. Hace estallar en su cara al hinchado y al dinamitero, y enciende el gas.', 'En el hueco por donde pasa la horda, detrás de un muro o de alambrado.'],
+      medico: ['Médico', 'Cura a la infantería que tiene a 2 celdas. No dispara.', 'Quien cae a su lado no se contagia. Con él cerca, el gas no vacía los búnkeres.', 'No hace daño y es presa como cualquiera. No arregla máquinas ni estructuras.', 'Pegado a tu gente o dentro de un búnker, del lado del campamento.'],
+      torreta: ['Torreta', 'Barre con ráfagas de ametralladora.', 'Mucho fuego: nada rápido se le escapa. Acaba con jaurías, corredores y dinamiteros.', 'Balas chicas: contra blindaje rinde la mitad. No apunta al aire. Atrae a la horda y no se mueve.', 'Detrás de alambrado o de un muro, apuntando al hueco.'],
+      tanque: ['Tanque', 'Aguanta al frente y voltea a los pesados con su cañón.', 'Tiene 400 de vida y las mordidas le hacen un tercio. Su cañón ignora el blindaje y busca al que más aguanta. El gas no le entra. Se puede mover.', 'Un solo blanco por disparo: no para una horda ni una jauría. Lo buscan el hinchado y el dinamitero. Nada contra lo que vuela. Caro.', 'De ancla al frente: la horda se frena contra él mientras lo demás dispara.'],
+      mortero: ['Mortero', 'Bombardea con granadas que estallan en un área.', 'Tira de 4 a 9 celdas, por encima de los muros y desde fuera de la vista. Castiga al montón que se frenó.', 'La granada tarda 1.5 segundos: falla contra lo rápido. Ciego a menos de 4 celdas. Nada contra lo que vuela.', 'Bien atrás, apuntando adonde la horda se frena: un búnker, el tanque o un señuelo.'],
+      antiaerea: ['Antiaérea', 'Derriba lo que vuela con ráfagas que estallan en el aire.', 'Limpia una bandada entera y baja al buitre. Alcanza 6 celdas.', 'No baja el cañón: inútil contra lo que camina.', 'Cerca del campamento y al centro: todo lo que vuela termina pasando por ahí.'],
+      muro: ['Muro', 'Bloquea el paso.', 'Barato y resistente. Desvía a los que no ven a nadie y es el escudo de quien está detrás. Perros y toro no lo pasan.', 'Lo vuela el dinamitero y lo rompe el gordo. Lo que vuela lo ignora. No se puede cerrar el paso del todo.', 'Delante de tu gente, no al lado.'],
+      alambrado: ['Alambrado', 'Frena y lastima sin bloquear.', 'Los zombies lo cruzan a menos de la mitad de velocidad y pierden una quinta parte de la vida. Va en el barro. Carnada para el hinchado.', 'Se gasta: unas 20 pisadas. Los perros lo saltan, el gordo lo aplasta y el toro lo arranca.', 'Bajo el fuego de tus torretas, dos celdas delante de lo valioso.'],
+      bunker: ['Búnker', 'Protege hasta a 4 de infantería, que disparan desde adentro.', 'Adentro no los muerden, ni los picotean, ni se los llevan, y tiran 20 % más lejos. Aguanta mucho y frena a la horda donde conviene.', 'Lo buscan el hinchado y el dinamitero. El gas entra. Si cae, su gente queda a pie en medio de la horda.', 'De ancla al frente, lleno de soldados; con un médico adentro si vienen tóxicos.'],
+      senuelo: ['Señuelo', 'Altavoz que llama a los caminantes.', 'Comunes, corredores y acorazados a 5 celdas dejan lo que estén haciendo, hasta de morder, y lo golpean 5 segundos. Carnada para el hinchado.', 'Se gasta: entretiene a unos 20. No engaña dos veces al mismo. No llama a animales ni a especiales, y el gordo lo aplasta.', 'Donde apuntan el mortero y las torretas, lejos de tu gente.'],
+    },
+    z: {
+      caminante: ['Común', 'Va por el primer humano que ve a 3 celdas; si no ve a nadie, al campamento.', 'Viene de a muchos y contagia. Rompe el muro que tapa a su presa.', 'Lento y sin protección. Se amontona: el fuego y las granadas lo barren. Sigue a cualquier señuelo.', 'Mortero o lanzallamas donde se frena; señuelo para llevarlo adonde quieras.'],
+      corredor: ['Corredor', 'Ve a 4 celdas y rodea los muros buscando el hueco.', 'Rápido: pasa poco tiempo bajo fuego y llega antes que los demás.', 'Aguanta menos. Nunca rompe: si no hay hueco, sigue de largo. El alambrado y el barro le quitan su ventaja.', 'Alambrado y torreta.'],
+      gordo: ['Gordo', 'Nunca rodea: va derecho y rompe todo lo que tiene delante.', 'Tres veces la vida del común y muerde más fuerte. Abre el laberinto para los demás. Aplasta alambrado y señuelo.', 'Lento, ve poco y es blanco fácil para los golpes fuertes.', 'Tanque y francotirador.'],
+      acorazado: ['Acorazado', 'Como el común, con casco y escudo.', 'Blindaje: la torreta le hace la mitad y el fusil, un tercio. Tiene el doble de vida.', 'Lento. El escudo no frena al francotirador, al cañón, al fuego ni a las explosiones.', 'Francotirador y tanque; lanzallamas si llega cerca.'],
+      griton: ['Gritón', 'Ve a 6 celdas y grita: delata a tu gente.', 'Los zombies a 5 celdas van por los humanos que él ve y se apuran 30 %. Descubre a francotiradores y morteros escondidos.', 'Casi no pelea y aguanta poco.', 'Francotirador, que lo elige primero; torreta si se acerca.'],
+      hinchado: ['Hinchado', 'Camina hacia lo construido más cercano y estalla al tocarlo o al morir.', 'Su explosión destroza defensas amontonadas y mata a la infantería cercana.', 'Lento. La explosión también mata zombies: reventado lejos, limpia la horda. Va igual a un alambrado de $15 que a una torreta.', 'Francotirador de lejos; alambrado o señuelo de carnada; no amontones tus defensas.'],
+      dinamitero: ['Dinamitero', 'Corre derecho al campamento y vuela la primera construcción que le corta el paso.', 'Le saca 120 de vida de un golpe a un muro, una torreta, un búnker o el tanque. Abre camino a los que vienen detrás.', 'Frágil. No ataca a la gente. A balazos cae sin estallar, y el alambrado lo deja bajo fuego.', 'Torreta y soldados; alambrado delante de lo que cierra el paso.'],
+      toxico: ['Tóxico', 'Caza donde hay más gente junta; al morir deja una nube de gas 5 segundos.', 'El gas daña a la infantería y vacía los búnkeres de a uno. Quien muere por gas se contagia.', 'El gas no entra a las máquinas ni daña estructuras. Si muere lejos, no llega. El fuego enciende la nube.', 'Francotirador de lejos; tanque; un médico para aguantar.'],
+      perro: ['Jauría', 'Cinco perros que huelen a la gente a pie a 6 celdas, aun detrás de un muro.', 'Muy rápidos. Rodean los muros y saltan el alambrado, los fardos y el tractor. Matan a un soldado suelto en un segundo.', 'Poca vida. A los protegidos ni los miran. No entran al agua ni cruzan el fuego.', 'Torreta; gente en búnker; lanzallamas.'],
+      toro: ['Toro', 'Embiste en línea recta a la gente a pie.', 'Derriba y aturde 2 segundos a todos los que atropella. Cuatro veces la vida del común. Arranca el alambrado.', 'Avisa antes de cargar, sólo va derecho y queda quieto 2 segundos después. No toca muros, búnkeres ni máquinas. No cruza el fuego.', 'Gente en búnker o detrás de un muro; tanque y francotirador mientras está quieto.'],
+      cuervo: ['Bandada', 'Seis cuervos que vuelan sobre todo y ven todo el campo.', 'Pasan sobre muros, agua y obstáculos. Picotean a la gente a pie; si no hay, cada uno le saca 1 al campamento.', 'Poca vida. No pueden con búnkeres ni máquinas.', 'Antiaérea; soldados dentro de un búnker.'],
+      buitre: ['Buitre', 'Vuela hasta alguien a pie, lo levanta y lo suelta en medio de la horda.', 'Primero se lleva a los que más valen: francotirador, médico, lanzallamas. Nada que camine lo alcanza.', 'Lento y de a uno. No puede con los protegidos. Blanco grande para fusiles y antiaérea.', 'Antiaérea; un soldado que cubra a tu tirador; búnker.'],
+      soldadoZombie: ['Soldado zombie', 'Es tu soldado contagiado: se levanta a los 3 segundos de caer.', 'Conserva casco y chaleco: blindaje 1 y más vida que un común.', 'Sólo aparece si pierdes gente. Con un médico cerca, el que cae no se contagia.', 'No pierdas infantería: búnker, muro de escudo y médico.'],
+      jefe: ['El Coloso', 'Jefe de las oleadas 6 y 12: va derecho y rompe todo.', 'Tiene 22 veces la vida del común y muerde el triple. Si entra, le saca 8 al campamento.', 'Muy lento.', 'Fuego concentrado: tanque, francotiradores y todo lo que haya.'],
+    },
+  },
+  pt: {
+    u: {
+      soldado: ['Soldado raso', 'Atira com um fuzil de alcance médio.', 'Barato e rápido de formar. Atira no que anda e no que voa. Enche os bunkers.', 'É visto logo e aguenta pouco. Contra blindagem, suas balas fazem um terço.', 'Nunca solto na linha de frente: atrás de um muro ou dentro de um bunker.'],
+      francotirador: ['Atirador de elite', 'Abate com um tiro forte e distante a cada 3 segundos.', 'Atira de fora da visão de quase todos. Ignora a blindagem e escolhe sozinho o mais perigoso. Também derruba abutres.', 'Um alvo por vez: a horda passa por cima. Aguenta muito pouco. O gritador o denuncia, os cães o farejam e o abutre o leva.', 'Longe da frente, com algo que o cubra, ou dentro de um bunker.'],
+      lanzallamas: ['Lança-chamas', 'Queima todos a até 2 casas e os deixa em chamas.', 'Acerta o grupo inteiro de uma vez e o fogo ignora a blindagem. Cães e touro não cruzam o fogo.', 'Está sempre à vista. Não alcança o que voa. Faz o inchado e o dinamitador explodirem na cara dele e acende o gás.', 'No vão por onde a horda passa, atrás de um muro ou de arame farpado.'],
+      medico: ['Médico', 'Cura a infantaria a até 2 casas. Não atira.', 'Quem cai ao lado dele não se contagia. Com ele por perto, o gás não esvazia os bunkers.', 'Não causa dano e é presa como qualquer um. Não conserta máquinas nem estruturas.', 'Junto do seu pessoal ou dentro de um bunker, do lado do acampamento.'],
+      torreta: ['Torre', 'Varre com rajadas de metralhadora.', 'Muito fogo: nada rápido escapa. Acaba com matilhas, corredores e dinamitadores.', 'Balas pequenas: contra blindagem rende a metade. Não mira para o ar. Atrai a horda e não se move.', 'Atrás de arame farpado ou de um muro, apontando para o vão.'],
+      tanque: ['Tanque', 'Aguenta na frente e derruba os pesados com o canhão.', 'Tem 400 de vida e as mordidas fazem um terço. O canhão ignora a blindagem e busca quem mais aguenta. O gás não entra. Pode se mover.', 'Um só alvo por disparo: não para uma horda nem uma matilha. O inchado e o dinamitador o procuram. Nada contra o que voa. Caro.', 'De âncora na frente: a horda para nele enquanto o resto atira.'],
+      mortero: ['Morteiro', 'Bombardeia com granadas que explodem em área.', 'Atira de 4 a 9 casas, por cima dos muros e de fora da visão. Castiga o grupo que parou.', 'A granada leva 1,5 segundo: erra o que é rápido. Cego a menos de 4 casas. Nada contra o que voa.', 'Bem atrás, apontando para onde a horda para: um bunker, o tanque ou uma isca.'],
+      antiaerea: ['Antiaérea', 'Derruba o que voa com rajadas que explodem no ar.', 'Limpa um bando inteiro e derruba o abutre. Alcança 6 casas.', 'Não abaixa o canhão: inútil contra o que anda.', 'Perto do acampamento e no centro: tudo o que voa acaba passando por ali.'],
+      muro: ['Muro', 'Bloqueia a passagem.', 'Barato e resistente. Desvia quem não vê ninguém e é o escudo de quem está atrás. Cães e touro não passam.', 'O dinamitador o explode e o gordo o quebra. O que voa o ignora. Não dá para fechar a passagem de vez.', 'Na frente do seu pessoal, não ao lado.'],
+      alambrado: ['Arame farpado', 'Freia e fere sem bloquear.', 'Os zumbis o cruzam a menos da metade da velocidade e perdem um quinto da vida. Vai na lama. Isca para o inchado.', 'Gasta: umas 20 pisadas. Os cães o pulam, o gordo o esmaga e o touro o arranca.', 'Sob o fogo das suas torres, duas casas à frente do que é valioso.'],
+      bunker: ['Bunker', 'Protege até 4 de infantaria, que atiram de dentro.', 'Lá dentro não são mordidos, nem bicados, nem levados, e atiram 20 % mais longe. Aguenta muito e segura a horda onde convém.', 'O inchado e o dinamitador o procuram. O gás entra. Se cair, o pessoal fica a pé no meio da horda.', 'De âncora na frente, cheio de soldados; com um médico dentro se vierem tóxicos.'],
+      senuelo: ['Isca', 'Alto-falante que chama os caminhantes.', 'Comuns, corredores e blindados a até 5 casas largam o que estiverem fazendo, até de morder, e batem nele por 5 segundos. Isca para o inchado.', 'Gasta: distrai uns 20. Não engana o mesmo duas vezes. Não chama animais nem especiais, e o gordo o esmaga.', 'Onde o morteiro e as torres apontam, longe do seu pessoal.'],
+    },
+    z: {
+      caminante: ['Comum', 'Vai atrás do primeiro humano que vê a até 3 casas; se não vê ninguém, vai para o acampamento.', 'Vem em grande número e contagia. Quebra o muro que esconde a presa.', 'Lento e sem proteção. Amontoa-se: fogo e granadas o varrem. Segue qualquer isca.', 'Morteiro ou lança-chamas onde ele para; isca para levá-lo aonde quiser.'],
+      corredor: ['Corredor', 'Vê a até 4 casas e contorna os muros procurando o vão.', 'Rápido: passa pouco tempo sob fogo e chega antes dos outros.', 'Aguenta menos. Nunca quebra: sem vão, segue em frente. O arame farpado e a lama tiram a vantagem dele.', 'Arame farpado e torre.'],
+      gordo: ['Gordo', 'Nunca contorna: vai reto e quebra tudo o que tem pela frente.', 'Três vezes a vida do comum e morde mais forte. Abre o labirinto para os outros. Esmaga arame farpado e isca.', 'Lento, vê pouco e é alvo fácil para golpes fortes.', 'Tanque e atirador de elite.'],
+      acorazado: ['Blindado', 'Como o comum, com capacete e escudo.', 'Blindagem: a torre faz a metade e o fuzil, um terço. Tem o dobro de vida.', 'Lento. O escudo não segura o atirador de elite, o canhão, o fogo nem as explosões.', 'Atirador de elite e tanque; lança-chamas se chegar perto.'],
+      griton: ['Gritador', 'Vê a até 6 casas e grita: denuncia o seu pessoal.', 'Os zumbis a até 5 casas vão atrás dos humanos que ele vê e aceleram 30 %. Revela atiradores e morteiros escondidos.', 'Quase não luta e aguenta pouco.', 'Atirador de elite, que o escolhe primeiro; torre se chegar perto.'],
+      hinchado: ['Inchado', 'Anda até a construção mais próxima e explode ao tocá-la ou ao morrer.', 'A explosão destrói defesas amontoadas e mata a infantaria por perto.', 'Lento. A explosão também mata zumbis: estourado longe, limpa a horda. Vai tanto a um arame de $15 quanto a uma torre.', 'Atirador de elite de longe; arame farpado ou isca como chamariz; não amontoe as defesas.'],
+      dinamitero: ['Dinamitador', 'Corre reto para o acampamento e explode a primeira construção que fecha o caminho.', 'Tira 120 de vida de uma vez de um muro, uma torre, um bunker ou do tanque. Abre caminho para os que vêm atrás.', 'Frágil. Não ataca pessoas. A tiros cai sem explodir, e o arame farpado o deixa sob fogo.', 'Torre e soldados; arame farpado na frente do que fecha a passagem.'],
+      toxico: ['Tóxico', 'Caça onde há mais gente junta; ao morrer deixa uma nuvem de gás por 5 segundos.', 'O gás fere a infantaria e esvazia os bunkers um a um. Quem morre pelo gás se contagia.', 'O gás não entra nas máquinas nem fere estruturas. Se morrer longe, não chega. O fogo acende a nuvem.', 'Atirador de elite de longe; tanque; um médico para aguentar.'],
+      perro: ['Matilha', 'Cinco cães que farejam quem está a pé a até 6 casas, mesmo atrás de um muro.', 'Muito rápidos. Contornam os muros e pulam o arame farpado, os fardos e o trator. Matam um soldado solto em um segundo.', 'Pouca vida. Nem olham para os protegidos. Não entram na água nem cruzam o fogo.', 'Torre; pessoal em bunker; lança-chamas.'],
+      toro: ['Touro', 'Investe em linha reta contra quem está a pé.', 'Derruba e atordoa por 2 segundos todos os que atropela. Quatro vezes a vida do comum. Arranca o arame farpado.', 'Avisa antes de investir, só vai reto e fica parado 2 segundos depois. Não toca muros, bunkers nem máquinas. Não cruza o fogo.', 'Pessoal em bunker ou atrás de um muro; tanque e atirador de elite enquanto ele está parado.'],
+      cuervo: ['Bando', 'Seis corvos que voam por cima de tudo e veem o campo inteiro.', 'Passam sobre muros, água e obstáculos. Bicam quem está a pé; se não houver ninguém, cada um tira 1 do acampamento.', 'Pouca vida. Não podem com bunkers nem máquinas.', 'Antiaérea; soldados dentro de um bunker.'],
+      buitre: ['Abutre', 'Voa até alguém a pé, levanta-o e o solta no meio da horda.', 'Leva primeiro os que mais valem: atirador de elite, médico, lança-chamas. Nada que anda o alcança.', 'Lento e um por vez. Não pode com os protegidos. Alvo grande para fuzis e antiaérea.', 'Antiaérea; um soldado cobrindo o seu atirador; bunker.'],
+      soldadoZombie: ['Soldado zumbi', 'É o seu soldado contagiado: levanta 3 segundos depois de cair.', 'Mantém capacete e colete: blindagem 1 e mais vida que um comum.', 'Só aparece se você perder gente. Com um médico por perto, quem cai não se contagia.', 'Não perca infantaria: bunker, muro de escudo e médico.'],
+      jefe: ['O Colosso', 'Chefe das ondas 6 e 12: vai reto e quebra tudo.', 'Tem 22 vezes a vida do comum e morde o triplo. Se entrar, tira 8 do acampamento.', 'Muito lento.', 'Fogo concentrado: tanque, atiradores de elite e tudo o que houver.'],
+    },
+  },
+  en: {
+    u: {
+      soldado: ['Rifleman', 'Fires a medium-range rifle.', 'Cheap and quick to train. Shoots at what walks and what flies. Fills bunkers.', 'Spotted right away and fragile. Against armor, his bullets do a third.', 'Never loose on the front line: behind a wall or inside a bunker.'],
+      francotirador: ['Sniper', 'Takes one hard, long shot every 3 seconds.', 'Shoots from outside almost everyone’s sight. Ignores armor and picks the most dangerous target himself. Also brings down vultures.', 'One target at a time: the horde walks over him. Very fragile. The screamer gives him away, dogs smell him and the vulture carries him off.', 'Far from the front, with something covering him, or inside a bunker.'],
+      lanzallamas: ['Flamethrower', 'Burns everyone within 2 cells and leaves them on fire.', 'Hits the whole pack at once and fire ignores armor. Dogs and the bull will not cross fire.', 'Always in sight. Cannot reach what flies. Makes the bloater and the dynamiter blow up in his face, and ignites gas.', 'In the gap the horde walks through, behind a wall or barbed wire.'],
+      medico: ['Medic', 'Heals infantry within 2 cells. Does not shoot.', 'Whoever falls next to him is not infected. With him nearby, gas does not empty bunkers.', 'Deals no damage and is prey like anyone else. Does not fix machines or structures.', 'Right next to your people or inside a bunker, on the camp side.'],
+      torreta: ['Turret', 'Sweeps with machine-gun bursts.', 'Lots of fire: nothing fast gets away. Finishes packs, runners and dynamiters.', 'Small bullets: half effect against armor. Cannot aim at the sky. Draws the horde and does not move.', 'Behind barbed wire or a wall, aimed at the gap.'],
+      tanque: ['Tank', 'Holds the front and knocks down the heavy ones with its cannon.', 'It has 400 health and bites do a third. Its cannon ignores armor and goes for whoever has the most health. Gas cannot get in. It can move.', 'A single target per shot: it will not stop a horde or a pack. The bloater and the dynamiter go for it. Nothing against flyers. Expensive.', 'As a forward anchor: the horde stalls against it while everything else fires.'],
+      mortero: ['Mortar', 'Shells an area with grenades.', 'Fires from 4 to 9 cells, over walls and from out of sight. Punishes the pack that stalled.', 'The shell takes 1.5 seconds: it misses fast targets. Blind under 4 cells. Nothing against flyers.', 'Far back, aimed where the horde stalls: a bunker, the tank or a decoy.'],
+      antiaerea: ['Anti-air gun', 'Brings down flyers with bursts that explode in the air.', 'Clears a whole flock and brings down the vulture. Reaches 6 cells.', 'It cannot lower its barrels: useless against what walks.', 'Near the camp and in the middle: everything that flies ends up passing there.'],
+      muro: ['Wall', 'Blocks the way.', 'Cheap and sturdy. Diverts those who see nobody and shields whoever is behind it. Dogs and the bull cannot get past.', 'The dynamiter blows it up and the fat one breaks it. Flyers ignore it. You cannot close the way completely.', 'In front of your people, not beside them.'],
+      alambrado: ['Barbed wire', 'Slows and hurts without blocking.', 'Zombies cross it at less than half speed and lose a fifth of their health. Goes on mud. Bait for the bloater.', 'It wears out: about 20 crossings. Dogs jump it, the fat one flattens it and the bull rips it out.', 'Under your turrets’ fire, two cells ahead of what matters.'],
+      bunker: ['Bunker', 'Shelters up to 4 infantry, who shoot from inside.', 'Inside they cannot be bitten, pecked or carried off, and they shoot 20% farther. Very sturdy and stalls the horde where you want.', 'The bloater and the dynamiter go for it. Gas gets in. If it falls, its people are left on foot among the horde.', 'As a forward anchor, full of riflemen; with a medic inside if toxics are coming.'],
+      senuelo: ['Decoy', 'Loudspeaker that calls walkers.', 'Walkers, runners and armored ones within 5 cells drop whatever they are doing, biting included, and hit it for 5 seconds. Bait for the bloater.', 'It wears out: it distracts about 20. It never fools the same one twice. It does not call animals or specials, and the fat one flattens it.', 'Where the mortar and the turrets aim, away from your people.'],
+    },
+    z: {
+      caminante: ['Walker', 'Goes for the first human it sees within 3 cells; if it sees nobody, for the camp.', 'Comes in numbers and infects. Breaks the wall hiding its prey.', 'Slow and unprotected. It bunches up: fire and shells sweep it. Follows any decoy.', 'Mortar or flamethrower where it stalls; a decoy to lead it wherever you want.'],
+      corredor: ['Runner', 'Sees 4 cells away and goes around walls looking for the gap.', 'Fast: spends little time under fire and arrives before the rest.', 'Less health. Never breaks anything: with no gap, it runs past. Barbed wire and mud take away its edge.', 'Barbed wire and turret.'],
+      gordo: ['Fat one', 'Never goes around: walks straight and breaks whatever is in front.', 'Three times a walker’s health and a harder bite. Opens the maze for the rest. Flattens barbed wire and decoys.', 'Slow, short-sighted and an easy target for heavy hits.', 'Tank and sniper.'],
+      acorazado: ['Armored', 'Like the walker, with helmet and shield.', 'Armor: the turret does half and the rifle a third. Twice the health.', 'Slow. The shield does not stop the sniper, the cannon, fire or explosions.', 'Sniper and tank; flamethrower if it gets close.'],
+      griton: ['Screamer', 'Sees 6 cells away and screams: it gives your people away.', 'Zombies within 5 cells go for the humans it sees and speed up 30%. Reveals hidden snipers and mortars.', 'Barely fights and has little health.', 'Sniper, who picks it first; turret if it gets close.'],
+      hinchado: ['Bloater', 'Walks to the nearest thing you built and blows up on touching it or on dying.', 'Its blast wrecks defenses packed together and kills nearby infantry.', 'Slow. The blast also kills zombies: popped far away, it clears the horde. It goes for a $15 wire just like for a turret.', 'Sniper from afar; barbed wire or a decoy as bait; do not pack your defenses together.'],
+      dinamitero: ['Dynamiter', 'Runs straight for the camp and blows up the first building in its way.', 'Takes 120 health in one hit from a wall, a turret, a bunker or the tank. Opens the way for those behind.', 'Fragile. Does not attack people. Shot down, it falls without exploding, and barbed wire keeps it under fire.', 'Turret and riflemen; barbed wire in front of what closes the way.'],
+      toxico: ['Toxic', 'Hunts where most people stand together; on dying it leaves a gas cloud for 5 seconds.', 'Gas hurts infantry and empties bunkers one by one. Whoever dies from gas is infected.', 'Gas does not get into machines or hurt structures. If it dies far away, the gas does not reach. Fire ignites the cloud.', 'Sniper from afar; tank; a medic to hold on.'],
+      perro: ['Pack', 'Five dogs that smell people on foot from 6 cells, even behind a wall.', 'Very fast. They go around walls and jump barbed wire, hay bales and the tractor. They kill a loose soldier in a second.', 'Little health. They ignore the protected. They will not enter water or cross fire.', 'Turret; people in a bunker; flamethrower.'],
+      toro: ['Bull', 'Charges in a straight line at people on foot.', 'Knocks down and stuns for 2 seconds everyone it runs over. Four times a walker’s health. Rips out barbed wire.', 'It warns before charging, only goes straight and stands still for 2 seconds afterwards. It does not touch walls, bunkers or machines. It will not cross fire.', 'People in a bunker or behind a wall; tank and sniper while it stands still.'],
+      cuervo: ['Flock', 'Six crows that fly over everything and see the whole field.', 'They pass over walls, water and obstacles. They peck people on foot; if there are none, each takes 1 from the camp.', 'Little health. They can do nothing to bunkers or machines.', 'Anti-air gun; riflemen inside a bunker.'],
+      buitre: ['Vulture', 'Flies to someone on foot, lifts him and drops him in the middle of the horde.', 'It takes the most valuable first: sniper, medic, flamethrower. Nothing that walks can reach it.', 'Slow and one at a time. It can do nothing to the protected. A big target for rifles and anti-air.', 'Anti-air gun; a rifleman covering your sniper; bunker.'],
+      soldadoZombie: ['Zombie soldier', 'It is your infected soldier: it gets up 3 seconds after falling.', 'Keeps helmet and vest: armor 1 and more health than a walker.', 'It only shows up if you lose people. With a medic nearby, whoever falls is not infected.', 'Do not lose infantry: bunker, wall as a shield and medic.'],
+      jefe: ['The Colossus', 'Boss of waves 6 and 12: walks straight and breaks everything.', 'It has 22 times a walker’s health and bites three times as hard. If it gets in, it takes 8 from the camp.', 'Very slow.', 'Focused fire: tank, snipers and everything you have.'],
+    },
+  },
+};
+for (const [idioma, F] of Object.entries(FICHAS_B2)) for (const clase of ['u', 'z']) for (const [id, [nombre, hace, fuerte, debil, uso]] of Object.entries(F[clase])) {
+  Object.assign(TEXTOS[idioma], { [`b2.${clase}.${id}`]: nombre, [`b2.${clase}.${id}.hace`]: hace, [`b2.${clase}.${id}.fuerte`]: fuerte, [`b2.${clase}.${id}.debil`]: debil, [`b2.${clase}.${id}.uso`]: uso });
+}
 Object.assign(TEXTOS.es, {
-  'menu.bastion2': 'ÚLTIMO BASTIÓN V2', 'bastion.alambrado': 'ALAMBRADO', 'bastion.senuelo': 'SEÑUELO',
-  'b2.titulo': 'ÚLTIMO BASTIÓN V2 · LA GRANJA', 'b2.ayuda': 'Versión de prueba del diseño nuevo. Aguanta 10 oleadas con el campamento en pie.',
-  'b2.regla1': 'Los zombies ven. Si alguien de tu gente entra en su vista, dejan el camino y van por él.',
-  'b2.regla2': 'Si está detrás de un muro o dentro de un búnker o una torreta, primero rompen eso.',
-  'b2.regla3': 'Soldado que cae, se contagia: a los 3 segundos se levanta en tu contra.',
-  'b2.horda': 'LA HORDA', 'b2.ejercito': 'TU EJÉRCITO', 'b2.empezar': 'EMPEZAR', 'b2.continuar': v => `CONTINUAR · OLEADA ${v.ola}/${v.total}`,
-  'b2.fuerte': 'FUERTE:', 'b2.debil': 'DÉBIL:', 'b2.usar': 'CÓMO USARLO:', 'b2.frenar': 'CÓMO FRENARLO:',
-  'b2.parte': v => `OLEADA ${v.n}:`, 'b2.teVen': 'TE VEN DESDE AQUÍ', 'b2.repetir': v => `REPETIR LA OLEADA ${v.n}`, 'b2.deCero': 'DESDE EL PRINCIPIO',
-  'b2.aviso': 'LOS ZOMBIES VAN POR TU GENTE: PONLA DETRÁS DE UN MURO O DENTRO DE UN BÚNKER', 'b2.contagiado': '¡SOLDADO CONTAGIADO!',
-  'b2.blando': 'EN EL BARRO SOLO VAN SOLDADOS, ALAMBRADO Y SEÑUELO',
-  'b2.finGanado': v => `Resististe las ${v.olas} oleadas de ${v.nivel} con el campamento en ${v.base}/${v.max}: ${v.bajas} zombies muertos y ${v.contagiados} soldados contagiados, en ${v.tiempo}.`,
-  'b2.finPerdido': v => `${v.nivel}: caíste en la oleada ${v.ola} de ${v.total}, en ${v.tiempo}. Entraron al campamento: ${v.lista}. Soldados contagiados: ${v.contagiados}.`,
-  'b2.tip.caminante': 'Consejo: el alambrado deja a los comunes bajo fuego, y un señuelo los lleva adonde apuntan tus torretas.',
-  'b2.tip.corredor': 'Consejo: los corredores no rompen muros. Ciérrales el paso y pon alambrado en el hueco, frente a una torreta.',
-  'b2.tip.gordo': 'Consejo: el gordo rompe lo que tiene adelante. Concentra el fuego en él y repara el muro que ataca.',
-  'b2.tip.jefe': 'Consejo: contra el Coloso, todo el fuego junto y muros de sobra para ganar tiempo.',
-  'b2.tip.soldadoZombie': 'Consejo: cada soldado que pierdes pelea en tu contra. Mételos en un búnker.',
-  'b2.z.caminante': 'Común', 'b2.z.corredor': 'Corredor', 'b2.z.gordo': 'Gordo', 'b2.z.jefe': 'El Coloso', 'b2.z.soldadoZombie': 'Soldado zombie',
-  'b2.u.soldado': 'Soldado raso', 'b2.u.torreta': 'Torreta', 'b2.u.bunker': 'Búnker', 'b2.u.muro': 'Muro', 'b2.u.alambrado': 'Alambrado', 'b2.u.senuelo': 'Señuelo',
-  'b2.u.soldado.hace': 'Dispara un fusil de alcance medio: 4 celdas.', 'b2.u.soldado.fuerte': 'Barato y rápido de formar. Llena búnkeres.',
-  'b2.u.soldado.debil': 'Los zombies lo ven casi al mismo tiempo que él dispara. Tres mordidas y cae.', 'b2.u.soldado.uso': 'Nunca suelto en primera línea: detrás de un muro o dentro de un búnker.',
-  'b2.u.torreta.hace': 'Ametralladora con su artillero. Barre con ráfagas.', 'b2.u.torreta.fuerte': 'Mucho daño por segundo: nada rápido se le escapa.',
-  'b2.u.torreta.debil': 'Su artillero atrae a la horda. Si la rompen, él queda a pie.', 'b2.u.torreta.uso': 'Detrás de alambrado o de un muro, apuntando al hueco.',
-  'b2.u.bunker.hace': 'Refugio para 4 soldados.', 'b2.u.bunker.fuerte': 'Adentro no los muerden, y disparan más lejos y más seguido. Atrae a la horda y la frena donde tú elijas.',
-  'b2.u.bunker.debil': 'Vacío no hace nada. Si cae, tu gente queda a pie entre los zombies.', 'b2.u.bunker.uso': 'De ancla al frente, con torretas que cubran a los que se amontonan contra él.',
-  'b2.u.muro.hace': 'Bloquea el paso.', 'b2.u.muro.fuerte': 'Mucho aguante por poco dinero. Escudo para quien está detrás; desvía a los que no ven a nadie.',
-  'b2.u.muro.debil': 'El gordo no lo rodea: lo rompe. Si tapa a un soldado a la vista, lo atacan.', 'b2.u.muro.uso': 'Delante de tu gente, no al lado.',
-  'b2.u.alambrado.hace': 'Frena y lastima sin bloquear.', 'b2.u.alambrado.fuerte': 'Los zombies lo cruzan a menos de la mitad de velocidad y cada uno les saca un quinto de la vida (entre todos, hasta la mitad). Se puede poner en el barro.',
-  'b2.u.alambrado.debil': 'Se gasta: aguanta unas 20 pisadas. El gordo lo aplasta de una.', 'b2.u.alambrado.uso': 'Donde apuntan tus torretas y tus soldados.',
-  'b2.u.senuelo.hace': 'Altavoz que llama a los zombies.', 'b2.u.senuelo.fuerte': 'Comunes y corredores a 5 celdas dejan lo que estén haciendo, también de morder, y lo golpean 5 segundos.',
-  'b2.u.senuelo.debil': 'Se gasta: entretiene a unos 20. No engaña dos veces al mismo zombie. Al gordo no lo llama, y si lo pisa lo aplasta.', 'b2.u.senuelo.uso': 'A 3 celdas de tus torretas, o junto a lo que estén mordiendo, para sacárselos de encima.',
-  'b2.z.caminante.hace': 'Ve a 3 celdas. Va derecho por el primer humano que ve.', 'b2.z.caminante.fuerte': 'Viene de a muchos. Rompe el muro que tapa a su presa. Contagia.',
-  'b2.z.caminante.debil': 'Lento y sin protección. Cae en cualquier señuelo.', 'b2.z.caminante.uso': 'Alambrado y fuego concentrado donde se amontona.',
-  'b2.z.corredor.hace': 'Ve a 4 celdas. Corre y rodea los muros buscando el hueco.', 'b2.z.corredor.fuerte': 'El doble de rápido: pasa poco tiempo bajo fuego.',
-  'b2.z.corredor.debil': 'Menos vida. No rompe muros: si no hay hueco, sigue de largo.', 'b2.z.corredor.uso': 'Alambrado frente a una torreta.',
-  'b2.z.gordo.hace': 'Ve poco: 2 celdas. Nunca rodea: rompe lo que tiene adelante.', 'b2.z.gordo.fuerte': 'Tres veces la vida de un común y muerde más fuerte. Aplasta el alambrado.',
-  'b2.z.gordo.debil': 'Muy lento: da tiempo para concentrar el fuego.', 'b2.z.gordo.uso': 'Varias torretas y soldados a la vez. Repara el muro que está atacando.',
-  'b2.z.jefe.hace': 'Gigante de las oleadas 5 y 10. Rompe todo a su paso.', 'b2.z.jefe.fuerte': 'Tiene la vida de 22 comunes y sus golpes valen por tres.',
-  'b2.z.jefe.debil': 'Lento, y es uno solo.', 'b2.z.jefe.uso': 'Todo el fuego sobre él, y muros de sobra para ganar tiempo.',
-  'b2.z.soldadoZombie.hace': 'Tu soldado contagiado. Se levanta a los 3 segundos de caer.', 'b2.z.soldadoZombie.fuerte': 'Casco y chaleco: cada bala le hace 1 punto menos. Más vida que un común.',
-  'b2.z.soldadoZombie.debil': 'Solo existe si pierdes gente.', 'b2.z.soldadoZombie.uso': 'No pierdas soldados: búnker y muros.',
+  'menu.bastion2': 'ÚLTIMO BASTIÓN V2',
+  'bastion.alambrado': 'ALAMBRADO', 'bastion.senuelo': 'SEÑUELO', 'bastion.francotirador': 'TIRADOR', 'bastion.lanzallamas': 'LLAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTERO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.mover': 'MOVER',
+  'b2.titulo': 'ÚLTIMO BASTIÓN V2 · DOS BANDOS', 'b2.ayuda': 'Aguanta 12 oleadas en La granja. Cada oleada trae un tipo nuevo de zombie: mira el parte y arma la respuesta.',
+  'b2.regla1': 'Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido.',
+  'b2.regla2': 'Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.',
+  'b2.regla3': 'Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.',
+  'b2.horda': 'LA HORDA', 'b2.ejercito': 'EL BASTIÓN', 'b2.empezar': 'EMPEZAR', 'b2.continuar': 'SEGUIR EN LA OLEADA {ola} DE {total}',
+  'b2.clase.inf': 'Infantería', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estructuras', 'b2.clase.cam': 'Caminantes', 'b2.clase.esp': 'Especiales', 'b2.clase.ani': 'Animales',
+  'b2.fuerte': 'FUERTE:', 'b2.debil': 'DÉBIL:', 'b2.frenar': 'CÓMO FRENARLO:', 'b2.usar': 'CÓMO USARLO:',
+  'b2.loFrena': 'LO FRENA', 'b2.noSirve': 'NO SIRVE', 'b2.frenaA': 'FRENA A', 'b2.flojoContra': 'FLOJO CONTRA', 'b2.nuevo': 'NUEVO',
+  'b2.parte': 'OLEADA {n}:', 'b2.teVen': 'DESDE AQUÍ LO VEN', 'b2.blando': 'Suelo blando: aquí sólo va gente a pie, alambrado o señuelo',
+  'b2.contagiado': '¡Soldado contagiado!', 'b2.sinContagio': 'Cayó, pero el médico evitó el contagio', 'b2.baja': '¡Perdiste a uno de los tuyos!', 'b2.raptado': '¡El buitre se lleva a uno de los tuyos!',
+  'b2.gasEncendido': '¡El fuego encendió el gas!', 'b2.nadaQueMover': 'Toca a alguien a pie, el tanque o un búnker con gente', 'b2.aviso': 'Mira el parte de arriba: dice qué viene en la próxima oleada',
+  'b2.repetir': 'REPETIR LA OLEADA {n}', 'b2.deCero': 'DESDE EL PRINCIPIO',
+  'b2.finGanado': 'Resististe las {olas} oleadas de {nivel} con el campamento en {base}/{max}: {bajas} zombies muertos y {contagiados} soldados contagiados, en {tiempo}.',
+  'b2.finPerdido': 'El campamento de {nivel} cayó en la oleada {ola} de {total}. Entraron: {lista}. Soldados contagiados: {contagiados}. Tiempo: {tiempo}.',
+  'b2.consejo': 'Contra {tipo} sirve: {con}.',
 });
 Object.assign(TEXTOS.pt, {
-  'menu.bastion2': 'ÚLTIMO BASTIÃO V2', 'bastion.alambrado': 'ARAME', 'bastion.senuelo': 'ISCA',
-  'b2.titulo': 'ÚLTIMO BASTIÃO V2 · A FAZENDA', 'b2.ayuda': 'Versão de teste do novo design. Aguente 10 ondas com o acampamento de pé.',
-  'b2.regla1': 'Os zumbis enxergam. Se alguém do seu pessoal entra na visão deles, largam o caminho e vão atrás.',
-  'b2.regla2': 'Se ele está atrás de um muro ou dentro de um bunker ou de uma torre, primeiro quebram isso.',
-  'b2.regla3': 'Soldado que cai é contaminado: em 3 segundos se levanta contra você.',
-  'b2.horda': 'A HORDA', 'b2.ejercito': 'SEU EXÉRCITO', 'b2.empezar': 'COMEÇAR', 'b2.continuar': v => `CONTINUAR · ONDA ${v.ola}/${v.total}`,
-  'b2.fuerte': 'FORTE:', 'b2.debil': 'FRACO:', 'b2.usar': 'COMO USAR:', 'b2.frenar': 'COMO PARAR:',
-  'b2.parte': v => `ONDA ${v.n}:`, 'b2.teVen': 'VEEM VOCÊ DAQUI', 'b2.repetir': v => `REPETIR A ONDA ${v.n}`, 'b2.deCero': 'DO COMEÇO',
-  'b2.aviso': 'OS ZUMBIS VÃO ATRÁS DO SEU PESSOAL: PONHA-O ATRÁS DE UM MURO OU DENTRO DE UM BUNKER', 'b2.contagiado': 'SOLDADO CONTAMINADO!',
-  'b2.blando': 'NA LAMA SÓ VÃO SOLDADOS, ARAME E ISCA',
-  'b2.finGanado': v => `Você resistiu às ${v.olas} ondas de ${v.nivel} com o acampamento em ${v.base}/${v.max}: ${v.bajas} zumbis mortos e ${v.contagiados} soldados contaminados, em ${v.tiempo}.`,
-  'b2.finPerdido': v => `${v.nivel}: você caiu na onda ${v.ola} de ${v.total}, em ${v.tiempo}. Entraram no acampamento: ${v.lista}. Soldados contaminados: ${v.contagiados}.`,
-  'b2.tip.caminante': 'Dica: o arame deixa os comuns sob fogo, e uma isca os leva para onde suas torres apontam.',
-  'b2.tip.corredor': 'Dica: os corredores não quebram muros. Feche a passagem e ponha arame na brecha, diante de uma torre.',
-  'b2.tip.gordo': 'Dica: o gordo quebra o que tem pela frente. Concentre o fogo nele e conserte o muro que ele ataca.',
-  'b2.tip.jefe': 'Dica: contra o Colosso, todo o fogo junto e muros de sobra para ganhar tempo.',
-  'b2.tip.soldadoZombie': 'Dica: cada soldado perdido luta contra você. Ponha-os em um bunker.',
-  'b2.z.caminante': 'Comum', 'b2.z.corredor': 'Corredor', 'b2.z.gordo': 'Gordo', 'b2.z.jefe': 'O Colosso', 'b2.z.soldadoZombie': 'Soldado zumbi',
-  'b2.u.soldado': 'Soldado raso', 'b2.u.torreta': 'Torre', 'b2.u.bunker': 'Bunker', 'b2.u.muro': 'Muro', 'b2.u.alambrado': 'Arame farpado', 'b2.u.senuelo': 'Isca',
-  'b2.u.soldado.hace': 'Atira com um fuzil de alcance médio: 4 casas.', 'b2.u.soldado.fuerte': 'Barato e rápido de formar. Enche bunkers.',
-  'b2.u.soldado.debil': 'Os zumbis o veem quase ao mesmo tempo em que ele atira. Três mordidas e cai.', 'b2.u.soldado.uso': 'Nunca solto na linha de frente: atrás de um muro ou dentro de um bunker.',
-  'b2.u.torreta.hace': 'Metralhadora com seu artilheiro. Varre com rajadas.', 'b2.u.torreta.fuerte': 'Muito dano por segundo: nada rápido escapa.',
-  'b2.u.torreta.debil': 'O artilheiro atrai a horda. Se a quebram, ele fica a pé.', 'b2.u.torreta.uso': 'Atrás de arame ou de um muro, apontando para a brecha.',
-  'b2.u.bunker.hace': 'Abrigo para 4 soldados.', 'b2.u.bunker.fuerte': 'Lá dentro não são mordidos, e atiram mais longe e mais rápido. Atrai a horda e a segura onde você quiser.',
-  'b2.u.bunker.debil': 'Vazio não faz nada. Se cair, seu pessoal fica a pé no meio dos zumbis.', 'b2.u.bunker.uso': 'De âncora na frente, com torres cobrindo os que se amontoam contra ele.',
-  'b2.u.muro.hace': 'Bloqueia a passagem.', 'b2.u.muro.fuerte': 'Aguenta muito por pouco dinheiro. Escudo para quem está atrás; desvia os que não veem ninguém.',
-  'b2.u.muro.debil': 'O gordo não o contorna: quebra. Se esconde um soldado à vista, atacam.', 'b2.u.muro.uso': 'Na frente do seu pessoal, não ao lado.',
-  'b2.u.alambrado.hace': 'Freia e fere sem bloquear.', 'b2.u.alambrado.fuerte': 'Os zumbis o cruzam a menos da metade da velocidade e cada um tira um quinto da vida (no total, até a metade). Pode ir na lama.',
-  'b2.u.alambrado.debil': 'Gasta: aguenta umas 20 pisadas. O gordo o esmaga de uma vez.', 'b2.u.alambrado.uso': 'Onde suas torres e seus soldados apontam.',
-  'b2.u.senuelo.hace': 'Alto-falante que chama os zumbis.', 'b2.u.senuelo.fuerte': 'Comuns e corredores a 5 casas largam o que estão fazendo, até de morder, e batem nele por 5 segundos.',
-  'b2.u.senuelo.debil': 'Gasta: distrai uns 20. Não engana o mesmo zumbi duas vezes. Não chama o gordo, e se ele pisa, esmaga.', 'b2.u.senuelo.uso': 'A 3 casas das suas torres, ou junto do que estão mordendo, para tirá-los de cima.',
-  'b2.z.caminante.hace': 'Enxerga a 3 casas. Vai direto no primeiro humano que vê.', 'b2.z.caminante.fuerte': 'Vem em bando. Quebra o muro que esconde sua presa. Contamina.',
-  'b2.z.caminante.debil': 'Lento e sem proteção. Segue qualquer isca.', 'b2.z.caminante.uso': 'Arame e fogo concentrado onde se amontoa.',
-  'b2.z.corredor.hace': 'Enxerga a 4 casas. Corre e contorna os muros procurando a brecha.', 'b2.z.corredor.fuerte': 'O dobro da velocidade: passa pouco tempo sob fogo.',
-  'b2.z.corredor.debil': 'Menos vida. Não quebra muros: sem brecha, segue em frente.', 'b2.z.corredor.uso': 'Arame diante de uma torre.',
-  'b2.z.gordo.hace': 'Enxerga pouco: 2 casas. Nunca contorna: quebra o que tem pela frente.', 'b2.z.gordo.fuerte': 'Três vezes a vida de um comum e morde mais forte. Esmaga o arame.',
-  'b2.z.gordo.debil': 'Muito lento: dá tempo de concentrar o fogo.', 'b2.z.gordo.uso': 'Várias torres e soldados ao mesmo tempo. Conserte o muro que ele ataca.',
-  'b2.z.jefe.hace': 'Gigante das ondas 5 e 10. Quebra tudo pelo caminho.', 'b2.z.jefe.fuerte': 'Tem a vida de 22 comuns e seus golpes valem por três.',
-  'b2.z.jefe.debil': 'Lento, e é um só.', 'b2.z.jefe.uso': 'Todo o fogo nele, e muros de sobra para ganhar tempo.',
-  'b2.z.soldadoZombie.hace': 'Seu soldado contaminado. Levanta 3 segundos depois de cair.', 'b2.z.soldadoZombie.fuerte': 'Capacete e colete: cada bala tira 1 ponto a menos. Mais vida que um comum.',
-  'b2.z.soldadoZombie.debil': 'Só existe se você perde gente.', 'b2.z.soldadoZombie.uso': 'Não perca soldados: bunker e muros.',
+  'menu.bastion2': 'ÚLTIMO BASTIÃO V2',
+  'bastion.alambrado': 'ARAME', 'bastion.senuelo': 'ISCA', 'bastion.francotirador': 'ATIRADOR', 'bastion.lanzallamas': 'CHAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTEIRO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.mover': 'MOVER',
+  'b2.titulo': 'ÚLTIMO BASTIÃO V2 · DOIS LADOS', 'b2.ayuda': 'Aguente 12 ondas em A fazenda. Cada onda traz um tipo novo de zumbi: veja o relatório e monte a resposta.',
+  'b2.regla1': 'Nenhuma unidade serve contra tudo. A blindagem segura as balas pequenas, o que voa passa por cima dos muros e a granada erra o que é rápido.',
+  'b2.regla2': 'Os zumbis veem. Vão atrás do seu pessoal e quebram o que o protege; quem cai se levanta contra você em 3 segundos.',
+  'b2.regla3': 'Antes de cada onda, o relatório diz o que vem. Toque em um tipo para ver o que o segura.',
+  'b2.horda': 'A HORDA', 'b2.ejercito': 'O BASTIÃO', 'b2.empezar': 'COMEÇAR', 'b2.continuar': 'CONTINUAR NA ONDA {ola} DE {total}',
+  'b2.clase.inf': 'Infantaria', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estruturas', 'b2.clase.cam': 'Caminhantes', 'b2.clase.esp': 'Especiais', 'b2.clase.ani': 'Animais',
+  'b2.fuerte': 'FORTE:', 'b2.debil': 'FRACO:', 'b2.frenar': 'COMO PARÁ-LO:', 'b2.usar': 'COMO USAR:',
+  'b2.loFrena': 'O QUE O PARA', 'b2.noSirve': 'NÃO SERVE', 'b2.frenaA': 'PARA', 'b2.flojoContra': 'FRACO CONTRA', 'b2.nuevo': 'NOVO',
+  'b2.parte': 'ONDA {n}:', 'b2.teVen': 'DAQUI ELES O VEEM', 'b2.blando': 'Solo mole: aqui só vai gente a pé, arame farpado ou isca',
+  'b2.contagiado': 'Soldado contagiado!', 'b2.sinContagio': 'Caiu, mas o médico evitou o contágio', 'b2.baja': 'Você perdeu um dos seus!', 'b2.raptado': 'O abutre está levando um dos seus!',
+  'b2.gasEncendido': 'O fogo acendeu o gás!', 'b2.nadaQueMover': 'Toque em alguém a pé, no tanque ou em um bunker com gente', 'b2.aviso': 'Veja o relatório acima: ele diz o que vem na próxima onda',
+  'b2.repetir': 'REPETIR A ONDA {n}', 'b2.deCero': 'DESDE O COMEÇO',
+  'b2.finGanado': 'Você resistiu às {olas} ondas de {nivel} com o acampamento em {base}/{max}: {bajas} zumbis mortos e {contagiados} soldados contagiados, em {tiempo}.',
+  'b2.finPerdido': 'O acampamento de {nivel} caiu na onda {ola} de {total}. Entraram: {lista}. Soldados contagiados: {contagiados}. Tempo: {tiempo}.',
+  'b2.consejo': 'Contra {tipo} serve: {con}.',
 });
 Object.assign(TEXTOS.en, {
-  'menu.bastion2': 'LAST BASTION V2', 'bastion.alambrado': 'WIRE', 'bastion.senuelo': 'DECOY',
-  'b2.titulo': 'LAST BASTION V2 · THE FARM', 'b2.ayuda': 'Test build of the new design. Hold 10 waves with the camp standing.',
-  'b2.regla1': 'Zombies can see. If one of your people steps into their sight, they leave the path and go for them.',
-  'b2.regla2': 'If that person is behind a wall or inside a bunker or a turret, they break that first.',
-  'b2.regla3': 'A fallen soldier is infected: 3 seconds later he rises against you.',
-  'b2.horda': 'THE HORDE', 'b2.ejercito': 'YOUR ARMY', 'b2.empezar': 'START', 'b2.continuar': v => `CONTINUE · WAVE ${v.ola}/${v.total}`,
-  'b2.fuerte': 'STRONG:', 'b2.debil': 'WEAK:', 'b2.usar': 'HOW TO USE IT:', 'b2.frenar': 'HOW TO STOP IT:',
-  'b2.parte': v => `WAVE ${v.n}:`, 'b2.teVen': 'THEY SEE YOU FROM HERE', 'b2.repetir': v => `RETRY WAVE ${v.n}`, 'b2.deCero': 'FROM THE START',
-  'b2.aviso': 'ZOMBIES GO FOR YOUR PEOPLE: PUT THEM BEHIND A WALL OR INSIDE A BUNKER', 'b2.contagiado': 'SOLDIER INFECTED!',
-  'b2.blando': 'ONLY SOLDIERS, WIRE AND DECOYS GO ON MUD',
-  'b2.finGanado': v => `You held the ${v.olas} waves of ${v.nivel} with the camp at ${v.base}/${v.max}: ${v.bajas} zombies killed and ${v.contagiados} soldiers infected, in ${v.tiempo}.`,
-  'b2.finPerdido': v => `${v.nivel}: you fell on wave ${v.ola} of ${v.total}, in ${v.tiempo}. Got into the camp: ${v.lista}. Soldiers infected: ${v.contagiados}.`,
-  'b2.tip.caminante': 'Tip: wire keeps walkers under fire, and a decoy leads them to where your turrets aim.',
-  'b2.tip.corredor': 'Tip: runners never break walls. Close the way and put wire in the gap, in front of a turret.',
-  'b2.tip.gordo': 'Tip: the fat one breaks whatever is ahead. Focus fire on him and repair the wall he attacks.',
-  'b2.tip.jefe': 'Tip: against the Colossus, all fire together and spare walls to buy time.',
-  'b2.tip.soldadoZombie': 'Tip: every soldier you lose fights against you. Put them in a bunker.',
-  'b2.z.caminante': 'Walker', 'b2.z.corredor': 'Runner', 'b2.z.gordo': 'Fat one', 'b2.z.jefe': 'The Colossus', 'b2.z.soldadoZombie': 'Zombie soldier',
-  'b2.u.soldado': 'Rifleman', 'b2.u.torreta': 'Turret', 'b2.u.bunker': 'Bunker', 'b2.u.muro': 'Wall', 'b2.u.alambrado': 'Barbed wire', 'b2.u.senuelo': 'Decoy',
-  'b2.u.soldado.hace': 'Fires a mid-range rifle: 4 cells.', 'b2.u.soldado.fuerte': 'Cheap and quick to train. Fills bunkers.',
-  'b2.u.soldado.debil': 'Zombies see him almost as soon as he can shoot. Three bites and he falls.', 'b2.u.soldado.uso': 'Never loose on the front line: behind a wall or inside a bunker.',
-  'b2.u.torreta.hace': 'Machine gun with its gunner. Sweeps with bursts.', 'b2.u.torreta.fuerte': 'High damage per second: nothing fast gets away.',
-  'b2.u.torreta.debil': 'Its gunner draws the horde. If it breaks, he is left on foot.', 'b2.u.torreta.uso': 'Behind wire or a wall, aiming at the gap.',
-  'b2.u.bunker.hace': 'Shelter for 4 soldiers.', 'b2.u.bunker.fuerte': 'Inside they cannot be bitten, and they shoot farther and faster. It draws the horde and holds it where you choose.',
-  'b2.u.bunker.debil': 'Empty, it does nothing. If it falls, your people are on foot among the zombies.', 'b2.u.bunker.uso': 'As an anchor up front, with turrets covering those who pile up against it.',
-  'b2.u.muro.hace': 'Blocks the way.', 'b2.u.muro.fuerte': 'Lots of toughness for little money. A shield for whoever is behind; diverts those who see nobody.',
-  'b2.u.muro.debil': 'The fat one never goes around: he breaks it. If it hides a soldier in sight, they attack it.', 'b2.u.muro.uso': 'In front of your people, not beside them.',
-  'b2.u.alambrado.hace': 'Slows and hurts without blocking.', 'b2.u.alambrado.fuerte': 'Zombies cross it at less than half speed and each one takes a fifth of their health (up to half in total). It can go on mud.',
-  'b2.u.alambrado.debil': 'It wears out: about 20 crossings. The fat one flattens it in one step.', 'b2.u.alambrado.uso': 'Where your turrets and soldiers aim.',
-  'b2.u.senuelo.hace': 'Loudspeaker that calls zombies.', 'b2.u.senuelo.fuerte': 'Walkers and runners within 5 cells drop whatever they are doing, biting included, and hit it for 5 seconds.',
-  'b2.u.senuelo.debil': 'It wears out: it distracts about 20. It never fools the same zombie twice. It does not call the fat one, and if he steps on it, he flattens it.', 'b2.u.senuelo.uso': '3 cells from your turrets, or next to whatever they are biting, to pull them off.',
-  'b2.z.caminante.hace': 'Sees 3 cells. Goes straight for the first human it sees.', 'b2.z.caminante.fuerte': 'Comes in numbers. Breaks the wall hiding its prey. Infects.',
-  'b2.z.caminante.debil': 'Slow and unprotected. Follows any decoy.', 'b2.z.caminante.uso': 'Wire and focused fire where they pile up.',
-  'b2.z.corredor.hace': 'Sees 4 cells. Runs and goes around walls looking for the gap.', 'b2.z.corredor.fuerte': 'Twice as fast: spends little time under fire.',
-  'b2.z.corredor.debil': 'Less health. Never breaks walls: with no gap, it runs past.', 'b2.z.corredor.uso': 'Wire in front of a turret.',
-  'b2.z.gordo.hace': 'Short-sighted: 2 cells. Never goes around: breaks whatever is ahead.', 'b2.z.gordo.fuerte': 'Three times a walker\'s health and a harder bite. Flattens wire.',
-  'b2.z.gordo.debil': 'Very slow: there is time to focus fire.', 'b2.z.gordo.uso': 'Several turrets and soldiers at once. Repair the wall he is attacking.',
-  'b2.z.jefe.hace': 'Giant of waves 5 and 10. Breaks everything in his way.', 'b2.z.jefe.fuerte': 'Has the health of 22 walkers and each blow counts as three.',
-  'b2.z.jefe.debil': 'Slow, and there is only one.', 'b2.z.jefe.uso': 'All fire on him, and spare walls to buy time.',
-  'b2.z.soldadoZombie.hace': 'Your infected soldier. Rises 3 seconds after falling.', 'b2.z.soldadoZombie.fuerte': 'Helmet and vest: every bullet does 1 less. More health than a walker.',
-  'b2.z.soldadoZombie.debil': 'Only exists if you lose people.', 'b2.z.soldadoZombie.uso': 'Do not lose soldiers: bunker and walls.',
+  'menu.bastion2': 'LAST BASTION V2',
+  'bastion.alambrado': 'WIRE', 'bastion.senuelo': 'DECOY', 'bastion.francotirador': 'SNIPER', 'bastion.lanzallamas': 'FLAMER', 'bastion.medico': 'MEDIC', 'bastion.mortero': 'MORTAR', 'bastion.antiaerea': 'ANTI-AIR', 'bastion.mover': 'MOVE',
+  'b2.titulo': 'LAST BASTION V2 · TWO SIDES', 'b2.ayuda': 'Hold out for 12 waves at The farm. Each wave brings a new zombie type: check the report and build the answer.',
+  'b2.regla1': 'No unit works against everything. Armor stops small bullets, flyers pass over walls and shells miss fast targets.',
+  'b2.regla2': 'Zombies can see. They go for your people and break whatever protects them; whoever falls gets up against you in 3 seconds.',
+  'b2.regla3': 'Before each wave, the report says what is coming. Tap a type to see what stops it.',
+  'b2.horda': 'THE HORDE', 'b2.ejercito': 'THE BASTION', 'b2.empezar': 'START', 'b2.continuar': 'CONTINUE AT WAVE {ola} OF {total}',
+  'b2.clase.inf': 'Infantry', 'b2.clase.mec': 'Mechanized', 'b2.clase.est': 'Structures', 'b2.clase.cam': 'Walkers', 'b2.clase.esp': 'Specials', 'b2.clase.ani': 'Animals',
+  'b2.fuerte': 'STRONG:', 'b2.debil': 'WEAK:', 'b2.frenar': 'HOW TO STOP IT:', 'b2.usar': 'HOW TO USE IT:',
+  'b2.loFrena': 'STOPPED BY', 'b2.noSirve': 'NO USE', 'b2.frenaA': 'STOPS', 'b2.flojoContra': 'WEAK AGAINST', 'b2.nuevo': 'NEW',
+  'b2.parte': 'WAVE {n}:', 'b2.teVen': 'THEY SEE IT FROM HERE', 'b2.blando': 'Soft ground: only people on foot, barbed wire or a decoy can go here',
+  'b2.contagiado': 'Soldier infected!', 'b2.sinContagio': 'He fell, but the medic prevented the infection', 'b2.baja': 'You lost one of yours!', 'b2.raptado': 'The vulture is carrying off one of yours!',
+  'b2.gasEncendido': 'Fire ignited the gas!', 'b2.nadaQueMover': 'Tap someone on foot, the tank or a bunker with people in it', 'b2.aviso': 'Check the report at the top: it says what the next wave brings',
+  'b2.repetir': 'REPLAY WAVE {n}', 'b2.deCero': 'FROM THE START',
+  'b2.finGanado': 'You held out for the {olas} waves of {nivel} with the camp at {base}/{max}: {bajas} zombies killed and {contagiados} soldiers infected, in {tiempo}.',
+  'b2.finPerdido': 'The camp at {nivel} fell on wave {ola} of {total}. They got in: {lista}. Soldiers infected: {contagiados}. Time: {tiempo}.',
+  'b2.consejo': 'Against {tipo}, use: {con}.',
 });
+// Los textos con {llaves} toman sus valores al pedirlos (t('b2.parte', { n: 3 }))
+for (const idioma of ['es', 'pt', 'en']) for (const k of Object.keys(TEXTOS[idioma])) {
+  const v = TEXTOS[idioma][k];
+  if (k.startsWith('b2.') && typeof v === 'string' && /\{\w+\}/.test(v)) TEXTOS[idioma][k] = p => v.replace(/\{(\w+)\}/g, (_, n) => p[n] ?? '');
+}

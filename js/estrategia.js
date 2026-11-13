@@ -500,13 +500,13 @@ Object.assign(Juego.prototype, {
       if (u.invisible) continue;
       const lleno = u.listo ? u.vida / u.vidaMax : u.obra;
       if (u.listo && lleno >= 0.999) continue;
-      const w = u.tipo === 'soldado' ? 18 : 30, P = cam.proyectar(u.x, u.y), y = P.y + 4 * P.s;
+      const w = u.tipo === 'soldado' || u.clase === 'inf' ? 18 : 30, P = cam.proyectar(u.x, u.y), y = P.y + 4 * P.s;
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(P.x - w / 2 - 1, y, w + 2, 4);
       ctx.fillStyle = !u.listo ? '#e8c45a' : lleno > 0.5 ? '#6ad06a' : lleno > 0.25 ? '#e8c45a' : '#e05a4a'; ctx.fillRect(P.x - w / 2, y + 1, w * lleno, 2);
     }
     for (const z of this.zombies) if (z.estado !== 'muerto' && z.vida < z.vidaMax) {
       // Arriba de la cabeza (el cráneo llega a 79 de alto y encima van el pelo o el casco) y corrida hacia donde mira, que es donde queda la cabeza
-      const w = 16 * Math.max(1, z.escala * 1.6), P = cam.proyectar(z.x, z.y), y = P.y - (88 * z.escala + 6) * P.s, x = P.x + z.direccion * 6 * z.escala * P.s - w / 2;
+      const w = 16 * Math.max(1, z.escala * 1.6), P = cam.proyectar(z.x, z.y), y = P.y - ((z.barraAlto ?? 88 * z.escala) + 6 + (z.barraAlto === undefined ? 0 : z.altura || 0)) * P.s, x = P.x + z.direccion * (z.barraDx ?? 6 * z.escala) * P.s - w / 2;   // barraAlto, barraDx: animales y aves de la v2
       ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x, y, w, 3); ctx.fillStyle = '#c0392b'; ctx.fillRect(x, y, w * z.vida / z.vidaMax, 3);
     }
     // Trazadoras y proyectiles del tanque: del piso de donde salen al de donde llegan, con la altura achicada por la distancia

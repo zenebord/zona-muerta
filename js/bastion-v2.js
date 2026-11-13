@@ -1,115 +1,191 @@
-/* ===== Último bastión v2: los zombies ven, cazan y contagian =====
- * Versión de prueba del diseño nuevo (nivel 1: La granja), al lado del modo de siempre, que no cambia. Se juega
- * sobre la misma grilla, con la misma cámara y el mismo campamento. Lo que cambia:
- *   - Los zombies se comportan como zombies. Cada uno mira (radio de vista según el tipo), caza al primer humano
- *     que ve, rompe lo que lo protege y, si no ve a nadie, marcha al campamento por el camino abierto.
- *       común     ve a 3 celdas; va por su presa por el camino si es corto y, si no, derecho, rompiendo lo que la tapa
- *       corredor  ve a 4; rodea buscando el hueco y nunca rompe (si no hay hueco, sigue de largo)
- *       gordo     ve a 2; nunca rodea: va derecho y rompe toda construcción que encuentre. Aplasta el alambrado
- *       coloso    jefe de las oleadas 5 y 10; como el gordo
- *   - Cuenta como humano el soldado a pie, la torreta (por su artillero) y el búnker con gente adentro. Muros y
- *     alambrado no atraen. El señuelo es un imán sin gente: llama a los que no están cazando.
- *   - Contagio: el soldado que cae se levanta a los 3 s como soldado zombie (casco y chaleco: blindaje 1).
- *   - Unidades nuevas: alambrado (no bloquea; frena al 45 % y a cada zombie que lo cruza le saca hasta un quinto de
- *     la vida; aguanta unas 20 pisadas y el gordo lo aplasta) y señuelo (un altavoz: comunes y corredores a 5 celdas
- *     dejan lo que estaban haciendo, también de morder, y se quedan 5 s golpeándolo; a cada zombie lo engaña una sola
- *     vez y aguanta a unos 20). La torreta rota deja a su artillero a pie. El tanque no está en este nivel.
- *   - Terreno por clase: en el barro sólo van soldados, alambrado y señuelo; el estanque es agua profunda (nadie
- *     pasa ni construye).
- *   - Oleadas escritas (no sorteadas) y parte de la próxima oleada durante el descanso. Vender devuelve 75 % en el
- *     descanso y 50 % con la oleada en marcha.
- *   - La partida se guarda al empezar cada oleada, aparte de la del modo de siempre. Si se pierde, se puede repetir
- *     esa oleada con todo como estaba al empezarla (y el descanso previo para cambiar lo que haga falta).
- *   - El búnker cuesta menos y los de adentro tiran más seguido: es el ancla que aguanta, no la que más pega.
+/* ===== Último bastión v2: dos bandos con contrapesos =====
+ * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). Un solo nivel, La granja,
+ * con el plantel completo: 12 unidades militares y 12 tipos de zombie, en tres clases por bando.
+ *
+ *   EL BASTIÓN                                              LA HORDA
+ *   Infantería   soldado, francotirador, lanzallamas,       Caminantes  común, corredor, gordo, acorazado
+ *                médico                                     Especiales  gritón, hinchado, dinamitero, tóxico
+ *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales    jauría, toro, bandada, buitre
+ *   Estructuras  muro, alambrado, búnker, señuelo           (+ el soldado contagiado y El Coloso, el jefe)
+ *
+ * Los contrapesos no salen de una tabla de multiplicadores sino de cinco reglas que valen para todos:
+ *   Blindaje   le resta puntos a cada bala (mínimo 1). No frena al francotirador, al cañón, al fuego ni a las explosiones
+ *   Área       el fuego y las explosiones pegan a todos los que están juntos; la granada del mortero tarda en caer
+ *   Aire       lo que vuela pasa sobre todo; sólo le tiran los fusiles (soldado, francotirador) y la antiaérea
+ *   Velocidad  cuanto más rápido el zombie, menos tiempo pasa bajo fuego: cadencia alta y alambrado
+ *   Vista      el zombie va por el humano que ve; el que tira desde más lejos que esa vista, tira escondido
+ *
+ * Los zombies se comportan como zombies: cada uno mira, caza al primer humano que ve, rompe lo que lo protege y, si
+ * no ve a nadie, marcha al campamento. Cuenta como humano la infantería a pie y la gente de torretas, morteros,
+ * antiaéreas, tanques y búnkeres ocupados. El soldado que cae se levanta a los 3 s como soldado zombie.
+ *
+ * Archivos:  js/bastion-v2.js         este: datos de los dos bandos, oleadas, colocar, vender, mover y guardar
+ *            js/bastion-v2-horda.js   cómo se crea y cómo se porta cada tipo de zombie
+ *            js/bastion-v2-tropa.js   armas y oficios de cada unidad, explosiones, gas y granadas
+ *            js/bastion-v2-dibujo.js  el dibujo de lo nuevo (unidades, zombies, aves y efectos)
+ *            js/bastion-v2-ui.js      panel, parte de la oleada, fichas, pantalla previa y textos
  * Cuelga de Juego con this.v2: envuelve los métodos de js/estrategia.js y deja el modo anterior intacto.
- * El dibujo de lo nuevo, la pantalla previa y los textos: js/bastion-v2-ui.js.
  */
-BASTION.unidades.alambrado = { costo: 15, tiempo: 1.5, vida: 40, donde: 'obra', frena: 0.45, raspa: 0.2, liviano: true };   // raspa: parte de la vida que le saca a cada zombie que lo cruza
-BASTION.unidades.senuelo = { costo: 50, tiempo: 2, vida: 100, donde: 'obra', atrae: 5, entretiene: 5, liviano: true };
-BASTION.zombies.soldadoZombie = { vida: 1.5, vel: 24, paga: 8, dano: 1, escala: 0.6 };
-
 const BASTION2 = {
-  // Lo que cambia de las unidades de siempre mientras se juega la v2
-  ajustes: { bunker: { costo: 120, cadencia: 0.45 } },
-  celda: 44,            // una celda de vista o de alcance, en px del plano
-  contagio: 3,          // segundos entre que cae un soldado y se levanta en contra
-  desgaste: 2,          // vida que le saca al alambrado cada zombie que lo pisa (aguanta 20 pisadas; el gordo lo aplasta)
-  topeRaspado: 0.5,     // el alambrado lastima pero no mata solo: entre todos le sacan hasta la mitad de la vida
+  celda: 44,              // una celda de vista o de alcance, en px del plano
+  contagio: 3,            // segundos entre que cae un soldado y se levanta en contra
+  desgaste: 2,            // vida que le saca al alambrado cada zombie que lo pisa (aguanta 20 pisadas)
+  topeRaspado: 0.5,       // el alambrado lastima pero no mata solo: entre todos le sacan hasta la mitad de la vida
+  quema: 4,               // daño por segundo de lo que quedó prendido fuego
   vender: { descanso: 0.75, oleada: 0.5 },
-  orden: ['soldado', 'torreta', 'bunker', 'muro', 'alambrado', 'senuelo'],   // botones del panel, teclas 1 a 6
-  // vista: en celdas. llega: 'derecho' (va por su presa y rompe lo que la tapa), 'rodea' (busca el hueco; nunca
-  // rompe) o 'rompe' (nunca rodea). aplasta: gasta el alambrado de una pisada
-  zombies: {
-    caminante:     { vista: 3, llega: 'derecho' },
-    corredor:      { vista: 4, llega: 'rodea' },
-    gordo:         { vista: 2, llega: 'rompe', aplasta: true },
-    jefe:          { vista: 3, llega: 'rompe', aplasta: true },
-    soldadoZombie: { vista: 3, llega: 'derecho', blindaje: 1 },
+  crecimientoVida: 1.17,  // la vida de los zombies crece 17 % por oleada (12 oleadas: ×5,6 en la última)
+  descanso: 28, primerDescanso: 45,
+  horda: 6,               // los comunes entran de a tandas de este tamaño, pegados: una horda, no una fila
+  clases: {
+    inf: ['soldado', 'francotirador', 'lanzallamas', 'medico'],
+    mec: ['torreta', 'tanque', 'mortero', 'antiaerea'],
+    est: ['muro', 'alambrado', 'bunker', 'senuelo'],
   },
-  // Cada oleada dice cuántos de cada tipo; el orden en que salen lo arma ordenOleada (siempre igual)
-  // Lo que paga cada zombie muerto (un poco menos que en el modo de siempre: acá la horda se frena contra la defensa)
-  paga: { caminante: 5, corredor: 6, gordo: 12, jefe: 72, soldadoZombie: 6 },
+  /* Unidades. alcance, minimo y radio en px del plano (44 px = una celda). arma: 'bala' (el blindaje le resta),
+   * 'pesada' (ignora el blindaje), 'fuego' (daño por segundo a todos los del cono), 'explosivo' (granada con demora)
+   * o 'flak' (sólo al aire, con área). aire: le puede tirar a lo que vuela. elige: a quién le tira */
+  unidades: {
+    soldado:       { clase: 'inf', costo: 50,  tiempo: 4,   vida: 30,  donde: 'cuartel', alcance: 175, dano: 3,  cadencia: 0.65, arma: 'bala', aire: true },
+    francotirador: { clase: 'inf', costo: 120, tiempo: 6,   vida: 20,  donde: 'cuartel', alcance: 340, dano: 45, cadencia: 3,    arma: 'pesada', aire: true, elige: 'peligro' },
+    lanzallamas:   { clase: 'inf', costo: 110, tiempo: 5,   vida: 45,  donde: 'cuartel', alcance: 88,  dano: 14, cono: 0.7,      arma: 'fuego', quema: 2 },
+    medico:        { clase: 'inf', costo: 90,  tiempo: 5,   vida: 25,  donde: 'cuartel', cura: 4, radio: 88 },
+    torreta:       { clase: 'mec', costo: 150, tiempo: 8,   vida: 90,  donde: 'obra', bloquea: true, alcance: 195, dano: 2, cadencia: 0.13, arma: 'bala' },
+    tanque:        { clase: 'mec', costo: 375, tiempo: 15,  vida: 400, donde: 'taller', bloquea: true, alcance: 220, dano: 70, cadencia: 1.8, arma: 'pesada', elige: 'vida', mordida: 0.3, vel: 38 },
+    mortero:       { clase: 'mec', costo: 130, tiempo: 7,   vida: 60,  donde: 'obra', bloquea: true, alcance: 396, minimo: 176, dano: 14, radio: 40, cadencia: 3.5, vuelo: 1.5, arma: 'explosivo', elige: 'monton' },
+    antiaerea:     { clase: 'mec', costo: 140, tiempo: 8,   vida: 80,  donde: 'obra', bloquea: true, alcance: 264, dano: 6, radio: 34, cadencia: 0.4, arma: 'flak', soloAire: true },
+    muro:          { clase: 'est', costo: 35,  tiempo: 2,   vida: 150, donde: 'obra', bloquea: true },
+    alambrado:     { clase: 'est', costo: 15,  tiempo: 1.5, vida: 40,  donde: 'obra', liviano: true, frena: 0.45, raspa: 0.2 },
+    bunker:        { clase: 'est', costo: 120, tiempo: 12,  vida: 280, donde: 'obra', bloquea: true, capacidad: 4, masAlcance: 1.2, masCadencia: 0.8 },
+    senuelo:       { clase: 'est', costo: 50,  tiempo: 2,   vida: 100, donde: 'obra', liviano: true, atrae: 5, entretiene: 5 },
+  },
+  /* Zombies. vida: veces la del común de esa oleada. vel en px/s. vista, olfato: en celdas. mueve: 'camina' (por la
+   * grilla), 'cuad' (cuadrúpedo: salta lo bajo y el alambrado, no entra al agua) o 'vuela'. llega (los que cazan):
+   * 'derecho' (por el camino si el rodeo es corto; si no, rompiendo lo que tapa a su presa), 'rodea' (nunca rompe) o
+   * 'rompe' (nunca rodea). dano: lo que le saca al campamento si entra. conducta: js/bastion-v2-horda.js */
+  zombies: {
+    caminante:     { clase: 'cam', conducta: 'caza', vida: 1,   vel: 24, vista: 3, llega: 'derecho', paga: 3,  dano: 1, escala: 0.58 },
+    corredor:      { clase: 'cam', conducta: 'caza', vida: 0.8, vel: 46, vista: 4, llega: 'rodea',   paga: 3,  dano: 1, escala: 0.5 },
+    gordo:         { clase: 'cam', conducta: 'caza', vida: 3.2, vel: 16, vista: 2, llega: 'rompe',   paga: 7,  dano: 3, escala: 0.66, aplasta: true, mordida: 1.5 },
+    acorazado:     { clase: 'cam', conducta: 'caza', vida: 2,   vel: 20, vista: 3, llega: 'derecho', paga: 7,  dano: 2, escala: 0.6, blindaje: 2 },
+    griton:        { clase: 'esp', conducta: 'grita', vida: 0.8, vel: 26, vista: 6, paga: 6, dano: 1, escala: 0.56, grito: { radio: 5, apuro: 1.3, dura: 6, cada: 5, quieto: 1.2 } },
+    hinchado:      { clase: 'esp', conducta: 'revienta', vida: 5, vel: 14, vista: 5, paga: 7, dano: 3, escala: 0.66, estalla: { radio: 60, unidades: 90, gente: 30, zombies: 2.2 } },
+    dinamitero:    { clase: 'esp', conducta: 'demuele', vida: 0.8, vel: 50, paga: 4, dano: 2, escala: 0.52, carga: { dano: 120, radio: 40, unidades: 40, gente: 20, zombies: 1 } },
+    toxico:        { clase: 'esp', conducta: 'caza', vida: 3, vel: 18, vista: 4, llega: 'derecho', paga: 6, dano: 2, escala: 0.6, grupo: true, gas: { radio: 50, dura: 5, dano: 5, bunker: 2.3 } },
+    perro:         { clase: 'ani', conducta: 'jauria', mueve: 'cuad', vida: 0.5, vel: 62, olfato: 6, paga: 2, dano: 1, escala: 0.74, manada: 5, cadaMordida: 600 },
+    toro:          { clase: 'ani', conducta: 'embiste', mueve: 'cuad', vida: 6, vel: 20, vista: 6, paga: 9, dano: 3, escala: 0.82, embestida: { vel: 96, largo: 6, aviso: 0.8, aturde: 2, dano: 12, quieto: 2 } },
+    cuervo:        { clase: 'ani', conducta: 'bandada', mueve: 'vuela', vida: 0.4, vel: 55, paga: 1, dano: 1, escala: 0.8, manada: 6, pico: 2, cadaPico: 700, altura: 44 },
+    buitre:        { clase: 'ani', conducta: 'rapta', mueve: 'vuela', vida: 2.5, vel: 40, paga: 6, dano: 1, escala: 1, altura: 56 },
+    soldadoZombie: { clase: 'cam', conducta: 'caza', vida: 1.5, vel: 24, vista: 3, llega: 'derecho', paga: 3, dano: 1, escala: 0.6, blindaje: 1 },
+    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 40, dano: 8, escala: 1.25, aplasta: true, mordida: 3 },
+  },
+  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'jefe'],
+  clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'] },
+  // A quién elige primero el francotirador (de más a menos peligroso)
+  peligro: ['griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo'],
+  /* Quién frena a quién, para las marcas del panel, las fichas y los consejos. Sale de medir cada cruce con el
+   * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6), no de una regla aparte.
+   * bien: lo frena; mal: rinde poco o se pierde contra él */
+  contra: {
+    caminante:  { bien: ['lanzallamas', 'mortero', 'senuelo'], mal: ['tanque', 'antiaerea'] },
+    corredor:   { bien: ['torreta', 'alambrado', 'lanzallamas'], mal: ['soldado', 'mortero', 'tanque'] },
+    gordo:      { bien: ['tanque', 'francotirador'], mal: ['soldado', 'muro', 'alambrado', 'mortero'] },
+    acorazado:  { bien: ['francotirador', 'tanque', 'lanzallamas'], mal: ['torreta', 'soldado', 'bunker'] },
+    griton:     { bien: ['francotirador', 'torreta'], mal: ['mortero'] },
+    hinchado:   { bien: ['francotirador', 'mortero', 'alambrado', 'senuelo'], mal: ['lanzallamas', 'soldado', 'muro'] },
+    dinamitero: { bien: ['torreta', 'soldado', 'francotirador', 'alambrado'], mal: ['muro', 'mortero', 'antiaerea', 'tanque'] },
+    toxico:     { bien: ['francotirador', 'tanque', 'medico'], mal: ['bunker', 'soldado', 'lanzallamas'] },
+    perro:      { bien: ['lanzallamas', 'torreta', 'bunker'], mal: ['soldado', 'francotirador', 'alambrado', 'mortero'] },
+    toro:       { bien: ['francotirador', 'tanque', 'torreta', 'bunker'], mal: ['soldado', 'alambrado', 'medico'] },
+    cuervo:     { bien: ['antiaerea', 'bunker'], mal: ['torreta', 'tanque', 'mortero', 'lanzallamas'] },
+    buitre:     { bien: ['antiaerea', 'soldado', 'bunker'], mal: ['torreta', 'tanque', 'mortero', 'lanzallamas'] },
+    soldadoZombie: { bien: ['francotirador', 'tanque', 'medico'], mal: ['soldado'] },
+    jefe:       { bien: ['tanque', 'francotirador'], mal: ['muro', 'alambrado', 'soldado'] },
+  },
+  /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena un tipo, de a pocos, para ver qué hace antes de que
+   * duela; el orden en que salen lo arma ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto
+   * paga poco (un común, $3): con lo que se junta en toda la partida alcanza para uno de cada cosa, no para todo */
   niveles: {
     granja: {
-      dinero: 200, vida: 1,
+      dinero: 220, vida: 1,
       oleadas: [
-        { caminante: 12 },
         { caminante: 18 },
-        { caminante: 21, corredor: 5 },
-        { caminante: 23, corredor: 7, gordo: 4 },
-        { caminante: 26, corredor: 10, gordo: 5, jefe: 1 },
-        { caminante: 32, corredor: 12, gordo: 8 },
-        { caminante: 36, corredor: 14, gordo: 10 },
-        { caminante: 40, corredor: 17, gordo: 13 },
-        { caminante: 44, corredor: 20, gordo: 16 },
-        { caminante: 48, corredor: 22, gordo: 18, jefe: 1 },
+        { caminante: 22, corredor: 10 },
+        { caminante: 24, corredor: 8, acorazado: 6 },
+        { caminante: 24, corredor: 10, acorazado: 6, perro: 10 },
+        { caminante: 30, acorazado: 8, perro: 10, cuervo: 12 },
+        { caminante: 30, corredor: 14, gordo: 5, acorazado: 8, jefe: 1 },
+        { caminante: 34, corredor: 14, hinchado: 3, perro: 15, cuervo: 12 },
+        { caminante: 36, gordo: 7, acorazado: 10, hinchado: 4, dinamitero: 6 },
+        { caminante: 38, corredor: 18, griton: 3, dinamitero: 6, perro: 15, cuervo: 18 },
+        { caminante: 42, gordo: 9, acorazado: 14, griton: 3, hinchado: 5, toxico: 4 },
+        { caminante: 42, corredor: 18, dinamitero: 7, toxico: 4, perro: 15, toro: 3, buitre: 3 },
+        { caminante: 44, corredor: 16, gordo: 8, acorazado: 12, griton: 3, hinchado: 4, dinamitero: 6, toxico: 4, perro: 15, toro: 3, cuervo: 18, buitre: 3, jefe: 1 },
       ],
     },
   },
 };
-const ARMA_ALAMBRE = { categoria: 'cuerpo', fuego: true };   // raspa de a poco: sin destello ni empujón en cada cuadro
-const ESTILO_SOLDADO_ZOMBIE = { id: 'soldado-zombie', torso: 'chaleco', sinBandas: true, cartucheras: true, camiseta: '#5d6248', chaleco: '#9a8262', piernas: 'largo', pantalon: '#7c7a5e', accesorio: 'casco-soldado', escala: [1.02, 1.08] };
-const ESTILO_COLOSO = { id: 'coloso', torso: 'desnudo', camiseta: '#4fae2e', piernas: 'short', pantalon: '#363a5e', accesorio: 'pelo-revuelto', escala: [1, 1] };
+// Cómo acusa cada golpe el zombie (js/zombie.js): el fuego y las púas no destellan ni empujan; la explosión lo despide
+const ARMA_BALA = { categoria: 'rifle' }, ARMA_PESADA = { categoria: 'escopeta', pesada: true };
+const ARMA_FUEGO = { categoria: 'cuerpo', fuego: true }, ARMA_EXPLOSION = { categoria: 'bazuca', explosivo: true };
+const ARMA_ALAMBRE = { categoria: 'cuerpo', fuego: true, alambre: true };
 
-/* ---------- Partida guardada, récord y pantalla de fin (aparte del modo de siempre) ---------- */
+/* ---------- Partida guardada, oleadas y pantalla de fin (aparte del modo de siempre) ---------- */
 const BastionV2 = {
-  PARTIDA: 'zonaMuerta.bastion2.partida', GANADO: 'zonaMuerta.bastion2.ganado',
-  partida() { return ProgresoBastion.leer(this.PARTIDA, null); },
+  PARTIDA: 'zonaMuerta.bastion2.partida', GANADO: 'zonaMuerta.bastion2.ganado', VERSION: 2,
+  partida() { const p = ProgresoBastion.leer(this.PARTIDA, null); return p && p.version === this.VERSION ? p : null; },   // la de un plantel anterior no sirve
   borrar() { ProgresoBastion.escribir(this.PARTIDA, null); },
-  // Orden en que sale una oleada: los comunes parejos, los corredores en dos tandas, los gordos en la segunda mitad
-  // y el jefe al final. Sin azar: la misma oleada sale siempre igual
+  oleadas() { return BASTION2.niveles.granja.oleadas; },
+  // En qué oleada (desde 0) aparece por primera vez cada tipo
+  debut() {
+    if (!this.debuts) { this.debuts = {}; this.oleadas().forEach((def, i) => { for (const k in def) if (!(k in this.debuts)) this.debuts[k] = i; }); }
+    return this.debuts;
+  },
+  /* Orden en que sale una oleada, sin azar: los comunes en hordas repartidas de principio a fin; los acorazados
+   * adelante, de escudo; el gritón, primero; gordos, hinchados y tóxicos de la mitad en adelante; corredores y
+   * dinamiteros en dos tandas; perros de a 5 y cuervos de a 6; el jefe, al final */
   ordenOleada(def) {
-    const puestos = [], poner = (tipo, f) => puestos.push([f, tipo]);
-    const n = tipo => def[tipo] || 0;
-    for (let k = 0; k < n('caminante'); k++) poner('caminante', (k + 0.5) / n('caminante'));
-    for (let k = 0; k < n('gordo'); k++) poner('gordo', 0.4 + 0.6 * (k + 0.5) / n('gordo'));
-    for (let k = 0; k < n('corredor'); k++) poner('corredor', (k < n('corredor') / 2 ? 0.3 : 0.72) + k * 0.0005);
+    const puestos = [], n = tipo => def[tipo] || 0, poner = (tipo, f) => puestos.push([f, tipo]);
+    const parejo = (tipo, a, b) => { for (let k = 0; k < n(tipo); k++) poner(tipo, a + (b - a) * (k + 0.5) / n(tipo)); };
+    const tandas = (tipo, tam, cuando) => { for (let k = 0; k < n(tipo); k++) poner(tipo, cuando[Math.min(cuando.length - 1, Math.floor(k / tam))] + k * 0.0004); };
+    const hordas = Math.max(1, Math.round(n('caminante') / BASTION2.horda));
+    for (let k = 0; k < n('caminante'); k++) poner('caminante', (Math.floor(k * hordas / n('caminante')) + 0.5) / hordas + k * 0.0004);
+    parejo('acorazado', 0.08, 0.7); parejo('gordo', 0.4, 1); parejo('griton', 0.04, 0.55);
+    parejo('hinchado', 0.3, 0.9); parejo('toxico', 0.3, 0.85); parejo('toro', 0.4, 0.8); parejo('buitre', 0.45, 0.9);
+    tandas('corredor', Math.ceil(n('corredor') / 2) || 1, [0.3, 0.72]);
+    tandas('dinamitero', Math.ceil(n('dinamitero') / 2) || 1, [0.5, 0.82]);
+    tandas('perro', BASTION2.zombies.perro.manada, [0.25, 0.6, 0.86, 0.95]);
+    tandas('cuervo', BASTION2.zombies.cuervo.manada, [0.4, 0.7, 0.92]);
     for (let k = 0; k < n('jefe'); k++) poner('jefe', 2 + k);
     return puestos.sort((a, b) => a[0] - b[0]).map(p => p[1]);
   },
   total(def) { return Object.values(def).reduce((s, v) => s + v, 0); },
-  // Pone o saca los números de la v2 en las unidades compartidas con el modo de siempre
-  ajustarUnidades(v2) {
-    this.originales = this.originales || Object.fromEntries(Object.keys(BASTION2.ajustes).map(k => [k, { ...BASTION.unidades[k] }]));
-    for (const k in BASTION2.ajustes) Object.assign(BASTION.unidades[k], this.originales[k], v2 ? BASTION2.ajustes[k] : {});
+  // Segundos hasta el próximo que sale: los de una misma tanda (horda de comunes, corredores, manada) salen pegados,
+  // y después de una horda hay un respiro
+  pausa(tipo, sigue, ronda, k) {
+    const base = Math.max(0.5, 1.5 - ronda * 0.08) * (0.8 + azar(k, ronda) * 0.4);
+    if (tipo === sigue) return base * ({ caminante: 0.3, corredor: 0.4, dinamitero: 0.5, perro: 0.22, cuervo: 0.2 }[tipo] || 1);
+    return base * (tipo === 'caminante' ? 2.4 : 1);
   },
-  // Teclas de los botones del panel: en la v2 hay seis unidades (1 a 6), vender es 7 y reparar 8
-  teclasDelPanel(v2) {
-    const panel = document.getElementById('panel-bastion'); if (!panel) return;
-    const orden = v2 ? [...BASTION2.orden, 'vender', 'reparar'] : ['soldado', 'torreta', 'bunker', 'tanque', 'muro', 'vender', 'reparar'];
-    orden.forEach((tipo, i) => { const k = panel.querySelector(`[data-unidad="${tipo}"] kbd`); if (k) k.textContent = String(i + 1); });
+  // Las unidades del bastión son una sola tabla (BASTION.unidades): en la v2 valen las de BASTION2 y, al volver al
+  // modo de siempre, las originales
+  ajustarUnidades(v2) {
+    if (!this.originales) this.originales = JSON.parse(JSON.stringify(BASTION.unidades));
+    for (const k of Object.keys(BASTION.unidades)) delete BASTION.unidades[k];
+    Object.assign(BASTION.unidades, JSON.parse(JSON.stringify(v2 ? BASTION2.unidades : this.originales)));
   },
   // Texto de la pantalla de fin: si se perdió, quiénes entraron al campamento y con qué se frena al que más entró
   fin(juego, v) {
-    const nivel = t('bniv.' + juego.nivelBastion.id), total = BASTION2.niveles.granja.oleadas.length;
+    const nivel = t('bniv.' + juego.nivelBastion.id), total = this.oleadas().length;
     if (juego.resultado === 'victoria') {
       return { titulo: t('fin.bastionGanado'), color: '#6ad06a',
         detalle: t('b2.finGanado', { nivel, olas: total, base: juego.vidaBase, max: BASTION.vidaBase, bajas: juego.bajas, contagiados: juego.contagiados, tiempo: v.tiempo }) };
     }
     const E = juego.entraron || {}, tipos = Object.keys(E).sort((a, b) => E[b] - E[a]);
     const lista = tipos.map(k => `${E[k]} × ${t('b2.z.' + k)}`).join(', ');
+    const peor = tipos[0], C = peor && BASTION2.contra[peor];
+    const consejo = C ? ' ' + t('b2.consejo', { tipo: t('b2.z.' + peor), con: C.bien.map(u => t('b2.u.' + u)).join(', ') }) : '';
     return { titulo: t('fin.bastionTitulo'), color: '',
-      detalle: t('b2.finPerdido', { nivel, ola: Math.max(1, juego.ronda), total, lista, contagiados: juego.contagiados, tiempo: v.tiempo }) + (tipos.length ? ' ' + t('b2.tip.' + tipos[0]) : '') };
+      detalle: t('b2.finPerdido', { nivel, ola: Math.max(1, juego.ronda), total, lista, contagiados: juego.contagiados, tiempo: v.tiempo }) + consejo };
   },
 };
 
@@ -119,13 +195,16 @@ const BastionV2 = {
   const VECINAS = [[-1, 0], [0, -1], [0, 1], [1, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]];
   // Un método de la v1 pasa a elegir: en una partida v2 corre el nuevo; en las demás, el de siempre
   const envolver = (nombre, nuevo) => { v1[nombre] = P[nombre]; P[nombre] = function (...a) { return this.v2 ? nuevo.apply(this, a) : v1[nombre].apply(this, a); }; };
+  BastionV2.distPlano = distPlano; BastionV2.v1 = v1; BastionV2.envolver = envolver;
+  const U_ = tipo => BASTION.unidades[tipo];
+  const esInf = u => !!u && u.clase === 'inf';
 
   /* ---------- Armar la partida ---------- */
   v1.prepararBastion = P.prepararBastion;
   P.prepararBastion = function () {
     this.v2 = !!(this.opcionesEstrategia && this.opcionesEstrategia.v2);
     document.body.classList.toggle('bastion-v2', this.v2);
-    BastionV2.teclasDelPanel(this.v2); BastionV2.ajustarUnidades(this.v2);
+    BastionV2.ajustarUnidades(this.v2);
     if (!this.v2) return v1.prepararBastion.call(this);
     const B = BASTION;
     Mundo.plano = true; Mundo.carriles = false; Mundo.perfil = null;
@@ -133,27 +212,51 @@ const BastionV2 = {
     this.filas = Math.floor((B.abajo - B.arriba) / B.celda[1]);
     this.vidaBase = B.vidaBase;
     this.unidades = []; this.colaCuartel = []; this.colaTaller = []; this.colaOleada = [];
-    this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = B.primerDescanso; this.proximoZombie = 0;
-    this.colocando = null; this.puntero = null; this.trazos = []; this.balasBastion = [];
+    this.ronda = 0; this.porAparecer = 0; this.enDescanso = true; this.descansoHasta = BASTION2.primerDescanso; this.proximoZombie = 0;
+    this.colocando = null; this.moviendo = null; this.puntero = null; this.trazos = []; this.balasBastion = [];
+    this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = [];
     this.velocidad = 1; this.construidas = 0; this.contagiados = 0; this.entraron = {};
-    this.camposLibres = new Map(); this.camposCrudos = new Map();
+    this.camposLibres = new Map(); this.camposCrudos = new Map(); this.camposCuad = new Map();
     this.prepararNivelBastion();   // escenario, terreno y obstáculos de La granja (js/bastion-niveles.js)
     this.nivelV2 = BASTION2.niveles[this.nivelBastion.id] || BASTION2.niveles.granja;
     this.dinero = this.nivelV2.dinero;
-    // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa y agua profunda
-    this.crudasV2 = new Set((this.obstaculos || []).map(o => o.c + ',' + o.f));
+    // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa y agua profunda. Los
+    // obstáculos bajos (fardos, el tractor) los saltan los perros
+    this.crudasV2 = new Set(); this.bajasV2 = new Set();
+    for (const o of this.obstaculos || []) { this.crudasV2.add(o.c + ',' + o.f); if (o.tipo === 'fardo' || o.tipo === 'tractor' || o.tipo === 'auto') this.bajasV2.add(o.c + ',' + o.f); }
     for (let f = 0; f < this.filas; f++) for (let c = 0; c < this.cols; c++) if (this.terrenoEn(c, f) === 'agua') this.crudasV2.add(c + ',' + f);
     const guardada = this.opcionesEstrategia.continuar && BastionV2.partida();
-    if (guardada) this.restaurarPartidaV2(guardada); else this.ejercitoInicial();
+    if (guardada) this.restaurarPartidaV2(guardada); else this.ejercitoInicialV2();
     this.rehacerCamino();
     document.getElementById('hud-aereo').classList.add('oculta');
     document.getElementById('panel-bastion').classList.remove('oculta');
     this.panelBastion();
   };
+  // Una unidad lista en su celda (op.obra: recién empezada a construir)
+  P.nuevaUnidadV2 = function (tipo, c, f, op = {}) {
+    const U = U_(tipo), p = this.centroCelda(c, f);
+    const u = { tipo, clase: U.clase, c, f, x: op.x ?? p.x, y: op.y ?? p.y, vida: U.vida, vidaMax: U.vida, listo: true, obra: 1, bloquea: !!U.bloquea, costo: U.costo,
+      enfriado: Math.random() * 0.4, fuego: 0, apunta: 0, fase: 0, adentro: 0 };
+    if (tipo === 'bunker') u.dentro = [];
+    if (U.soloAire) u.apunta = -0.8;   // la antiaérea espera mirando al cielo
+    if (op.obra) { u.listo = false; u.obra = 0; u.vida = U.vida * 0.25; }
+    return u;
+  };
+  // Ejército mínimo al empezar: tres soldados y tres muros que les sirven de escudo sin cerrar el camino
+  P.ejercitoInicialV2 = function () {
+    const medio = Math.floor(this.filas / 2);
+    for (const df of [-2, -1, 1]) if (!this.motivoNoColocar('muro', 7, medio + df, true)) this.unidades.push(this.nuevaUnidadV2('muro', 7, medio + df));
+    for (const df of [-1, 0, 1]) if (!this.motivoNoColocar('soldado', 4, medio + df, true)) this.unidades.push(this.nuevaUnidadV2('soldado', 4, medio + df));
+  };
 
-  envolver('alMorirZombie', function (zombie) { this.bajas++; this.dinero += BASTION2.paga[zombie.tipoBastion] ?? BASTION2.paga.caminante; });
+  envolver('alMorirZombie', function (zombie, arma) {
+    this.bajas++;
+    if (!zombie.sinPaga) this.dinero += (BASTION2.zombies[zombie.tipoBastion] || BASTION2.zombies.caminante).paga;
+    this.alCaerZombieV2(zombie, arma);   // lo que deja al morir: explosión, gas… (js/bastion-v2-horda.js)
+  });
 
-  /* ---------- Caminos: el de siempre (libre), hacia una presa y «crudo» (como si no hubiera construcciones) ---------- */
+  /* ---------- Caminos: el de siempre (libre), hacia una presa, «crudo» (como si no hubiera construcciones) y el de
+   * los cuadrúpedos (que saltan lo bajo) ---------- */
   envolver('bloqueadas', function (extra) {
     const s = v1.bloqueadas.call(this, extra);
     for (const k of this.crudasV2) s.add(k);   // el estanque también corta el paso
@@ -162,7 +265,9 @@ const BastionV2 = {
   envolver('rehacerCamino', function () {
     this.bloqV2 = this.bloqueadas();
     this.distBastion = this.distancias(this.bloqV2);
-    this.camposLibres.clear();
+    this.bloqCuadV2 = new Set([...this.bloqV2].filter(k => !this.bajasV2.has(k)));
+    this.distCuadV2 = this.distancias(this.bloqCuadV2);
+    this.camposLibres.clear(); this.camposCuad.clear();
   });
   // Distancias por celda desde las fuentes, sin pisar las bloqueadas
   P.bfsV2 = function (fuentes, bloqueadas) {
@@ -177,16 +282,18 @@ const BastionV2 = {
     }
     return d;
   };
-  // Hacia una celda por el camino abierto. Si la celda es una construcción (búnker, torreta), hasta sus vecinas
-  P.campoLibre = function (c, f) {
-    const k = c + ',' + f; let d = this.camposLibres.get(k);
-    if (!d) { d = this.bfsV2(this.bloqV2.has(k) ? [[c + 1, f], [c - 1, f], [c, f + 1], [c, f - 1]] : [[c, f]], this.bloqV2); this.camposLibres.set(k, d); }
+  // Hacia una celda por el camino abierto. Si la celda es una construcción (búnker, torreta), hasta sus vecinas.
+  // cuad: el de los perros y el toro
+  P.campoLibre = function (c, f, cuad) {
+    const k = c + ',' + f, cache = cuad ? this.camposCuad : this.camposLibres, bloq = cuad ? this.bloqCuadV2 : this.bloqV2;
+    let d = cache.get(k);
+    if (!d) { d = this.bfsV2(bloq.has(k) ? [[c + 1, f], [c - 1, f], [c, f + 1], [c, f - 1]] : [[c, f]], bloq); cache.set(k, d); }
     return d;
   };
   // Hacia una celda (o hacia el campamento) en línea lo más recta posible: sólo estorban los obstáculos del mapa
   P.campoCrudo = function (c, f) {
     const k = c + ',' + f; let d = this.camposCrudos.get(k);
-    if (!d) { d = this.bfsV2([[c, f]], this.crudasV2); this.camposCrudos.set(k, d); }
+    if (!d) { d = this.bfsV2([[c, f]], this.crudasV2); this.camposCrudos.set(k, d); if (this.camposCrudos.size > 400) this.camposCrudos.delete(this.camposCrudos.keys().next().value); }
     return d;
   };
   P.campoCrudoBase = function () {
@@ -209,88 +316,156 @@ const BastionV2 = {
     return mejor;
   };
 
-  /* ---------- Colocar y vender ---------- */
-  envolver('motivoNoColocar', function (tipo, c, f) {
-    const U = BASTION.unidades[tipo];
+  /* ---------- Colocar, vender, reparar ---------- */
+  // sinPlata: sólo las reglas del lugar (para el ejército inicial y para mover)
+  envolver('motivoNoColocar', function (tipo, c, f, sinPlata, mueve) {
+    const U = U_(tipo);
     if (!this.dentro(c, f)) return 'bastion.fuera';
     if (this.obstaculoEn(c, f)) return 'bastion.obstaculo';
     const suelo = this.terrenoEn(c, f);
     if (suelo === 'agua') return 'bastion.agua';
-    if (suelo === 'barro' && tipo !== 'soldado' && !U.liviano) return 'b2.blando';   // en el barro: sólo gente a pie, alambrado y señuelo
-    if (this.dinero < U.costo) return 'bastion.sinDinero';
+    if (suelo === 'barro' && U.clase !== 'inf' && !U.liviano) return 'b2.blando';   // en el barro: sólo gente a pie, alambrado y señuelo
+    if (!sinPlata && this.dinero < U.costo) return 'bastion.sinDinero';
     const ocupa = this.ocupadaPor(c, f);
-    const suelta = this.unidades.find(u => !u.bloquea && !u.invisible && u.c === c && u.f === f && (u.tipo !== 'soldado' || u.listo));   // alambrado, señuelo, un caído o un soldado en su puesto
-    if (tipo === 'soldado') {
-      if (ocupa) return ocupa.tipo !== 'bunker' ? 'bastion.ocupado' : ocupa.adentro + this.vanAlBunker(ocupa) >= BASTION.unidades.bunker.capacidad ? 'bastion.lleno' : null;
-      return suelta && suelta.tipo !== 'soldado' ? 'bastion.ocupado' : null;
+    const suelta = this.unidades.find(u => u !== mueve && !u.bloquea && !u.invisible && !u.llevado && u.c === c && u.f === f && (!esInf(u) || u.listo));   // alambrado, señuelo, un caído o alguien en su puesto
+    if (U.clase === 'inf') {
+      if (ocupa && ocupa !== mueve) return ocupa.tipo !== 'bunker' ? 'bastion.ocupado' : ocupa.dentro.length + this.vanAlBunker(ocupa) >= U_('bunker').capacidad ? 'bastion.lleno' : null;
+      return suelta ? 'bastion.ocupado' : this.colaCuartel.some(o => o.c === c && o.f === f && !o.bunker) ? 'bastion.ocupado' : null;
     }
-    if (ocupa || suelta) return 'bastion.ocupado';
-    if (this.zombies.some(z => { if (z.estado === 'muerto') return false; const k = this.celdaDe(z.x, z.y); return k.c === c && k.f === f; })) return 'bastion.ocupado';
+    if ((ocupa && ocupa !== mueve) || suelta) return 'bastion.ocupado';
+    if (this.zombies.some(z => { if (z.estado === 'muerto' || z.vuela) return false; const k = this.celdaDe(z.x, z.y); return k.c === c && k.f === f; })) return 'bastion.ocupado';
     if (!U.liviano) {   // lo que bloquea no puede cerrar del todo el paso al campamento
-      const d = this.distancias(this.bloqueadas(c + ',' + f));
-      if (!d.some(fila => fila[this.cols - 1] < Infinity)) return 'bastion.bloquea';
+      const bloq = this.bloqueadas(c + ',' + f);
+      if (mueve && mueve.bloquea) bloq.delete(mueve.c + ',' + mueve.f);
+      if (!this.distancias(bloq).some(fila => fila[this.cols - 1] < Infinity)) return 'bastion.bloquea';
     }
     return null;
   });
+  envolver('vanAlBunker', function (b) { return this.unidades.filter(u => u.destinoBunker === b || u.esperaBunker === b).length + this.colaCuartel.filter(o => o.bunker === b).length; });
   envolver('colocar', function (c, f) {
-    const tipo = this.colocando, U = BASTION.unidades[tipo];
-    if (!U || !U.liviano) return v1.colocar.call(this, c, f);   // lo de siempre (valida con las reglas de la v2)
+    const tipo = this.colocando, U = U_(tipo); if (!U) return false;
     const motivo = this.motivoNoColocar(tipo, c, f);
     if (motivo) { this.aviso(t(motivo), 1400); Audio_.vacio(); return false; }
     this.dinero -= U.costo;
-    const p = this.centroCelda(c, f);   // alambrado y señuelo se arman en el lugar y no cierran el paso
-    this.unidades.push({ tipo, c, f, x: p.x, y: p.y, vida: U.vida * 0.25, vidaMax: U.vida, listo: false, obra: 0, bloquea: false, costo: U.costo, enfriado: 0, fuego: 0, apunta: 0, adentro: 0 });
-    Audio_.recarga('cartucho');
+    if (U.donde === 'obra') {   // se levanta en el lugar
+      this.unidades.push(this.nuevaUnidadV2(tipo, c, f, { obra: true }));
+      if (U.bloquea) this.rehacerCamino();
+      Audio_.recarga('cartucho');
+    } else {   // se forma en el cuartel o se arma en el taller, de a uno, y va hasta su lugar
+      const bunker = this.ocupadaPor(c, f), p = this.centroCelda(c, f);
+      const orden = { tipo, c, f, costo: U.costo, bunker: bunker && bunker.tipo === 'bunker' ? bunker : null };
+      if (U.bloquea) {   // el lugar del tanque queda reservado desde ya, así nadie lo bloquea
+        orden.reserva = { tipo: 'reserva', c, f, x: p.x, y: p.y, bloquea: true, listo: false, vida: 1, vidaMax: 1, costo: 0, invisible: true };
+        this.unidades.push(orden.reserva); this.rehacerCamino();
+      }
+      (U.donde === 'cuartel' ? this.colaCuartel : this.colaTaller).push(orden);
+      Audio_.recarga('tapa');
+    }
     this.panelBastion();
     return true;
   });
+  // Lo que hay para vender o reparar en una celda: primero lo construido, después la gente
+  P.unidadEnV2 = function (c, f) {
+    const lista = this.unidades.filter(u => u.c === c && u.f === f && !u.invisible && !u.llevado && u.tipo !== 'caido' && U_(u.tipo));
+    return lista.find(u => u.bloquea) || lista.find(u => !esInf(u)) || lista.find(u => u.listo && !u.enCamino) || null;
+  };
   envolver('vender', function (x, y) {
-    const { c, f } = this.celdaDe(x, y);
-    const u = this.unidades.find(u => u.c === c && u.f === f && !u.invisible && u.tipo !== 'caido' && (u.bloquea || u.listo || BASTION.unidades[u.tipo].liviano));
+    const { c, f } = this.celdaDe(x, y), u = this.unidadEnV2(c, f);
     if (!u) return false;
     const devuelve = u.listo ? Math.round(u.costo * (this.enDescanso ? BASTION2.vender.descanso : BASTION2.vender.oleada)) : u.costo;
     this.quitarUnidad(u); this.dinero += devuelve;
     this.aviso(t('bastion.vendido', { d: devuelve }), 1200); Audio_.recarga('tapa');
     return true;
   });
+  envolver('aReparar', function (c, f) { return this.unidades.find(u => u.c === c && u.f === f && !u.invisible && u.listo && u.vida < u.vidaMax - 0.5 && U_(u.tipo) && !esInf(u)) || null; });   // a la gente la cura el médico
   envolver('quitarUnidad', function (u, destruida) {
     u.quitada = true;   // los zombies que la tenían de presa la sueltan
-    v1.quitarUnidad.call(this, u, destruida);
-  });
-  // Lo que un zombie termina de romper o de matar
-  P.perderUnidadV2 = function (u) {
-    if (u.tipo === 'soldado') {   // cae y queda contagiado: a los 3 s se levanta en contra
-      u.quitada = true; this.unidades = this.unidades.filter(x => x !== u);
-      this.unidades.push({ tipo: 'caido', c: u.c, f: u.f, x: u.x, y: u.y, vida: 1, vidaMax: 1, listo: true, bloquea: false, costo: 0, t: 0 });
-      this.salpicar(u.x, u.y - 14, '#8b0f0f', 12, 3, u.y);
-      this.contagiados++; this.aviso(t('b2.contagiado'), 1500); Audio_.jugadorHerido();
-      return;
-    }
-    if (u.tipo === 'alambrado' || u.tipo === 'senuelo') {   // sin estallido: se desarma
-      this.quitarUnidad(u);
-      this.salpicar(u.x, u.y - 8, u.tipo === 'senuelo' ? '#ffd27a' : '#9aa0a6', 10, 3, u.y);
-      if (u.tipo === 'senuelo') { this.explosiones.push(new Explosion(u.x, u.y - 18, 12)); Audio_.recarga('tapa'); }
-      return;
-    }
-    this.quitarUnidad(u, true);   // estalla; los que estaban en el búnker salen a pie
-    if (u.tipo === 'torreta') {   // el artillero queda a pie, herido
-      const s = this.nuevoSoldado(u.x - 4, u.y + 2, u.c, u.f); s.vida = s.vidaMax / 2;
+    const dentro = u.dentro || []; u.dentro = []; u.adentro = 0;
+    if (this.moviendo === u) this.moviendo = null;
+    v1.quitarUnidad.call(this, u, destruida && !esInf(u));
+    dentro.forEach((d, k) => {   // los de adentro del búnker salen a pie, cada uno con su oficio
+      const s = this.nuevaUnidadV2(d.tipo, u.c, u.f, { x: u.x - 10 + k * 6, y: u.y + 6 }); s.vida = d.vida ?? s.vida;
       this.unidades.push(s);
+    });
+    for (const s of this.unidades) if (s.esperaBunker === u) s.esperaBunker = null;
+  });
+
+  // Cuartel y taller: forman de a uno; lo formado sale del campamento y va hasta su lugar
+  envolver('formar', function (dt) {
+    const B = BASTION, puerta = { x: B.baseX - 18, y: B.arriba + (this.filas * B.celda[1]) / 2 + 8 };
+    for (const cola of [this.colaCuartel, this.colaTaller]) {
+      const o = cola[0]; if (!o) continue;
+      o.hecho = (o.hecho || 0) + dt;
+      if (o.hecho < U_(o.tipo).tiempo) continue;
+      cola.shift();
+      if (o.reserva) this.unidades = this.unidades.filter(x => x !== o.reserva);
+      const u = this.nuevaUnidadV2(o.tipo, o.c, o.f, { x: puerta.x, y: puerta.y });
+      u.destino = this.centroCelda(o.c, o.f); u.enCamino = true; u.retroceso = 0;
+      if (esInf(u) && o.bunker && !o.bunker.quitada) u.destinoBunker = o.bunker;
+      this.unidades.push(u); if (u.bloquea) this.rehacerCamino();
+      this.aviso(t('bastion.listo', { que: t('b2.u.' + o.tipo) }), 1100);
+      Audio_.recarga(u.bloquea ? 'tapa' : 'cerrojo');
     }
+  });
+
+  /* ---------- Mover: la infantería y el tanque cambian de lugar (también en plena oleada; van expuestos) ---------- */
+  envolver('elegirUnidad', function (tipo) {
+    this.moviendo = null;
+    if (tipo !== 'mover') return v1.elegirUnidad.call(this, tipo);
+    this.colocando = this.colocando === 'mover' ? null : 'mover';
+    this.panelBastion();
+  });
+  envolver('cancelarColocacion', function () { this.moviendo = null; return v1.cancelarColocacion.call(this); });
+  // ¿A quién se puede mover de esa celda? Alguien a pie, el tanque o el último que entró a un búnker
+  P.movibleEnV2 = function (c, f) {
+    const en = this.unidades.filter(u => u.c === c && u.f === f && u.listo && !u.invisible && !u.llevado);
+    return en.find(u => esInf(u) && !u.enCamino) || en.find(u => u.tipo === 'tanque') || en.find(u => u.tipo === 'bunker' && u.dentro.length) || null;
   };
+  P.tocarMoverV2 = function (c, f) {
+    if (!this.moviendo) {
+      const u = this.movibleEnV2(c, f);
+      if (!u) { this.aviso(t('b2.nadaQueMover'), 1100); Audio_.vacio(); return; }
+      this.moviendo = u; Audio_.recarga('cerrojo'); return;
+    }
+    let u = this.moviendo;
+    if (u.quitada) { this.moviendo = null; return; }
+    if (u.c === c && u.f === f) { this.moviendo = null; return; }   // tocar de nuevo el mismo lugar lo suelta
+    const tipo = u.tipo === 'bunker' ? u.dentro[u.dentro.length - 1].tipo : u.tipo;
+    const motivo = this.motivoNoColocar(tipo, c, f, true, u.tipo === 'bunker' ? null : u);
+    if (motivo) { this.aviso(t(motivo), 1400); Audio_.vacio(); return; }
+    if (u.tipo === 'bunker') {   // sale el último que entró
+      const d = u.dentro.pop(); u.adentro = u.dentro.length;
+      const s = this.nuevaUnidadV2(d.tipo, c, f, { x: u.x, y: u.y + 6 }); s.vida = d.vida ?? s.vida;
+      this.unidades.push(s); u = s;
+    }
+    const destino = this.ocupadaPor(c, f);
+    u.c = c; u.f = f; u.destino = this.centroCelda(c, f); u.enCamino = true; u.esperaBunker = null;
+    u.destinoBunker = esInf(u) && destino && destino.tipo === 'bunker' ? destino : null;
+    if (u.bloquea) this.rehacerCamino();
+    this.moviendo = null; Audio_.recarga('tapa');
+  };
+  envolver('punteroBastion', function (x, y, tipo, boton) {
+    if (this.colocando !== 'mover') return v1.punteroBastion.call(this, x, y, tipo, boton);
+    ({ x, y } = this.camaraBastion().desproyectar(x, y));
+    this.puntero = { x, y };
+    if (tipo !== 'down' || this.terminado) return;
+    if (boton === 2) { if (this.moviendo) this.moviendo = null; else this.cancelarColocacion(); return; }
+    const { c, f } = this.celdaDe(x, y);
+    if (this.dentro(c, f)) this.tocarMoverV2(c, f);
+  });
 
   /* ---------- Oleadas escritas ---------- */
   envolver('oleadas', function (dt) {
-    const B = BASTION, total = this.nivelV2.oleadas.length;
+    const total = this.nivelV2.oleadas.length;
     if (this.terminado) return;
     if (this.enDescanso) { if (this.tiempoJugado >= this.descansoHasta) this.empezarOleadaV2(); return; }
     if (this.colaOleada.length) {
       this.proximoZombie -= dt;
       if (this.proximoZombie <= 0) {
         const tipo = this.colaOleada.shift(), sigue = this.colaOleada[0];
-        this.aparecerZombieV2(tipo);
-        const k = this.colaOleada.length;   // los corredores salen en tanda, pegados
-        this.proximoZombie = Math.max(0.35, 1.5 - this.ronda * 0.1) * (tipo === 'corredor' && sigue === 'corredor' ? 0.45 : 1) * (0.8 + azar(k, this.ronda) * 0.4);
+        this.aparecerZombieV2(tipo, sigue);
+        const k = this.colaOleada.length;
+        this.proximoZombie = BastionV2.pausa(tipo, sigue, this.ronda, k);
         this.porAparecer = k;
       }
     } else if (!this.zombies.some(z => z.estado !== 'muerto') && !this.unidades.some(u => u.tipo === 'caido')) {
@@ -300,7 +475,8 @@ const BastionV2 = {
         Audio_.rondaSuperada(); return;
       }
       const bono = 30 + 5 * this.ronda;
-      this.dinero += bono; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + B.descanso;
+      this.dinero += bono; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + BASTION2.descanso;
+      this.nubesV2 = []; this.granadasV2 = [];
       this.avisoRonda(t('bastion.oleadaSuperada', { n: this.ronda }), t('bastion.bonus', { d: bono }), 2600); Audio_.rondaSuperada();
       this.guardarPartidaV2();
     }
@@ -309,270 +485,57 @@ const BastionV2 = {
     this.guardarPartidaV2();   // la foto de cómo estaba todo al empezar la oleada: si se pierde, se repite desde acá
     this.ronda++; this.enDescanso = false; this.sinPremioPorAdelantar = false;
     this.colaOleada = BastionV2.ordenOleada(this.nivelV2.oleadas[this.ronda - 1]);
-    this.porAparecer = this.colaOleada.length; this.proximoZombie = 0.5;
+    this.porAparecer = this.colaOleada.length; this.proximoZombie = 0.5; this.filaManada = null;
     this.avisoRonda(t('bastion.ola', { n: this.ronda }), t('bastion.vienen', { n: this.porAparecer }), 2200); Audio_.sirena();
   };
-  // Vida, velocidad y forma de portarse de un zombie de la v2
-  P.vestirZombieV2 = function (z, tipo) {
-    const B = BASTION, Z = B.zombies[tipo];
-    z.tipoBastion = tipo;
-    z.escala = Z.escala * (tipo === 'jefe' ? 1 : 0.94 + Math.random() * 0.12);
-    z.ancho = 26 * z.escala; z.alto = 64 * z.escala;
-    z.vidaMax = z.vida = Math.max(1, Math.round(this.dificultad.vidaZombie * Z.vida * AJUSTE.vidaZombie * Math.pow(B.crecimientoVida, Math.max(1, this.ronda) - 1) * this.nivelV2.vida));
-    z.vel = Z.vel * this.dificultad.velocidad * AJUSTE.velocidadZombie * (0.9 + Math.random() * 0.2);
-    z.blindaje = BASTION2.zombies[tipo].blindaje || 0;
-    z.desvio = (Math.random() - 0.5) * 12; z.direccion = -1; z.mordiscoEn = 0; z.presa = null; z.miraEn = 0;
-    z.quietoEn = this.ahora + 1500; z.quietoX = 1e9; z.quietoY = 0;
-  };
-  P.aparecerZombieV2 = function (tipo) {
-    const B = BASTION;
-    const filas = []; for (let f = 0; f < this.filas; f++) if (this.distBastion[f][this.cols - 1] < Infinity) filas.push(f);
-    const f = filas[Math.floor(Math.random() * filas.length)] ?? 0, p = this.centroCelda(this.cols - 1, f);
-    let z;
-    if (tipo === 'jefe') { z = zombieConEstilo(0, ESTILO_COLOSO, this.dificultad); z.piel = '#4fae2e'; z.grosorBrazos = 2; z.grosorPiernas = 1.6; z.jefe = true; }
-    else z = new Zombie(0, tipo === 'corredor', this.dificultad);
-    if (tipo === 'gordo') { z.estilo = VARIANTES_CAMINANTE.find(v => v.id === 'gordo'); z.colores.camiseta = variarColor(z.estilo.camiseta); }
-    this.vestirZombieV2(z, tipo);
+  // Entra por la derecha, en una fila con paso al campamento. Las manadas (perros, cuervos) entran por la misma zona
+  P.aparecerZombieV2 = function (tipo, sigue) {
+    const B = BASTION, Z = BASTION2.zombies[tipo];
+    const filas = []; for (let f = 0; f < this.filas; f++) if (Z.mueve === 'vuela' || this.distBastion[f][this.cols - 1] < Infinity) filas.push(f);
+    let f = filas[Math.floor(Math.random() * filas.length)] ?? 0;
+    if (Z.manada || tipo === 'caminante') {
+      if (this.filaManada && this.filaManada.tipo === tipo) f = limitar(this.filaManada.f + Math.round((Math.random() - 0.5) * 2), 0, this.filas - 1);
+      this.filaManada = tipo === sigue ? { tipo, f: this.filaManada && this.filaManada.tipo === tipo ? this.filaManada.f : f } : null;
+      if (!filas.includes(f)) f = filas[0] ?? 0;
+    }
+    const z = this.crearZombieV2(tipo), p = this.centroCelda(this.cols - 1, f);
     z.x = B.baseX + this.cols * B.celda[0] + 14 + Math.random() * 20; z.y = z.ySuelo = p.y + (Math.random() - 0.5) * 10;
     this.zombies.push(z);
+    return z;
   };
-  // El soldado caído se levanta en contra, con el uniforme puesto
-  P.levantarContagiado = function (caido) {
-    const z = zombieConEstilo(0, ESTILO_SOLDADO_ZOMBIE, this.dificultad);
-    z.piel = '#8fa672';
-    this.vestirZombieV2(z, 'soldadoZombie');
-    z.x = caido.x; z.y = z.ySuelo = caido.y; z.cabezaAtras = -0.9; z.levanta = 0.7;
-    this.zombies.push(z);
-    Audio_.gemido(true, 120);
-  };
-
-  /* ---------- Zombies: miran, cazan, rompen lo que protege a su presa y, si no ven a nadie, marchan ---------- */
-  // ¿A quién va? Si lo llama un señuelo (una sola vez en su vida, y no al gordo ni al jefe), deja lo que esté
-  // haciendo y va; si no, al humano más cercano dentro de su vista
-  P.mirarV2 = function (z, Z2, humanos, senuelos) {
-    const ahora = this.ahora; let mejor = null, dm;
-    if (!z.fueLlamado && !Z2.aplasta && senuelos.length) {
-      dm = BASTION.unidades.senuelo.atrae * BASTION2.celda;
-      for (const u of senuelos) { const d = distPlano(z.x, z.y, u.x, u.y); if (d < dm) { dm = d; mejor = u; } }
-      if (mejor) { z.presa = mejor; z.fueLlamado = true; z.entretenido = 0; return; }
-    }
-    if (z.presa) return;   // sigue con la que tenía
-    dm = Z2.vista * BASTION2.celda;
-    for (const u of humanos) {
-      if (z.inalcanzable && z.inalcanzable.get(u) > ahora) continue;
-      const d = distPlano(z.x, z.y, u.x, u.y);
-      if (d < dm) { dm = d; mejor = u; }
-    }
-    if (mejor) { z.presa = mejor; z.alerta = ahora + 900; }
-  };
-  P.alAlcanceV2 = function (z, u) {
-    const k = z.tipoBastion === 'jefe' ? 1.5 : 1;
-    if (u.bloquea) return Math.abs(z.x - u.x) < 36 * k && Math.abs(z.y - u.y) < 26 * k;   // pegado a la celda que ocupa
-    return distPlano(z.x, z.y, u.x, u.y) < (u.tipo === 'soldado' ? 20 : 16) * k;
-  };
-  P.morderV2 = function (z, u, dt) {
-    z.estado = 'ataca'; z.direccion = u.x < z.x ? -1 : 1; z.fase += dt * 4;
-    if (this.ahora < z.mordiscoEn) return;
-    z.mordiscoEn = this.ahora + 900;
-    u.vida -= this.dificultad.danoMordida * AJUSTE.mordida * (z.tipoBastion === 'jefe' ? 3 : z.tipoBastion === 'gordo' ? 1.5 : 1);
-    Audio_.zombieGolpea();
-    if (u.vida <= 0) this.perderUnidadV2(u);
-  };
-  envolver('moverZombiesBastion', function (dt) {
-    const B = BASTION, ahora = this.ahora, [W] = B.celda;
-    const vivos = this.zombies.filter(z => z.estado !== 'muerto');
-    const humanos = [], senuelos = [], alambres = new Map();
-    for (const u of this.unidades) {
-      if (!u.listo || u.invisible) continue;
-      if (u.tipo === 'soldado' || u.tipo === 'torreta' || (u.tipo === 'bunker' && u.adentro > 0)) humanos.push(u);
-      else if (u.tipo === 'senuelo') senuelos.push(u);
-      else if (u.tipo === 'alambrado') alambres.set(u.c + ',' + u.f, u);
-    }
-    for (const z of this.zombies) {
-      z.ahora = ahora;
-      if (z.estado === 'muerto') { if (z.muerte) z.moverCadaver(dt, this); else z.tiempoMuerto += dt; continue; }
-      if (z.cabezaAtras < 0) z.cabezaAtras = Math.min(0, z.cabezaAtras + dt * 1.4);
-      if (z.levanta > 0) { z.levanta -= dt; z.estado = 'camina'; z.fase += dt * 2; continue; }   // recién contagiado: se incorpora
-      const Z2 = BASTION2.zombies[z.tipoBastion] || BASTION2.zombies.caminante;
-      // 1) Mira: suelta la presa que ya no está y busca otra
-      if (z.presa && (z.presa.quitada || (z.presa.tipo === 'bunker' && !z.presa.adentro))) z.presa = null;
-      if (ahora >= z.miraEn && (!z.presa || (!z.fueLlamado && senuelos.length))) { z.miraEn = ahora + 180 + Math.random() * 120; this.mirarV2(z, Z2, humanos, senuelos); }
-      const { c, f } = this.celdaDe(z.x, z.y), cc = limitar(c, 0, this.cols - 1), ff = limitar(f, 0, this.filas - 1);
-      const enojado = Z2.llega === 'rompe' || ahora < (z.furia || 0);   // va derecho, rompiendo
-      // 2) Caza: si la alcanza, la muerde; si no, elige por dónde ir
-      let campo = this.distBastion, crudo = false, u = z.presa;
-      if (u && u.tipo === 'senuelo') {   // lo llama el altavoz: va, lo golpea unos segundos buscando a alguien y sigue viaje
-        if (distPlano(z.x, z.y, u.x, u.y) < 26) {
-          z.estado = 'ataca'; z.direccion = u.x < z.x ? -1 : 1; z.fase += dt * 3;
-          z.entretenido = (z.entretenido || 0) + dt; u.vida -= dt * u.vidaMax / (20 * BASTION.unidades.senuelo.entretiene);   // aguanta a unos 20
-          if (u.vida <= 0) this.perderUnidadV2(u);
-          if (z.entretenido >= BASTION.unidades.senuelo.entretiene || u.quitada) z.presa = null;
-          continue;
-        }
-      }
-      if (u) {
-        if (u.tipo !== 'senuelo' && this.alAlcanceV2(z, u)) { this.morderV2(z, u, dt); continue; }
-        const k = u.enCamino ? this.celdaDe(u.x, u.y) : u, uc = limitar(k.c, 0, this.cols - 1), uf = limitar(k.f, 0, this.filas - 1);
-        const libre = this.campoLibre(uc, uf), dl = libre[ff][cc];
-        if (enojado) { campo = this.campoCrudo(uc, uf); crudo = true; }
-        else if (dl < Infinity && (Z2.llega === 'rodea' || dl <= 2 * (Math.abs(cc - uc) + Math.abs(ff - uf)) + 5)) campo = libre;
-        else if (Z2.llega === 'rodea') { (z.inalcanzable || (z.inalcanzable = new Map())).set(u, ahora + 4000); z.presa = u = null; }   // sin hueco: sigue de largo
-        else { campo = this.campoCrudo(uc, uf); crudo = true; }   // está tapada: derecho, rompiendo lo que la tapa
-      }
-      if (!u && enojado) { campo = this.campoCrudoBase(); crudo = true; }
-      // 3) Hacia la celda vecina que acerca. En el campo crudo, la que viene puede ser una construcción: la rompe
-      let tx = B.baseX - 40, ty = z.y;
-      if (c >= this.cols) { tx = B.baseX + this.cols * W - 12; }   // recién llega: entra al campo por su fila
-      else {
-        const sig = this.siguienteCeldaV2(cc, ff, campo, crudo);
-        const traba = crudo && sig ? this.ocupadaPor(sig[0], sig[1]) : null;
-        if (traba && !traba.invisible) {
-          if (this.alAlcanceV2(z, traba)) { this.morderV2(z, traba, dt); continue; }
-          tx = traba.x; ty = traba.y;
-        } else if (sig) { const p = this.centroCelda(sig[0], sig[1]); tx = p.x; ty = p.y + z.desvio * 0.5; }
-        else if (u) { tx = u.x; ty = u.y; }   // ya está al lado: derecho a la presa
-        else if (cc > 0) { tx = z.x - 30; }   // quedó en un rincón sin salida: hacia el campamento igual
-        else ty = this.centroCelda(0, ff).y;
-      }
-      z.estado = 'camina'; z.direccion = tx < z.x - 2 ? -1 : tx > z.x + 2 ? 1 : z.direccion;
-      // Amontonamiento: cuantos más alrededor, más lento; y se empujan para no encimarse
-      let cerca = 0, ex = 0, ey = 0;
-      for (const o of vivos) {
-        if (o === z || o.estado === 'muerto') continue;
-        const dx = z.x - o.x, dy = (z.y - o.y) * 1.6, d2 = dx * dx + dy * dy;
-        if (d2 < 22 * 22 && d2 > 0.01) { cerca++; const d = Math.sqrt(d2); ex += dx / d * (22 - d); ey += dy / d * (22 - d) / 1.6; }
-      }
-      // Alambrado: lo cruza a menos de la mitad de velocidad. Cada zombie que lo pisa lo gasta un poco (una vez por
-      // alambrado); el gordo le saca la mitad de una pisada
-      let paso = this.pasoTerreno(z.x, z.y);
-      const alambre = alambres.get(c + ',' + f);
-      if (alambre && !alambre.quitada) {
-        paso *= BASTION.unidades.alambrado.frena;
-        if (z.pisado !== alambre) { z.pisado = alambre; z.raspado = 0; alambre.vida -= Z2.aplasta ? alambre.vidaMax : BASTION2.desgaste; if (alambre.vida <= 0) this.perderUnidadV2(alambre); }
-        if (!Z2.aplasta && z.raspado < z.vidaMax * BASTION.unidades.alambrado.raspa && (z.raspadoTotal || 0) < z.vidaMax * BASTION2.topeRaspado) {   // las púas: hasta un quinto de su vida por alambrado, y entre todos, la mitad
-          const d = Math.min(z.vidaMax * 0.1 * dt, z.vidaMax * BASTION.unidades.alambrado.raspa - z.raspado);
-          z.raspado += d; z.raspadoTotal = (z.raspadoTotal || 0) + d; z.recibirDano(d, 0, ARMA_ALAMBRE, this);
-          if (Math.random() < dt * 2.5) this.salpicar(z.x, z.y - 8, z.colorSangre, 2, 2, z.ySuelo);
-          if (z.estado === 'muerto') continue;
-        }
-      }
-      if (Z2.aplasta) for (const su of senuelos) if (!su.quitada && su.c === c && su.f === f) this.perderUnidadV2(su);   // el gordo pisa el señuelo
-      let vx = tx - z.x, vy = ty - z.y; const l = Math.hypot(vx, vy) || 1; vx /= l; vy /= l;
-      const v = z.vel / (1 + 0.32 * cerca) * (z.tipoBastion === 'corredor' ? 1 : 0.55 + Math.max(0, Math.sin(z.fase)) * 0.9) * paso;
-      const mx = (vx * v + ex * 1.2) * dt, my = (vy * v + ey * 1.2) * dt;
-      z.x += mx; z.y += my;
-      // No meterse en celdas cerradas (si lo empujaron, vuelve)
-      const k = this.celdaDe(z.x, z.y);
-      if (this.dentro(k.c, k.f) && this.bloqV2.has(k.c + ',' + k.f)) { z.x -= mx; z.y -= my; }
-      z.y = limitar(z.y, B.arriba + 10, B.arriba + this.filas * B.celda[1] + 6); z.ySuelo = z.y;
-      z.fase += dt * (z.tipoBastion === 'corredor' ? 14 : 6);
-      // Frenado mucho rato sin avanzar (amontonado contra un muro): se enoja y rompe lo que tenga adelante
-      if (ahora >= z.quietoEn) {
-        if (Math.hypot(z.x - z.quietoX, z.y - z.quietoY) < 5 && Z2.llega === 'derecho') z.furia = ahora + 3500;
-        z.quietoEn = ahora + 1800; z.quietoX = z.x; z.quietoY = z.y;
-      }
-      // Llegó al campamento
-      if (z.x < B.baseX - 30) {
-        this.vidaBase = Math.max(0, this.vidaBase - B.zombies[z.tipoBastion].dano); z.estado = 'muerto'; z.tiempoMuerto = 99;
-        this.entraron[z.tipoBastion] = (this.entraron[z.tipoBastion] || 0) + 1;
-        this.aviso(t('bastion.baseGolpeada'), 1200); this.sacudida = 6; Audio_.jugadorHerido();
-        this.salpicar(B.baseX - 20, z.y - 10, '#8b0f0f', 8, 3, z.y);
-        if (this.vidaBase <= 0 && !this.terminado) { this.terminado = true; this.resultado = 'invadido'; Audio_.jugadorMuere(); }   // la partida guardada queda: se puede repetir la oleada
-      }
-      if (ahora >= (z.gemidoEn || 0)) { z.gemidoEn = ahora + 4000 + Math.random() * 9000; if (Math.random() < 0.3) Audio_.gemido(false, 300); }
-    }
-    this.zombies = this.zombies.filter(z => !z.terminado());
-  });
-
-  /* ---------- Lo propio: obras, soldados que van a su puesto, contagio y disparos (al zombie más cercano) ---------- */
-  envolver('moverUnidades', function (dt) {
-    const B = BASTION, vivos = this.zombies.filter(z => z.estado !== 'muerto');
-    for (const u of [...this.unidades]) {
-      u.fuego = Math.max(0, (u.fuego || 0) - dt * 8);
-      if (u.invisible || u.quitada) continue;
-      if (u.tipo === 'caido') {   // el contagio avanza: a los 3 s se levanta
-        u.t += dt;
-        if (u.t >= BASTION2.contagio) { u.quitada = true; this.unidades = this.unidades.filter(x => x !== u); this.levantarContagiado(u); }
-        continue;
-      }
-      const U = B.unidades[u.tipo];
-      if (!u.listo) {   // en obra
-        u.obra += dt / U.tiempo; u.vida = Math.min(u.vidaMax, u.vida + u.vidaMax * 0.75 * dt / U.tiempo);
-        if (u.obra >= 1) { u.listo = true; u.vida = u.vidaMax; this.construidas++; Audio_.recarga('cerrar'); }
-        continue;
-      }
-      if (u.enCamino) {   // caminando hasta su lugar
-        const dx = u.destino.x - u.x, dy = u.destino.y - u.y, d = Math.hypot(dx, dy);
-        u.caminando = true; u.fase = (u.fase || 0) + dt * 10;
-        if (d < 2) {
-          u.enCamino = false; u.caminando = false; u.x = u.destino.x; u.y = u.destino.y;
-          if (u.destinoBunker && this.unidades.includes(u.destinoBunker)) {
-            const b = u.destinoBunker;
-            if (b.listo && b.adentro < B.unidades.bunker.capacidad) { b.adentro++; u.quitada = true; this.unidades = this.unidades.filter(x => x !== u); Audio_.recarga('cerrar'); continue; }
-            u.esperaBunker = b;   // espera al lado a que lo terminen
-          }
-        } else { u.x += dx / d * Math.min(d, 62 * dt); u.y += dy / d * Math.min(d, 62 * dt); }
-      }
-      if (u.esperaBunker && u.esperaBunker.listo && u.esperaBunker.adentro < B.unidades.bunker.capacidad && this.unidades.includes(u.esperaBunker)) {
-        u.esperaBunker.adentro++; u.quitada = true; this.unidades = this.unidades.filter(x => x !== u); continue;
-      }
-      if (!U.alcance || (u.tipo === 'bunker' && !u.adentro)) continue;   // muro, alambrado, señuelo y búnker vacío no disparan
-      u.enfriado -= dt;
-      const enAlcance = [];
-      for (const z of vivos) { if (z.estado === 'muerto') continue; const d = distPlano(z.x, z.y, u.x, u.y); if (d <= U.alcance) enAlcance.push([d, z]); }
-      if (!enAlcance.length) continue;
-      enAlcance.sort((a, b) => a[0] - b[0]);
-      const blanco = enAlcance[0][1];
-      if (u.tipo === 'soldado') u.mira = blanco.x < u.x - 4 ? -1 : 1;   // el soldado gira hacia el que tiene más cerca
-      const lado = u.tipo === 'soldado' ? u.mira : 1;
-      u.apunta = limitar(Math.atan2((blanco.y - 20 * blanco.escala) - (u.y - 20), Math.max(20, (blanco.x - u.x) * lado)), -0.5, 0.5);
-      if (u.enfriado > 0) continue;
-      const disparos = u.tipo === 'bunker' ? u.adentro : 1;
-      u.enfriado = U.cadencia * (0.85 + Math.random() * 0.3);
-      u.fuego = 1;
-      for (let k = 0; k < disparos; k++) {
-        const z = enAlcance[Math.min(k, enAlcance.length - 1)][1];
-        if (z.estado === 'muerto') continue;
-        z.recibirDano(Math.max(1, U.dano - (z.blindaje || 0)), z.x >= u.x ? 1 : -1, ARMA_BASTION, this);   // el blindaje le resta a cada bala
-        const sale = u.tipo === 'bunker' ? { x: u.x - 9 + k * 6, y: u.y - 17 } : u.tipo === 'torreta' ? { x: u.x + 30, y: u.y - 12 } : { x: u.x + 20 * lado, y: u.y - 22 };
-        this.trazos.push({ x0: sale.x, y0: sale.y, x1: z.x + (Math.random() - 0.5) * 4, y1: z.y - 22 * z.escala, b0: u.y, b1: z.y, t: 0.06 });
-        if (u.tipo === 'bunker') { u.fuegoK = u.fuegoK || []; u.fuegoK[k] = 1; }
-      }
-      if (Math.random() < (u.tipo === 'torreta' ? 0.35 : 0.8)) Audio_.disparo(u.tipo === 'torreta' ? 'ametralladora' : 'rifle', u.tipo === 'torreta' ? 'm2' : 'm16');
-    }
-    for (const u of this.unidades) if (u.fuegoK) u.fuegoK = u.fuegoK.map(v => Math.max(0, v - dt * 8));
-    for (const tr of this.trazos) tr.t -= dt;
-    this.trazos = this.trazos.filter(tr => tr.t > 0);
-  });
 
   /* ---------- Guardar y seguir ---------- */
-  // Foto de la partida: todo lo construido y la gente, cada uno en su puesto (el soldado que está formándose o en
-  // camino se guarda ya llegado: en su celda o dentro de su búnker)
+  // Foto de la partida: todo lo construido y la gente, cada uno en su puesto (el que está formándose o en camino se
+  // guarda ya llegado: en su celda o dentro de su búnker)
   P.fotoV2 = function () {
-    const B = BASTION, us = [], alBunker = new Map();
-    const llega = (c, f, bunker) => { if (bunker && !bunker.quitada) alBunker.set(bunker, (alBunker.get(bunker) || 0) + 1); else us.push({ tipo: 'soldado', c, f, vida: B.unidades.soldado.vida, listo: true, obra: 1, adentro: 0 }); };
-    for (const o of this.colaCuartel) llega(o.c, o.f, o.bunker);
+    const us = [], alBunker = new Map();
+    const llega = (tipo, c, f, bunker, vida) => {
+      if (bunker && !bunker.quitada) { if (!alBunker.has(bunker)) alBunker.set(bunker, []); alBunker.get(bunker).push({ tipo, vida }); }
+      else us.push({ tipo, c, f, vida: vida ?? U_(tipo).vida, listo: true, obra: 1 });
+    };
+    for (const o of this.colaCuartel) llega(o.tipo, o.c, o.f, o.bunker);
+    for (const o of this.colaTaller) us.push({ tipo: o.tipo, c: o.c, f: o.f, vida: U_(o.tipo).vida, listo: true, obra: 1 });
     for (const u of this.unidades) {
-      if (u.invisible || u.tipo === 'caido') continue;
-      if (u.tipo === 'soldado' && (u.destinoBunker || u.esperaBunker)) { llega(u.c, u.f, u.destinoBunker || u.esperaBunker); continue; }
-      us.push({ tipo: u.tipo, c: u.c, f: u.f, vida: Math.round(u.vida), listo: !!u.listo, obra: u.obra || 0, adentro: u.adentro || 0, de: u });
+      if (u.invisible || !U_(u.tipo)) continue;   // reservas y caídos no se guardan
+      if (esInf(u) && (u.destinoBunker || u.esperaBunker)) { llega(u.tipo, u.c, u.f, u.destinoBunker || u.esperaBunker, Math.round(u.vida)); continue; }
+      us.push({ tipo: u.tipo, c: u.c, f: u.f, vida: Math.round(u.vida), listo: !!u.listo, obra: u.obra || 0, dentro: (u.dentro || []).map(d => ({ tipo: d.tipo, vida: d.vida })), de: u });
     }
-    for (const s of us) { if (s.tipo === 'bunker') s.adentro = Math.min(B.unidades.bunker.capacidad, s.adentro + (alBunker.get(s.de) || 0)); delete s.de; }
-    return { nivel: this.nivelBastion.id, dificultad: this.dificultad.id, ronda: this.ronda, dinero: this.dinero, vidaBase: this.vidaBase,
+    for (const s of us) { if (s.de && alBunker.has(s.de)) s.dentro = [...s.dentro, ...alBunker.get(s.de)].slice(0, U_('bunker').capacidad); delete s.de; }
+    return { version: BastionV2.VERSION, nivel: this.nivelBastion.id, dificultad: this.dificultad.id, ronda: this.ronda, dinero: this.dinero, vidaBase: this.vidaBase,
       bajas: this.bajas || 0, construidas: this.construidas || 0, contagiados: this.contagiados || 0, tiempo: Math.round(this.tiempoJugado), fecha: Date.now(), unidades: us };
   };
   P.guardarPartidaV2 = function () { if (!this.terminado) ProgresoBastion.escribir(BastionV2.PARTIDA, this.fotoV2()); };
   P.restaurarPartidaV2 = function (d) {
-    const B = BASTION;
     this.unidades = [];
     for (const s of d.unidades) {
-      const U = B.unidades[s.tipo]; if (!U || !this.dentro(s.c, s.f)) continue;
-      const p = this.centroCelda(s.c, s.f);
-      if (s.tipo === 'soldado') { const u = this.nuevoSoldado(p.x, p.y, s.c, s.f); u.vida = Math.min(U.vida, s.vida); this.unidades.push(u); continue; }
-      this.unidades.push({ tipo: s.tipo, c: s.c, f: s.f, x: p.x, y: p.y, vida: Math.min(U.vida, s.vida), vidaMax: U.vida, listo: s.listo, obra: s.obra, bloquea: !U.liviano, costo: U.costo, enfriado: 0, fuego: 0, apunta: 0, adentro: Math.min(s.adentro || 0, U.capacidad || 0) });
+      const U = U_(s.tipo); if (!U || !this.dentro(s.c, s.f)) continue;
+      const u = this.nuevaUnidadV2(s.tipo, s.c, s.f);
+      u.vida = Math.min(U.vida, s.vida ?? U.vida); u.listo = s.listo !== false; u.obra = u.listo ? 1 : s.obra || 0;
+      if (u.dentro) { u.dentro = (s.dentro || []).filter(x => U_(x.tipo)).slice(0, U.capacidad).map(x => ({ tipo: x.tipo, vida: x.vida ?? U_(x.tipo).vida, enfriado: Math.random() })); u.adentro = u.dentro.length; }
+      this.unidades.push(u);
     }
     this.ronda = d.ronda; this.dinero = d.dinero; this.vidaBase = d.vidaBase; this.bajas = d.bajas || 0; this.construidas = d.construidas || 0; this.contagiados = d.contagiados || 0;
-    this.tiempoJugado = d.tiempo || 0; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + B.descanso;
+    this.tiempoJugado = d.tiempo || 0; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + BASTION2.descanso;
     this.sinPremioPorAdelantar = true;   // al repetir una oleada, adelantarla no vuelve a pagar (si no, perder a propósito daría plata)
   };
   envolver('oleadaYa', function () {
@@ -580,24 +543,31 @@ const BastionV2 = {
     v1.oleadaYa.call(this);
   });
 
-  /* ---------- Panel, teclas y dibujo ---------- */
-  envolver('panelBastion', function () {
-    v1.panelBastion.call(this);
-    const vender = document.querySelector('#panel-bastion [data-unidad="vender"] small');
-    if (vender) vender.textContent = this.enDescanso ? '¾' : '½';
-    if (typeof BastionV2UI !== 'undefined') BastionV2UI.parte(this);
-  });
+  /* ---------- El paso de cada cuadro, panel, teclas y dibujo ---------- */
+  envolver('moverZombiesBastion', function (dt) { this.hordaV2(dt); });                       // js/bastion-v2-horda.js
+  envolver('moverUnidades', function (dt) { this.tropaV2(dt); this.efectosV2(dt); });         // js/bastion-v2-tropa.js
+  envolver('panelBastion', function () { if (typeof BastionV2UI !== 'undefined') BastionV2UI.panel(this); });
+  // Teclas como el panel: 1 a 4 la infantería, Q W E R los mecanizados, A S D F las estructuras; Z vende, X repara, C mueve
+  const TECLAS = { Digit1: 'soldado', Digit2: 'francotirador', Digit3: 'lanzallamas', Digit4: 'medico', KeyQ: 'torreta', KeyW: 'tanque', KeyE: 'mortero', KeyR: 'antiaerea',
+    KeyA: 'muro', KeyS: 'alambrado', KeyD: 'bunker', KeyF: 'senuelo', KeyZ: 'vender', KeyX: 'reparar', KeyC: 'mover' };
+  BastionV2.TECLAS = TECLAS;
   envolver('teclaBastion', function (codigo) {
-    const n = /^(Digit|Numpad)([1-8])$/.exec(codigo);
-    if (n) { this.elegirUnidad([...BASTION2.orden, 'vender', 'reparar'][+n[2] - 1]); return true; }
+    if (TECLAS[codigo]) { this.elegirUnidad(TECLAS[codigo]); return true; }
+    if (/^(Digit|Numpad)\d$/.test(codigo)) return true;
     return v1.teclaBastion.call(this, codigo);   // espacio: oleada ya; V: velocidad
   });
   envolver('dibujarUnidad', function (ctx, u) {
-    if (u.tipo === 'soldado' && u.mira === -1 && u.listo && !u.caminando) { ctx.save(); ctx.scale(-1, 1); v1.dibujarUnidad.call(this, ctx, u); ctx.restore(); return; }   // mira al que tiene a la espalda
+    if (!esInf(u) || !u.listo) return v1.dibujarUnidad.call(this, ctx, u);
+    ctx.save();
+    if (u.llevado) ctx.translate(0, -(u.llevado.altura - 12));   // colgando de las garras del buitre
+    if (u.mira === -1) ctx.scale(-1, 1);                          // mira (o camina) hacia la izquierda
     v1.dibujarUnidad.call(this, ctx, u);
+    ctx.restore();
   });
   envolver('dibujarBastion', function () {
-    v1.dibujarBastion.call(this);
-    if (typeof BastionV2UI !== 'undefined') BastionV2UI.encima(this);   // lo que va sobre la escena: vista, avisos de «te vi», celdas prohibidas
+    const herramienta = this.colocando;
+    if (herramienta === 'mover') this.colocando = null;   // el modo de siempre no conoce «mover»: su cursor lo pinta la v2
+    try { v1.dibujarBastion.call(this); } finally { this.colocando = herramienta; }
+    if (typeof BastionV2Dibujo !== 'undefined') BastionV2Dibujo.encima(this);   // efectos, avisos, anillos y cursores de la v2
   });
 })();
