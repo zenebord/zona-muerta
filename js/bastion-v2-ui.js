@@ -5,9 +5,11 @@
  * una unidad, en el parte quedan marcados los zombies que frena (verde) y contra los que rinde poco (rojo); al tocar
  * un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven. De texto, un solo
  * renglón arriba de la barra. La guía completa (qué hace cada uno, fuerte, débil, cómo usarlo) es la pantalla previa.
+ * Tocar una unidad del campo la elige: se ve hasta dónde llega (lo pinta js/bastion-v2-dibujo.js), su botón queda marcado
+ * y las herramientas pasan a decir qué harían con ella (vender +$, reparar −$, mover); el renglón cuenta cómo está.
  */
 const BastionV2UI = {
-  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null,
+  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null, suyaVista: null,
   // Un zombie de cada tipo para retratarlo (quieto, mirando hacia el campamento)
   zombieDeMuestra(id) {
     const P = Juego.prototype, falso = { dificultad: DIFICULTADES.medio, ronda: 1, nivelV2: { vida: 1 }, ahora: 0, vidaComunV2: P.vidaComunV2, vestirZombieV2: P.vestirZombieV2 };
@@ -103,14 +105,20 @@ const BastionV2UI = {
     document.getElementById('bastion-ola').textContent = t('bastion.olaDe', { n: Math.max(1, j.ronda), total });
     const base = document.getElementById('bastion-base');
     base.textContent = t('bastion.base', { v: j.vidaBase, max: B.vidaBase }); base.classList.toggle('peligro', j.vidaBase <= B.vidaBase * 0.3);
+    // Con una unidad elegida en el campo, su botón queda marcado y cada herramienta dice qué pasa si se la toca
+    const suya = j.elegidaVivaV2(), A = suya && (!j.colocando || j.unMovimiento) ? j.accionesV2(suya) : null;
     for (const b of barra.querySelectorAll('[data-unidad]')) {
       const tipo = b.dataset.unidad, U = B.unidades[tipo];
       b.classList.toggle('elegida', j.colocando === tipo);
       if (!U) {   // herramientas
         if (b.dataset.idioma !== idioma) { b.dataset.idioma = idioma; b.querySelector('b').textContent = t('bastion.' + tipo); }
-        b.querySelector('small').textContent = tipo === 'vender' ? (j.enDescanso ? '¾' : '½') : tipo === 'reparar' ? '¾' : '';
+        const sirve = !!A && (tipo === 'vender' || (tipo === 'reparar' ? A.reparar > 0 : A.mover));
+        b.classList.toggle('accion', sirve); b.classList.toggle('no', !!A && !sirve); b.classList.toggle('caro', sirve && tipo === 'reparar' && j.dinero < A.reparar);
+        const chico = A ? (!sirve || tipo === 'mover' ? '' : tipo === 'vender' ? '+$' + A.vender : '−$' + A.reparar) : tipo === 'vender' ? (j.enDescanso ? '¾' : '½') : tipo === 'reparar' ? '¾' : '';
+        const small = b.querySelector('small'); if (small.textContent !== chico) small.textContent = chico;
         continue;
       }
+      b.classList.toggle('suya', !!suya && suya.tipo === tipo);
       if (b.dataset.idioma !== idioma) { b.dataset.idioma = idioma; b.title = t('b2.u.' + tipo); const img = b.querySelector('img'); img.src = this.retrato('u:' + tipo, 40); img.alt = t('b2.u.' + tipo); }
       const precio = '$' + U.costo, chico = b.querySelector('small'); if (chico.textContent !== precio) chico.textContent = precio;   // (el panel del modo de siempre también escribe en los botones que comparten nombre)
       b.classList.toggle('caro', j.dinero < U.costo);
@@ -149,25 +157,41 @@ const BastionV2UI = {
     if (this.debutCola.length && !this.zombieVisto && ver && j.enDescanso) this.verZombie(this.debutCola.shift(), 8000);   // de a uno, si son dos
     // Elegir otra cosa en la barra deja de mostrar al zombie que se había tocado
     if (j.colocando !== this.colocandoVisto) { this.colocandoVisto = j.colocando; if (j.colocando) { this.verZombie(null); this.debutCola = []; } }
+    const suya = j.elegidaVivaV2();   // elegir una unidad del campo, lo mismo
+    if (suya !== this.suyaVista) { this.suyaVista = suya; if (suya) { this.verZombie(null); this.debutCola = []; } }
     if (this.zombieVisto && (performance.now() > this.zombieHasta || j.terminado)) this.verZombie(null);
-    const unidad = BASTION2.unidades[j.colocando] ? j.colocando : '', zombie = this.zombieVisto;
-    // Renglón de arriba de la barra: el zombie que se tocó (o que debuta) o, si no, lo que se está por poner
-    const claveInfo = (zombie ? 'z:' + zombie : unidad ? 'u:' + unidad : '') + ':' + Idioma.actual();
-    info.classList.toggle('oculta', !zombie && !unidad);
+    const unidad = BASTION2.unidades[j.colocando] ? j.colocando : '', zombie = this.zombieVisto, enCampo = !unidad && suya ? suya : null;
+    // Renglón de arriba de la barra: el zombie que se tocó (o que debuta); si no, lo que se está por poner; si no, la unidad elegida en el campo
+    const claveInfo = (zombie ? 'z:' + zombie : unidad ? 'u:' + unidad : enCampo ? 'e:' + this.estadoDe(enCampo) : '') + ':' + Idioma.actual();
+    info.classList.toggle('oculta', !zombie && !unidad && !enCampo);
     if (claveInfo !== this.infoDe || rehecho) {
       this.infoDe = claveInfo;
       if (zombie) info.innerHTML = `<b>${t('b2.z.' + zombie)}</b>${debut[zombie] === n && n > 0 ? ` <i class="b2-nuevo">${t('b2.nuevo')}</i>` : ''} ${t('b2.z.' + zombie + '.hace')} ${t('b2.z.' + zombie + '.fuerte')}`;
       else if (unidad) info.innerHTML = `<b>${t('b2.u.' + unidad)}</b> ${t('b2.u.' + unidad + '.hace')} ${t('b2.u.' + unidad + '.uso')}`;
-      info.classList.toggle('zombie', !!zombie);
-      // Marcas: con un zombie a la vista, en la barra (qué lo frena y qué no sirve); con una unidad elegida, en el parte
-      const CZ = zombie ? BASTION2.contra[zombie] : null;
+      else if (enCampo) info.innerHTML = this.renglonDe(enCampo);
+      info.classList.toggle('zombie', !!zombie); info.classList.toggle('suya', !zombie && !!enCampo);
+      // Marcas: con un zombie a la vista, en la barra (qué lo frena y qué no sirve); con una unidad (por poner o elegida), en el parte
+      const CZ = zombie ? BASTION2.contra[zombie] : null, marca = zombie ? '' : unidad || (enCampo ? enCampo.tipo : '');
       for (const b of barra.querySelectorAll('[data-unidad]')) { const u = b.dataset.unidad; b.classList.toggle('bien', !!CZ && CZ.bien.includes(u)); b.classList.toggle('mal', !!CZ && CZ.mal.includes(u)); }
       for (const c of el.querySelectorAll('.chip')) {
         const C = BASTION2.contra[c.dataset.fichaZ];
         c.classList.toggle('vista', c.dataset.fichaZ === zombie);
-        c.classList.toggle('bien', !zombie && !!unidad && C.bien.includes(unidad)); c.classList.toggle('mal', !zombie && !!unidad && C.mal.includes(unidad));
+        c.classList.toggle('bien', !!marca && C.bien.includes(marca)); c.classList.toggle('mal', !!marca && C.mal.includes(marca));
       }
     }
+  },
+  // Lo que cambia en el renglón de una unidad elegida (para no reescribirlo en cada pasada)
+  estadoDe(u) { return [u.tipo, Math.ceil(u.vida), u.listo ? 1 : 0, u.dentro ? u.dentro.length : ''].join(':'); },
+  // El renglón de una unidad elegida en el campo: cómo está, hasta dónde llega y qué hace
+  renglonDe(u) {
+    const U = BASTION2.unidades[u.tipo], k = 'b2.u.' + u.tipo;
+    const celdas = px => String(Math.round(px / BASTION2.celda * 2) / 2).replace('.', Idioma.actual() === 'en' ? '.' : ',');
+    const datos = [t('b2.e.vida', { v: Math.ceil(u.vida), max: u.vidaMax })];
+    if (!u.listo) datos.push(t('b2.e.obra'));
+    else if (u.tipo === 'bunker') datos.push(t('b2.e.adentro', { n: u.dentro.length, max: U.capacidad }));
+    else if (U.alcance) datos.push(U.minimo ? t('b2.e.alcanceDe', { min: celdas(U.minimo), n: celdas(U.alcance) }) : t('b2.e.alcance', { n: celdas(U.alcance) }));
+    else if (U.atrae) datos.push(t('b2.e.atrae', { n: U.atrae }));   // (el médico y la torre de vigía ya dicen su distancia en lo que hacen)
+    return `<b>${t(k)}</b> ${datos.join(' · ')} · ${t(k + '.hace')}`;
   },
   // Deja a la vista un zombie del parte por ms milisegundos (null: ninguno)
   verZombie(tipo, ms = 9000) { this.zombieVisto = tipo || ''; this.zombieHasta = tipo ? performance.now() + ms : 0; },
@@ -318,6 +342,8 @@ Object.assign(TEXTOS.es, {
   'b2.finGanado': 'Resististe las {olas} oleadas de {nivel} con el campamento en {base}/{max}: {bajas} zombies muertos y {contagiados} soldados contagiados, en {tiempo}.',
   'b2.finPerdido': 'El campamento de {nivel} cayó en la oleada {ola} de {total}. Entraron: {lista}. Soldados contagiados: {contagiados}. Tiempo: {tiempo}.',
   'b2.consejo': 'Contra {tipo} sirve: {con}.',
+  'b2.e.vida': 'vida {v}/{max}', 'b2.e.obra': 'en obra', 'b2.e.adentro': 'adentro {n}/{max}', 'b2.e.alcance': 'alcance {n} celdas', 'b2.e.alcanceDe': 'alcance de {min} a {n} celdas',
+  'b2.e.atrae': 'llama a {n} celdas', 'b2.curaMedico': 'A la gente la cura el médico',
 });
 Object.assign(TEXTOS.pt, {
   'menu.bastion2': 'ÚLTIMO BASTIÃO V2',
@@ -337,6 +363,8 @@ Object.assign(TEXTOS.pt, {
   'b2.finGanado': 'Você resistiu às {olas} ondas de {nivel} com o acampamento em {base}/{max}: {bajas} zumbis mortos e {contagiados} soldados contagiados, em {tiempo}.',
   'b2.finPerdido': 'O acampamento de {nivel} caiu na onda {ola} de {total}. Entraram: {lista}. Soldados contagiados: {contagiados}. Tempo: {tiempo}.',
   'b2.consejo': 'Contra {tipo} serve: {con}.',
+  'b2.e.vida': 'vida {v}/{max}', 'b2.e.obra': 'em obra', 'b2.e.adentro': 'dentro {n}/{max}', 'b2.e.alcance': 'alcance {n} casas', 'b2.e.alcanceDe': 'alcance de {min} a {n} casas',
+  'b2.e.atrae': 'atrai a {n} casas', 'b2.curaMedico': 'Quem cura o pessoal é o médico',
 });
 Object.assign(TEXTOS.en, {
   'menu.bastion2': 'LAST BASTION V2',
@@ -356,6 +384,8 @@ Object.assign(TEXTOS.en, {
   'b2.finGanado': 'You held out for the {olas} waves of {nivel} with the camp at {base}/{max}: {bajas} zombies killed and {contagiados} soldiers infected, in {tiempo}.',
   'b2.finPerdido': 'The camp at {nivel} fell on wave {ola} of {total}. They got in: {lista}. Soldiers infected: {contagiados}. Time: {tiempo}.',
   'b2.consejo': 'Against {tipo}, use: {con}.',
+  'b2.e.vida': 'health {v}/{max}', 'b2.e.obra': 'being built', 'b2.e.adentro': 'inside {n}/{max}', 'b2.e.alcance': 'range {n} cells', 'b2.e.alcanceDe': 'range {min} to {n} cells',
+  'b2.e.atrae': 'lures within {n} cells', 'b2.curaMedico': 'People are healed by the medic',
 });
 // Los textos con {llaves} toman sus valores al pedirlos (t('b2.parte', { n: 3 }))
 for (const idioma of ['es', 'pt', 'en']) for (const k of Object.keys(TEXTOS[idioma])) {

@@ -311,8 +311,17 @@ rinde poco; al tocar un zombie del parte, en la barra quedan marcadas las unidad
 débil, cómo usarlo) es la pantalla previa. La partida se guarda al empezar cada oleada: al perder, la pantalla de fin
 dice quiénes entraron, con qué se los frena, y ofrece repetir esa oleada con todo como estaba.
 
+**Elegir una unidad del campo.** Con la mano vacía, tocar una unidad la elige (`unidadBajoV2`, `elegirDelCampoV2`): en
+el campo se ve hasta dónde llega desde donde está (el arma, el mínimo del mortero, la cura, el llamado del señuelo, lo
+que descubre la vigía; para un búnker, el alcance de cada uno de los de adentro, que tiran 20 % más lejos), su botón
+queda marcado en la barra y las tres herramientas pasan a actuar sobre ella: **Vender** dice lo que devuelve (`+$`),
+**Reparar** lo que cuesta (`−$`) y **Mover** la levanta para tocar adónde va (ahí se ve el alcance que tendría y desde
+dónde la verían). Las que no aplican quedan apagadas. El renglón de arriba de la barra dice su vida y su alcance.
+Tocarla de nuevo, tocar el suelo, el botón derecho o `Esc` la sueltan. Sin unidad elegida, las herramientas funcionan
+como antes (se elige la herramienta y después a quién).
+
 Teclas: `1` a `4` la infantería, `Q W E R` los mecanizados, `A S D F G` las estructuras; `Z` vende (75 % en el descanso,
-50 % en la oleada), `X` repara, `C` mueve.
+50 % en la oleada), `X` repara, `C` mueve (sobre la unidad elegida, si hay una).
 
 **Balance medido** con bots que juegan con el código real, en dificultad media. Cruce por cruce (una defensa de un solo
 tipo y unos $300 contra una tanda de un solo tipo, en la oleada 6 los doce primeros y en la 8 los acechadores;

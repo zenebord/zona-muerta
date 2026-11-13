@@ -681,6 +681,23 @@ const BastionV2Dibujo = {
       if (relleno) { ctx.fillStyle = relleno; ctx.fill(); } if (borde) { ctx.strokeStyle = borde; ctx.lineWidth = 1.2; ctx.stroke(); }
       return q;
     };
+    // Hasta dónde llega una unidad de ese tipo parada en (x, y). op.tiro: también el alcance del arma (por op.factor si
+    // tira desde un búnker); op.teVen: desde dónde la ve un zombie común
+    const radios = (tipo, x, y, op = {}) => {
+      const U = B.unidades[tipo]; if (!U) return;
+      if (op.teVen && (U.clase === 'inf' || U.clase === 'mec' || tipo === 'bunker')) {
+        const radio = BASTION2.zombies.caminante.vista * CELDA;
+        anillo(x, y, radio, 'rgba(255,120,95,0.8)', [2, 4]);
+        const arriba = cam.proyectar(x, y - radio / 1.3), abajo = cam.proyectar(x, y + radio / 1.3);
+        cartel(t('b2.teVen'), arriba.x, arriba.y > 46 ? arriba.y - 5 : abajo.y + 11, '#ff9c88');
+      }
+      if (op.tiro && U.alcance) anillo(x, y, U.alcance * (op.factor || 1), U.soloAire ? 'rgba(150,215,255,0.9)' : 'rgba(255,230,170,0.9)', [6, 5], 1.6);   // el arma (celeste: sólo le tira a lo que vuela)
+      if (U.minimo) anillo(x, y, U.minimo, 'rgba(255,190,90,0.75)', [3, 3]);          // el mortero no tira más cerca que esto
+      if (U.cura) anillo(x, y, U.radio, 'rgba(140,255,150,0.7)', [5, 4]);              // hasta dónde cura el médico
+      if (U.atrae) anillo(x, y, U.atrae * CELDA, 'rgba(255,230,170,0.6)', [5, 5]);     // hasta dónde llama el señuelo
+      if (U.detecta) anillo(x, y, U.detecta * CELDA, 'rgba(255,244,190,0.75)', [6, 4]);  // hasta dónde descubre la torre de vigía
+      if (tipo === 'tanque') anillo(x, y, BASTION2.zombies.topo.topo.tanque * CELDA, 'rgba(255,244,190,0.5)', [2, 5]);   // por su peso, ningún topo pasa por debajo
+    };
 
     // Gas del tóxico: nubes verdes que giran sobre el piso, y el borde hasta donde daña
     for (const n of j.nubesV2) {
@@ -800,30 +817,31 @@ const BastionV2Dibujo = {
         }
       }
       const { c, f } = j.celdaDe(j.puntero.x, j.puntero.y);
-      if (j.dentro(c, f)) {
-        const p = j.centroCelda(c, f);
-        if (U.clase === 'inf' || U.clase === 'mec' || j.colocando === 'bunker') {   // desde dónde lo ve un zombie común
-          const radio = BASTION2.zombies.caminante.vista * CELDA;
-          anillo(p.x, p.y, radio, 'rgba(255,120,95,0.8)', [2, 4]);
-          const arriba = cam.proyectar(p.x, p.y - radio / 1.3), abajo = cam.proyectar(p.x, p.y + radio / 1.3);
-          cartel(t('b2.teVen'), arriba.x, arriba.y > 46 ? arriba.y - 5 : abajo.y + 11, '#ff9c88');
-        }
-        if (U.minimo) anillo(p.x, p.y, U.minimo, 'rgba(255,190,90,0.75)', [3, 3]);          // el mortero no tira más cerca que esto
-        if (U.cura) anillo(p.x, p.y, U.radio, 'rgba(140,255,150,0.7)', [5, 4]);              // hasta dónde cura el médico
-        if (U.atrae) anillo(p.x, p.y, U.atrae * CELDA, 'rgba(255,230,170,0.6)', [5, 5]);     // hasta dónde llama el señuelo
-        if (U.detecta) anillo(p.x, p.y, U.detecta * CELDA, 'rgba(255,244,190,0.75)', [6, 4]);  // hasta dónde descubre la torre de vigía
-      }
+      if (j.dentro(c, f)) { const p = j.centroCelda(c, f); radios(j.colocando, p.x, p.y, { teVen: true }); }   // (el alcance de tiro lo pinta el modo de siempre)
     }
-    // Mover: a quién se eligió y si puede ir adonde está el puntero
+    // La unidad elegida en el campo: una marca a sus pies y hasta dónde llega desde donde está
+    const elegida = j.elegidaVivaV2(), moviendo = j.colocando === 'mover' ? j.moviendo : null;
+    if (elegida && elegida !== moviendo && !j.terminado) {
+      const late = 0.55 + 0.35 * Math.sin(ahora / 160);
+      if (elegida.bloquea && !elegida.enCamino) pintarCelda(elegida.c, elegida.f, 'rgba(255,255,255,0.1)', `rgba(255,255,255,${late})`);   // lo que ocupa su celda: la celda
+      else anillo(elegida.x, elegida.y, 15, `rgba(255,255,255,${late})`, null, 2);                                                      // quien camina: a sus pies
+      if (elegida.tipo === 'bunker') for (const tipo of new Set(elegida.dentro.map(d => d.tipo))) radios(tipo, elegida.x, elegida.y, { tiro: true, factor: B.unidades.bunker.masAlcance });   // desde adentro tiran más lejos
+      else if (elegida.listo) radios(elegida.tipo, elegida.x, elegida.y, { tiro: true });
+    }
+    // Mover: a quién se eligió, si puede ir adonde está el puntero y hasta dónde llegaría desde ahí
     if (j.colocando === 'mover' && !j.terminado) {
       const u = j.moviendo, pc = j.puntero ? j.celdaDe(j.puntero.x, j.puntero.y) : null;
       if (u && !u.quitada) {
-        anillo(u.x, u.y, 15, `rgba(255,255,255,${0.6 + 0.4 * Math.sin(ahora / 120)})`, null, 2);
+        anillo(u.x, u.y, u.bloquea ? 23 : 15, `rgba(255,255,255,${0.6 + 0.4 * Math.sin(ahora / 120)})`, null, 2);
         if (pc && j.dentro(pc.c, pc.f) && !(pc.c === u.c && pc.f === u.f)) {
           const tipo = u.tipo === 'bunker' ? u.dentro[u.dentro.length - 1].tipo : u.tipo, ok = !j.motivoNoColocar(tipo, pc.c, pc.f, true, u.tipo === 'bunker' ? null : u);
           pintarCelda(pc.c, pc.f, ok ? 'rgba(120,230,120,0.28)' : 'rgba(240,80,70,0.3)');
           const a = cam.proyectar(u.x, u.y), d = j.centroCelda(pc.c, pc.f), b = cam.proyectar(d.x, d.y);
           ctx.strokeStyle = ok ? 'rgba(200,255,200,0.7)' : 'rgba(255,150,140,0.6)'; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
+          if (ok) {
+            const alBunker = (j.ocupadaPor(pc.c, pc.f) || {}).tipo === 'bunker';   // la gente que entra a un búnker tira más lejos y no queda a la vista
+            radios(tipo, d.x, d.y, { tiro: true, teVen: !alBunker, factor: alBunker ? B.unidades.bunker.masAlcance : 1 });
+          }
         }
       } else if (pc && j.dentro(pc.c, pc.f)) pintarCelda(pc.c, pc.f, j.movibleEnV2(pc.c, pc.f) ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.4)');
     }

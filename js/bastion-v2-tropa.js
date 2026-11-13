@@ -69,7 +69,7 @@
     if (!b.listo || b.dentro.length >= U_('bunker').capacidad) return false;
     b.dentro.push({ tipo: u.tipo, vida: u.vida, enfriado: Math.random() * 0.4 }); b.adentro = b.dentro.length;
     u.quitada = true; this.unidades = this.unidades.filter(x => x !== u);
-    if (this.moviendo === u) this.moviendo = null;
+    if (this.moviendo === u) this.soltarMoverV2();
     Audio_.recarga('cerrar');
     return true;
   };
@@ -198,7 +198,7 @@
     if (esInf(u)) {   // cae: se contagia, salvo que lo haya volado una explosión o tenga un médico al lado
       const salvado = this.medicoCercaV2(u.x, u.y, u);
       u.quitada = true; u.vida = 0; this.unidades = this.unidades.filter(x => x !== u);
-      if (this.moviendo === u) this.moviendo = null;
+      if (this.moviendo === u) this.soltarMoverV2();
       this.salpicar(u.x, u.y - 14, '#8b0f0f', 12, 3, u.y); Audio_.jugadorHerido();
       if (causa === 'explosion') { this.aviso(t('b2.baja'), 1300); return; }
       if (salvado) { this.aviso(t('b2.sinContagio'), 1500); return; }
