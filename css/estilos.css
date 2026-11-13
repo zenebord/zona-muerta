@@ -822,6 +822,10 @@ body.en-bastion.tactil .extras-tactiles { left: calc(var(--izq) + 50px); right: 
 body.en-bastion.bastion-v2 .b2-guia { display: block; position: absolute; top: 10px; left: 58px; pointer-events: auto; padding: 5px 10px; cursor: pointer; touch-action: manipulation;
   background: rgba(10,8,12,.72); border: 1px solid rgba(201,169,110,.55); color: var(--texto); font: inherit; font-weight: 700; letter-spacing: .1em; font-size: clamp(11px, 1.9vh, 15px); }
 body.en-bastion.bastion-v2 .b2-guia:hover { border-color: var(--luz); color: var(--luz); }
+/* La pausa va por encima del panel del bastión (barra, parte, velocidades): si no, la barra tapa sus botones en una
+   pantalla baja. Ahí, además, se compacta para que entren los cinco */
+body.en-bastion #pausa { z-index: 6; }
+@media (max-height: 480px) { body.en-bastion #pausa { gap: 7px; } body.en-bastion #pausa h2 { font-size: 24px; margin: 0; } body.en-bastion #pausa .boton { padding-top: 7px; padding-bottom: 7px; } }
 /* En el celular va a la derecha del botón de pausa (que está al lado del engranaje), y con su mismo alto */
 body.en-bastion.bastion-v2.tactil .b2-guia { left: calc(max(14px, env(safe-area-inset-left, 0px)) + 108px); top: 8px; min-height: 36px; padding: 0 12px; border-radius: 18px; }
 body.en-bastion.bastion-v2 .solo-b2 { display: inline-block; }

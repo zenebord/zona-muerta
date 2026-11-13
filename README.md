@@ -368,7 +368,10 @@ marcado. Al elegir una unidad, en el parte quedan en verde los zombies que frena
 rinde poco; al tocar un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven
 (`BASTION2.contra`). De texto hay un solo renglón arriba de la barra; la guía completa se abre aparte (botón GUÍA o
 `H`). La partida se guarda al empezar cada oleada: al perder, la pantalla de fin dice quiénes entraron, con qué se los
-frena, y ofrece repetir esa oleada con todo como estaba.
+frena, y ofrece repetir esa oleada con todo como estaba. Lo mismo se puede pedir en cualquier momento desde la pausa,
+con **REINICIAR LA OLEADA n**: unidades, dinero y campamento vuelven a como estaban al empezar la última oleada que se
+largó (`fotoInicioV2`; si todavía no empezó ninguna, el nivel arranca de cero). En el descanso que sigue a una oleada
+ganada el botón sigue apuntando a esa oleada, así que sirve para rehacerla aunque se haya ganado mal.
 
 **Elegir una unidad del campo.** Con la mano vacía, tocar una unidad la elige (`unidadBajoV2`, `elegirDelCampoV2`): en
 el campo se ve hasta dónde llega desde donde está (el arma, el mínimo del mortero, la cura, el llamado del señuelo, lo
