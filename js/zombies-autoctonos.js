@@ -292,7 +292,7 @@ class ZombieAnimal extends Zombie {
       const meta = Math.round((M.giro - Math.PI) / (2 * Math.PI)) * 2 * Math.PI + Math.PI;
       M.giro += (meta - M.giro) * Math.min(1, dt * 9);
     }
-    this.y = alturaSuelo(this.x);
+    this.y = this.ySuelo !== undefined ? this.ySuelo : alturaSuelo(this.x);   // en el último bastión el piso es la fila
     // Chorros de sangre mientras patalea
     const T = this.tiempoMuerto;
     if (T < 1.9 && T >= M.chorro) {
