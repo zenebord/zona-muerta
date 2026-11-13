@@ -497,7 +497,24 @@ Object.assign(DibujoBastion, {
         detalle(ctx, 'rgba(200,230,70,0.85)', elipse(11.4, -66, 1, 2.2, 0.3));   // la baba ácida
       }
     }
-    if (est.escudo) {   // hombrera y escudo antidisturbios, con la ventana y las abolladuras
+    if (est.escudoGrande) {   // El Escudo: un pavés que lo tapa de los ojos a los tobillos, con franjas de obra y la ventana enrejada
+      pieza(ctx, elipse(6.6, -56.4, 6.6, 4.8), col('#1b2030'), 0.4, 13.2);
+      pieza(ctx, k => { k.moveTo(12.6, -72); k.quadraticCurveTo(24, -74.6, 26.6, -69); k.lineTo(28, -12); k.quadraticCurveTo(21, -6.4, 13.4, -9.6); k.closePath(); }, col('#2a3146'), 12.6, 28);
+      if (!Pincel.silueta) {
+        ctx.fillStyle = golpeado ? 'rgba(255,255,255,0.75)' : 'rgba(150,200,225,0.42)'; ctx.beginPath(); ctx.moveTo(15, -67); ctx.lineTo(24.6, -67.6); ctx.lineTo(25, -57); ctx.lineTo(15.2, -56.4); ctx.closePath(); ctx.fill();
+        if (!golpeado) {
+          for (const x of [17.4, 20, 22.6]) linea(ctx, 'rgba(20,24,34,0.85)', 0.6, [[x, -67.2], [x + 0.2, -56.8]]);
+          for (const [y0, y1] of [[-53.6, -48.6], [-21, -16]]) {   // franjas amarillas y negras, arriba y abajo
+            detalle(ctx, '#e8c23a', k => k.rect(13.8, y0, 13.4, y1 - y0));
+            for (let x = 14.2; x < 25.4; x += 4.4) detalle(ctx, '#1a1c22', k => { k.moveTo(x, y1); k.lineTo(x + 2.2, y1); k.lineTo(x + 4.2, y0); k.lineTo(x + 2, y0); k.closePath(); });
+          }
+          detalle(ctx, 'rgba(110,11,11,0.8)', elipse(21, -36, 3.2, 5, 0.3));
+          linea(ctx, 'rgba(12,14,22,0.7)', 0.6, [[16.4, -44], [20.4, -40], [18.2, -31], [22, -26]]);
+          for (const [x, y] of [[14.6, -70], [25, -70.6], [15, -11.8], [26, -13]]) detalle(ctx, '#8a8e9a', circulo(x, y, 0.9));
+          linea(ctx, 'rgba(255,255,255,0.18)', 0.7, [[13.6, -71], [14.2, -10.4]]);
+        }
+      }
+    } else if (est.escudo) {   // hombrera y escudo antidisturbios, con la ventana y las abolladuras
       pieza(ctx, elipse(6.6, -56.4, 6.2, 4.4), col('#1b2030'), 0.4, 12.8);
       pieza(ctx, k => { k.moveTo(13.4, -62); k.quadraticCurveTo(22.6, -63, 23.4, -58); k.lineTo(24.4, -27); k.quadraticCurveTo(19.4, -22.6, 14, -25.4); k.closePath(); }, col('#262d40'), 13.4, 24.4);
       if (!Pincel.silueta) {
@@ -795,7 +812,7 @@ const BastionV2Dibujo = {
     // Avisos sobre lo propio: derribados, curados y delatados por un grito
     for (const u of j.unidades) {
       if (u.invisible || u.quitada || u.tipo === 'caido') continue;
-      const P = cam.proyectar(u.x, u.y);
+      const P = cam.proyectar(u.x, u.y, u.techoVisto || 0);   // (arriba de un contenedor, a su altura)
       if (u.aturdidoHasta > ahora) for (let k = 0; k < 3; k++) {   // estrellitas dando vueltas
         const a = ahora / 220 + k * 2.1, x = P.x + (Math.cos(a) * 8 - 8) * P.s, y = P.y - (16 + Math.sin(a) * 2.4) * P.s;
         ctx.fillStyle = '#ffe36a'; ctx.beginPath();
@@ -804,6 +821,28 @@ const BastionV2Dibujo = {
       }
       if (u.curadoEn > ahora - 450) { const f = ((ahora / 700) + u.x * 0.01) % 1; ctx.globalAlpha = 1 - f; cartel('+', P.x + 7 * P.s, P.y - (38 + f * 12) * P.s, '#8cff9a', 12); ctx.globalAlpha = 1; }
       if (u.delatadoHasta > ahora) { ctx.globalAlpha = 0.6 + 0.4 * Math.sin(ahora / 90); cartel('!', P.x, P.y - (u.bloquea ? 62 : 46) * P.s, '#e9a0ff', 13); ctx.globalAlpha = 1; }
+    }
+
+    // El Escudo: detrás de él, la zona donde no entra una bala tirada desde el piso
+    for (const z of j.zombies) {
+      const C = z.estado !== 'muerto' && BASTION2.zombies[z.tipoBastion] && BASTION2.zombies[z.tipoBastion].cubre; if (!C) continue;
+      const R = C.radio * CELDA, lat = 0.5 + 0.2 * Math.sin(ahora / 300);
+      ctx.beginPath();
+      for (let i = 0; i <= 24; i++) { const a = -Math.PI / 2 + i / 24 * Math.PI, q = cam.proyectar(z.x - 4 + Math.cos(a) * R, z.y + Math.sin(a) * R / 1.3); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
+      ctx.closePath(); ctx.fillStyle = `rgba(120,170,230,${0.1 + 0.05 * lat})`; ctx.fill();
+      ctx.strokeStyle = `rgba(160,205,255,${lat})`; ctx.lineWidth = 1.2; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+      const arriba = cam.proyectar(z.x + R * 0.45, z.y - R / 1.3);
+      cartel(t('b2.aCubierto'), arriba.x, arriba.y - 4, '#bcd9ff');
+    }
+    // Techos: con infantería en la mano (por poner o por mover), los contenedores libres quedan marcados
+    const enMano = j.colocando === 'mover' ? j.moviendo && (j.moviendo.tipo === 'bunker' ? j.moviendo.dentro[j.moviendo.dentro.length - 1] : j.moviendo) : null;
+    const tipoEnMano = enMano ? enMano.tipo : j.colocando, suben = !j.terminado && B.unidades[tipoEnMano] && B.unidades[tipoEnMano].clase === 'inf';
+    if (suben) for (const o of j.obstaculos || []) {
+      const alto = BASTION2.techos[o.tipo]; if (!alto || j.motivoNoColocar(tipoEnMano, o.c, o.f, true, j.colocando === 'mover' && j.moviendo && j.moviendo.tipo !== 'bunker' ? j.moviendo : null)) continue;
+      const q = [[-21, -7], [21, -7], [21, 7], [-21, 7]].map(([dx, dy]) => cam.proyectar(o.x + dx, o.y + dy / 1.3, alto)), m = cam.proyectar(o.x, o.y, alto + 9 + 3 * Math.sin(ahora / 200));
+      ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
+      ctx.fillStyle = 'rgba(120,230,120,0.3)'; ctx.fill(); ctx.strokeStyle = 'rgba(190,255,190,0.85)'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = '#c8ffc8'; ctx.beginPath(); ctx.moveTo(m.x, m.y - 5 * m.s); ctx.lineTo(m.x + 4.5 * m.s, m.y + 1.5 * m.s); ctx.lineTo(m.x - 4.5 * m.s, m.y + 1.5 * m.s); ctx.closePath(); ctx.fill();
     }
 
     const U = j.colocando && B.unidades[j.colocando];
@@ -817,16 +856,20 @@ const BastionV2Dibujo = {
         }
       }
       const { c, f } = j.celdaDe(j.puntero.x, j.puntero.y);
-      if (j.dentro(c, f)) { const p = j.centroCelda(c, f); radios(j.colocando, p.x, p.y, { teVen: true }); }   // (el alcance de tiro lo pinta el modo de siempre)
+      if (j.dentro(c, f)) {   // (el alcance de tiro en el piso lo pinta el modo de siempre)
+        const p = j.centroCelda(c, f), arriba = U.clase === 'inf' && j.alturaEn(c, f);
+        radios(j.colocando, p.x, p.y, arriba ? { tiro: true, factor: BASTION2.altura.alcance } : { teVen: true });
+      }
     }
     // La unidad elegida en el campo: una marca a sus pies y hasta dónde llega desde donde está
     const elegida = j.elegidaVivaV2(), moviendo = j.colocando === 'mover' ? j.moviendo : null;
     if (elegida && elegida !== moviendo && !j.terminado) {
       const late = 0.55 + 0.35 * Math.sin(ahora / 160);
       if (elegida.bloquea && !elegida.enCamino) pintarCelda(elegida.c, elegida.f, 'rgba(255,255,255,0.1)', `rgba(255,255,255,${late})`);   // lo que ocupa su celda: la celda
+      else if (elegida.techo) pintarCelda(elegida.c, elegida.f, null, `rgba(255,255,255,${late})`);                                      // arriba de un contenedor: su celda
       else anillo(elegida.x, elegida.y, 15, `rgba(255,255,255,${late})`, null, 2);                                                      // quien camina: a sus pies
       if (elegida.tipo === 'bunker') for (const tipo of new Set(elegida.dentro.map(d => d.tipo))) radios(tipo, elegida.x, elegida.y, { tiro: true, factor: B.unidades.bunker.masAlcance });   // desde adentro tiran más lejos
-      else if (elegida.listo) radios(elegida.tipo, elegida.x, elegida.y, { tiro: true });
+      else if (elegida.listo) radios(elegida.tipo, elegida.x, elegida.y, { tiro: true, factor: elegida.techo ? BASTION2.altura.alcance : 1 });
     }
     // Mover: a quién se eligió, si puede ir adonde está el puntero y hasta dónde llegaría desde ahí
     if (j.colocando === 'mover' && !j.terminado) {
@@ -839,8 +882,8 @@ const BastionV2Dibujo = {
           const a = cam.proyectar(u.x, u.y), d = j.centroCelda(pc.c, pc.f), b = cam.proyectar(d.x, d.y);
           ctx.strokeStyle = ok ? 'rgba(200,255,200,0.7)' : 'rgba(255,150,140,0.6)'; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
           if (ok) {
-            const alBunker = (j.ocupadaPor(pc.c, pc.f) || {}).tipo === 'bunker';   // la gente que entra a un búnker tira más lejos y no queda a la vista
-            radios(tipo, d.x, d.y, { tiro: true, teVen: !alBunker, factor: alBunker ? B.unidades.bunker.masAlcance : 1 });
+            const alBunker = (j.ocupadaPor(pc.c, pc.f) || {}).tipo === 'bunker', alTecho = !!j.alturaEn(pc.c, pc.f);   // en un búnker o arriba de un contenedor se tira más lejos y no se queda a mano
+            radios(tipo, d.x, d.y, { tiro: true, teVen: !alBunker && !alTecho, factor: alBunker ? B.unidades.bunker.masAlcance : alTecho ? BASTION2.altura.alcance : 1 });
           }
         }
       } else if (pc && j.dentro(pc.c, pc.f)) pintarCelda(pc.c, pc.f, j.movibleEnV2(pc.c, pc.f) ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.4)');

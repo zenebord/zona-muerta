@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=d23781f921">
+  <link rel="stylesheet" href="css/estilos.css?v=0451a7cb40">
 </head>
 <body>
 
@@ -75,23 +75,15 @@
     </div>
   </section>
 
-  <!-- ===== ÚLTIMO BASTIÓN V2: la horda y el ejército del nivel, con sus fichas (js/bastion-v2-ui.js) ===== -->
-  <section id="panel-bastion2" class="pantalla">
-    <h2 data-t="b2.titulo">ÚLTIMO BASTIÓN V2 · DOS BANDOS</h2>
-    <p class="ayuda" data-t="b2.ayuda">Aguanta 12 oleadas en La granja. Cada oleada trae un tipo nuevo de zombie: mira el parte y arma la respuesta.</p>
-    <ul class="b2-reglas">
-      <li data-t="b2.regla1">Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido.</li>
-      <li data-t="b2.regla2">Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.</li>
-      <li data-t="b2.regla3">Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.</li>
-    </ul>
-    <div class="b2-bandos">
-      <div><h3 data-t="b2.horda">LA HORDA</h3><div id="b2-zombies"></div></div>
-      <div><h3 data-t="b2.ejercito">EL BASTIÓN</h3><div id="b2-unidades"></div></div>
-    </div>
-    <div id="b2-detalle" class="b2-detalle"></div>
+  <!-- ===== ÚLTIMO BASTIÓN V2: niveles disponibles (js/bastion-v2-ui.js). La guía de los dos bandos es una capa que
+       se abre desde acá o desde adentro de la partida: #panel-bastion2, más abajo ===== -->
+  <section id="panel-bastion2-niveles" class="pantalla">
+    <h2 data-t="b2.titulo">ÚLTIMO BASTIÓN V2</h2>
+    <p class="ayuda" data-t="b2.nivAyuda">Cada nivel tiene su terreno y su horda. Aguanta todas las oleadas con el campamento en pie.</p>
+    <button id="b2-continuar" class="boton oculta" data-accion="bastion2-continuar"></button>
+    <div id="lista-bastion2" class="lista-mapas lista-bastion lista-bastion2"></div>
     <div class="fila-botones">
-      <button class="boton" data-accion="bastion2-empezar" data-t="b2.empezar">EMPEZAR</button>
-      <button id="b2-continuar" class="boton chico oculta" data-accion="bastion2-continuar"></button>
+      <button class="boton chico" data-accion="bastion2-guia" data-t="b2.guia">GUÍA</button>
       <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
     </div>
   </section>
@@ -193,6 +185,7 @@
       <button type="button" data-unidad="reparar"><b data-t="bastion.reparar">REPARAR</b><small data-t="bastion.repararCosto">¾ del daño</small><span class="cola"></span><span class="avance"></span><kbd>7</kbd></button>
         <button type="button" id="bastion-oleada" class="bastion-oleada"></button>
       </div>
+      <button type="button" id="b2-guia" class="b2-guia" data-accion="bastion2-guia" data-t="b2.guia">GUÍA</button>
       <div class="bastion-velocidades" role="group" data-t-aria="bastion.velocidad" aria-label="Velocidad">
         <button type="button" data-velocidad="1">1×</button><button type="button" data-velocidad="2">2×</button><button type="button" data-velocidad="5">5×</button><button type="button" data-velocidad="10">10×</button>
       </div>
@@ -235,6 +228,7 @@
     <div id="pausa" class="capa oculta">
       <h2 data-t="pausa.titulo">PAUSA</h2>
       <button class="boton chico" data-accion="reanudar" data-t="pausa.seguir">SEGUIR</button>
+      <button class="boton chico solo-b2" data-accion="bastion2-guia" data-t="b2.guia">GUÍA</button>
       <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
       <button class="boton chico" data-accion="al-menu" data-t="pausa.salir">SALIR AL MENÚ</button>
     </div>
@@ -359,6 +353,25 @@
       <div class="fila-botones"><button class="boton chico" type="button" id="asist-volver" data-accion="asist-volver" data-t="asist.volver">VOLVER</button></div>
     </div>
   </div>
+  <!-- Último bastión v2: guía de los dos bandos (js/bastion-v2-ui.js). Se abre desde la lista de niveles o desde
+       adentro de la partida (botón GUÍA, tecla H), que queda en pausa mientras se lee -->
+  <div id="panel-bastion2" class="capa-guia oculta" role="dialog" aria-modal="true" aria-labelledby="b2-guia-titulo">
+    <h2 id="b2-guia-titulo" data-t="b2.guiaTitulo">GUÍA · LOS DOS BANDOS</h2>
+    <ul class="b2-reglas">
+      <li data-t="b2.regla1">Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido.</li>
+      <li data-t="b2.regla2">Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.</li>
+      <li data-t="b2.regla3">Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.</li>
+      <li data-t="b2.regla4">El terreno también juega: en el barro no entran las máquinas, y arriba de un contenedor sólo sube tu infantería, que desde ahí tira más lejos y no es alcanzada a pie.</li>
+    </ul>
+    <div class="b2-bandos">
+      <div><h3 data-t="b2.horda">LA HORDA</h3><div id="b2-zombies"></div></div>
+      <div><h3 data-t="b2.ejercito">EL BASTIÓN</h3><div id="b2-unidades"></div></div>
+    </div>
+    <div id="b2-detalle" class="b2-detalle"></div>
+    <div class="fila-botones">
+      <button class="boton" data-accion="bastion2-guia-cerrar" data-t="boton.volver">VOLVER</button>
+    </div>
+  </div>
   <div id="capa-config" class="capa-config oculta" role="dialog" aria-modal="true" aria-labelledby="config-titulo">
     <div class="panel-config">
       <h2 id="config-titulo" data-t="config.titulo">CONFIGURACIÓN</h2>
@@ -426,7 +439,7 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=c944c3e5e9"></script>
+  <script src="js/version.js?v=f97b7db405"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
@@ -463,18 +476,18 @@
   <script src="js/escenario-historia.js?v=3224c7c117"></script>
   <script src="js/zombies-autoctonos.js?v=447324a013"></script>
   <script src="js/historia.js?v=8bffdb3dff"></script>
-  <script src="js/estrategia.js?v=47754cc278"></script>
+  <script src="js/estrategia.js?v=c8017e56c6"></script>
   <script src="js/bastion-niveles.js?v=d6caba82aa"></script>
   <script src="js/bastion-dibujo.js?v=10ecca945c"></script>
-  <script src="js/bastion-camara.js?v=dc719e0691"></script>
-  <script src="js/bastion-v2.js?v=06291ac2c0"></script>
-  <script src="js/bastion-v2-horda.js?v=9fc7776370"></script>
-  <script src="js/bastion-v2-tropa.js?v=112d6929de"></script>
-  <script src="js/bastion-v2-dibujo.js?v=fc2d62ad89"></script>
-  <script src="js/bastion-v2-ui.js?v=611a3c4036"></script>
+  <script src="js/bastion-camara.js?v=19a67df034"></script>
+  <script src="js/bastion-v2.js?v=3c22afcbe6"></script>
+  <script src="js/bastion-v2-horda.js?v=e0d2c5b2a8"></script>
+  <script src="js/bastion-v2-tropa.js?v=0423b51f62"></script>
+  <script src="js/bastion-v2-dibujo.js?v=8d9da02df8"></script>
+  <script src="js/bastion-v2-ui.js?v=50f8b4ed5e"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=7bcf596264"></script>
-  <script src="js/interfaz.js?v=50dfd6712c"></script>
+  <script src="js/interfaz.js?v=72dd8b4a41"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>

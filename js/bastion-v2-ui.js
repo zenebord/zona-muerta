@@ -1,15 +1,16 @@
-/* ===== Último bastión v2: panel, parte de la oleada, fichas, pantalla previa y textos =====
+/* ===== Último bastión v2: lista de niveles, panel, parte de la oleada, guía y textos =====
  * El panel de abajo tiene las 12 unidades con su retrato, agrupadas por clase (infantería, mecanizados, estructuras),
  * las tres herramientas (vender, reparar, mover) y el botón de la oleada. Arriba, el parte: qué trae la oleada que
  * viene (o la que está en curso), con el tipo que debuta marcado. Los contrapesos se ven sin tapar el campo: al elegir
  * una unidad, en el parte quedan marcados los zombies que frena (verde) y contra los que rinde poco (rojo); al tocar
  * un zombie del parte, en la barra quedan marcadas las unidades que lo frenan y las que no sirven. De texto, un solo
- * renglón arriba de la barra. La guía completa (qué hace cada uno, fuerte, débil, cómo usarlo) es la pantalla previa.
+ * renglón arriba de la barra. La guía completa (qué hace cada uno, fuerte, débil, cómo usarlo) es una capa aparte, que
+ * se abre desde la lista de niveles o desde la partida (botón GUÍA o tecla H). Al entrar se ve la lista de niveles.
  * Tocar una unidad del campo la elige: se ve hasta dónde llega (lo pinta js/bastion-v2-dibujo.js), su botón queda marcado
  * y las herramientas pasan a decir qué harían con ella (vender +$, reparar −$, mover); el renglón cuenta cómo está.
  */
 const BastionV2UI = {
-  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null, suyaVista: null,
+  retratos: {}, parteDe: '', infoDe: '', debutVisto: -1, debutCola: [], zombieVisto: '', zombieHasta: 0, colocandoVisto: null, suyaVista: null, guiaDe: '', fichaVista: '',
   // Un zombie de cada tipo para retratarlo (quieto, mirando hacia el campamento)
   zombieDeMuestra(id) {
     const P = Juego.prototype, falso = { dificultad: DIFICULTADES.medio, ronda: 1, nivelV2: { vida: 1 }, ahora: 0, vidaComunV2: P.vidaComunV2, vestirZombieV2: P.vestirZombieV2 };
@@ -33,7 +34,7 @@ const BastionV2UI = {
         const z = this.zombieDeMuestra(id);
         if (z.vuela) { const s = c.width / (z.E.ancho * 1.5 * z.escala); g.translate(c.width * 0.56, c.height * 0.62); g.scale(s, s); z.altura = 0; z.fase = 0.9; g.save(); z.cuerpo(g, false); g.restore(); }
         else if (z.E) { const s = c.width / (z.E.ancho * 1.75 * z.escala); g.translate(c.width * 0.6, c.height * 0.8); g.scale(s, s); z.dibujar(g, 0, 0); }
-        else { const s = c.height / (98 * z.escala); g.translate(c.width * (id === 'acorazado' || id === 'griton' ? 0.62 : 0.56), c.height * 0.95); g.scale(s, s); z.dibujar(g, 0, 0); }
+        else { const s = c.height / (98 * z.escala); g.translate(c.width * (id === 'acorazado' || id === 'griton' ? 0.62 : id === 'escudo' ? 0.5 : 0.56), c.height * 0.95); g.scale(s, s); z.dibujar(g, 0, 0); }
       }
     } catch (e) { /* sin lienzo: queda vacío */ } finally { Lienzo.liviano = liviano; }
     return (this.retratos[k] = c.toDataURL());
@@ -63,24 +64,54 @@ const BastionV2UI = {
       `<p><b>${t(esZ ? 'b2.frenar' : 'b2.usar')}</b> ${t(k + '.uso')}</p>${contras}</div>`;
   },
 
-  /* ---------- Pantalla previa: los dos bandos por clase, con sus fichas ---------- */
-  abrir(mostrar) {
+  /* ---------- Lista de niveles: lo primero que se ve al entrar ---------- */
+  abrirNiveles(mostrar) {
     BastionV2.ajustarUnidades(true);   // los precios de la v2, también antes de empezar
-    this.pintar('z:caminante');
-    mostrar('panel-bastion2');
+    this.pintarNiveles();
+    mostrar('panel-bastion2-niveles');
   },
-  // Las fichas de los dos bandos y el detalle de la elegida (se arma de nuevo si cambia el idioma con la pantalla abierta)
-  pintar(elegida) {
-    const tecla = (clave, precio) => `<button type="button" class="b2-ficha" data-ficha="${clave}"><img src="${this.retrato(clave, 56)}" alt=""><b>${t('b2.' + clave.replace(':', '.'))}</b>${precio ? `<small>${precio}</small>` : ''}</button>`;
-    const fila = (clase, claves, precios) => `<div class="b2-fila"><h4>${t('b2.clase.' + clase)}</h4><div class="b2-fichas">${claves.map(k => tecla(k, precios ? '$' + BASTION2.unidades[k.slice(2)].costo : '')).join('')}</div></div>`;
-    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani', 'ace'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie', 'jefe'] : [])].map(k => 'z:' + k))).join('');
-    document.getElementById('b2-unidades').innerHTML = ['inf', 'mec', 'est'].map(c => fila(c, BASTION2.clases[c].map(k => 'u:' + k), true)).join('');
-    const guardada = BastionV2.partida(), seguir = document.getElementById('b2-continuar');
+  // Una tarjeta por nivel, con la vista del escenario; arriba, la partida guardada (si hay)
+  pintarNiveles() {
+    const lista = document.getElementById('lista-bastion2'), seguir = document.getElementById('b2-continuar'); if (!lista) return;
+    const guardada = BastionV2.partida();
     seguir.classList.toggle('oculta', !guardada);
-    if (guardada) seguir.textContent = t('b2.continuar', { ola: guardada.ronda + 1, total: BastionV2.oleadas().length });
+    if (guardada) seguir.textContent = t('b2.continuar', { nivel: t('bniv.' + guardada.nivel), ola: guardada.ronda + 1, total: BastionV2.oleadas(guardada.nivel).length });
+    lista.innerHTML = '';
+    BastionV2.niveles().forEach((id, i) => {
+      const ganado = BastionV2.ganado(id), b = document.createElement('button'), lienzo = document.createElement('canvas');
+      b.type = 'button'; b.className = 'tarjeta-mapa tarjeta-bastion' + (ganado ? ' ganada' : ''); b.dataset.nivelBastion2 = id;
+      lienzo.width = 320; lienzo.height = 150; lienzo.className = 'vista';
+      b.appendChild(lienzo);
+      b.insertAdjacentHTML('beforeend', `<h3>${i + 1}. ${t('bniv.' + id)}</h3><p>${t('b2.niv.' + id)}</p><span class="etiqueta">${ganado ? t('bniv.ganado') : t('bniv.olas', { n: BastionV2.oleadas(id).length })}</span>`);
+      lista.appendChild(b);
+      try { PaisajeBastion.vista(lienzo, BastionV2.escenario(id)); } catch (e) { /* sin lienzo: queda vacía */ }
+    });
+  },
+
+  /* ---------- La guía: los dos bandos por clase, con sus fichas. Es una capa que se abre desde la lista de niveles o
+   * desde adentro de la partida (que queda en pausa); ahí, los tipos que no vienen en ese nivel quedan apagados ---------- */
+  abrirGuia(j) {
+    BastionV2.ajustarUnidades(true);
+    const enPartida = j && j.v2 ? j : null, suya = enPartida && enPartida.elegidaVivaV2();
+    this.guiaDe = enPartida ? enPartida.nivelBastion.id : '';
+    // Se abre en lo que se estaba mirando: el zombie del parte, la unidad elegida en el campo o la última ficha vista
+    this.pintar(enPartida && this.zombieVisto ? 'z:' + this.zombieVisto : suya ? 'u:' + suya.tipo : this.fichaVista || 'z:caminante');
+    document.getElementById('panel-bastion2').classList.remove('oculta');
+  },
+  cerrarGuia() { document.getElementById('panel-bastion2').classList.add('oculta'); },
+  guiaAbierta() { const g = document.getElementById('panel-bastion2'); return !!g && !g.classList.contains('oculta'); },
+  // Las fichas de los dos bandos y el detalle de la elegida (se arma de nuevo si cambia el idioma con la guía abierta)
+  pintar(elegida) {
+    const vienen = this.guiaDe ? BastionV2.debut(this.guiaDe) : null;
+    const fuera = clave => !!vienen && clave[0] === 'z' && clave !== 'z:soldadoZombie' && !(clave.slice(2) in vienen);
+    const tecla = (clave, precio) => `<button type="button" class="b2-ficha${fuera(clave) ? ' fuera' : ''}" data-ficha="${clave}"${fuera(clave) ? ` title="${t('b2.noViene')}"` : ''}><img src="${this.retrato(clave, 56)}" alt=""><b>${t('b2.' + clave.replace(':', '.'))}</b>${precio ? `<small>${precio}</small>` : ''}</button>`;
+    const fila = (clase, claves, precios) => `<div class="b2-fila"><h4>${t('b2.clase.' + clase)}</h4><div class="b2-fichas">${claves.map(k => tecla(k, precios ? '$' + BASTION2.unidades[k.slice(2)].costo : '')).join('')}</div></div>`;
+    document.getElementById('b2-zombies').innerHTML = ['cam', 'esp', 'ani', 'ace'].map(c => fila(c, [...BASTION2.clasesZombie[c], ...(c === 'cam' ? ['soldadoZombie', ...BASTION2.jefes] : [])].map(k => 'z:' + k))).join('');
+    document.getElementById('b2-unidades').innerHTML = ['inf', 'mec', 'est'].map(c => fila(c, BASTION2.clases[c].map(k => 'u:' + k), true)).join('');
     this.mostrarFicha(elegida);
   },
   mostrarFicha(clave) {
+    this.fichaVista = clave;
     document.querySelectorAll('.b2-ficha').forEach(b => b.classList.toggle('elegida', b.dataset.ficha === clave));
     document.getElementById('b2-detalle').innerHTML = this.ficha(clave);
   },
@@ -143,7 +174,7 @@ const BastionV2UI = {
     el.classList.toggle('oculta', !ver); el.classList.toggle('en-curso', !j.enDescanso);
     el.classList.toggle('muchos', ver && Object.keys(j.nivelV2.oleadas[n]).length > 11);   // con muchos tipos, más chicos para que entren en el celular
     const clave = ver ? n + ':' + j.enDescanso + ':' + Idioma.actual() : '';
-    const def = ver ? j.nivelV2.oleadas[n] : {}, debut = BastionV2.debut();
+    const def = ver ? j.nivelV2.oleadas[n] : {}, debut = BastionV2.debut(j.nivelBastion.id);
     let rehecho = false;
     if (clave !== this.parteDe) {
       this.parteDe = clave; rehecho = true;
@@ -181,7 +212,7 @@ const BastionV2UI = {
     }
   },
   // Lo que cambia en el renglón de una unidad elegida (para no reescribirlo en cada pasada)
-  estadoDe(u) { return [u.tipo, Math.ceil(u.vida), u.listo ? 1 : 0, u.dentro ? u.dentro.length : ''].join(':'); },
+  estadoDe(u) { return [u.tipo, Math.ceil(u.vida), u.listo ? 1 : 0, u.dentro ? u.dentro.length : '', u.techo ? 1 : 0].join(':'); },
   // El renglón de una unidad elegida en el campo: cómo está, hasta dónde llega y qué hace
   renglonDe(u) {
     const U = BASTION2.unidades[u.tipo], k = 'b2.u.' + u.tipo;
@@ -189,7 +220,7 @@ const BastionV2UI = {
     const datos = [t('b2.e.vida', { v: Math.ceil(u.vida), max: u.vidaMax })];
     if (!u.listo) datos.push(t('b2.e.obra'));
     else if (u.tipo === 'bunker') datos.push(t('b2.e.adentro', { n: u.dentro.length, max: U.capacidad }));
-    else if (U.alcance) datos.push(U.minimo ? t('b2.e.alcanceDe', { min: celdas(U.minimo), n: celdas(U.alcance) }) : t('b2.e.alcance', { n: celdas(U.alcance) }));
+    else if (U.alcance) { const A = U.alcance * (u.techo ? BASTION2.altura.alcance : 1); datos.push(U.minimo ? t('b2.e.alcanceDe', { min: celdas(U.minimo), n: celdas(A) }) : t('b2.e.alcance', { n: celdas(A) })); }   // desde arriba de un contenedor llega más lejos
     else if (U.atrae) datos.push(t('b2.e.atrae', { n: U.atrae }));   // (el médico y la torre de vigía ya dicen su distancia en lo que hacen)
     return `<b>${t(k)}</b> ${datos.join(' · ')} · ${t(k + '.hace')}`;
   },
@@ -201,9 +232,10 @@ document.addEventListener('click', e => {
   const chip = e.target.closest('[data-ficha-z]');   // tocar un tipo del parte lo deja a la vista; tocarlo de nuevo lo saca
   if (chip) { BastionV2UI.verZombie(BastionV2UI.zombieVisto === chip.dataset.fichaZ ? null : chip.dataset.fichaZ); const j = window.ZonaMuerta && ZonaMuerta.juego(); if (j && j.v2) j.panelBastion(); }
 });
-Idioma.alCambiar(() => {   // con la pantalla previa abierta, las fichas pasan al idioma nuevo
-  const panel = document.getElementById('panel-bastion2'), elegida = document.querySelector('.b2-ficha.elegida');
-  if (panel && panel.classList.contains('visible')) BastionV2UI.pintar(elegida ? elegida.dataset.ficha : 'z:caminante');
+Idioma.alCambiar(() => {   // lo que esté a la vista pasa al idioma nuevo: la guía y la lista de niveles
+  if (BastionV2UI.guiaAbierta()) BastionV2UI.pintar(BastionV2UI.fichaVista || 'z:caminante');
+  const niveles = document.getElementById('panel-bastion2-niveles');
+  if (niveles && niveles.classList.contains('visible')) BastionV2UI.pintarNiveles();
 });
 
 /* ---------- Textos ---------- */
@@ -243,7 +275,8 @@ const FICHAS_B2 = {
       lanzador: ['Lanzador', 'Agarra al zombie que tiene al lado y lo arroja por encima de tus muros, hasta 7 celdas, junto a lo que tienes más atrás.', 'Tus muros no protegen de lo que cae del cielo. Si no tiene a quién arrojar, tira cascotes a lo construido. Mucha vida.', 'Lento. El arrojado cae lastimado y aturdido, y no puede con un búnker.', 'Francotiradores dentro de un búnker, o el tanque con francotiradores: lo que cae no puede con los protegidos.'],
       escupidor: ['Escupidor', 'Se planta a 5 celdas y escupe ácido en arco: un charco que quema a la gente y a lo construido.', 'Tira desde más lejos que el soldado y la torreta, que no le llegan. El ácido desarma torretas y búnkeres.', 'Poca vida y se queda quieto: el francotirador lo baja de uno o dos tiros. El charco dura poco. Le escupe a la gente, no a un muro pelado.', 'Francotirador; el tanque, que tira tan lejos como él.'],
       rabioso: ['Rabioso', 'Corre al doble que un perro, en zigzag, directo al campamento. No se detiene por nadie.', 'Vienen de a cuatro. El tiro del francotirador y el cañón le erran más de la mitad de las veces, y la granada nunca llega a tiempo.', 'Poca vida. El alambrado y el barro lo frenan como a todos. No ataca a tu gente.', 'Lanzallamas en fila en el paso; varias torretas con alambrado.'],
-      jefe: ['El Coloso', 'Jefe de las oleadas 6 y 12: va derecho, rompe todo y arroja fardos a lo que tiene a 5 celdas.', 'Tiene 22 veces la vida del común y muerde el triple. Sus fardos golpean a todo lo que está junto. Si entra, le saca 8 al campamento.', 'Muy lento.', 'Fuego concentrado: tanque, francotiradores y todo lo que haya. No amontones tus defensas.'],
+      escudo: ['El Escudo', 'Jefe de La autopista (oleadas 6 y 12): un acorazado gigante que marcha adelante y cubre a los que vienen pegados detrás.', 'Las balas chicas le hacen 1. Mientras vive, a los que cubre no les entra ninguna bala tirada desde el piso. Tiene 22 veces la vida del común y rompe todo.', 'Lento. El francotirador y el cañón le pegan de lleno. No cubre a nadie del fuego, de las granadas ni de quien tira desde arriba de un contenedor.', 'Francotiradores y tanque sobre él; lanzallamas y mortero para los que cubre, y tu gente arriba de los contenedores.'],
+      jefe: ['El Coloso', 'Jefe de La granja (oleadas 6 y 12): va derecho, rompe todo y arroja fardos a lo que tiene a 5 celdas.', 'Tiene 22 veces la vida del común y muerde el triple. Sus fardos golpean a todo lo que está junto. Si entra, le saca 8 al campamento.', 'Muy lento.', 'Fuego concentrado: tanque, francotiradores y todo lo que haya. No amontones tus defensas.'],
     },
   },
   pt: {
@@ -280,7 +313,8 @@ const FICHAS_B2 = {
       lanzador: ['Arremessador', 'Agarra o zumbi ao lado e o arremessa por cima dos seus muros, até 7 casas, junto do que você tem mais atrás.', 'Seus muros não protegem do que cai do céu. Se não tiver quem arremessar, joga entulho nas construções. Muita vida.', 'Lento. O arremessado cai ferido e atordoado, e não pode com um bunker.', 'Atiradores de elite dentro de um bunker, ou o tanque com atiradores: o que cai não pode com os protegidos.'],
       escupidor: ['Cuspidor', 'Para a 5 casas e cospe ácido em arco: uma poça que queima pessoas e construções.', 'Atira de mais longe que o soldado e a torre, que não o alcançam. O ácido desmonta torres e bunkers.', 'Pouca vida e fica parado: o atirador de elite o derruba com um ou dois tiros. A poça dura pouco. Cospe nas pessoas, não em um muro vazio.', 'Atirador de elite; o tanque, que atira tão longe quanto ele.'],
       rabioso: ['Raivoso', 'Corre o dobro de um cão, em zigue-zague, direto para o acampamento. Não para por ninguém.', 'Vêm de quatro em quatro. O tiro do atirador de elite e o canhão erram mais da metade das vezes, e a granada nunca chega a tempo.', 'Pouca vida. O arame farpado e a lama o freiam como a todos. Não ataca o seu pessoal.', 'Lança-chamas em fila na passagem; várias torres com arame farpado.'],
-      jefe: ['O Colosso', 'Chefe das ondas 6 e 12: vai reto, quebra tudo e arremessa fardos no que estiver a até 5 casas.', 'Tem 22 vezes a vida do comum e morde o triplo. Os fardos acertam tudo o que está junto. Se entrar, tira 8 do acampamento.', 'Muito lento.', 'Fogo concentrado: tanque, atiradores de elite e tudo o que houver. Não amontoe as defesas.'],
+      escudo: ['O Escudo', 'Chefe de A rodovia (ondas 6 e 12): um blindado gigante que marcha na frente e cobre os que vêm colados atrás.', 'As balas pequenas tiram 1. Enquanto ele vive, nenhuma bala disparada do chão entra nos que ele cobre. Tem 22 vezes a vida do comum e quebra tudo.', 'Lento. O atirador de elite e o canhão o acertam em cheio. Não cobre ninguém do fogo, das granadas nem de quem atira de cima de um contêiner.', 'Atiradores de elite e tanque nele; lança-chamas e morteiro nos que ele cobre, e o seu pessoal em cima dos contêineres.'],
+      jefe: ['O Colosso', 'Chefe de A fazenda (ondas 6 e 12): vai reto, quebra tudo e arremessa fardos no que estiver a até 5 casas.', 'Tem 22 vezes a vida do comum e morde o triplo. Os fardos acertam tudo o que está junto. Se entrar, tira 8 do acampamento.', 'Muito lento.', 'Fogo concentrado: tanque, atiradores de elite e tudo o que houver. Não amontoe as defesas.'],
     },
   },
   en: {
@@ -317,7 +351,8 @@ const FICHAS_B2 = {
       lanzador: ['Thrower', 'Grabs the zombie next to it and throws it over your walls, up to 7 cells, next to whatever you keep farthest back.', 'Your walls do not protect from what falls from the sky. With nobody to throw, it hurls rubble at what you built. Lots of health.', 'Slow. The thrown one lands hurt and stunned, and can do nothing to a bunker.', 'Snipers inside a bunker, or the tank with snipers: what lands cannot hurt the protected.'],
       escupidor: ['Spitter', 'Stops 5 cells away and spits acid in an arc: a puddle that burns people and buildings.', 'It shoots from farther than the rifleman and the turret, which cannot reach it. Acid takes apart turrets and bunkers.', 'Little health and it stands still: the sniper drops it in a shot or two. The puddle does not last. It spits at people, not at a bare wall.', 'Sniper; the tank, which shoots as far as it does.'],
       rabioso: ['Rabid', 'Runs twice as fast as a dog, zigzagging, straight for the camp. It stops for nobody.', 'They come in fours. The sniper’s shot and the cannon miss more than half the time, and the shell never arrives in time.', 'Little health. Barbed wire and mud slow it like everyone else. It does not attack your people.', 'Flamethrowers in a row in its way; several turrets with barbed wire.'],
-      jefe: ['The Colossus', 'Boss of waves 6 and 12: walks straight, breaks everything and throws hay bales at whatever is within 5 cells.', 'It has 22 times a walker’s health and bites three times as hard. Its bales hit everything standing together. If it gets in, it takes 8 from the camp.', 'Very slow.', 'Focused fire: tank, snipers and everything you have. Do not pack your defenses together.'],
+      escudo: ['The Shield', 'Boss of The highway (waves 6 and 12): a giant armored one that marches in front and covers those right behind it.', 'Small bullets do 1 to it. While it lives, no bullet fired from the ground reaches those it covers. It has 22 times a walker’s health and breaks everything.', 'Slow. The sniper and the cannon hit it in full. It covers no one from fire, shells or anyone shooting from the top of a container.', 'Snipers and tank on it; flamethrower and mortar for those it covers, and your people on top of the containers.'],
+      jefe: ['The Colossus', 'Boss of The farm (waves 6 and 12): walks straight, breaks everything and throws hay bales at whatever is within 5 cells.', 'It has 22 times a walker’s health and bites three times as hard. Its bales hit everything standing together. If it gets in, it takes 8 from the camp.', 'Very slow.', 'Focused fire: tank, snipers and everything you have. Do not pack your defenses together.'],
     },
   },
 };
@@ -327,11 +362,16 @@ for (const [idioma, F] of Object.entries(FICHAS_B2)) for (const clase of ['u', '
 Object.assign(TEXTOS.es, {
   'menu.bastion2': 'ÚLTIMO BASTIÓN V2',
   'bastion.alambrado': 'ALAMBRADO', 'bastion.senuelo': 'SEÑUELO', 'bastion.francotirador': 'TIRADOR', 'bastion.lanzallamas': 'LLAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTERO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.vigia': 'VIGÍA', 'bastion.mover': 'MOVER',
-  'b2.titulo': 'ÚLTIMO BASTIÓN V2 · DOS BANDOS', 'b2.ayuda': 'Aguanta 12 oleadas en La granja. Cada oleada trae un tipo nuevo de zombie: mira el parte y arma la respuesta.',
+  'b2.titulo': 'ÚLTIMO BASTIÓN V2', 'b2.nivAyuda': 'Cada nivel tiene su terreno y su horda. Aguanta todas las oleadas con el campamento en pie. La guía de unidades y zombies también se abre durante la partida.',
+  'b2.guia': 'GUÍA', 'b2.guiaTitulo': 'GUÍA · LOS DOS BANDOS', 'b2.noViene': 'No viene en este nivel',
+  'b2.regla4': 'El terreno también juega: en el barro no entran las máquinas, y arriba de un contenedor sólo sube tu infantería, que desde ahí tira más lejos y no es alcanzada a pie.',
+  'b2.niv.autopista': 'Los autos chocados arman pasillos donde la horda se junta. Arriba de los contenedores sólo sube tu infantería: tira más lejos y a pie no la alcanzan. Jefe: El Escudo.',
+  'b2.avisoAutopista': 'Arriba de los contenedores sólo sube tu infantería: tira más lejos y a pie no la alcanzan', 'b2.soloInfArriba': 'Arriba de un contenedor sólo sube la infantería', 'b2.aCubierto': 'A CUBIERTO',
+  'b2.niv.granja': 'Campo abierto: no hay embudo. En la tierra arada no entran las máquinas y el estanque corta el paso. Viene toda la horda, con un tipo nuevo en cada oleada.',
   'b2.regla1': 'Ninguna unidad sirve contra todo. El blindaje frena las balas chicas, lo que vuela pasa sobre los muros y la granada falla contra lo rápido. Y no todos vienen de frente.',
   'b2.regla2': 'Los zombies ven. Van por tu gente y rompen lo que la protege; el que cae se levanta en tu contra a los 3 segundos.',
   'b2.regla3': 'Antes de cada oleada, el parte dice qué viene. Toca un tipo para ver con qué se lo frena.',
-  'b2.horda': 'LA HORDA', 'b2.ejercito': 'EL BASTIÓN', 'b2.empezar': 'EMPEZAR', 'b2.continuar': 'SEGUIR EN LA OLEADA {ola} DE {total}',
+  'b2.horda': 'LA HORDA', 'b2.ejercito': 'EL BASTIÓN', 'b2.continuar': 'SEGUIR: {nivel} · OLEADA {ola} DE {total}',
   'b2.clase.inf': 'Infantería', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estructuras', 'b2.clase.cam': 'Caminantes', 'b2.clase.esp': 'Especiales', 'b2.clase.ani': 'Animales', 'b2.clase.ace': 'Acechadores',
   'b2.fuerte': 'FUERTE:', 'b2.debil': 'DÉBIL:', 'b2.frenar': 'CÓMO FRENARLO:', 'b2.usar': 'CÓMO USARLO:',
   'b2.loFrena': 'LO FRENA', 'b2.noSirve': 'NO SIRVE', 'b2.frenaA': 'FRENA A', 'b2.flojoContra': 'FLOJO CONTRA', 'b2.nuevo': 'NUEVO',
@@ -348,11 +388,16 @@ Object.assign(TEXTOS.es, {
 Object.assign(TEXTOS.pt, {
   'menu.bastion2': 'ÚLTIMO BASTIÃO V2',
   'bastion.alambrado': 'ARAME', 'bastion.senuelo': 'ISCA', 'bastion.francotirador': 'ATIRADOR', 'bastion.lanzallamas': 'CHAMAS', 'bastion.medico': 'MÉDICO', 'bastion.mortero': 'MORTEIRO', 'bastion.antiaerea': 'ANTIAÉREA', 'bastion.vigia': 'VIGIA', 'bastion.mover': 'MOVER',
-  'b2.titulo': 'ÚLTIMO BASTIÃO V2 · DOIS LADOS', 'b2.ayuda': 'Aguente 12 ondas em A fazenda. Cada onda traz um tipo novo de zumbi: veja o relatório e monte a resposta.',
+  'b2.titulo': 'ÚLTIMO BASTIÃO V2', 'b2.nivAyuda': 'Cada fase tem seu terreno e sua horda. Aguente todas as ondas com o acampamento de pé. O guia de unidades e zumbis também abre durante a partida.',
+  'b2.guia': 'GUIA', 'b2.guiaTitulo': 'GUIA · OS DOIS LADOS', 'b2.noViene': 'Não vem nesta fase',
+  'b2.regla4': 'O terreno também joga: na lama as máquinas não entram, e em cima de um contêiner só sobe a sua infantaria, que dali atira mais longe e não é alcançada a pé.',
+  'b2.niv.autopista': 'Os carros batidos formam corredores onde a horda se junta. Em cima dos contêineres só sobe a sua infantaria: atira mais longe e a pé não a alcançam. Chefe: O Escudo.',
+  'b2.avisoAutopista': 'Em cima dos contêineres só sobe a sua infantaria: atira mais longe e a pé não a alcançam', 'b2.soloInfArriba': 'Em cima de um contêiner só sobe a infantaria', 'b2.aCubierto': 'PROTEGIDOS',
+  'b2.niv.granja': 'Campo aberto: não há funil. Na terra arada as máquinas não entram e o lago corta a passagem. Vem a horda inteira, com um tipo novo a cada onda.',
   'b2.regla1': 'Nenhuma unidade serve contra tudo. A blindagem segura as balas pequenas, o que voa passa por cima dos muros e a granada erra o que é rápido. E nem todos vêm de frente.',
   'b2.regla2': 'Os zumbis veem. Vão atrás do seu pessoal e quebram o que o protege; quem cai se levanta contra você em 3 segundos.',
   'b2.regla3': 'Antes de cada onda, o relatório diz o que vem. Toque em um tipo para ver o que o segura.',
-  'b2.horda': 'A HORDA', 'b2.ejercito': 'O BASTIÃO', 'b2.empezar': 'COMEÇAR', 'b2.continuar': 'CONTINUAR NA ONDA {ola} DE {total}',
+  'b2.horda': 'A HORDA', 'b2.ejercito': 'O BASTIÃO', 'b2.continuar': 'CONTINUAR: {nivel} · ONDA {ola} DE {total}',
   'b2.clase.inf': 'Infantaria', 'b2.clase.mec': 'Mecanizados', 'b2.clase.est': 'Estruturas', 'b2.clase.cam': 'Caminhantes', 'b2.clase.esp': 'Especiais', 'b2.clase.ani': 'Animais', 'b2.clase.ace': 'Espreitadores',
   'b2.fuerte': 'FORTE:', 'b2.debil': 'FRACO:', 'b2.frenar': 'COMO PARÁ-LO:', 'b2.usar': 'COMO USAR:',
   'b2.loFrena': 'O QUE O PARA', 'b2.noSirve': 'NÃO SERVE', 'b2.frenaA': 'PARA', 'b2.flojoContra': 'FRACO CONTRA', 'b2.nuevo': 'NOVO',
@@ -369,11 +414,16 @@ Object.assign(TEXTOS.pt, {
 Object.assign(TEXTOS.en, {
   'menu.bastion2': 'LAST BASTION V2',
   'bastion.alambrado': 'WIRE', 'bastion.senuelo': 'DECOY', 'bastion.francotirador': 'SNIPER', 'bastion.lanzallamas': 'FLAMER', 'bastion.medico': 'MEDIC', 'bastion.mortero': 'MORTAR', 'bastion.antiaerea': 'ANTI-AIR', 'bastion.vigia': 'WATCH', 'bastion.mover': 'MOVE',
-  'b2.titulo': 'LAST BASTION V2 · TWO SIDES', 'b2.ayuda': 'Hold out for 12 waves at The farm. Each wave brings a new zombie type: check the report and build the answer.',
+  'b2.titulo': 'LAST BASTION V2', 'b2.nivAyuda': 'Each level has its own terrain and its own horde. Hold out through every wave with the camp standing. The guide to units and zombies also opens during the game.',
+  'b2.guia': 'GUIDE', 'b2.guiaTitulo': 'GUIDE · THE TWO SIDES', 'b2.noViene': 'Not in this level',
+  'b2.regla4': 'Terrain matters too: machines cannot enter mud, and only your infantry can climb a container, where they shoot farther and cannot be reached on foot.',
+  'b2.niv.autopista': 'Crashed cars form corridors where the horde bunches up. Only your infantry can climb the containers: they shoot farther and cannot be reached on foot. Boss: The Shield.',
+  'b2.avisoAutopista': 'Only your infantry can climb the containers: they shoot farther and cannot be reached on foot', 'b2.soloInfArriba': 'Only infantry can go on top of a container', 'b2.aCubierto': 'IN COVER',
+  'b2.niv.granja': 'Open field: there is no funnel. Machines cannot enter the ploughed land and the pond blocks the way. The whole horde comes, with a new type every wave.',
   'b2.regla1': 'No unit works against everything. Armor stops small bullets, flyers pass over walls and shells miss fast targets. And not all of them come head-on.',
   'b2.regla2': 'Zombies can see. They go for your people and break whatever protects them; whoever falls gets up against you in 3 seconds.',
   'b2.regla3': 'Before each wave, the report says what is coming. Tap a type to see what stops it.',
-  'b2.horda': 'THE HORDE', 'b2.ejercito': 'THE BASTION', 'b2.empezar': 'START', 'b2.continuar': 'CONTINUE AT WAVE {ola} OF {total}',
+  'b2.horda': 'THE HORDE', 'b2.ejercito': 'THE BASTION', 'b2.continuar': 'CONTINUE: {nivel} · WAVE {ola} OF {total}',
   'b2.clase.inf': 'Infantry', 'b2.clase.mec': 'Mechanized', 'b2.clase.est': 'Structures', 'b2.clase.cam': 'Walkers', 'b2.clase.esp': 'Specials', 'b2.clase.ani': 'Animals', 'b2.clase.ace': 'Stalkers',
   'b2.fuerte': 'STRONG:', 'b2.debil': 'WEAK:', 'b2.frenar': 'HOW TO STOP IT:', 'b2.usar': 'HOW TO USE IT:',
   'b2.loFrena': 'STOPPED BY', 'b2.noSirve': 'NO USE', 'b2.frenaA': 'STOPS', 'b2.flojoContra': 'WEAK AGAINST', 'b2.nuevo': 'NEW',

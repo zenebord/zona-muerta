@@ -106,7 +106,7 @@ function capaQuietaBastion(g, N, e, cam) {
 const capaCamaraBastion = { lienzo: null, clave: '' };
 Juego.prototype.dibujarFondoBastion = function (ctx, cam = this.camaraBastion()) {
   const N = this.nivelBastion, e = Math.round(Math.hypot(ctx.getTransform().a, ctx.getTransform().b) * 100) / 100 || 1;
-  const clave = [N.id, this.cols, this.filas, e, ANCHO, typeof Idioma !== 'undefined' && Idioma.actual ? Idioma.actual() : ''].join(':');
+  const clave = [N.id, N.variante || '', this.cols, this.filas, e, ANCHO, typeof Idioma !== 'undefined' && Idioma.actual ? Idioma.actual() : ''].join(':');   // variante: el mismo escenario con otro mapa (el de la v2)
   if (capaCamaraBastion.clave !== clave) { capaCamaraBastion.lienzo = capaQuietaBastion(this, N, e, cam); capaCamaraBastion.clave = clave; }
   ctx.drawImage(capaCamaraBastion.lienzo, 0, 0, ANCHO, ALTO);
   PaisajeBastion.fondoVivo(ctx, N, this.ahora, cam);

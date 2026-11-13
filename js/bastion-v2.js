@@ -1,33 +1,37 @@
 /* ===== Último bastión v2: dos bandos con contrapesos =====
- * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). Un solo nivel, La granja,
- * con el plantel completo: 13 unidades militares en tres clases y 16 tipos de zombie en cuatro.
+ * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). El plantel completo, 13
+ * unidades militares en tres clases y 16 tipos de zombie en cuatro, en dos niveles: La granja (campo abierto, toda
+ * la horda) y La autopista (pasillos entre autos chocados y contenedores con techo; 11 tipos y su jefe, El Escudo).
  *
  *   EL BASTIÓN                                              LA HORDA
  *   Infantería   soldado, francotirador, lanzallamas,       Caminantes   común, corredor, gordo, acorazado
  *                médico                                     Especiales   gritón, hinchado, dinamitero, tóxico
  *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales     jauría, toro, bandada, buitre
  *   Estructuras  muro, alambrado, búnker, señuelo,          Acechadores  topo, lanzador, escupidor, rabioso
- *                torre de vigía                             (+ el soldado contagiado y El Coloso, el jefe)
+ *                torre de vigía                             (+ el soldado contagiado y un jefe por nivel:
+ *                                                            El Coloso y El Escudo)
  *
  * Los acechadores son los que no vienen de frente: el topo pasa por debajo, el lanzador arroja zombies por arriba de
  * los muros, el escupidor tira desde más lejos que la línea y el rabioso corre más rápido que las armas lentas.
  *
- * Los contrapesos no salen de una tabla de multiplicadores sino de cinco reglas que valen para todos:
+ * Los contrapesos no salen de una tabla de multiplicadores sino de seis reglas que valen para todos:
  *   Blindaje   le resta puntos a cada bala (mínimo 1). No frena al francotirador, al cañón, al fuego ni a las explosiones
  *   Área       el fuego y las explosiones pegan a todos los que están juntos; la granada del mortero tarda en caer
  *   Aire       lo que vuela pasa sobre todo; sólo le tiran los fusiles (soldado, francotirador) y la antiaérea
  *   Velocidad  cuanto más rápido el zombie, menos tiempo pasa bajo fuego: cadencia alta y alambrado
  *   Vista      el zombie va por el humano que ve; el que tira desde más lejos que esa vista, tira escondido
+ *   Altura     arriba de un contenedor sólo sube la infantería: tira más lejos y a pie no la alcanzan (sí lo que
+ *              vuela, escupe o arroja, el gas y las explosiones)
  *
  * Los zombies se comportan como zombies: cada uno mira, caza al primer humano que ve, rompe lo que lo protege y, si
  * no ve a nadie, marcha al campamento. Cuenta como humano la infantería a pie y la gente de torretas, morteros,
  * antiaéreas, tanques y búnkeres ocupados. El soldado que cae se levanta a los 3 s como soldado zombie.
  *
- * Archivos:  js/bastion-v2.js         este: datos de los dos bandos, oleadas, colocar, vender, mover y guardar
+ * Archivos:  js/bastion-v2.js         este: datos de los dos bandos, niveles y oleadas, colocar, vender, mover y guardar
  *            js/bastion-v2-horda.js   cómo se crea y cómo se porta cada tipo de zombie
  *            js/bastion-v2-tropa.js   armas y oficios de cada unidad, explosiones, gas y granadas
  *            js/bastion-v2-dibujo.js  el dibujo de lo nuevo (unidades, zombies, aves y efectos)
- *            js/bastion-v2-ui.js      panel, parte de la oleada, fichas, pantalla previa y textos
+ *            js/bastion-v2-ui.js      lista de niveles, panel, parte de la oleada, guía y textos
  * Cuelga de Juego con this.v2: envuelve los métodos de js/estrategia.js y deja el modo anterior intacto.
  */
 const BASTION2 = {
@@ -87,13 +91,19 @@ const BASTION2 = {
       arroja: { alcance: 7, cada: 3.2, vuelo: 1.3, cerca: 1.6, alFondo: true, tira: ['caminante', 'corredor', 'soldadoZombie', 'rabioso'], cosa: 'cascote', golpe: { unidades: 28, gente: 12, radio: 18 } } },
     escupidor:     { clase: 'ace', conducta: 'escupe', vida: 1.2, vel: 20, paga: 7, dano: 2, escala: 0.6, escupe: { alcance: 5, cada: 3.2, vuelo: 1, golpe: 6, charco: { radio: 22, dura: 3.5, gente: 6, cosas: 7 } } },
     rabioso:       { clase: 'ace', conducta: 'corre', vida: 0.7, vel: 120, paga: 3, dano: 1, escala: 0.5, manada: 4, esquiva: 0.6 },
-    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.25, aplasta: true, mordida: 3,
+    jefe:          { clase: 'cam', conducta: 'caza', vida: 22,  vel: 14, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.25, aplasta: true, mordida: 3, jefe: true,
       arroja: { alcance: 5, cada: 5, vuelo: 1.3, cosa: 'fardo', golpe: { unidades: 60, gente: 25, radio: 30 } } },
+    // El Escudo, jefe de La autopista: un acorazado gigante. Las balas chicas le hacen 1 y, mientras vive, a los que
+    // marchan pegados detrás de él no les llega ninguna bala tirada desde el piso (sí el fuego, las explosiones y
+    // los tiros de quien esté arriba de un contenedor)
+    escudo:        { clase: 'cam', conducta: 'caza', vida: 22,  vel: 17, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.22, aplasta: true, mordida: 2.5, blindaje: 4, jefe: true,
+      cubre: { radio: 2.2 } },
   },
-  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe'],
+  jefes: ['jefe', 'escudo'],
+  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe', 'escudo'],
   clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'], ace: ['topo', 'lanzador', 'escupidor', 'rabioso'] },
   // A quién elige primero el francotirador (de más a menos peligroso)
-  peligro: ['lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
+  peligro: ['lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'escudo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
   /* Quién frena a quién, para las marcas del panel, las fichas y los consejos. Sale de medir cada cruce con el
    * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6 u 8), no de una regla aparte.
    * bien: lo frena; mal: rinde poco o se pierde contra él */
@@ -116,7 +126,13 @@ const BASTION2 = {
     rabioso:    { bien: ['lanzallamas', 'torreta', 'alambrado'], mal: ['francotirador', 'mortero', 'tanque', 'soldado'] },
     soldadoZombie: { bien: ['francotirador', 'tanque', 'medico'], mal: ['soldado'] },
     jefe:       { bien: ['tanque', 'francotirador'], mal: ['muro', 'alambrado', 'soldado'] },
+    escudo:     { bien: ['francotirador', 'tanque'], mal: ['torreta', 'soldado', 'bunker', 'muro'] },
   },
+  /* Altura: arriba de un obstáculo con techo (el contenedor) sólo sube la infantería. Desde ahí tira más lejos y los
+   * que caminan no la alcanzan; sí lo que vuela, lo que escupe o arroja, el gas y las explosiones. techos: a cuántos
+   * puntos del piso queda parada */
+  techos: { contenedor: 30 },
+  altura: { alcance: 1.25 },
   /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena uno o dos tipos; el orden en que salen lo arma
    * ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto paga poco (un común, $4): con lo que se
    * junta en toda la partida alcanza para responder a cada tipo, no para tener de todo de sobra. La plata es la perilla
@@ -139,27 +155,81 @@ const BASTION2 = {
         { caminante: 44, corredor: 16, gordo: 8, acorazado: 12, griton: 3, hinchado: 4, dinamitero: 6, toxico: 4, perro: 15, toro: 3, cuervo: 18, buitre: 3, topo: 4, lanzador: 2, escupidor: 3, rabioso: 12, jefe: 1 },
       ],
     },
+    /* La autopista: el choque arma dos líneas de chatarra con pasillos, donde la horda se junta (y donde un hinchado o
+     * un dinamitero hacen más daño). Los contenedores tienen techo: son las cuatro posiciones altas del mapa. La
+     * banquina del sur, en la línea de lejos, es barro: ese paso no se cierra con un muro. Trae 11 de los 16 tipos (no
+     * hay gordos, gritones, tóxicos, toros ni topos: bajo el asfalto no se excava) y su jefe, El Escudo, en la 6 y la 12 */
+    autopista: {
+      dinero: 220, vida: 1, aviso: 'b2.avisoAutopista',
+      mapa: {
+        terreno: [['asfalto', 0, 2, 40, 6], ['agua', 12, 0, 13, 0], ['barro', 11, 8, 14, 8], ['barro', 2, 8, 3, 8]],
+        obstaculos: [['contenedor', 7, 1], ['auto', 7, 2], ['auto', 7, 4], ['auto', 7, 6], ['contenedor', 7, 7],
+          ['contenedor', 12, 1], ['auto', 12, 2], ['auto', 12, 3], ['auto', 12, 5], ['auto', 12, 6], ['contenedor', 12, 7], ['auto', 16, 3]],
+      },
+      // Con qué se empieza: dos muros de escudo, dos soldados detrás y uno arriba de un contenedor (así se ve la regla)
+      inicio: { muro: [[5, 3], [5, 5]], soldado: [[4, 3], [4, 5], [7, 1]] },
+      oleadas: [
+        { caminante: 20 },
+        { caminante: 24, corredor: 12 },
+        { caminante: 26, corredor: 10, acorazado: 8, hinchado: 1 },
+        { caminante: 28, corredor: 12, acorazado: 10, hinchado: 2, perro: 10 },
+        { caminante: 30, acorazado: 12, hinchado: 3, perro: 10, escupidor: 3 },
+        { caminante: 30, corredor: 12, acorazado: 14, hinchado: 3, dinamitero: 4, escupidor: 3, escudo: 1 },
+        { caminante: 34, corredor: 14, acorazado: 10, perro: 15, cuervo: 18, lanzador: 2, escupidor: 4 },
+        { caminante: 36, acorazado: 14, hinchado: 5, dinamitero: 8, cuervo: 12, lanzador: 2, escupidor: 3 },
+        { caminante: 38, corredor: 16, acorazado: 12, hinchado: 3, dinamitero: 8, perro: 20, buitre: 3, escupidor: 4, rabioso: 8 },
+        { caminante: 40, acorazado: 18, hinchado: 6, dinamitero: 8, cuervo: 12, lanzador: 3, escupidor: 5, rabioso: 12 },
+        { caminante: 42, corredor: 18, acorazado: 14, hinchado: 5, dinamitero: 6, perro: 20, cuervo: 18, buitre: 3, lanzador: 3, escupidor: 4 },
+        { caminante: 44, corredor: 16, acorazado: 16, hinchado: 5, dinamitero: 7, perro: 15, cuervo: 18, buitre: 3, lanzador: 3, escupidor: 4, rabioso: 8, escudo: 1 },
+      ],
+    },
   },
+  ordenNiveles: ['granja', 'autopista'],
 };
 // Cómo acusa cada golpe el zombie (js/zombie.js): el fuego y las púas no destellan ni empujan; la explosión lo despide
 const ARMA_BALA = { categoria: 'rifle' }, ARMA_PESADA = { categoria: 'escopeta', pesada: true };
 const ARMA_FUEGO = { categoria: 'cuerpo', fuego: true }, ARMA_EXPLOSION = { categoria: 'bazuca', explosivo: true };
 const ARMA_ALAMBRE = { categoria: 'cuerpo', fuego: true, alambre: true };
+const ARMA_REBOTE = { categoria: 'rifle', fuego: true, rebote: true };   // la bala que no pasa el blindaje: astilla (1 punto) sin destello, sangre ni empujón
 
 /* ---------- Partida guardada, oleadas y pantalla de fin (aparte del modo de siempre) ---------- */
 const BastionV2 = {
-  PARTIDA: 'zonaMuerta.bastion2.partida', GANADO: 'zonaMuerta.bastion2.ganado', VERSION: 2,
-  partida() { const p = ProgresoBastion.leer(this.PARTIDA, null); return p && p.version === this.VERSION ? p : null; },   // la de un plantel anterior no sirve
+  PARTIDA: 'zonaMuerta.bastion2.partida', PROGRESO: 'zonaMuerta.bastion2.progreso', GANADO: 'zonaMuerta.bastion2.ganado', VERSION: 2,
+  // Una sola partida guardada, la última, que recuerda su nivel (la de un plantel anterior, o de un nivel que ya no está, no sirve)
+  partida() { const p = ProgresoBastion.leer(this.PARTIDA, null); return p && p.version === this.VERSION && BASTION2.niveles[p.nivel] ? p : null; },
   borrar() { ProgresoBastion.escribir(this.PARTIDA, null); },
-  oleadas() { return BASTION2.niveles.granja.oleadas; },
-  // En qué oleada (desde 0) aparece por primera vez cada tipo
-  debut() {
-    if (!this.debuts) { this.debuts = {}; this.oleadas().forEach((def, i) => { for (const k in def) if (!(k in this.debuts)) this.debuts[k] = i; }); }
-    return this.debuts;
+  // Los niveles, en orden. Todos están abiertos: ganar uno lo marca, no abre el siguiente
+  niveles() { return BASTION2.ordenNiveles; },
+  nivel(id) { return BASTION2.niveles[id] || BASTION2.niveles.granja; },
+  // El escenario de un nivel: el del modo de siempre con ese nombre (fondo, suelo) y, si la v2 lo redefine, su mapa
+  escenario(id) {
+    const N = NIVELES_BASTION.find(n => n.id === id) || NIVELES_BASTION[0], M = BASTION2.niveles[N.id];
+    if (!M || !M.mapa) return N;
+    this.escenarios = this.escenarios || {};
+    return this.escenarios[N.id] || (this.escenarios[N.id] = { ...N, ...M.mapa, variante: 'v2' });
+  },
+  // Niveles ganados: { granja: { base, dificultad, fecha }, … } (GANADO es la marca de cuando había un solo nivel)
+  progreso() {
+    const p = ProgresoBastion.leer(this.PROGRESO, null) || {}, antes = ProgresoBastion.leer(this.GANADO, null);
+    if (antes && !p.granja) p.granja = antes;
+    return p;
+  },
+  ganado(id) { return !!this.progreso()[id]; },
+  ganar(id, base, dificultad) {
+    const p = this.progreso(), antes = p[id];
+    p[id] = { base: Math.max(base, antes ? antes.base || 0 : 0), dificultad, fecha: Date.now() };
+    ProgresoBastion.escribir(this.PROGRESO, p);
+  },
+  oleadas(id) { return this.nivel(id).oleadas; },
+  // En qué oleada (desde 0) aparece por primera vez cada tipo en ese nivel
+  debut(id) {
+    const D = this.debuts = this.debuts || {};
+    if (!D[id]) { D[id] = {}; this.oleadas(id).forEach((def, i) => { for (const k in def) if (!(k in D[id])) D[id][k] = i; }); }
+    return D[id];
   },
   /* Orden en que sale una oleada, sin azar: los comunes en hordas repartidas de principio a fin; los acorazados
    * adelante, de escudo; el gritón, primero; gordos, hinchados y tóxicos de la mitad en adelante; corredores y
-   * dinamiteros en dos tandas; perros de a 5 y cuervos de a 6; el jefe, al final */
+   * dinamiteros en dos tandas; perros de a 5 y cuervos de a 6; el Coloso, al final (El Escudo, en cambio, adelante) */
   ordenOleada(def) {
     const puestos = [], n = tipo => def[tipo] || 0, poner = (tipo, f) => puestos.push([f, tipo]);
     const parejo = (tipo, a, b) => { for (let k = 0; k < n(tipo); k++) poner(tipo, a + (b - a) * (k + 0.5) / n(tipo)); };
@@ -174,6 +244,7 @@ const BastionV2 = {
     tandas('dinamitero', Math.ceil(n('dinamitero') / 2) || 1, [0.5, 0.82]);
     tandas('perro', BASTION2.zombies.perro.manada, [0.25, 0.6, 0.86, 0.95]);
     tandas('cuervo', BASTION2.zombies.cuervo.manada, [0.4, 0.7, 0.92]);
+    parejo('escudo', 0.28, 0.3);   // El Escudo sale temprano: la horda marcha detrás de él
     for (let k = 0; k < n('jefe'); k++) poner('jefe', 2 + k);
     return puestos.sort((a, b) => a[0] - b[0]).map(p => p[1]);
   },
@@ -194,7 +265,7 @@ const BastionV2 = {
   },
   // Texto de la pantalla de fin: si se perdió, quiénes entraron al campamento y con qué se frena al que más entró
   fin(juego, v) {
-    const nivel = t('bniv.' + juego.nivelBastion.id), total = this.oleadas().length;
+    const nivel = t('bniv.' + juego.nivelBastion.id), total = juego.nivelV2.oleadas.length;
     if (juego.resultado === 'victoria') {
       return { titulo: t('fin.bastionGanado'), color: '#6ad06a',
         detalle: t('b2.finGanado', { nivel, olas: total, base: juego.vidaBase, max: BASTION.vidaBase, bajas: juego.bajas, contagiados: juego.contagiados, tiempo: v.tiempo }) };
@@ -236,8 +307,15 @@ const BastionV2 = {
     this.granadasV2 = []; this.nubesV2 = []; this.rayosV2 = []; this.flakV2 = []; this.pendientesV2 = []; this.ondasV2 = []; this.arrojadosV2 = []; this.charcosV2 = [];
     this.velocidad = 1; this.construidas = 0; this.contagiados = 0; this.entraron = {};
     this.camposLibres = new Map(); this.camposCrudos = new Map(); this.camposCuad = new Map();
-    this.prepararNivelBastion();   // escenario, terreno y obstáculos de La granja (js/bastion-niveles.js)
-    this.nivelV2 = BASTION2.niveles[this.nivelBastion.id] || BASTION2.niveles.granja;
+    this.prepararNivelBastion();   // escenario, terreno y obstáculos del nivel (js/bastion-niveles.js)
+    const N = BastionV2.escenario(this.nivelBastion.id);
+    if (N !== this.nivelBastion) {   // la v2 redefine el mapa de ese escenario: mismo fondo, otro terreno y otros obstáculos
+      this.nivelBastion = N;
+      this.terreno = Array.from({ length: this.filas }, () => new Array(this.cols).fill(N.base));
+      for (const [tipo, c0, f0, c1, f1] of N.terreno) for (let f = f0; f <= f1; f++) for (let c = c0; c <= c1; c++) if (this.dentro(c, f)) this.terreno[f][c] = tipo;
+      this.obstaculos = N.obstaculos.filter(([, c, f]) => this.dentro(c, f) && c < this.cols - 1).map(([tipo, c, f], i) => ({ tipo, c, f, ...this.centroCelda(c, f), semilla: i }));
+    }
+    this.nivelV2 = BastionV2.nivel(this.nivelBastion.id);
     this.dinero = this.nivelV2.dinero;
     // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa y agua profunda. Los
     // obstáculos bajos (fardos, el tractor) los saltan los perros
@@ -263,6 +341,8 @@ const BastionV2 = {
   };
   // Ejército mínimo al empezar: tres soldados y tres muros que les sirven de escudo sin cerrar el camino
   P.ejercitoInicialV2 = function () {
+    const I = this.nivelV2.inicio;
+    if (I) { for (const tipo in I) for (const [c, f] of I[tipo]) if (!this.motivoNoColocar(tipo, c, f, true)) this.unidades.push(this.nuevaUnidadV2(tipo, c, f)); return; }
     const medio = Math.floor(this.filas / 2);
     for (const df of [-2, -1, 1]) if (!this.motivoNoColocar('muro', 7, medio + df, true)) this.unidades.push(this.nuevaUnidadV2('muro', 7, medio + df));
     for (const df of [-1, 0, 1]) if (!this.motivoNoColocar('soldado', 4, medio + df, true)) this.unidades.push(this.nuevaUnidadV2('soldado', 4, medio + df));
@@ -335,12 +415,29 @@ const BastionV2 = {
     return mejor;
   };
 
+  /* ---------- Altura: el techo de un contenedor ---------- */
+  // A cuántos puntos del piso queda parado quien sube a esa celda (0: no hay techo)
+  P.alturaEn = function (c, f) { const o = this.obstaculoEn(c, f); return (o && BASTION2.techos[o.tipo]) || 0; };
+  // El obstáculo con techo que está dibujado bajo ese punto de la pantalla: el toque vale por su celda (el dibujo tapa la de atrás)
+  P.techoBajoV2 = function (x, y) {
+    const cam = this.camaraBastion();
+    for (const o of this.obstaculos || []) {
+      if (!BASTION2.techos[o.tipo]) continue;
+      const q = cam.proyectar(o.x, o.y);
+      if (Math.abs(x - q.x) < 22 * q.s && y < q.y + 2 * q.s && y > q.y - 40 * q.s) return o;
+    }
+    return null;
+  };
+
   /* ---------- Colocar, vender, reparar ---------- */
   // sinPlata: sólo las reglas del lugar (para el ejército inicial y para mover)
   envolver('motivoNoColocar', function (tipo, c, f, sinPlata, mueve) {
     const U = U_(tipo);
     if (!this.dentro(c, f)) return 'bastion.fuera';
-    if (this.obstaculoEn(c, f)) return 'bastion.obstaculo';
+    if (this.obstaculoEn(c, f)) {   // arriba de un contenedor sólo sube la infantería (de a uno)
+      if (!this.alturaEn(c, f)) return 'bastion.obstaculo';
+      if (U.clase !== 'inf') return 'b2.soloInfArriba';
+    }
     const suelo = this.terrenoEn(c, f);
     if (suelo === 'agua') return 'bastion.agua';
     if (suelo === 'barro' && U.clase !== 'inf' && !U.liviano) return 'b2.blando';   // en el barro: sólo gente a pie, alambrado y señuelo
@@ -528,6 +625,8 @@ const BastionV2 = {
     this.colocando = 'mover'; this.moviendo = u; this.unMovimiento = true; Audio_.recarga('cerrojo');   // falta tocar adónde va
   };
   envolver('punteroBastion', function (x, y, tipo, boton) {
+    const techo = this.techoBajoV2(x, y);
+    if (techo) { const q = this.camaraBastion().proyectar(techo.x, techo.y - 6); x = q.x; y = q.y; }
     if (this.colocando !== 'mover') {
       if (tipo === 'down' && !this.terminado && !this.colocando && (boton !== 2 || this.elegidaVivaV2())) {   // sin nada en la mano: el toque elige (el botón derecho suelta)
         const p = this.camaraBastion().desproyectar(x, y); this.puntero = p;
@@ -560,7 +659,7 @@ const BastionV2 = {
     } else if (!this.zombies.some(z => z.estado !== 'muerto') && !this.unidades.some(u => u.tipo === 'caido')) {
       if (this.ronda >= total) {
         this.terminado = true; this.resultado = 'victoria';
-        ProgresoBastion.escribir(BastionV2.GANADO, { base: this.vidaBase, dificultad: this.dificultad.id, fecha: Date.now() }); BastionV2.borrar();
+        BastionV2.ganar(this.nivelBastion.id, this.vidaBase, this.dificultad.id); BastionV2.borrar();
         Audio_.rondaSuperada(); return;
       }
       const bono = 30 + 5 * this.ronda;
@@ -649,6 +748,7 @@ const BastionV2 = {
     if (!esInf(u) || !u.listo) return v1.dibujarUnidad.call(this, ctx, u);
     ctx.save();
     if (u.llevado) ctx.translate(0, -(u.llevado.altura - 12));   // colgando de las garras del buitre
+    else if (u.techoVisto) ctx.translate(0, -u.techoVisto);       // parado arriba de un contenedor
     if (u.mira === -1) ctx.scale(-1, 1);                          // mira (o camina) hacia la izquierda
     v1.dibujarUnidad.call(this, ctx, u);
     ctx.restore();
