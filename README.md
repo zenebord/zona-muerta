@@ -230,6 +230,45 @@ en Chrome sin GPU); por cuadro solo se pintan fogonazos, humo, bandera, reflecto
 cámara le suma algo al cuadro: en una batalla chica (6 unidades, 4 o 5 zombies), de 5,2–6,0 ms a 6,4–7,9 ms (Chrome sin
 GPU), por las unidades y los zombies escalados.
 
+### Último bastión v2 (prueba del diseño nuevo)
+
+Botón aparte en el menú («ÚLTIMO BASTIÓN V2»), con un solo nivel (La granja, 10 oleadas) y partida guardada propia. Es
+la prueba del rediseño por bandos: `js/bastion-v2.js` envuelve los métodos de `js/estrategia.js` (lo nuevo corre sólo
+si `juego.v2`) y el modo de siempre queda igual. La pantalla previa con las fichas de cada tipo, el dibujo de lo nuevo
+y los textos están en `js/bastion-v2-ui.js`.
+
+Los zombies ven, cazan y contagian: cada uno mira a su alrededor (en celdas de 44 px) y va por el primer humano que
+ve, que puede ser un soldado a pie, una torreta (por su artillero) o un búnker con gente. Si no ve a nadie, marcha al
+campamento por el camino abierto.
+
+| Zombie | Ve | Cómo llega a su presa | Paga |
+|---|---|---|---|
+| Común | 3 celdas | Por el camino si el rodeo es corto; si no, derecho, rompiendo lo que la tapa | $5 |
+| Corredor | 4 | Rodea buscando el hueco y nunca rompe; sin hueco, sigue de largo | $6 |
+| Gordo | 2 | Nunca rodea: va derecho y rompe toda construcción. Aplasta alambrado y señuelo | $12 |
+| El Coloso | 3 | Como el gordo. Es el jefe de las oleadas 5 y 10 | $72 |
+| Soldado zombie | 3 | Como el común, con blindaje 1 (cada bala le saca 1 menos). Es un soldado propio contagiado | $6 |
+
+- **Contagio**: el soldado que cae se levanta a los 3 s como soldado zombie. La torreta rota deja a su artillero a pie,
+  con media vida.
+- **Unidades**: soldado, torreta, búnker ($120 y cadencia 0,45, en vez de $150 y 0,65), muro y dos nuevas que no cierran
+  el paso. **Alambrado** ($15): frena al 45 %, le saca 20 % de la vida a cada zombie que lo cruza (hasta 50 % entre
+  todos los alambrados), aguanta 20 pisadas y el gordo lo aplasta. **Señuelo** ($50): comunes y corredores a 5 celdas
+  dejan lo que estén haciendo, también de morder, y lo golpean 5 s; engaña una vez a cada zombie y aguanta a unos 20.
+  El tanque no está en este nivel.
+- **Terreno**: en el barro sólo van soldados, alambrado y señuelo; el estanque no se cruza ni se construye.
+- **Oleadas escritas** (`BASTION2.niveles.granja.oleadas`), sin sorteo, con el parte de la próxima oleada durante el
+  descanso. Vender devuelve 75 % en el descanso y 50 % con la oleada en marcha. Teclas: `1` a `6` eligen, `7` vende y
+  `8` repara.
+- **Repetir la oleada**: la partida se guarda al empezar cada oleada (`zonaMuerta.bastion2.partida`). Al perder, la
+  pantalla de fin dice quiénes entraron al campamento y ofrece «REPETIR LA OLEADA n», con todo como estaba al
+  empezarla, o «DESDE EL PRINCIPIO». Al repetir, adelantar la oleada no paga premio.
+
+Balance medido con bots que juegan con el código real (dificultad media, 6 corridas por caso): sin construir se pierde
+en la oleada 3 o 4; con soldados sueltos, en la 8 o 9 y con unos 29 contagiados; con torretas a los costados del carril
+o con búnkeres llenos se gana 6 de 6 con el campamento en 15/15. Con la vida de los zombies ×1,2, las torretas ganan 2
+de 6 y los búnkeres 6 de 6. No está medido con jugadores.
+
 ## Publicar
 
 - **Código y web**: `herramientas/publicar-web.sh` sube el último commit a https://github.com/zenebord/zona-muerta

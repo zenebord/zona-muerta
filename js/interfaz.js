@@ -71,7 +71,7 @@
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
     juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
-    if (opciones.estrategia) juego.aviso(t('bastion.aviso'), 7000);
+    if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? 'b2.aviso' : 'bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
     ultimo = performance.now();
@@ -120,9 +120,21 @@
     const titulo = document.getElementById('fin-titulo');
     const detalle = document.getElementById('fin-detalle');
     document.getElementById('fin-siguiente').classList.add('oculta');   // solo al ganar un nivel del último bastión
+    document.getElementById('fin-repetir').classList.add('oculta');     // solo al perder en el último bastión v2
+    document.getElementById('fin-otra-vez').textContent = t('fin.otraVez');
     const resumen = t('fin.resumen', { ronda: juego.ronda, dificultad: dif, bajas: juego.bajas, tiempo, armas: juego.jugador.inventario.length });
     if (juego.resultado === 'mision-cumplida') { titulo.textContent = t('fin.cumplida'); titulo.style.color = '#4caf50'; detalle.textContent = `${misionActual.nombre}: ${misionActual.descripcion} ${resumen}`; }
     else if (juego.resultado === 'mision-fallida') { titulo.textContent = t('fin.tiempo'); titulo.style.color = '#ff8a65'; detalle.textContent = t('fin.fallida', { mision: misionActual.nombre, resumen }); }
+    else if (juego.estrategia && juego.v2) {   // último bastión v2: si se perdió, dice quiénes entraron y con qué se frenan
+      document.getElementById('panel-bastion').classList.add('oculta');
+      const F = BastionV2.fin(juego, { tiempo });
+      titulo.textContent = F.titulo; titulo.style.color = F.color; detalle.textContent = F.detalle;
+      if (juego.resultado !== 'victoria' && BastionV2.partida()) {   // se puede repetir la oleada perdida, con todo como estaba al empezarla
+        const repetir = document.getElementById('fin-repetir');
+        repetir.textContent = t('b2.repetir', { n: juego.ronda }); repetir.classList.remove('oculta');
+        document.getElementById('fin-otra-vez').textContent = t('b2.deCero');
+      }
+    }
     else if (juego.estrategia) {
       document.getElementById('panel-bastion').classList.add('oculta');   // la barra de construir no va sobre el final
       const N = juego.nivelBastion, i = NIVELES_BASTION.indexOf(N), siguiente = NIVELES_BASTION[i + 1];
@@ -423,6 +435,9 @@
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
       case 'bastion':   NivelesBastionUI.abrir(mostrar); break;
+      case 'bastion2':  BastionV2UI.abrir(mostrar); break;   // versión de prueba del diseño nuevo (js/bastion-v2.js)
+      case 'bastion2-empezar': iniciar(null, { estrategia: { nivel: 'granja', v2: true } }); break;
+      case 'bastion2-continuar': { const p = BastionV2.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, v2: true, continuar: true, dificultad: p.dificultad } }); break; }
       case 'bastion-continuar': { const p = ProgresoBastion.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, continuar: true, dificultad: p.dificultad } }); break; }
       case 'bastion-siguiente': { const i = NIVELES_BASTION.findIndex(n => n.id === juego.nivelBastion.id); if (NIVELES_BASTION[i + 1]) iniciar(null, { estrategia: { nivel: NIVELES_BASTION[i + 1].id } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
@@ -450,7 +465,7 @@
         }
         break;
       case 'reanudar':  alternarPausa(); break;
-      case 'reintentar': iniciar(misionActual, opcionesActuales); break;
+      case 'reintentar': iniciar(misionActual, opcionesActuales.estrategia && opcionesActuales.estrategia.v2 ? { estrategia: { nivel: opcionesActuales.estrategia.nivel, v2: true } } : opcionesActuales); break;   // en la v2, «otra vez» es desde la oleada 1
       case 'al-menu':   salirAlMenu(); break;
       case 'config-abrir': abrirConfig(); break;
       case 'personaje-abrir': abrirPersonajes(); break;
