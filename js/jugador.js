@@ -330,15 +330,16 @@ class Jugador {
     switch (tipo) {
       case 'cargador-pistola':
         // Saca el vacío tirando hacia abajo, lo suelta (cae al piso), trae uno nuevo del portacargador y lo mete
-        l.fase('sacar', 300, { a: 'cargador', llegada: 0.5, incl: -0.3, presionar: 5, mano: [['cargador', 0.55, 1]], eventos: [[0.55, quitar(null)]] });
-        l.fase('soltar', 140, { a: 'cargador', offset: { x: 0, y: 5 }, alInicio: soltarDeLaMano('cargadorPistola') });
+        // El cargador sale y entra a lo largo de la empuñadura (eje: js/cargadores.js); la mano lo suelta recién puesto
+        l.fase('sacar', 300, { a: 'agarreCargador', eje: true, llegada: 0.5, incl: -0.3, presionar: 8, mano: [['cargador', 0.55, 1]], eventos: [[0.55, quitar(null)]] });
+        l.fase('soltar', 140, { a: 'agarreCargador', eje: true, offset: { x: 0, y: 9 }, alInicio: soltarDeLaMano('cargadorPistola') });
         l.fase('cadera', 340, { a: 'cadera', mano: [['cargador', 0.55, 1]] });
-        l.fase('poner', 300, { a: 'cargador', mano: [['cargador', 0, 0.9]], alTerminar: llenar('cargador-poner') });
+        l.fase('poner', 300, { a: 'agarreCargador', eje: true, llegada: 0.55, offset: { x: 0, y: 8 }, presionar: -8, mano: [['cargador', 0, 1]], alTerminar: llenar('cargador-poner') });
         let montar = false;
         if (trabada && arma.recargaFinal === 'liberar') l.fase('liberar', 170, { a: 'corredera', llegada: 0.6, co: 0, snap: 0, eventos: [[0.6, s('liberar')]] });
         else if (trabada) {   // pausa con la mano en el cargador recién puesto y después tira de la corredera
           montar = true;
-          l.fase('esperar', 300, { a: 'cargador' });
+          l.fase('esperar', 300, { a: 'agarreCargador' });
           l.fase('corredera', 380, { a: 'corredera', llegada: 0.45, co: 0, snap: 0.55, tiron: 1.9, incl: -0.1, eventos: [[0.55, s('corredera')]] });
         }
         l.fase('volver', 170, { a: 'arma', incl: 0 });
@@ -348,18 +349,22 @@ class Jugador {
       case 'cargador': case 'ignicion': {   // ignicion: el lanzallamas cambia el cilindro de ignición de la punta (no cae al piso)
         const suelta = unidad === 'celda' || unidad === 'ignicion' ? null : unidad === 'tambor-cargador' ? 'tambor' : 'cargador';
         if (arma.recargaFinal === 'palmada-hk') l.fase('trabar', 320, { a: 'corredera', llegada: 0.4, co: 1, eventos: [[0.5, s('cerrojo-abrir')]] });
+        // Con su cargador (js/cargadores.js) la mano lo agarra donde corresponde y lo saca y lo mete a lo largo de su eje
+        const conCargador = !!CARGADORES[arma.id], dondeAgarra = conCargador ? 'agarreCargador' : 'cargador', sal = conCargador ? CARGADORES[arma.id].salida ?? 1 : 1;
         if (suelta) {   // tira el cargador hacia abajo, lo suelta y cae al piso; la mano va vacía al portacargador
-          l.fase('sacar', 320, { a: 'cargador', llegada: 0.5, incl: -0.2, presionar: 6, mano: [[unidad, 0.55, 1]], eventos: [[0.55, quitar(null)]] });
-          l.fase('soltar', 140, { a: 'cargador', offset: { x: 0, y: 6 }, alInicio: soltarDeLaMano(suelta) });
+          l.fase('sacar', 320, { a: dondeAgarra, eje: conCargador, llegada: 0.5, incl: -0.2, presionar: 6 * sal, mano: [[unidad, 0.55, 1]], eventos: [[0.55, quitar(null)]] });
+          l.fase('soltar', 140, { a: dondeAgarra, eje: conCargador, offset: { x: 0, y: 7 * sal }, alInicio: soltarDeLaMano(suelta) });
         } else l.fase('sacar', 300, { a: 'cargador', llegada: 0.55, incl: -0.2, eventos: [[0.8, quitar(null)]] });
         l.fase('cadera', 380, { a: 'cadera', mano: [[unidad, 0.5, 1]] });
-        l.fase('poner', 360, { a: 'cargador', mano: [[unidad, 0, 0.9]], rotMano: arma.balanceo ? [0.75, 0] : null, alTerminar: llenar(unidad === 'celda' ? 'celda' : 'cargador-poner') });
+        l.fase('poner', 360, conCargador
+          ? { a: 'agarreCargador', eje: true, llegada: 0.55, offset: { x: 0, y: 7 }, presionar: -7, mano: [[unidad, 0, 1]], rotMano: arma.balanceo ? [0.5, 0] : null, alTerminar: llenar('cargador-poner') }
+          : { a: 'cargador', mano: [[unidad, 0, 0.9]], alTerminar: llenar(unidad === 'celda' ? 'celda' : 'cargador-poner') });
         const fin = arma.recargaFinal;
         if (fin === 'palmada-hk') l.fase('palmada', 200, { a: 'corredera', llegada: 0.6, co: 0, snap: 0, eventos: [[0.6, s('palmada-hk')]] });
         else if (fin === 'palmada' && vacio) l.fase('palmada', 200, { a: 'corredera', llegada: 0.65, tiron: -2, eventos: [[0.65, s('palmada')]] });
         // Metralletas y fusiles vacíos: pausa con la mano en el cargador antes de tirar de la manija (más lento)
         const montar = fin === 'cerrojo' && vacio && (arma.categoria === 'metralleta' || arma.categoria === 'rifle');
-        if (montar) l.fase('esperar', 300, { a: 'cargador' });
+        if (montar) l.fase('esperar', 300, { a: dondeAgarra });
         if (fin === 'cerrojo' && vacio) l.fase('cerrojo', montar ? 420 : 320, { a: 'corredera', llegada: 0.4, pulso: { que: 'corredera', recorrido: 0 }, eventos: [[0.45, s('cerrojo')]] });
         l.fase('volver', 200, { a: 'arma', incl: 0 });
         l.ajustar(T + (montar ? PAUSA_MONTAR : 0));
@@ -602,6 +607,11 @@ class Jugador {
       if (nombre === 'cadera') return { x: CADERA.x, y: CADERA.y };
       if (nombre === 'frente') return { x: 19, y: -58 };                 // brazo de apoyo estirado adelante, para el lanzamiento
       if (nombre === 'anilla') return enArma({ x: 0.3 * CM, y: -5.6 * CM });
+      if (nombre === 'agarreCargador') {   // donde la mano agarra el cargador puesto (js/cargadores.js)
+        const M = CARGADORES[arma.id];
+        if (M) return enArma({ x: M.agarre[0] * CM, y: M.agarre[1] * CM });
+        nombre = 'cargador';
+      }
       const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave];
       if (!movil) return enArma(ancla);
       const [dx, dy] = movil(e);
@@ -612,8 +622,10 @@ class Jugador {
     if (!linea) { e.mano = e.apoyo; return e; }
 
     // 3) La mano: sale de donde terminó la fase anterior, llega al destino y después hace la acción
+    const ejeCargador = (() => { const M = CARGADORES[arma.id], [ex, ey] = M ? M.eje : [0, 1]; return [ex * c - ey * s, ex * s + ey * c]; })();
     const desplazamiento = (fase, avance) => {
       let x = fase.offset ? fase.offset.x : 0, y = (fase.offset ? fase.offset.y : 0) + (fase.presionar || 0) * avance;
+      if (fase.eje) { const d = y; x = ejeCargador[0] * d; y = ejeCargador[1] * d; }   // el cargador sale y entra a lo largo de su eje
       if (fase.tiron) x -= fase.tiron * Math.sin(avance * Math.PI);
       if (fase.pulso && fase.pulso.recorrido) x -= fase.pulso.recorrido * Math.sin(avance * Math.PI);
       return { x, y };
@@ -627,9 +639,34 @@ class Jugador {
     const o0 = { x: f.offset ? f.offset.x : 0, y: f.offset ? f.offset.y : 0 }, oq = desplazamiento(f, q);
     e.mano = { x: inicio.x + (destino.x + o0.x - inicio.x) * pm + (oq.x - o0.x), y: inicio.y + (destino.y + o0.y - inicio.y) * pm + (oq.y - o0.y) };
 
-    if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && p < hasta) { e.enMano = objeto; break; }
+    if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
+    e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
     if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q }; }
+
+    // 4) Cómo va la mano: abierta mientras viaja vacía o suelta algo, se cierra al agarrar, cerrada mientras sostiene;
+    // y hacia dónde apunta (e.dirMano, en el marco del cuerpo; null: sigue al antebrazo). El dibujo limita cuánto
+    // dobla la muñeca, así que el que gira es el brazo entero.
+    const cerrar = (desde, k) => desde + (0.85 - desde) * suavizar(limitar(k, 0, 1));
+    const objeto = e.enMano;
+    if (objeto) {
+      const chico = objeto === 'bala' || objeto === 'cartucho' || objeto === 'granada40' || objeto === 'speedloader' || objeto === 'pasador';
+      e.cierre = chico ? 0.62 : 0.82;                                  // pinza para lo chico, puño para cargadores y cohetes
+      e.dirMano = e.incl - (chico ? 0.55 : 0.1);                       // la punta de los dedos hacia el arma
+    } else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) {
+      e.cierre = 0.1; e.dirMano = null;                                // abre la mano: suelta el cargador o la granada
+    } else if (pm < 1) {
+      e.cierre = 0.3; e.dirMano = null;                                // viajando: mano entreabierta, sigue al brazo
+    } else if (f.a === 'cadera') {
+      e.cierre = cerrar(0.25, (p - 0.35) / 0.15); e.dirMano = 1.35;     // dedos hacia abajo, al portacargador
+    } else if (f.a === 'corredera') {
+      const palmea = /palmada|liberar/.test(f.nombre);
+      e.cierre = palmea ? 0.05 : cerrar(0.3, pAccion / 0.25); e.dirMano = palmea ? e.incl - 0.4 : null;
+    } else if (f.a === 'cargador') {
+      e.cierre = cerrar(0.3, pAccion / 0.3); e.dirMano = e.incl - 0.1;   // agarra el cargador o la boca del arma
+    } else {
+      e.cierre = 0.7; e.dirMano = null;
+    }
     return e;
   }
 

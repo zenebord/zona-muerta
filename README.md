@@ -570,6 +570,23 @@ en las de palanca con la palanca. La manija de carga va con el portacerrojo dond
 Saiga, SPAS-12, Benelli, Uzi, Thompson); en la M16, la MP5, la Vector, la Barrett y la AA-12 queda quieta. En
 cámara lenta (L, en el campo de pruebas) se ve cada paso.
 
+**Cargadores** (`js/cargadores.js`): cada arma con cargador extraíble tiene el suyo, el mismo dibujo que se ve
+puesto en el arma (el modelo lo llama desde ahí). El que se saca, el que va en la mano y el que cae al piso son ese
+cargador y de esa medida; antes eran un palito de 2 × 10 o tres cubitos apilados. La mano lo agarra cerca de la
+base y lo saca y lo mete a lo largo de su eje (inclinado como la empuñadura en las pistolas) y no lo suelta hasta
+que encastra. En la mano se dibuja antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
+(el de la P90, que va encima, después). En las pistolas y la Uzi, puesto se ve solo la base; suelto, el cuerpo
+entero con los agujeros de control. El nuevo trae la bala de arriba asomando. Al piso cae girado como estaba en la
+mano, se va acostando y queda tendido sobre su lado largo.
+
+**Manos**: todas son la misma mano con guante (mismo color, el mismo trazo que el resto del cuerpo, mismas
+medidas), empuñe lo que empuñe; antes cada agarre tenía su dibujo, con degradados y contornos distintos, y al
+recargar la mano cambiaba de color y de forma. La mano libre sigue al antebrazo: la muñeca dobla como mucho 50° y
+lo demás lo gira el brazo, que llega a la muñeca y no al centro de la mano. Se abre o se cierra según la fase:
+entreabierta mientras viaja, se cierra al agarrar, en puño mientras sostiene un cargador, en pinza con una bala o
+un cartucho, abierta al soltar o al palmear, con los dedos hacia abajo en el portacargador. En cuerpo a cuerpo los
+dos puños giran con el mango.
+
 La granada M67 no sale de golpe: la mano de apoyo engancha la anilla y saca el pasador (se oye el tirón),
 el brazo va atrás, lanza (salta la cuchara) y la mano suelta el pasador, que cae al piso. La granada se
 gasta recién al soltarla.

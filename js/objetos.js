@@ -403,7 +403,13 @@ class Casquillo {
         this.vy = -this.vy * 0.38; this.vx *= 0.7; this.rebotes++;
         if (this.rebotes === 1) Audio_.casquillo(this.tipo, !Mundo.interior && Mundo.plano || alturaSuelo(this.x) < SUELO_BASE - 1 ? 'arena' : 'asfalto', fuerza);
       }
-      else { this.vy = 0; this.vrot = 0; this.rot = this.tipo === 'cargador' || this.tipo === 'cargadorPistola' ? Math.PI / 2 : this.rot; }
+      else {
+        this.vy = 0; this.vrot = 0;
+        if (this.cargador) {   // queda tendido: el largo del cargador acostado, del lado más cercano a como cayó
+          const [ex, ey] = this.cargador.ejeLargo || this.cargador.eje, b = Math.atan2(ey, ex * this.lado);
+          this.rot = Math.round((this.rot + b) / Math.PI) * Math.PI - b;
+        } else if (this.tipo === 'cargador' || this.tipo === 'cargadorPistola') this.rot = Math.PI / 2;
+      }
       this.vx *= 0.6;
     }
   }
@@ -413,6 +419,13 @@ class Casquillo {
     ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot);
     if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
       ctx.fillStyle = 'rgba(255, 236, 160, 0.55)'; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.fill();
+    }
+    if (this.cargador) {   // el cargador de su arma, en cm, girado alrededor de donde lo tenía la mano
+      const M = this.cargador, K = ESCALA_JUGADOR * CM;
+      ctx.scale(this.lado * K, K); ctx.translate(-M.agarre[0], -M.agarre[1]);
+      dibujarCargadorSuelto(ctx, M, false);
+      ctx.restore();
+      return;
     }
     switch (this.tipo) {
       // Proporciones reales (vaina de 9 mm, de fusil, de .50 y cartucho de escopeta), agrandadas para que se vean al volar

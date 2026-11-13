@@ -230,7 +230,12 @@ class Juego {
   soltarCargador(jugador, tipo = 'cargador', desde = null) {   // desde: dónde cae (la mano); si no, el pozo del cargador
     if (!tipo) return;
     const p = desde || jugador.puntoArma('cargador');
-    this.casquillos.push(new Casquillo(p.x, p.y, jugador.direccion, tipo));
+    const c = new Casquillo(p.x, p.y, jugador.direccion, tipo);
+    // El cargador de esa arma (js/cargadores.js), tal cual estaba en la mano: con su forma, su medida y girado como
+    // el arma; cae, se va acostando y queda tendido en el piso
+    const M = desde && !jugador.montada && (tipo === 'cargador' || tipo === 'cargadorPistola' || tipo === 'tambor') && CARGADORES[jugador.arma().id];
+    if (M) { c.cargador = M; c.lado = jugador.direccion; c.rot = jugador.estadoArma().incl * jugador.direccion; c.vrot = jugador.direccion * (0.05 + Math.random() * 0.05); }
+    this.casquillos.push(c);
   }
 
   explotar(x, y, arma) {
