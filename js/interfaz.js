@@ -167,6 +167,7 @@
   function alternarPausa() {
     if (!juego || juego.terminado) return;
     pausado = !pausado;
+    if (pausado && juego.estrategia) document.getElementById('pausa-reiniciar').textContent = t('b2.reiniciar', { n: juego.oleadaAReiniciarV2() });   // último bastión: qué oleada se reiniciaría
     capaPausa.classList.toggle('oculta', !pausado);
     Musica.pausar(pausado);
     if (!pausado) ultimo = performance.now();
@@ -422,6 +423,13 @@
       case 'bastion2-guia': abrirGuiaB2(); break;
       case 'bastion2-guia-cerrar': cerrarGuiaB2(); break;
       case 'bastion2-continuar': { const p = BastionV2.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, v2: true, continuar: true, dificultad: p.dificultad } }); break; }
+      case 'bastion2-reiniciar': {   // desde la pausa: todo vuelve a como estaba al empezar la oleada (unidades, plata y campamento)
+        if (!juego || !juego.estrategia) break;
+        const foto = juego.fotoInicioV2, nivel = juego.nivelBastion.id, dificultad = juego.dificultad.id;
+        if (foto) ProgresoBastion.escribir(BastionV2.PARTIDA, foto);   // (en el descanso siguiente, la guardada ya era otra: vuelve a valer la del comienzo de la oleada)
+        iniciar(null, { estrategia: foto ? { nivel, v2: true, continuar: true, dificultad } : { nivel, v2: true, dificultad } });   // sin foto todavía no empezó ninguna oleada: el nivel, de cero
+        break;
+      }
       case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;

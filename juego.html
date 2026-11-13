@@ -829,6 +829,10 @@ body.en-bastion.tactil .extras-tactiles { left: calc(var(--izq) + 50px); right: 
 body.en-bastion.bastion-v2 .b2-guia { display: block; position: absolute; top: 10px; left: 58px; pointer-events: auto; padding: 5px 10px; cursor: pointer; touch-action: manipulation;
   background: rgba(10,8,12,.72); border: 1px solid rgba(201,169,110,.55); color: var(--texto); font: inherit; font-weight: 700; letter-spacing: .1em; font-size: clamp(11px, 1.9vh, 15px); }
 body.en-bastion.bastion-v2 .b2-guia:hover { border-color: var(--luz); color: var(--luz); }
+/* La pausa va por encima del panel del bastión (barra, parte, velocidades): si no, la barra tapa sus botones en una
+   pantalla baja. Ahí, además, se compacta para que entren los cinco */
+body.en-bastion #pausa { z-index: 6; }
+@media (max-height: 480px) { body.en-bastion #pausa { gap: 7px; } body.en-bastion #pausa h2 { font-size: 24px; margin: 0; } body.en-bastion #pausa .boton { padding-top: 7px; padding-bottom: 7px; } }
 /* En el celular va a la derecha del botón de pausa (que está al lado del engranaje), y con su mismo alto */
 body.en-bastion.bastion-v2.tactil .b2-guia { left: calc(max(14px, env(safe-area-inset-left, 0px)) + 108px); top: 8px; min-height: 36px; padding: 0 12px; border-radius: 18px; }
 body.en-bastion.bastion-v2 .solo-b2 { display: inline-block; }
@@ -1170,6 +1174,8 @@ body.en-bastion.bastion-v2 .bastion-info {
     <div id="pausa" class="capa oculta">
       <h2 data-t="pausa.titulo">PAUSA</h2>
       <button class="boton chico" data-accion="reanudar" data-t="pausa.seguir">SEGUIR</button>
+      <!-- Último bastión: vuelve todo a como estaba al empezar la oleada (el texto lo pone interfaz.js al pausar) -->
+      <button id="pausa-reiniciar" class="boton chico solo-b2" data-accion="bastion2-reiniciar">REINICIAR LA OLEADA</button>
       <button class="boton chico solo-b2" data-accion="bastion2-guia" data-t="b2.guia">GUÍA</button>
       <button class="boton chico" data-accion="config-abrir" data-t="menu.config">CONFIGURACIÓN</button>
       <button class="boton chico" data-accion="al-menu" data-t="pausa.salir">SALIR AL MENÚ</button>
@@ -1383,7 +1389,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261113-0135-a47fa1b';
+const VERSION_JUEGO = '20261113-1942-bd9481a';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -18961,6 +18967,7 @@ const BastionV2 = {
       if (suelo === 'agua' || S.porte === 'pared' || S.porte === 'alto') this.crudasV2.add(c + ',' + f);   // tampoco se pisan el risco ni sus cornisas
       if (S.techo) this.altosV2.push({ c, f, ...this.centroCelda(c, f), alto: S.techo });
     }
+    this.fotoInicioV2 = null;
     const guardada = this.opcionesEstrategia.continuar && BastionV2.partida();
     if (guardada) this.restaurarPartidaV2(guardada); else this.ejercitoInicialV2();
     this.rehacerCamino();
@@ -19309,7 +19316,7 @@ const BastionV2 = {
     }
   });
   P.empezarOleadaV2 = function () {
-    this.guardarPartidaV2();   // la foto de cómo estaba todo al empezar la oleada: si se pierde, se repite desde acá
+    this.guardarPartidaV2(true);   // la foto de cómo estaba todo al empezar la oleada: si se pierde (o se pide reiniciarla), se repite desde acá
     this.ronda++; this.enDescanso = false; this.sinPremioPorAdelantar = false;
     this.colaOleada = BastionV2.ordenOleada(this.nivelV2.oleadas[this.ronda - 1]);
     this.porAparecer = this.colaOleada.length; this.proximoZombie = 0.5; this.filaManada = null;
@@ -19351,7 +19358,15 @@ const BastionV2 = {
     return { version: BastionV2.VERSION, nivel: this.nivelBastion.id, dificultad: this.dificultad.id, ronda: this.ronda, dinero: this.dinero, vidaBase: this.vidaBase,
       bajas: this.bajas || 0, construidas: this.construidas || 0, contagiados: this.contagiados || 0, tiempo: Math.round(this.tiempoJugado), fecha: Date.now(), unidades: us };
   };
-  P.guardarPartidaV2 = function () { if (!this.terminado) ProgresoBastion.escribir(BastionV2.PARTIDA, this.fotoV2()); };
+  // inicio: es la foto del comienzo de una oleada, a la que vuelve «reiniciar la oleada» (fotoInicioV2)
+  P.guardarPartidaV2 = function (inicio) {
+    if (this.terminado) return;
+    const foto = this.fotoV2();
+    if (inicio) this.fotoInicioV2 = foto;
+    ProgresoBastion.escribir(BastionV2.PARTIDA, foto);
+  };
+  // La oleada que se volvería a jugar al reiniciar: la última que se empezó (o la primera, si todavía no empezó ninguna)
+  P.oleadaAReiniciarV2 = function () { return (this.fotoInicioV2 ? this.fotoInicioV2.ronda : 0) + 1; };
   P.restaurarPartidaV2 = function (d) {
     this.unidades = [];
     for (const s of d.unidades) {
@@ -19364,6 +19379,7 @@ const BastionV2 = {
     this.ronda = d.ronda; this.dinero = d.dinero; this.vidaBase = d.vidaBase; this.bajas = d.bajas || 0; this.construidas = d.construidas || 0; this.contagiados = d.contagiados || 0;
     this.tiempoJugado = d.tiempo || 0; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + BASTION2.descanso;
     this.sinPremioPorAdelantar = true;   // al repetir una oleada, adelantarla no vuelve a pagar (si no, perder a propósito daría plata)
+    this.fotoInicioV2 = d;               // se partió de esta foto: reiniciar la oleada vuelve a ella
   };
   envolver('oleadaYa', function () {
     if (this.enDescanso && this.sinPremioPorAdelantar) { this.descansoHasta = this.tiempoJugado; return; }
@@ -21674,7 +21690,7 @@ Object.assign(TEXTOS.es, {
   'b2.parte': 'OLEADA {n}:', 'b2.teVen': 'DESDE AQUÍ LO VEN', 'b2.blando': 'Suelo blando: aquí sólo va gente a pie, alambrado o señuelo',
   'b2.contagiado': '¡Soldado contagiado!', 'b2.sinContagio': 'Cayó, pero el médico evitó el contagio', 'b2.baja': '¡Perdiste a uno de los tuyos!', 'b2.raptado': '¡El buitre se lleva a uno de los tuyos!',
   'b2.gasEncendido': '¡El fuego encendió el gas!', 'b2.nadaQueMover': 'Toca a alguien a pie, el tanque o un búnker con gente', 'b2.aviso': 'Mira el parte de arriba: dice qué viene en la próxima oleada',
-  'b2.repetir': 'REPETIR LA OLEADA {n}', 'b2.deCero': 'DESDE EL PRINCIPIO',
+  'b2.repetir': 'REPETIR LA OLEADA {n}', 'b2.deCero': 'DESDE EL PRINCIPIO', 'b2.reiniciar': 'REINICIAR LA OLEADA {n}',
   'b2.finGanado': 'Resististe las {olas} oleadas de {nivel} con el campamento en {base}/{max}: {bajas} zombies muertos y {contagiados} soldados contagiados, en {tiempo}.',
   'b2.finPerdido': 'El campamento de {nivel} cayó en la oleada {ola} de {total}. Entraron: {lista}. Soldados contagiados: {contagiados}. Tiempo: {tiempo}.',
   'b2.consejo': 'Contra {tipo} sirve: {con}.',
@@ -21704,7 +21720,7 @@ Object.assign(TEXTOS.pt, {
   'b2.parte': 'ONDA {n}:', 'b2.teVen': 'DAQUI ELES O VEEM', 'b2.blando': 'Solo mole: aqui só vai gente a pé, arame farpado ou isca',
   'b2.contagiado': 'Soldado contagiado!', 'b2.sinContagio': 'Caiu, mas o médico evitou o contágio', 'b2.baja': 'Você perdeu um dos seus!', 'b2.raptado': 'O abutre está levando um dos seus!',
   'b2.gasEncendido': 'O fogo acendeu o gás!', 'b2.nadaQueMover': 'Toque em alguém a pé, no tanque ou em um bunker com gente', 'b2.aviso': 'Veja o relatório acima: ele diz o que vem na próxima onda',
-  'b2.repetir': 'REPETIR A ONDA {n}', 'b2.deCero': 'DESDE O COMEÇO',
+  'b2.repetir': 'REPETIR A ONDA {n}', 'b2.deCero': 'DESDE O COMEÇO', 'b2.reiniciar': 'REINICIAR A ONDA {n}',
   'b2.finGanado': 'Você resistiu às {olas} ondas de {nivel} com o acampamento em {base}/{max}: {bajas} zumbis mortos e {contagiados} soldados contagiados, em {tiempo}.',
   'b2.finPerdido': 'O acampamento de {nivel} caiu na onda {ola} de {total}. Entraram: {lista}. Soldados contagiados: {contagiados}. Tempo: {tiempo}.',
   'b2.consejo': 'Contra {tipo} serve: {con}.',
@@ -21734,7 +21750,7 @@ Object.assign(TEXTOS.en, {
   'b2.parte': 'WAVE {n}:', 'b2.teVen': 'THEY SEE IT FROM HERE', 'b2.blando': 'Soft ground: only people on foot, barbed wire or a decoy can go here',
   'b2.contagiado': 'Soldier infected!', 'b2.sinContagio': 'He fell, but the medic prevented the infection', 'b2.baja': 'You lost one of yours!', 'b2.raptado': 'The vulture is carrying off one of yours!',
   'b2.gasEncendido': 'Fire ignited the gas!', 'b2.nadaQueMover': 'Tap someone on foot, the tank or a bunker with people in it', 'b2.aviso': 'Check the report at the top: it says what the next wave brings',
-  'b2.repetir': 'REPLAY WAVE {n}', 'b2.deCero': 'FROM THE START',
+  'b2.repetir': 'REPLAY WAVE {n}', 'b2.deCero': 'FROM THE START', 'b2.reiniciar': 'RESTART WAVE {n}',
   'b2.finGanado': 'You held out for the {olas} waves of {nivel} with the camp at {base}/{max}: {bajas} zombies killed and {contagiados} soldiers infected, in {tiempo}.',
   'b2.finPerdido': 'The camp at {nivel} fell on wave {ola} of {total}. They got in: {lista}. Soldiers infected: {contagiados}. Time: {tiempo}.',
   'b2.consejo': 'Against {tipo}, use: {con}.',
@@ -22566,6 +22582,7 @@ const Asistente = (() => {
   function alternarPausa() {
     if (!juego || juego.terminado) return;
     pausado = !pausado;
+    if (pausado && juego.estrategia) document.getElementById('pausa-reiniciar').textContent = t('b2.reiniciar', { n: juego.oleadaAReiniciarV2() });   // último bastión: qué oleada se reiniciaría
     capaPausa.classList.toggle('oculta', !pausado);
     Musica.pausar(pausado);
     if (!pausado) ultimo = performance.now();
@@ -22821,6 +22838,13 @@ const Asistente = (() => {
       case 'bastion2-guia': abrirGuiaB2(); break;
       case 'bastion2-guia-cerrar': cerrarGuiaB2(); break;
       case 'bastion2-continuar': { const p = BastionV2.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, v2: true, continuar: true, dificultad: p.dificultad } }); break; }
+      case 'bastion2-reiniciar': {   // desde la pausa: todo vuelve a como estaba al empezar la oleada (unidades, plata y campamento)
+        if (!juego || !juego.estrategia) break;
+        const foto = juego.fotoInicioV2, nivel = juego.nivelBastion.id, dificultad = juego.dificultad.id;
+        if (foto) ProgresoBastion.escribir(BastionV2.PARTIDA, foto);   // (en el descanso siguiente, la guardada ya era otra: vuelve a valer la del comienzo de la oleada)
+        iniciar(null, { estrategia: foto ? { nivel, v2: true, continuar: true, dificultad } : { nivel, v2: true, dificultad } });   // sin foto todavía no empezó ninguna oleada: el nivel, de cero
+        break;
+      }
       case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;

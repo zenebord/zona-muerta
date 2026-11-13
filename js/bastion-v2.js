@@ -416,6 +416,7 @@ const BastionV2 = {
       if (suelo === 'agua' || S.porte === 'pared' || S.porte === 'alto') this.crudasV2.add(c + ',' + f);   // tampoco se pisan el risco ni sus cornisas
       if (S.techo) this.altosV2.push({ c, f, ...this.centroCelda(c, f), alto: S.techo });
     }
+    this.fotoInicioV2 = null;
     const guardada = this.opcionesEstrategia.continuar && BastionV2.partida();
     if (guardada) this.restaurarPartidaV2(guardada); else this.ejercitoInicialV2();
     this.rehacerCamino();
@@ -764,7 +765,7 @@ const BastionV2 = {
     }
   });
   P.empezarOleadaV2 = function () {
-    this.guardarPartidaV2();   // la foto de cómo estaba todo al empezar la oleada: si se pierde, se repite desde acá
+    this.guardarPartidaV2(true);   // la foto de cómo estaba todo al empezar la oleada: si se pierde (o se pide reiniciarla), se repite desde acá
     this.ronda++; this.enDescanso = false; this.sinPremioPorAdelantar = false;
     this.colaOleada = BastionV2.ordenOleada(this.nivelV2.oleadas[this.ronda - 1]);
     this.porAparecer = this.colaOleada.length; this.proximoZombie = 0.5; this.filaManada = null;
@@ -806,7 +807,15 @@ const BastionV2 = {
     return { version: BastionV2.VERSION, nivel: this.nivelBastion.id, dificultad: this.dificultad.id, ronda: this.ronda, dinero: this.dinero, vidaBase: this.vidaBase,
       bajas: this.bajas || 0, construidas: this.construidas || 0, contagiados: this.contagiados || 0, tiempo: Math.round(this.tiempoJugado), fecha: Date.now(), unidades: us };
   };
-  P.guardarPartidaV2 = function () { if (!this.terminado) ProgresoBastion.escribir(BastionV2.PARTIDA, this.fotoV2()); };
+  // inicio: es la foto del comienzo de una oleada, a la que vuelve «reiniciar la oleada» (fotoInicioV2)
+  P.guardarPartidaV2 = function (inicio) {
+    if (this.terminado) return;
+    const foto = this.fotoV2();
+    if (inicio) this.fotoInicioV2 = foto;
+    ProgresoBastion.escribir(BastionV2.PARTIDA, foto);
+  };
+  // La oleada que se volvería a jugar al reiniciar: la última que se empezó (o la primera, si todavía no empezó ninguna)
+  P.oleadaAReiniciarV2 = function () { return (this.fotoInicioV2 ? this.fotoInicioV2.ronda : 0) + 1; };
   P.restaurarPartidaV2 = function (d) {
     this.unidades = [];
     for (const s of d.unidades) {
@@ -819,6 +828,7 @@ const BastionV2 = {
     this.ronda = d.ronda; this.dinero = d.dinero; this.vidaBase = d.vidaBase; this.bajas = d.bajas || 0; this.construidas = d.construidas || 0; this.contagiados = d.contagiados || 0;
     this.tiempoJugado = d.tiempo || 0; this.enDescanso = true; this.descansoHasta = this.tiempoJugado + BASTION2.descanso;
     this.sinPremioPorAdelantar = true;   // al repetir una oleada, adelantarla no vuelve a pagar (si no, perder a propósito daría plata)
+    this.fotoInicioV2 = d;               // se partió de esta foto: reiniciar la oleada vuelve a ella
   };
   envolver('oleadaYa', function () {
     if (this.enDescanso && this.sinPremioPorAdelantar) { this.descansoHasta = this.tiempoJugado; return; }
