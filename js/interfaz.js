@@ -125,7 +125,7 @@
     const resumen = t('fin.resumen', { ronda: juego.ronda, dificultad: dif, bajas: juego.bajas, tiempo, armas: juego.jugador.inventario.length });
     if (juego.resultado === 'mision-cumplida') { titulo.textContent = t('fin.cumplida'); titulo.style.color = '#4caf50'; detalle.textContent = `${misionActual.nombre}: ${misionActual.descripcion} ${resumen}`; }
     else if (juego.resultado === 'mision-fallida') { titulo.textContent = t('fin.tiempo'); titulo.style.color = '#ff8a65'; detalle.textContent = t('fin.fallida', { mision: misionActual.nombre, resumen }); }
-    else if (juego.estrategia && juego.v2) {   // último bastión v2: si se perdió, dice quiénes entraron y con qué se frenan
+    else if (juego.estrategia) {   // último bastión: si se perdió, dice quiénes entraron y con qué se frenan
       document.getElementById('panel-bastion').classList.add('oculta');
       const F = BastionV2.fin(juego, { tiempo });
       titulo.textContent = F.titulo; titulo.style.color = F.color; detalle.textContent = F.detalle;
@@ -135,25 +135,6 @@
         const repetir = document.getElementById('fin-repetir');
         repetir.textContent = t('b2.repetir', { n: juego.ronda }); repetir.classList.remove('oculta');
         document.getElementById('fin-otra-vez').textContent = t('b2.deCero');
-      }
-    }
-    else if (juego.estrategia) {
-      document.getElementById('panel-bastion').classList.add('oculta');   // la barra de construir no va sobre el final
-      const N = juego.nivelBastion, i = NIVELES_BASTION.indexOf(N), siguiente = NIVELES_BASTION[i + 1];
-      const gano = juego.resultado === 'victoria';
-      document.getElementById('fin-siguiente').classList.toggle('oculta', !(gano && siguiente));
-      if (gano) {
-        titulo.textContent = t('fin.bastionGanado'); titulo.style.color = '#6ad06a';
-        detalle.textContent = t('fin.bastionGanadoDetalle', { nivel: t('bniv.' + N.id), olas: OLAS_POR_NIVEL, base: juego.vidaBase, max: BASTION.vidaBase, bajas: juego.bajas, tiempo })
-          + ' ' + (siguiente ? t('fin.bastionAbre', { nivel: t('bniv.' + siguiente.id) }) : t('fin.bastionTodos'));
-      } else {
-        // Récord de oleadas por nivel y dificultad
-        const clave = 'zonaMuerta.recordBastion.' + N.id + '.' + juego.dificultad.id, olas = Math.max(0, juego.ronda - 1);
-        let record = 0; try { record = parseInt(localStorage.getItem(clave) || '0', 10) || 0; } catch { /* sin almacenamiento */ }
-        const nuevo = olas > record;
-        if (nuevo) { try { localStorage.setItem(clave, String(olas)); } catch { /* ídem */ } }
-        titulo.textContent = t('fin.bastionTitulo'); titulo.style.color = '';
-        detalle.textContent = t('fin.bastionNivel', { nivel: t('bniv.' + N.id), olas, total: OLAS_POR_NIVEL }) + ' ' + t('fin.bastion', { olas, dificultad: dif, bajas: juego.bajas, unidades: juego.construidas, tiempo }) + (nuevo ? t('fin.record') : t('fin.tuRecord', { ola: record }));
       }
     }
     else if (juego.ultra) {
@@ -418,8 +399,6 @@
 
   /* ---- Botones (delegación por data-accion) ---- */
   document.addEventListener('click', e => {
-    const nivelB = e.target.closest('[data-nivel-bastion]');
-    if (nivelB && !nivelB.disabled) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB.dataset.nivelBastion } }); return; }
     const nivelB2 = e.target.closest('[data-nivel-bastion2]');
     if (nivelB2) { Audio_.activar(); iniciar(null, { estrategia: { nivel: nivelB2.dataset.nivelBastion2, v2: true } }); return; }
     const arma = e.target.closest('[data-arma]');
@@ -439,16 +418,11 @@
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
-      case 'bastion':   NivelesBastionUI.abrir(mostrar); break;
-      case 'bastion2':  BastionV2UI.abrirNiveles(mostrar); break;   // el diseño nuevo por bandos: lista de niveles (js/bastion-v2-ui.js)
+      case 'bastion2':  BastionV2UI.abrirNiveles(mostrar); break;   // Último bastión: la lista de niveles (js/bastion-v2-ui.js)
       case 'bastion2-guia': abrirGuiaB2(); break;
       case 'bastion2-guia-cerrar': cerrarGuiaB2(); break;
       case 'bastion2-continuar': { const p = BastionV2.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, v2: true, continuar: true, dificultad: p.dificultad } }); break; }
-      case 'bastion-continuar': { const p = ProgresoBastion.partida(); if (p) iniciar(null, { estrategia: { nivel: p.nivel, continuar: true, dificultad: p.dificultad } }); break; }
-      case 'bastion-siguiente': {
-        if (juego.v2) { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
-        const i = NIVELES_BASTION.findIndex(n => n.id === juego.nivelBastion.id); if (NIVELES_BASTION[i + 1]) iniciar(null, { estrategia: { nivel: NIVELES_BASTION[i + 1].id } }); break;
-      }
+      case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;

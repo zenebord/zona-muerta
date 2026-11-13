@@ -1,7 +1,10 @@
-/* ===== Último bastión v2: dos bandos con contrapesos =====
- * Versión de prueba del diseño por bandos, al lado del modo de siempre (que no cambia). El plantel completo, 13
- * unidades militares en tres clases y 16 tipos de zombie en cuatro, en dos niveles: La granja (campo abierto, toda
- * la horda) y La autopista (pasillos entre autos chocados y contenedores con techo; 11 tipos y su jefe, El Escudo).
+/* ===== Último bastión: dos bandos con contrapesos (el rediseño, «v2» en el código) =====
+ * Es el Último bastión que se juega: el modo anterior ya no está en el menú y su motor (js/estrategia.js) es la base
+ * que estos archivos envuelven. El plantel completo, 13 unidades militares en tres clases y 16 tipos de zombie en
+ * cuatro, en cuatro niveles, cada uno con un terreno que limita a su manera dónde entra cada cosa: La granja (campo
+ * abierto, toda la horda), La autopista (pasillos entre autos chocados y contenedores con techo), El desierto (arena
+ * suelta: lo pesado sólo entra en unas pocas losas de piedra) y La montaña (un paso entre riscos, con los cuellos de
+ * hielo y cornisas). Cada nivel elige su grupo de tipos y tiene su jefe.
  *
  *   EL BASTIÓN                                              LA HORDA
  *   Infantería   soldado, francotirador, lanzallamas,       Caminantes   común, corredor, gordo, acorazado
@@ -9,7 +12,7 @@
  *   Mecanizados  torreta, tanque, mortero, antiaérea        Animales     jauría, toro, bandada, buitre
  *   Estructuras  muro, alambrado, búnker, señuelo,          Acechadores  topo, lanzador, escupidor, rabioso
  *                torre de vigía                             (+ el soldado contagiado y un jefe por nivel:
- *                                                            El Coloso y El Escudo)
+ *                                                            El Coloso, El Escudo, La Cisterna, La Sirena)
  *
  * Los acechadores son los que no vienen de frente: el topo pasa por debajo, el lanzador arroja zombies por arriba de
  * los muros, el escupidor tira desde más lejos que la línea y el rabioso corre más rápido que las armas lentas.
@@ -20,8 +23,10 @@
  *   Aire       lo que vuela pasa sobre todo; sólo le tiran los fusiles (soldado, francotirador) y la antiaérea
  *   Velocidad  cuanto más rápido el zombie, menos tiempo pasa bajo fuego: cadencia alta y alambrado
  *   Vista      el zombie va por el humano que ve; el que tira desde más lejos que esa vista, tira escondido
- *   Altura     arriba de un contenedor sólo sube la infantería: tira más lejos y a pie no la alcanzan (sí lo que
- *              vuela, escupe o arroja, el gas y las explosiones)
+ *   Altura     arriba de un contenedor o de una cornisa sólo sube la infantería: tira más lejos y a pie no la
+ *              alcanzan (sí lo que vuela, escupe o arroja, el gas y las explosiones)
+ * Además, cada suelo aguanta lo suyo (BASTION2.suelos): en el barro y en la arena no entra lo pesado, sobre el
+ * hielo sólo se para la gente a pie y el risco no se pisa.
  *
  * Los zombies se comportan como zombies: cada uno mira, caza al primer humano que ve, rompe lo que lo protege y, si
  * no ve a nadie, marcha al campamento. Cuenta como humano la infantería a pie y la gente de torretas, morteros,
@@ -98,12 +103,19 @@ const BASTION2 = {
     // los tiros de quien esté arriba de un contenedor)
     escudo:        { clase: 'cam', conducta: 'caza', vida: 22,  vel: 17, vista: 3, llega: 'rompe', paga: 45, dano: 8, escala: 1.22, aplasta: true, mordida: 2.5, blindaje: 4, jefe: true,
       cubre: { radio: 2.2 } },
+    // La Cisterna, jefa de El desierto: una hinchada gigante. Va a lo construido y, donde cae, estalla a 3 celdas
+    cisterna:      { clase: 'esp', conducta: 'revienta', vida: 18, vel: 13, vista: 6, paga: 45, dano: 8, escala: 1.34, jefe: true,
+      estalla: { radio: 132, unidades: 220, gente: 60, zombies: 4 } },
+    // La Sirena, jefa de La montaña: una gritona gigante. Ve a toda tu gente esté donde esté y su grito llega a todo el
+    // campo: mientras vive, la horda entera sabe adónde ir y va apurada
+    sirena:        { clase: 'esp', conducta: 'grita', vida: 18, vel: 18, vista: 60, paga: 45, dano: 8, escala: 1.26, mordida: 2, jefe: true,
+      grito: { radio: 60, apuro: 1.35, dura: 7, cada: 6, quieto: 1.4 } },
   },
-  jefes: ['jefe', 'escudo'],
-  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe', 'escudo'],
+  jefes: ['jefe', 'escudo', 'cisterna', 'sirena'],
+  ordenParte: ['caminante', 'corredor', 'gordo', 'acorazado', 'griton', 'hinchado', 'dinamitero', 'toxico', 'perro', 'toro', 'cuervo', 'buitre', 'topo', 'lanzador', 'escupidor', 'rabioso', 'jefe', 'escudo', 'cisterna', 'sirena'],
   clasesZombie: { cam: ['caminante', 'corredor', 'gordo', 'acorazado'], esp: ['griton', 'hinchado', 'dinamitero', 'toxico'], ani: ['perro', 'toro', 'cuervo', 'buitre'], ace: ['topo', 'lanzador', 'escupidor', 'rabioso'] },
   // A quién elige primero el francotirador (de más a menos peligroso)
-  peligro: ['lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'escudo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
+  peligro: ['sirena', 'cisterna', 'lanzador', 'escupidor', 'griton', 'hinchado', 'toxico', 'dinamitero', 'buitre', 'topo', 'escudo', 'acorazado', 'toro', 'jefe', 'gordo', 'soldadoZombie', 'corredor', 'caminante', 'perro', 'cuervo', 'rabioso'],
   /* Quién frena a quién, para las marcas del panel, las fichas y los consejos. Sale de medir cada cruce con el
    * simulador (una defensa de un solo tipo contra una tanda de un solo tipo, en la oleada 6 u 8), no de una regla aparte.
    * bien: lo frena; mal: rinde poco o se pierde contra él */
@@ -127,12 +139,21 @@ const BASTION2 = {
     soldadoZombie: { bien: ['francotirador', 'tanque', 'medico'], mal: ['soldado'] },
     jefe:       { bien: ['tanque', 'francotirador'], mal: ['muro', 'alambrado', 'soldado'] },
     escudo:     { bien: ['francotirador', 'tanque'], mal: ['torreta', 'soldado', 'bunker', 'muro'] },
+    cisterna:   { bien: ['francotirador', 'tanque', 'senuelo'], mal: ['lanzallamas', 'soldado', 'bunker', 'muro'] },
+    sirena:     { bien: ['francotirador', 'tanque'], mal: ['senuelo', 'soldado', 'muro'] },
   },
   /* Altura: arriba de un obstáculo con techo (el contenedor) sólo sube la infantería. Desde ahí tira más lejos y los
    * que caminan no la alcanzan; sí lo que vuela, lo que escupe o arroja, el gas y las explosiones. techos: a cuántos
    * puntos del piso queda parada */
   techos: { contenedor: 30 },
   altura: { alcance: 1.25 },
+  /* Suelos: qué aguanta cada terreno (lo que no figura es firme: entra todo).
+   *   blando  barro: sólo gente a pie, alambrado y señuelo
+   *   suelto  arena: además de eso, el tanque (lo demás se hunde)
+   *   liso    hielo: sólo gente a pie
+   *   pared   risco: nada, y nadie lo pisa
+   *   alto    cornisa: como el techo de un contenedor (techo: a cuántos puntos del piso); nadie la pisa */
+  suelos: { barro: { porte: 'blando' }, arena: { porte: 'suelto' }, hielo: { porte: 'liso' }, risco: { porte: 'pared' }, cornisa: { porte: 'alto', techo: 11 } },
   /* Oleadas escritas (cuántos de cada tipo). Cada oleada estrena uno o dos tipos; el orden en que salen lo arma
    * ordenOleada, siempre igual. El Coloso viene en la 6 y en la 12. Cada muerto paga poco (un común, $4): con lo que se
    * junta en toda la partida alcanza para responder a cada tipo, no para tener de todo de sobra. La plata es la perilla
@@ -183,8 +204,63 @@ const BASTION2 = {
         { caminante: 44, corredor: 16, acorazado: 16, hinchado: 5, dinamitero: 7, perro: 15, cuervo: 18, buitre: 3, lanzador: 3, escupidor: 4, rabioso: 8, escudo: 1 },
       ],
     },
+    /* El desierto: arena suelta, donde no se construye nada (BASTION2.suelos: sobre la arena sólo van la gente a pie, el
+     * tanque, el alambrado y el señuelo). Lo que pesa va en las losas de piedra, que son 12 celdas en seis afloramientos:
+     * no entra todo, y está donde está. Sin muros no hay embudo: se contiene con el tanque (se empieza con uno), alambrado
+     * y señuelos, en un frente ancho que el oasis parte en dos. Trae lo rápido, lo que pasa por debajo y lo que vuela, y a
+     * La Cisterna. La horda aguanta un 5 % más que en los dos primeros niveles */
+    desierto: {
+      dinero: 200, vida: 1.05, aviso: 'b2.avisoDesierto',
+      mapa: {
+        terreno: [['losa', 2, 1, 3, 1], ['losa', 2, 7, 3, 7], ['losa', 1, 4, 2, 4], ['losa', 5, 4, 6, 4], ['losa', 8, 2, 9, 2], ['losa', 8, 6, 9, 6], ['agua', 12, 3, 13, 5]],
+        obstaculos: [['cactus', 6, 0], ['roca', 10, 0], ['cactus', 5, 8], ['roca', 10, 8], ['cactus', 15, 1], ['roca', 16, 7], ['cactus', 11, 4]],
+      },
+      inicio: { tanque: [[8, 4]], soldado: [[4, 3], [4, 5], [4, 4]], alambrado: [[10, 3], [10, 4], [10, 5]] },
+      oleadas: [
+        { caminante: 20 },
+        { caminante: 22, corredor: 12 },
+        { caminante: 26, corredor: 12, rabioso: 4 },
+        { caminante: 28, corredor: 12, toro: 2, cuervo: 12 },
+        { caminante: 30, corredor: 14, hinchado: 3, topo: 3, rabioso: 8 },
+        { caminante: 30, corredor: 14, toro: 3, cuervo: 12, escupidor: 4, cisterna: 1 },
+        { caminante: 34, corredor: 16, hinchado: 4, dinamitero: 5, topo: 4, rabioso: 8 },
+        { caminante: 36, corredor: 16, toro: 4, cuervo: 18, buitre: 3, escupidor: 4 },
+        { caminante: 38, corredor: 18, hinchado: 5, dinamitero: 6, topo: 5, rabioso: 12 },
+        { caminante: 40, corredor: 18, toro: 4, cuervo: 18, buitre: 3, topo: 4, escupidor: 6 },
+        { caminante: 42, corredor: 20, hinchado: 6, dinamitero: 7, toro: 4, escupidor: 6, rabioso: 12 },
+        { caminante: 44, corredor: 20, hinchado: 6, dinamitero: 7, toro: 4, cuervo: 18, buitre: 3, topo: 6, escupidor: 6, rabioso: 12, cisterna: 1 },
+      ],
+    },
+    /* La montaña: un paso entre riscos. Más de la mitad del mapa es pared (no se pisa ni se construye). El paso se
+     * angosta dos veces a tres filas, y esos dos cuellos son hielo: ahí sólo se para la gente a pie y la horda resbala
+     * (va 35 % más rápido). Se construye en los ensanches: la plaza del medio y la retaguardia, que está pegada al
+     * campamento. Cuatro cornisas, sobre los dos cuellos, son puestos altos. Trae lo pesado, el gas, lo que embiste y lo
+     * que no viene de frente, y a La Sirena. La horda aguanta un 5 % más que en los dos primeros niveles */
+    montana: {
+      dinero: 240, vida: 1.05, aviso: 'b2.avisoMontana',
+      mapa: {
+        terreno: [['risco', 0, 0, 40, 1], ['risco', 0, 7, 40, 8], ['risco', 3, 2, 6, 2], ['risco', 3, 6, 6, 6], ['risco', 11, 2, 14, 2], ['risco', 11, 6, 14, 6],
+          ['cornisa', 4, 2, 4, 2], ['cornisa', 4, 6, 4, 6], ['cornisa', 12, 2, 12, 2], ['cornisa', 12, 6, 12, 6], ['hielo', 3, 3, 6, 5], ['hielo', 11, 3, 14, 5]],
+        obstaculos: [['pinoNevado', 0, 2], ['roca', 16, 2], ['pinoNevado', 16, 6], ['roca', 10, 2]],
+      },
+      inicio: { soldado: [[7, 3], [7, 5], [12, 2]], alambrado: [[10, 4]] },
+      oleadas: [
+        { caminante: 20 },
+        { caminante: 24, corredor: 10 },
+        { caminante: 26, corredor: 10, gordo: 3 },
+        { caminante: 28, gordo: 4, acorazado: 8, rabioso: 4 },
+        { caminante: 30, corredor: 12, acorazado: 8, toro: 2, cuervo: 12, escupidor: 2 },
+        { caminante: 30, gordo: 6, acorazado: 10, escupidor: 3, rabioso: 8, sirena: 1 },
+        { caminante: 34, corredor: 14, toxico: 3, toro: 2, cuervo: 12, topo: 3 },
+        { caminante: 36, gordo: 8, acorazado: 12, dinamitero: 5, lanzador: 2, rabioso: 8 },
+        { caminante: 38, corredor: 16, toxico: 4, toro: 3, cuervo: 18, topo: 4, lanzador: 2, escupidor: 3 },
+        { caminante: 40, gordo: 9, acorazado: 14, dinamitero: 6, toxico: 4, escupidor: 4, rabioso: 12 },
+        { caminante: 42, corredor: 18, gordo: 9, toxico: 4, toro: 3, cuervo: 18, topo: 4, lanzador: 3 },
+        { caminante: 44, corredor: 16, gordo: 10, acorazado: 14, dinamitero: 7, toxico: 4, toro: 3, cuervo: 18, topo: 4, lanzador: 3, escupidor: 4, rabioso: 12, sirena: 1 },
+      ],
+    },
   },
-  ordenNiveles: ['granja', 'autopista'],
+  ordenNiveles: ['granja', 'autopista', 'desierto', 'montana'],
 };
 // Cómo acusa cada golpe el zombie (js/zombie.js): el fuego y las púas no destellan ni empujan; la explosión lo despide
 const ARMA_BALA = { categoria: 'rifle' }, ARMA_PESADA = { categoria: 'escopeta', pesada: true };
@@ -221,6 +297,17 @@ const BastionV2 = {
     ProgresoBastion.escribir(this.PROGRESO, p);
   },
   oleadas(id) { return this.nivel(id).oleadas; },
+  // ¿Ese suelo no aguanta a esa unidad? Devuelve la clave del motivo, o null si la aguanta
+  noAguanta(suelo, tipo) {
+    const porte = (BASTION2.suelos[suelo] || {}).porte, U = BASTION.unidades[tipo]; if (!porte || !U) return null;
+    const aPie = U.clase === 'inf';
+    if (porte === 'pared') return 'b2.pared';
+    if (porte === 'alto') return aPie ? null : 'b2.soloInfArriba';
+    if (porte === 'liso') return aPie ? null : 'b2.liso';
+    if (porte === 'blando') return aPie || U.liviano ? null : 'b2.blando';
+    if (porte === 'suelto') return aPie || U.liviano || tipo === 'tanque' ? null : 'b2.suelto';
+    return null;
+  },
   // En qué oleada (desde 0) aparece por primera vez cada tipo en ese nivel
   debut(id) {
     const D = this.debuts = this.debuts || {};
@@ -245,6 +332,8 @@ const BastionV2 = {
     tandas('perro', BASTION2.zombies.perro.manada, [0.25, 0.6, 0.86, 0.95]);
     tandas('cuervo', BASTION2.zombies.cuervo.manada, [0.4, 0.7, 0.92]);
     parejo('escudo', 0.28, 0.3);   // El Escudo sale temprano: la horda marcha detrás de él
+    parejo('sirena', 0.16, 0.18);  // La Sirena también: grita toda la oleada
+    parejo('cisterna', 0.5, 0.52); // La Cisterna, en el medio de la horda
     for (let k = 0; k < n('jefe'); k++) poner('jefe', 2 + k);
     return puestos.sort((a, b) => a[0] - b[0]).map(p => p[1]);
   },
@@ -317,11 +406,16 @@ const BastionV2 = {
     }
     this.nivelV2 = BastionV2.nivel(this.nivelBastion.id);
     this.dinero = this.nivelV2.dinero;
-    // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa y agua profunda. Los
-    // obstáculos bajos (fardos, el tractor) los saltan los perros
+    // Lo que no deja pasar a nadie que camine, haya o no construcciones: obstáculos del mapa, agua profunda y la
+    // pared de la montaña. Los obstáculos bajos (fardos, el tractor, los autos) los saltan los perros
     this.crudasV2 = new Set(); this.bajasV2 = new Set();
     for (const o of this.obstaculos || []) { this.crudasV2.add(o.c + ',' + o.f); if (o.tipo === 'fardo' || o.tipo === 'tractor' || o.tipo === 'auto') this.bajasV2.add(o.c + ',' + o.f); }
-    for (let f = 0; f < this.filas; f++) for (let c = 0; c < this.cols; c++) if (this.terrenoEn(c, f) === 'agua') this.crudasV2.add(c + ',' + f);
+    this.altosV2 = (this.obstaculos || []).filter(o => BASTION2.techos[o.tipo]).map(o => ({ c: o.c, f: o.f, x: o.x, y: o.y, alto: BASTION2.techos[o.tipo], techo: true }));   // puestos altos: techos y cornisas
+    for (let f = 0; f < this.filas; f++) for (let c = 0; c < this.cols; c++) {
+      const suelo = this.terrenoEn(c, f), S = BASTION2.suelos[suelo] || {};
+      if (suelo === 'agua' || S.porte === 'pared' || S.porte === 'alto') this.crudasV2.add(c + ',' + f);   // tampoco se pisan el risco ni sus cornisas
+      if (S.techo) this.altosV2.push({ c, f, ...this.centroCelda(c, f), alto: S.techo });
+    }
     const guardada = this.opcionesEstrategia.continuar && BastionV2.partida();
     if (guardada) this.restaurarPartidaV2(guardada); else this.ejercitoInicialV2();
     this.rehacerCamino();
@@ -415,9 +509,9 @@ const BastionV2 = {
     return mejor;
   };
 
-  /* ---------- Altura: el techo de un contenedor ---------- */
+  /* ---------- Altura: el techo de un contenedor o una cornisa de la montaña ---------- */
   // A cuántos puntos del piso queda parado quien sube a esa celda (0: no hay techo)
-  P.alturaEn = function (c, f) { const o = this.obstaculoEn(c, f); return (o && BASTION2.techos[o.tipo]) || 0; };
+  P.alturaEn = function (c, f) { const o = this.obstaculoEn(c, f); return (o && BASTION2.techos[o.tipo]) || (BASTION2.suelos[this.terrenoEn(c, f)] || {}).techo || 0; };
   // El obstáculo con techo que está dibujado bajo ese punto de la pantalla: el toque vale por su celda (el dibujo tapa la de atrás)
   P.techoBajoV2 = function (x, y) {
     const cam = this.camaraBastion();
@@ -440,7 +534,7 @@ const BastionV2 = {
     }
     const suelo = this.terrenoEn(c, f);
     if (suelo === 'agua') return 'bastion.agua';
-    if (suelo === 'barro' && U.clase !== 'inf' && !U.liviano) return 'b2.blando';   // en el barro: sólo gente a pie, alambrado y señuelo
+    const hunde = BastionV2.noAguanta(suelo, tipo); if (hunde) return hunde;   // cada suelo aguanta lo suyo (BASTION2.suelos)
     if (!sinPlata && this.dinero < U.costo) return 'bastion.sinDinero';
     const ocupa = this.ocupadaPor(c, f);
     const suelta = this.unidades.find(u => u !== mueve && !u.bloquea && !u.invisible && !u.llevado && u.c === c && u.f === f && (!esInf(u) || u.listo));   // alambrado, señuelo, un caído o alguien en su puesto

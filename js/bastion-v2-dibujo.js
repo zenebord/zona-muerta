@@ -834,27 +834,37 @@ const BastionV2Dibujo = {
       const arriba = cam.proyectar(z.x + R * 0.45, z.y - R / 1.3);
       cartel(t('b2.aCubierto'), arriba.x, arriba.y - 4, '#bcd9ff');
     }
-    // Techos: con infantería en la mano (por poner o por mover), los contenedores libres quedan marcados
+    // Lo que se tiene en la mano (por poner o por mover): dónde entra según el suelo y, si es gente, los puestos altos libres
     const enMano = j.colocando === 'mover' ? j.moviendo && (j.moviendo.tipo === 'bunker' ? j.moviendo.dentro[j.moviendo.dentro.length - 1] : j.moviendo) : null;
-    const tipoEnMano = enMano ? enMano.tipo : j.colocando, suben = !j.terminado && B.unidades[tipoEnMano] && B.unidades[tipoEnMano].clase === 'inf';
-    if (suben) for (const o of j.obstaculos || []) {
-      const alto = BASTION2.techos[o.tipo]; if (!alto || j.motivoNoColocar(tipoEnMano, o.c, o.f, true, j.colocando === 'mover' && j.moviendo && j.moviendo.tipo !== 'bunker' ? j.moviendo : null)) continue;
-      const q = [[-21, -7], [21, -7], [21, 7], [-21, 7]].map(([dx, dy]) => cam.proyectar(o.x + dx, o.y + dy / 1.3, alto)), m = cam.proyectar(o.x, o.y, alto + 9 + 3 * Math.sin(ahora / 200));
-      ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
-      ctx.fillStyle = 'rgba(120,230,120,0.3)'; ctx.fill(); ctx.strokeStyle = 'rgba(190,255,190,0.85)'; ctx.lineWidth = 1.2; ctx.stroke();
-      ctx.fillStyle = '#c8ffc8'; ctx.beginPath(); ctx.moveTo(m.x, m.y - 5 * m.s); ctx.lineTo(m.x + 4.5 * m.s, m.y + 1.5 * m.s); ctx.lineTo(m.x - 4.5 * m.s, m.y + 1.5 * m.s); ctx.closePath(); ctx.fill();
+    const tipoEnMano = enMano ? enMano.tipo : j.colocando, UM = !j.terminado && B.unidades[tipoEnMano];
+    if (UM) {
+      const no = [], si = [];
+      for (let f = 0; f < j.filas; f++) for (let c = 0; c < j.cols; c++) {
+        const suelo = j.terrenoEn(c, f), porte = (BASTION2.suelos[suelo] || {}).porte;
+        if (suelo === 'agua' || porte === 'pared' || porte === 'alto' || j.obstaculoEn(c, f)) continue;   // ahí no va nada (los puestos altos se marcan aparte)
+        (BastionV2.noAguanta(suelo, tipoEnMano) ? no : si).push([c, f]);
+      }
+      // Si casi ningún suelo lo aguanta (una torreta en la arena), se marcan las celdas donde sí entra; si no, se tachan las que no
+      if (no.length > si.length) for (const [c, f] of si) pintarCelda(c, f, 'rgba(120,230,120,0.2)', 'rgba(180,245,180,0.6)');
+      else for (const [c, f] of no) {
+        const q = pintarCelda(c, f, 'rgba(240,80,70,0.2)');
+        ctx.strokeStyle = 'rgba(240,80,70,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[2].x, q[2].y); ctx.moveTo(q[1].x, q[1].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
+      }
+      // Puestos altos libres (el techo de un contenedor, una cornisa): sólo para la gente a pie
+      const mueve = j.colocando === 'mover' && j.moviendo && j.moviendo.tipo !== 'bunker' ? j.moviendo : null;
+      if (UM.clase === 'inf') for (const a of j.altosV2 || []) {
+        if (j.motivoNoColocar(tipoEnMano, a.c, a.f, true, mueve)) continue;
+        const q = a.techo ? [[-21, -7], [21, -7], [21, 7], [-21, 7]].map(([dx, dy]) => cam.proyectar(a.x + dx, a.y + dy / 1.3, a.alto))
+          : [[0, 0], [1, 0], [1, 1], [0, 1]].map(([i, k]) => cam.proyectar(B.baseX + (a.c + i) * W, B.arriba + (a.f + k) * H, a.alto));
+        const m = cam.proyectar(a.x, a.y - (a.techo ? 0 : 8), a.alto + 9 + 3 * Math.sin(ahora / 200));
+        ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
+        ctx.fillStyle = 'rgba(120,230,120,0.3)'; ctx.fill(); ctx.strokeStyle = 'rgba(190,255,190,0.85)'; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.fillStyle = '#c8ffc8'; ctx.beginPath(); ctx.moveTo(m.x, m.y - 5 * m.s); ctx.lineTo(m.x + 4.5 * m.s, m.y + 1.5 * m.s); ctx.lineTo(m.x - 4.5 * m.s, m.y + 1.5 * m.s); ctx.closePath(); ctx.fill();
+      }
     }
 
     const U = j.colocando && B.unidades[j.colocando];
     if (U && j.puntero && !j.terminado) {
-      // Lo pesado no va en el barro: esas celdas, tachadas
-      if (U.clase !== 'inf' && !U.liviano) {
-        for (let f = 0; f < j.filas; f++) for (let c = 0; c < j.cols; c++) {
-          if (j.terrenoEn(c, f) !== 'barro') continue;
-          const q = pintarCelda(c, f, 'rgba(240,80,70,0.2)');
-          ctx.strokeStyle = 'rgba(240,80,70,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(q[0].x, q[0].y); ctx.lineTo(q[2].x, q[2].y); ctx.moveTo(q[1].x, q[1].y); ctx.lineTo(q[3].x, q[3].y); ctx.stroke();
-        }
-      }
       const { c, f } = j.celdaDe(j.puntero.x, j.puntero.y);
       if (j.dentro(c, f)) {   // (el alcance de tiro en el piso lo pinta el modo de siempre)
         const p = j.centroCelda(c, f), arriba = U.clase === 'inf' && j.alturaEn(c, f);

@@ -810,12 +810,11 @@ body.tactil.en-pruebas .ficha-vitrina .fv-ayuda { display: none; }
 .ficha-vitrina .fv-ayuda kbd { font-size: .85em; padding: 0 4px; margin: 0 1px; }
 
 /* ===== Último bastión v2 (js/bastion-v2*.js): panel de 12 unidades, parte de la oleada, fichas y pantalla previa ===== */
-.boton.grande.bastion.v2 { border-style: dashed; }
 /* En el celular la pausa sube al lado del engranaje: abajo tapaba los botones de construir */
 body.en-bastion.tactil .extras-tactiles { left: calc(var(--izq) + 50px); right: auto; top: 8px; bottom: auto; justify-content: flex-start; flex-wrap: nowrap; }
 .bastion-parte, .bastion-info, .b2-barra, .b2-guia, .solo-b2 { display: none; }
 /* Lista de niveles: pocas tarjetas, que no se estiren a todo el ancho */
-.lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(200px, 300px)); justify-content: center; }
+.lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(200px, 270px)); justify-content: center; }
 #panel-bastion2-niveles { justify-content: safe center; overflow-y: auto; }
 #panel-bastion2-niveles > * { flex-shrink: 0; }
 #panel-bastion2-niveles .ayuda { max-width: 760px; }
@@ -941,9 +940,9 @@ body.en-bastion.bastion-v2 .bastion-info {
   #panel-bastion2-niveles { padding: 6px 12px; gap: 4px; }
   #panel-bastion2-niveles h2 { font-size: 16px; margin: 0; } #panel-bastion2-niveles .ayuda { font-size: 11px; margin: 0; }
   #panel-bastion2-niveles > .boton { padding: 4px 14px; font-size: 12px; }
-  .lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(180px, 250px)); gap: 8px; padding: 2px; }
-  .lista-bastion2 .tarjeta-mapa .vista { margin-bottom: 4px; } .lista-bastion2 .tarjeta-mapa h3 { font-size: 13px; margin: 0 10px 2px; }
-  .lista-bastion2 .tarjeta-mapa p { font-size: 11px; line-height: 1.25; margin: 0 10px; } .lista-bastion2 .tarjeta-mapa .etiqueta { margin: 4px 10px 0; font-size: 10px; }
+  .lista-bastion2 { grid-template-columns: repeat(auto-fit, minmax(150px, 196px)); gap: 8px; padding: 2px; }   /* cuatro niveles en una fila */
+  .lista-bastion2 .tarjeta-mapa .vista { margin-bottom: 4px; } .lista-bastion2 .tarjeta-mapa h3 { font-size: 12.5px; margin: 0 8px 2px; }
+  .lista-bastion2 .tarjeta-mapa { padding-bottom: 8px; } .lista-bastion2 .tarjeta-mapa p { font-size: 10.5px; line-height: 1.22; margin: 0 8px; } .lista-bastion2 .tarjeta-mapa .etiqueta { margin: 4px 8px 0; font-size: 9.5px; }
   #panel-bastion2-niveles .fila-botones { margin-top: 4px; } #panel-bastion2-niveles .fila-botones .boton { padding-top: 5px; padding-bottom: 5px; }
   #panel-bastion2 { padding-top: 4px; gap: 3px; } #panel-bastion2 h2 { font-size: 15px; } #panel-bastion2 .ayuda, .b2-reglas li:nth-child(n+2) { display: none; }
   /* En el celular el botón de volver va arriba a la derecha: abajo tapaba la ficha */
