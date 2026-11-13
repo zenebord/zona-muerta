@@ -29,6 +29,11 @@ const mezclaPose = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y
 const CICLO_PISTOLA = 70;           // ms que tarda la corredera de la pistola en ir atrás y volver después de cada tiro
 const PAUSA_MONTAR = 400;          // ms de más entre meter el cargador y tirar de la corredera o la manija (arma vacía)
 const ACCION_MANUAL = { remington700: 'cerrojo', mosin: 'cerrojo', mossberg: 'bombeo', rem870: 'bombeo', winchester1894: 'palanca', winchester1887: 'palanca' };
+// Las que se recargan solas (fusiles, metralletas, escopetas semiautomáticas): con cada tiro el cerrojo va atrás, la
+// recámara queda abierta un instante (por ahí sale la vaina) y vuelve con otra bala. Nunca dura más que un tiro.
+const CICLO_CERROJO = 130;          // ms del cerrojo atrás y adelante (js/armas-recamara.js dibuja la ventana)
+const recargaSola = (arma, d) => !!(d && d.casquillo) && arma.recargaTipo !== 'cargador-pistola' && !ACCION_MANUAL[arma.id];
+const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].ciclo) || CICLO_CERROJO, arma.cadencia * 0.75);
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
@@ -76,6 +81,8 @@ class Jugador {
     this.sinCargador = false;          // el arma está sin cargador, a mitad de la recarga
     this.golpeEn = -1000;              // momento en que algo encastró: el arma rebota un poquito
     this.ultimoDisparo = -10000;       // bien atrás, para poder disparar desde el primer cuadro
+    this.tiroEn = -10000;              // último tiro de verdad (el gatillo en vacío no mueve el cerrojo)
+    this.vainaPendiente = null;        // la vaina del último tiro, que sale cuando el cerrojo llega atrás
     this.invulnerableHasta = 0;
     this.montada = null;               // ametralladora fija que está usando, si hay
     this.fase = 0; this.retroceso = 0; this.caminando = false;
@@ -100,6 +107,12 @@ class Jugador {
     const paso = dt * 60;
     this.ahora = juego.ahora;
     this.caminando = false;
+    // La vaina del último tiro sale por la ventana cuando la corredera o el cerrojo llegaron atrás
+    const vaina = this.vainaPendiente;
+    if (vaina && this.ahora >= vaina.en) {
+      this.vainaPendiente = null;
+      if (!this.montada && this.arma().id === vaina.arma) { const p = this.puntoArma('expulsion'); juego.casquillos.push(new Casquillo(p.x, p.y, this.direccion, vaina.tipo)); }
+    }
     // Golpe cuerpo a cuerpo en curso: pega en su momento y termina
     const g = this.golpeActual;
     if (g) {
@@ -205,12 +218,18 @@ class Jugador {
     if (this.municionActual() <= 0) { Audio_.vacio(); this.ultimoDisparo = ahora; return false; }
     if (!this.montada && arma.categoria === 'granada') { this.ultimoDisparo = ahora; this.iniciarLanzamiento(juego, arma); return true; }
     if (this.montada) this.montada.municion--; else this.municion[arma.id]--;
-    this.ultimoDisparo = ahora;
+    this.ultimoDisparo = ahora; this.tiroEn = ahora;
     this.retroceso = 1;
     const boca = this.puntoArma('boca'), expulsion = this.puntoArma('expulsion');
     const accion = this.montada ? null : ACCION_MANUAL[arma.id];
     const tipoCasquillo = this.montada ? 'grande' : DIBUJO_ARMAS[arma.id].casquillo;
-    juego.dispararArma(arma, boca.x, boca.y, this.direccion, tipoCasquillo && !accion ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null);
+    // La vaina no sale en el momento del tiro sino cuando la corredera (pistolas) o el cerrojo llegan atrás y la
+    // recámara queda abierta; las de acción manual la escupen al accionar (iniciarCiclo); la M2, enseguida
+    if (!this.montada && tipoCasquillo && !accion) {
+      const retraso = arma.recargaTipo === 'cargador-pistola' ? 20 : cicloCerrojo(arma) * 0.3;
+      this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id };
+    }
+    juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null);
     Audio_.disparo(arma.categoria, arma.id);
     if (accion) this.iniciarCiclo(juego, arma, accion, tipoCasquillo);
     return true;
@@ -500,7 +519,7 @@ class Jugador {
     const empuje = this.retroceso * this.fuerzaRetroceso();
     const retroX = empuje * (corta ? 2.4 : 3.2), retroY = empuje * (corta ? 1.6 : 0.4);
     const e = { origen: { x: base.x - retroX, y: base.y - retroY }, retroX, retroY, empuje, incl: 0, apunta: 0, apoyo: null, mano: null, manoGatillo: { x: 0, y: 0 },
-      sinCargador: this.sinCargador, corredera: 0, abierto: 0, bombeo: 0, palanca: 0, tapa: 0, peine: null, enMano: null, rotMano: 0, mirar: 0 };
+      sinCargador: this.sinCargador, corredera: 0, cerrojo: 0, recamara: null, abierto: 0, bombeo: 0, palanca: 0, tapa: 0, peine: null, enMano: null, rotMano: 0, mirar: 0 };
     if (arma.cuerpo && !this.montada) {
       // Cuerpo a cuerpo: guardia → alzar (38 %) → bajar rápido (hasta el 55 %, ahí pega) → volver a la guardia
       const guardia = arma.unaMano ? GOLPE.guardiaUnaMano : GOLPE.guardia, fin = arma.poder === 'escudo' || arma.poder === 'lanza' ? GOLPE.lanzar : GOLPE.golpe;
@@ -521,7 +540,18 @@ class Jugador {
     if (!this.montada && arma.recargaTipo === 'cargador-pistola' && municion === 0) e.corredera = 1;   // corredera trabada atrás
     if (!this.montada && arma.recargaTipo === 'cargador-pistola' && !this.recarga) {                    // con cada tiro va atrás y escupe la vaina
       const t = ahora - this.ultimoDisparo;
-      if (t >= 0 && t < CICLO_PISTOLA) e.corredera = Math.max(e.corredera, t < 20 ? t / 20 : 1 - (t - 20) / (CICLO_PISTOLA - 20));
+      if (t >= 0 && t < CICLO_PISTOLA) {
+        e.corredera = Math.max(e.corredera, t < 20 ? t / 20 : 1 - (t - 20) / (CICLO_PISTOLA - 20));
+        e.recamara = t < 20 ? 'sale' : municion > 0 ? 'entra' : null;   // a los 20 ms la vaina sale (vainaPendiente)
+      }
+    }
+    if (!this.montada && !this.recarga && recargaSola(arma, d)) {   // fusiles, metralletas y semiautomáticas: el cerrojo va y vuelve
+      const t = ahora - this.tiroEn, dur = cicloCerrojo(arma);
+      if (t >= 0 && t < dur) {
+        const p = t / dur;   // abre rápido (con la vaina servida), queda atrás (ahí la escupe) y cierra con la bala nueva
+        e.cerrojo = p < 0.28 ? suavizar(p / 0.28) : p < 0.5 ? 1 : 1 - suavizar((p - 0.5) / 0.5);
+        e.recamara = p < 0.3 ? 'sale' : p >= 0.5 && municion > 0 ? 'entra' : null;
+      }
     }
     if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
     e.sinPasador = !!this.pasadorFuera;
@@ -551,6 +581,9 @@ class Jugador {
       if (f.pulso) {                                                     // cerrojo, bomba o palanca que va y vuelve
         const v = Math.sin(q * Math.PI);
         e[f.pulso.que] = Math.max(e[f.pulso.que] || 0, v);
+        // Por la ventana: al accionar después de un tiro sale la vaina (hasta la mitad) y después entra otra bala;
+        // al cargar la primera, la recámara estaba vacía y solo entra
+        e.recamara = this.ciclo === linea && q < 0.5 ? 'sale' : q >= 0.5 && municion > 0 ? 'entra' : null;
         if (f.pulso.que === 'palanca') e.manoGatillo = { x: 2 * v, y: 5 * v };
       }
       if (this.recarga) { const t = Math.min(ahora - linea.inicio, linea.fin - ahora); e.mirar = suavizar(limitar(t / 200, 0, 1)); }

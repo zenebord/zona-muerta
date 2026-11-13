@@ -559,6 +559,17 @@ Las de acción manual (Remington, Mosin, Mossberg y las dos Winchester) accionan
 bomba o la palanca después de cada tiro, y el casquillo sale recién ahí. Los revólveres y la
 recortada no tiran casquillos al disparar: los sueltan cuando se abren para recargar.
 
+**Recámara a la vista** (`js/armas-recamara.js`): el casquillo no aparece en el momento del tiro, sale por la
+ventana de expulsión cuando la recámara está abierta. En las que se recargan solas (Uzi, AK-47, M16, MP5,
+Thompson, Vector, Garand, SVD, Barrett, SPAS-12, AA-12, Saiga-12, Benelli) el cerrojo va atrás con cada tiro:
+la ventana, que en reposo muestra el costado del cerrojo, queda abierta un instante con la vaina tomada de la uña
+del extractor; a los 0,3 del ciclo la escupe, y al cerrar se ve entrar la bala nueva. El ciclo dura 130 ms (160 en
+la Barrett), y nunca más que tres cuartos de la cadencia: en la AK, 75 ms. En las pistolas la ventana se abre con
+la corredera (la vaina sale a los 20 ms; si se vació, la recámara queda abierta), en las de bomba con la bomba y
+en las de palanca con la palanca. La manija de carga va con el portacerrojo donde en el arma real va (AK, SVD,
+Saiga, SPAS-12, Benelli, Uzi, Thompson); en la M16, la MP5, la Vector, la Barrett y la AA-12 queda quieta. En
+cámara lenta (L, en el campo de pruebas) se ve cada paso.
+
 La granada M67 no sale de golpe: la mano de apoyo engancha la anilla y saca el pasador (se oye el tirón),
 el brazo va atrás, lanza (salta la cuchara) y la mano suelta el pasador, que cae al piso. La granada se
 gasta recién al soltarla.

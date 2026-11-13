@@ -79,7 +79,7 @@ const M2_NUEVOS = {
   garand: modelo({ casquillo: 'bala',
     anclas: { manoDelantera: [33, 0.8], cargador: [10.5, -4.6], corredera: [19.4, -3.8], expulsion: [11, -4.6], boca: [80.6, -3.0] },
     dibujarCm(ctx, e) {
-      const ab = Math.max(e.corredera, e.abierto);
+      const ab = Math.max(e.corredera, e.abierto, e.cerrojo || 0);   // también va atrás con cada tiro
       // Culata de una pieza: talón alto, lomo casi recto, garganta curva, y el fuste que sigue bajo el cañón
       pintar(ctx, suave([[-30, 0.2], [-12, -0.9], [-4, -1.5], [-0.4, -1.6], [17, -1.6], [44.6, -1.8], [64.7, -1.8], [65.2, -0.6], [64.7, 0.2],
         [45, 0.5], [17, 2.4], [8.4, 2.7], [2.2, 2.6], [-2.4, 3.6], [-6, 4.4], [-12, 7.0], [-22, 10.2], [-30, 12.0], [-30.4, 6]], 0.9, 4), NOGAL_GARAND);
