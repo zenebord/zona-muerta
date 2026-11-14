@@ -320,6 +320,7 @@ kbd {
 .boton-tactil.apretado { background: rgba(201,169,110,.6); color: var(--noche); transform: scale(.94); }
 .boton-tactil.fuego.apretado { background: rgba(229,57,53,.75); color: var(--texto); }
 .tactil:not(.en-pruebas) .solo-pruebas { display: none; }
+.tactil:not(.con-mira) .solo-mira { display: none; }   /* MIRA: sólo con un rifle con mira telescópica en la mano */
 .en-entrenamiento .boton-tactil.boton-zombie { display: none; }   /* el zombie de prueba es solo del campo de pruebas */
 /* Defensa ultra: ▲ ▼ cambian de carril donde estaba la barra de caminar; sin caminar, saltar ni agacharse */
 .solo-ultra { display: none; }

@@ -38,6 +38,14 @@ class Proyectil {
       if (juego.particulas.length < 600) juego.particulas.push(new Particula(this.x - this.direccion * 6, this.y + (Math.random() - 0.5) * 2, -this.direccion * 0.4, -0.15 - Math.random() * 0.3, '#a49c92', 0.7, 3 + Math.random() * 3, false));
     }
     if (this.arma.fuego) this.vx *= Math.pow(0.986, paso);   // la llama frena con el aire
+    if (this.objetivo) {   // tiro con mira telescópica (js/jugador.js): corrige el rumbo hacia el pecho del zombie, no falla
+      const z = this.objetivo;
+      if (z.estado === 'muerto' || !juego.zombies.includes(z)) this.objetivo = null;
+      else {
+        const c = z.caja(), dx = c.x + c.w / 2 - this.x, dy = c.y + c.h * 0.4 - this.y, d = Math.hypot(dx, dy) || 1, v = Math.hypot(this.vx, this.vy);
+        this.vx = dx / d * v; this.vy = dy / d * v; this.direccion = Math.sign(this.vx) || this.direccion;
+      }
+    }
     this.x += this.vx * paso;
     this.y += this.vy * paso;
     this.recorrido += Math.abs(this.vx * paso);
@@ -85,7 +93,8 @@ class Proyectil {
       this.mecha -= dt * 1000;
       if (this.mecha <= 0) { this.explotar(juego); return; }
     }
-    if (this.recorrido > this.arma.alcance || this.y > ALTO + 50 || (!this.arma.explosivo && this.y >= piso)) {
+    // (la bala de la mira no se corta contra el piso ni el borde de la montaña mientras siga a su zombie: no falla)
+    if (this.recorrido > this.arma.alcance || this.y > ALTO + 50 || (!this.arma.explosivo && !this.objetivo && this.y >= piso)) {
       if (this.arma.fuego && this.y >= piso && Math.random() < 0.35 && juego.explosiones.length < 400) juego.explosiones.push(new FuegoPiso(this.x, piso));   // el combustible sigue ardiendo en el piso
       if (this.arma.explosivo && !this.arma.mecha) this.explotar(juego); else this.vivo = false;
     }

@@ -681,9 +681,22 @@ recarga a la derecha, y abajo cambio de arma, M2, cajas (en el campo de pruebas)
 | `S` o clic derecho | Recargar (las escopetas cargan cartucho por cartucho; disparar interrumpe la carga). El clic derecho no abre el menú del navegador |
 | `1` … `5` | Grupo de armas: 1 pistolas, 2 metralletas, 3 rifles, 4 escopetas, 5 especiales (otra vez: la siguiente del grupo) |
 | `Q` / `E`, `G` / `H` o rueda del mouse | Arma anterior / siguiente |
+| `D` | Mira telescópica (sólo Remington 700, Barrett M82, Mosin-Nagant y Dragunov SVD): apunta sola al zombie más cercano; otra vez, la quita |
 | `A` | Defensa zombie: pedir un ataque aéreo (cada 20 s) |
 | `C` | Campo de pruebas: menú de cajas y ametralladoras (`X` borra todo lo generado) |
 | `P` / `Esc` | Pausa |
+
+**Mira telescópica** (`D`; en el celular, el botón MIRA que aparece con esas armas; en todos los modos menos el
+bastión, donde la tecla es de otra cosa): con un rifle que la tiene dibujada (Remington 700, Barrett M82, Mosin-Nagant
+de tirador y Dragunov SVD) apunta sola al zombie vivo más cercano en línea recta, también más abajo en la montaña o a
+los chiquitos sin agacharse, hasta volver a apretarla (en Defensa ultra, el más cercano de su carril). El personaje se
+da vuelta hacia él, el arma gira sobre la cantonera hasta 34° y la cabeza la acompaña; la retícula (anillo de borde
+difuso, cuatro postes, círculo y cruz finos, como la imagen de referencia que mandó Enzo) se cierra sobre el zombie y
+lo sigue. La bala no falla: sale derecho al pecho, corrige el rumbo si se mueve y no se corta contra el borde de la
+montaña. Si el zombie muere pasa solo al siguiente, y no salta a otro por un pelo (sólo si está 10 más cerca).
+Probado con las cuatro: un zombie 100 px más arriba y otros de 60 a 160 px más abajo murieron de un tiro; en una
+partida normal, 10 de 10 tiros pegaron. Código: `alternarMira` y `actualizarMira` en `js/jugador.js`,
+`Proyectil.objetivo` en `js/objetos.js` y `dibujarMiraTelescopica` en `js/jugador-dibujo.js`.
 
 ## Armas y tiros para matar un zombie
 
