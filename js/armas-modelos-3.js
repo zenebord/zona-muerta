@@ -1637,7 +1637,9 @@ DIBUJO_ARMAS.m16.anguloEmpunadura = 0.42;   // el pistolete del AR va bien incli
 /* ======================= REVISIÓN CON FOTOS: SPAS-12, SVD, BARRETT, REVÓLVERES ======================= */
 
 // Revólveres calcados de fotos del lado izquierdo, espejadas. Las dos piezas comunes: el tambor estriado (se
-// vuelca hacia afuera para recargar) y el guardamonte redondo con la cola del disparador.
+// vuelca hacia afuera para recargar) y el guardamonte redondo con la cola del disparador. El armazón tiene hueca la
+// ventana donde va el tambor: cerrado, el tambor la tapa entera; al volcarlo se ve a través de ella lo que hay detrás,
+// como en uno de verdad, y al cerrarlo se vuelve a tapar.
 function tamborRevolver(ctx, e, P, x0, y0, x1, y1, color) {
   const sil = Pincel.silueta, [a, b] = P(x0, y0), [c, d] = P(x1, y1), xa = Math.min(a, c), xb = Math.max(a, c);
   ctx.save(); ctx.translate(-e.abierto * 1.5, e.abierto * 4.2);
@@ -1670,6 +1672,7 @@ const PY_FORMAS = {
   cola: suave(PYF([[440, 333], [452, 334], [452, 350], [446, 368], [434, 384], [430, 380], [438, 362], [442, 345]]), 0.3, 2),
   martillo: suave(PYF([[480, 222], [495, 215], [512, 214], [530, 212], [537, 217], [520, 224], [505, 232], [497, 245], [488, 240]]), 0.3, 2),
   cacha: suave(PYF([[498, 290], [540, 275], [580, 285], [612, 330], [635, 400], [650, 450], [657, 485], [537, 487], [530, 460], [515, 410], [503, 370], [492, 340]]), 0.8, 4),
+  ventana: suave(PYF([[370, 229], [451, 229], [451, 301], [370, 301]]), 0.4, 3),   // donde va el tambor: con el tambor afuera se ve a través
 };
 reemplazar('python', { casquillo: null, casquilloVaciado: 'pistola', origen: PISTOLA,
   anclas: { manoDelantera: PY(500, 380), cargador: PY(410, 265), corredera: PY(410, 265), expulsion: PY(410, 265), boca: PY(68, 248) },
@@ -1681,7 +1684,7 @@ reemplazar('python', { casquillo: null, casquilloVaciado: 'pistola', origen: PIS
     pintar(ctx, F.guarda, INOX, { brillo: 0.55, huecos: [F.hueco] });
     pintar(ctx, F.cola, INOX, { brillo: 0.5 });
     pintar(ctx, F.martillo, '#b9bcc1', { brillo: 0.5 });
-    pintar(ctx, F.armazon, INOX, { brillo: 0.6 });
+    pintar(ctx, F.armazon, INOX, { brillo: 0.6, huecos: [F.ventana] });
     if (!sil) { trazo(ctx, 'rgba(60,62,66,0.35)', 0.12, [P(345, 300), P(365, 300)]); trazo(ctx, 'rgba(60,62,66,0.35)', 0.12, [P(345, 312), P(365, 312)]); }
     pintar(ctx, PYF([[460, 204], [462, 196], [478, 196], [478, 204]]), '#2a2c30');                                // alza
     // Cañón, costilla ventilada, guion y varilla
@@ -1713,6 +1716,7 @@ const MG_FORMAS = {
   hueco: suave(MGF([[420, 1116], [482, 1116], [486, 1132], [480, 1150], [460, 1158], [436, 1154], [424, 1142], [420, 1128]]), 0.8, 4),
   cola: suave(MGF([[455, 1112], [466, 1112], [466, 1130], [460, 1146], [450, 1156], [447, 1152], [454, 1138], [456, 1125]]), 0.3, 2),
   martillo: suave(MGF([[505, 1032], [515, 1024], [530, 1022], [545, 1015], [549, 1021], [532, 1030], [520, 1040], [510, 1046]]), 0.3, 2),
+  ventana: suave(MGF([[400, 1022], [472, 1022], [472, 1088], [400, 1088]]), 0.4, 3),   // donde va el tambor: con el tambor afuera se ve a través
   cacha: suave(MGF([[496, 1100], [535, 1072], [580, 1068], [598, 1080], [607, 1130], [622, 1180], [636, 1235], [634, 1246], [545, 1246], [536, 1233], [531, 1219], [539, 1206], [527, 1194], [519, 1180], [526, 1167], [513, 1155], [503, 1145], [497, 1128]]), 0.7, 4),
 };
 reemplazar('magnum', { casquillo: null, casquilloVaciado: 'pistola', origen: PISTOLA,
@@ -1724,7 +1728,7 @@ reemplazar('magnum', { casquillo: null, casquilloVaciado: 'pistola', origen: PIS
     pintar(ctx, F.guarda, INOX, { brillo: 0.55, huecos: [F.hueco] });
     pintar(ctx, F.cola, INOX, { brillo: 0.5 });
     pintar(ctx, F.martillo, '#b4b7bc', { brillo: 0.5 });
-    pintar(ctx, F.armazon, INOX, { brillo: 0.6 });
+    pintar(ctx, F.armazon, INOX, { brillo: 0.6, huecos: [F.ventana] });
     pintar(ctx, MGF([[470, 997], [472, 990], [505, 989], [505, 997]]), '#141416');                                   // alza
     if (!sil) { ctx.beginPath(); ctx.ellipse(...P(505, 1066), 0.85, 0.48, 0.25, 0, Math.PI * 2); ctx.fillStyle = '#9ea2a8'; ctx.fill(); ctx.strokeStyle = '#3a3c40'; ctx.lineWidth = 0.12; ctx.stroke(); }   // retén del tambor
     // Cañón con costilla ventilada, guion y ranura de la varilla

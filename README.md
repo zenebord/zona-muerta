@@ -876,6 +876,7 @@ mientras el arma gira para cargarla ya va camino a la canana.
 | Cargador de pistola | Glock, Desert Eagle, Colt 1911 | Saca el cargador, toma otro del cinturón y lo mete. Si quedó vacía, la corredera está trabada atrás: la Glock y la Deagle la tiran, la 1911 suelta el retén. |
 | Tambor | Magnum .44 | Abre el tambor, boca arriba vacía los seis casquillos, baja el revólver a la altura de la canana, carga bala por bala y cierra. |
 | Cargador rápido | Colt Python | Abre, vacía, mete las seis juntas con el cargador rápido, lo suelta al piso y cierra. |
+| (los dos revólveres) | Magnum .44, Colt Python | La ventana del armazón donde va el tambor es hueca: con el tambor volcado se ve a través de ella lo que hay detrás, y al cerrarlo el tambor la vuelve a tapar entera (`ventana` en `PY_FORMAS` y `MG_FORMAS`, `js/armas-modelos-3.js`). |
 | Peine | Mosin-Nagant, Mauser C96 | Vacía: abre el cerrojo, apoya el peine, empuja las balas y al cerrar salta el peine. A medias: completa bala por bala. |
 | Peine en bloque | M1 Garand | Con la última bala el cerrojo queda trabado atrás y el peine vacío salta para arriba girando, con su «ping». Vacía: no toca la manija; apoya el peine lleno en la guía, lo empuja entero con el pulgar (peine y balas bajan juntos y desaparecen en el cajón) y, cuando la mano se va, el cerrojo salta adelante solo. A medias: completa bala por bala. |
 | Cerrojo | Remington 700 | Abre la recámara, pone bala por bala por arriba, metiéndola en la ranura de la recámara abierta (antes la bala se borraba unos centímetros antes), y cierra. |
