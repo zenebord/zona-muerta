@@ -684,17 +684,18 @@ Armas especiales de `js/armas-especiales.js`, que se engancha envolviendo métod
   sin nombres de marcas ni de películas.
 - **Sonidos del cazador** (`js/audio.js`, síntesis propia: ni grabaciones ni copias de películas o juegos; se
   escuchan fuera del juego con `Audio_.generadores` en un `OfflineAudioContext`):
-  - *Susurro* «ki ki ki ki… ma ma ma ma», una voz que susurra con fuerza y a ritmo. El «ki» es casi un «ch», como se
-    oye siempre: la «k» estalla, al soltarla sale el aire áspero (~90 ms, con el pico cerca de 2,85 kHz) y queda la
-    «i» susurrada, por resonadores en cadena como el tracto vocal (formantes 420, ~2300, 2980 y 3650 Hz; nada por encima
-    de 5 kHz). Las medidas salen de «key» y «kill» dichos por voces de referencia (aire de 70–90 ms con el pico entre
-    2,8 y 3,3 kHz). La «m», un murmullo nasal grave, y la «a», aire con un hilo de voz grave (88 Hz, más bajo en cada
-    «ma») por sus formantes (780, 1180, 2500 y 3400 Hz). Lento y parejo: un «ki» y un «ma» cada 0,5 s, con un pulso
-    de pausa entre los dos grupos que llena el eco; cada «ki» suena casi tan fuerte como cada «ma» (−1 dB A; antes,
-    −4 dB). Eco al mismo paso (0,5 s), que rebota de izquierda a derecha y se oscurece, y una sala larga. `SUSURRO`
-    (ritmo, voz, eco) y `SILABA_KI` (explosión, «ch», «i», aspereza) en `js/audio.js` permiten probar variantes. Suena
-    al sacar el machete, medio segundo después, cuando se apaga el «shing» (nunca antes de que termine el anterior, así
-    no se pisan) y, si pasaron 8 s del último, al matar con él o en 4 de cada 10 golpes.
+  - *Susurro* «ki ki ki ki… ma ma ma ma», medido contra una grabación de referencia del efecto clásico que eligió
+    Leandro. De ella se tomaron medidas, no sonido: queda a menos de 1 dB de la referencia en cada uno de sus 11
+    pulsos. Una sílaba cada 0,4 s de punta a punta, y el primer «ma» un pulso después del último «ki», sin pausa. El
+    «ki» es corto y casi un «ch»: un soplido ancho al soltar la «k», una resonancia angosta en 2,78 kHz que pica a los
+    55 ms (la mitad de la energía entre 2,6 y 3,6 kHz, como en la referencia) y una «i» floja que asoma a los 70 ms;
+    a los 150 ms ya está 17 dB abajo. La «m», un murmullo nasal grave, y la «a», aire con un hilo de voz grave (88 Hz,
+    más bajo en cada «ma») por sus formantes (780, 1180, 2500 y 3400 Hz). Volúmenes (dB A, re el primer «ki»):
+    «ki» 0 · 0 · −5 · −9,5; «ma» +6 · +6,5 · −2 · −7 y la cola del eco −14 · −20 · −27. Eco al mismo paso (0,4 s),
+    que rebota de izquierda a derecha y se oscurece, y una sala larga. `SUSURRO` (ritmo, eco, volumen de cada sílaba)
+    y `SILABA_KI` (la «k», el soplido, la resonancia, la «i», la aspereza) en `js/audio.js` permiten probar variantes.
+    Suena al sacar el machete, medio segundo después, cuando se apaga el «shing» (nunca antes de que termine el
+    anterior, así no se pisan) y, si pasaron 8 s del último, al matar con él o en 4 de cada 10 golpes.
   - *Machete*: al desenfundarlo, un roce metálico que sube y termina en un «shing»; el tajo, aire que barre de grave a
     agudo y vuelve, con el silbido del filo y el peso de la hoja, de izquierda a derecha; el golpe, el filo que muerde,
     el golpe sordo, la carne, el hueso si es fuerte y la hoja que queda vibrando (más la grabación de carne de siempre).
