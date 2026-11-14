@@ -469,13 +469,11 @@ const CABEZAS_SKIN = {
     pintura(ctx, c => c.ellipse(-9.8, hy + 3.8, 1.7, 1.5, 0, 0, Math.PI * 2), R, { sombra: 0.4, brillo: 0.4, linea: 0.4 });   // nudo
   },
 };
-function dibujarCabeza(ctx, S, C, ty, e) {
-  const hy = -78 + ty, tipo = S.cabeza;
-  // Cabeza de tamaño real (72 % del dibujo, unas 6,5 cabezas de alto en total) con el mentón arriba del cuello como pivote
-  const cabezaArriba = () => { ctx.translate(1, hy + 13.2); ctx.scale(0.72, 0.72); ctx.translate(-1, -(hy + 16.4)); };
-  if (tipo === 'casco-alado' || tipo === 'pelo-largo') { ctx.save(); cabezaArriba(); peloAtras(ctx, C, hy); ctx.restore(); }
-  // Cuello largo y fino, con el trapecio que baja al hombro, la nuez y el tendón
-  const piel = C.piel, cuelloColor = tipo === 'ninja' || tipo === 'casco-armadura' ? C.chaqueta : piel;
+// El cuello, con el trapecio que baja al hombro, la nuez y el tendón. Va ANTES que el torso (js/jugador-dibujo.js),
+// con la misma inclinación que la cabeza: así sale de adentro de la ropa y el cuello de la campera, del traje o el borde
+// de la remera lo abrazan. Dibujado después (encima), quedaba como un palo apoyado sobre la ropa, separado del cuerpo
+function dibujarCuello(ctx, S, C, ty) {
+  const tipo = S.cabeza, piel = C.piel, cuelloColor = tipo === 'ninja' || tipo === 'casco-armadura' ? C.chaqueta : piel;
   pintura(ctx, c => { c.moveTo(-4, -57.4 + ty); c.quadraticCurveTo(-2.4, -59 + ty, -2.4, -62 + ty); c.lineTo(-2.2, -66.4 + ty); c.lineTo(3, -66.2 + ty);
     c.quadraticCurveTo(2.8, -63.4 + ty, 3.6, -61 + ty); c.quadraticCurveTo(4.2, -58.6 + ty, 5.4, -57.4 + ty); }, ajustarColor(cuelloColor, -0.04), { sombra: 0.6 });
   if (!Pincel.silueta && cuelloColor === piel) {
@@ -483,6 +481,12 @@ function dibujarCabeza(ctx, S, C, ty, e) {
     raya(ctx, ajustarColor(piel, -0.28), 0.4, [[-0.4, -63.6 + ty], [1.4, -58.6 + ty]]);   // tendón
     detalle(ctx, ajustarColor(piel, -0.1), elipse(3, -61.6 + ty, 0.6, 1));                 // nuez
   }
+}
+function dibujarCabeza(ctx, S, C, ty, e) {
+  const hy = -78 + ty, tipo = S.cabeza, piel = C.piel;
+  // Cabeza de tamaño real (72 % del dibujo, unas 6,5 cabezas de alto en total) con el mentón arriba del cuello como pivote
+  const cabezaArriba = () => { ctx.translate(1, hy + 13.2); ctx.scale(0.72, 0.72); ctx.translate(-1, -(hy + 16.4)); };
+  if (tipo === 'casco-alado' || tipo === 'pelo-largo') { ctx.save(); cabezaArriba(); peloAtras(ctx, C, hy); ctx.restore(); }
   if (tipo === 'casco-armadura') for (let k = 0; k < 3; k++) {   // gola: anillos de metal articulados alrededor del cuello
     pintura(ctx, c => c.roundRect(-3.6 + k * 0.3, -66.2 + k * 2.6 + ty, 7.6 - k * 0.1, 2.4, 1), ajustarColor(C.chaqueta, 0.06 - k * 0.04), { sombra: 0.4, brillo: 0.4, linea: 0.4 });
   }

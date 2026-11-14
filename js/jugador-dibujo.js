@@ -413,7 +413,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const lejos = armarBrazo(this, 'lejos', -4 - golpe, -53 + ty, gestoGatillo(gestoLejos, [gatillo.x, gatillo.y], cuerpoACuerpo ? e.incl : angMano), { lado: -1, fondo: corta ? 7 : 3 });
   // Hombro izquierdo: con el arma al hombro el cuerpo se perfila y ese hombro va adelante (el codo cae bajo el arma);
   // con la pistola los hombros quedan de frente al blanco (posición isósceles)
-  const hombroX = (tapa || this.montada ? 4 : d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe, hombroY = -52 + ty;
+  const hombroX = (tapa || this.montada ? 4 : d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe + (tapa || this.montada ? 0 : e.adelantoHombro || 0), hombroY = -52 + ty;
   const opCerca = { lado: 1, fondo: corta ? -7 : -5, afuera: 0.12 };   // el codo del brazo de apoyo cae hacia abajo, casi en el plano
   // El cargador que lleva la mano de apoyo es el de esta arma (js/cargadores.js), girado como el arma y con el agarre en la mano
   const cargadorEnMano = !this.montada && e.enMano && ES_CARGADOR.has(e.enMano) && CARGADORES[arma.id];
@@ -434,7 +434,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
       cerca = armarBrazo(this, 'cerca', hombroX, hombroY, ante3 => { const B = manoDesdeAntebrazo(ante3, true, 10, 15, 0); return { gesto: 'guardia', B, O: guardia, pose: GESTOS_MANO.punio }; }, opCerca);
     }
   } else {
-    if (gestoCerca === 'apoyo') gestoCerca = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'viaja' : 'guardamanos';
+    if (gestoCerca === 'apoyo') gestoCerca = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'viaja' : d.apoyoVertical ? 'mango' : 'guardamanos';
     // Lo que lleva: el cargador se agarra a lo largo de su eje; lo demás, según hacia dónde apunta. Los dedos que envuelven
     // el cargador por el otro lado van antes que el arma (también cuando el cargador está puesto y la mano lo agarra ahí)
     let eje = null;
@@ -461,14 +461,12 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   }
   ctx.restore();
 
-  // Torso según el personaje (chaleco táctico, armadura, traje…)
+  // Cuello, torso según el personaje (chaleco táctico, armadura, traje…) y cabeza. El cuello va antes que el torso, para
+  // que salga de adentro de la ropa; cuello y cabeza con la misma inclinación (durante la recarga baja la mirada hacia el arma)
+  const inclinarCabeza = () => { ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62 - ty); };
+  ctx.save(); inclinarCabeza(); dibujarCuello(ctx, S, C, ty); ctx.restore();
   dibujarTorso(ctx, S, C, ty);
-
-  // Cuello y cabeza; durante la recarga baja la mirada hacia el arma
-  ctx.save();
-  ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62 - ty);
-  dibujarCabeza(ctx, S, C, ty, e);
-  ctx.restore();
+  ctx.save(); inclinarCabeza(); dibujarCabeza(ctx, S, C, ty, e); ctx.restore();
 
   // Cuerpo a tierra (suelta el arma y se tapa la cabeza con las dos manos) y la M2 (que se dibuja en el mundo): solo las manos
   if (tapa || this.montada) {
@@ -604,9 +602,10 @@ function dibujarColgado(ctx, j, S, C) {
     const sube = Math.max(0, c), baja = Math.max(0, -c);
     piernaArticulada(ctx, -2, -34, 0.35 + 0.75 * baja, 0.45 + 1.1 * baja, pantalonLejos, C);
     brazoSuelto(ctx, j, 'lejos', -3, -53, gestoGatillo('peldano', [7, -74 - 9 * baja], 0), Clejos);
+    const mirarArriba = () => { ctx.translate(2, -62); ctx.rotate(-0.18); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62); };   // mira hacia arriba
+    ctx.save(); mirarArriba(); dibujarCuello(ctx, S, C, 0); ctx.restore();
     dibujarTorso(ctx, S, C, 0);
-    ctx.save(); ctx.translate(2, -62); ctx.rotate(-0.18); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62);   // mira hacia arriba
-    dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
+    ctx.save(); mirarArriba(); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
     piernaArticulada(ctx, 3, -34, 0.35 + 0.75 * sube, 0.45 + 1.1 * sube, C.pantalon, C);
     brazoSuelto(ctx, j, 'cerca', 4, -52, gestoApoyo('peldano', [8, -74 - 9 * sube], { incl: 0 }), C);
     return;
@@ -615,8 +614,10 @@ function dibujarColgado(ctx, j, S, C) {
   const vaiven = Math.sin(j.ahora / 260) * 0.12;
   piernaArticulada(ctx, -2, -34, 0.1 + vaiven, 0.35, pantalonLejos, C);
   brazoSuelto(ctx, j, 'lejos', -3, -53, gestoGatillo('soga', [0, -78], 0), Clejos);
+  const colgado = () => { ctx.translate(1, -62); ctx.rotate(-0.12); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62); };
+  ctx.save(); colgado(); dibujarCuello(ctx, S, C, 0); ctx.restore();
   dibujarTorso(ctx, S, C, 0);
-  ctx.save(); ctx.translate(1, -62); ctx.rotate(-0.12); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
+  ctx.save(); colgado(); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
   piernaArticulada(ctx, 3, -34, 0.25 + vaiven, 0.5, C.pantalon, C);
   brazoSuelto(ctx, j, 'cerca', 4, -52, gestoApoyo('soga', [1, -70], { incl: 0 }), C);
 }

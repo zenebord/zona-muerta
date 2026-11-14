@@ -587,7 +587,7 @@ const TH_FORMAS = {
   culata: suave(THF([[385, 48], [445, 50], [600, 88], [604, 160], [590, 162], [440, 76], [400, 72]]), 1.0, 4),
 };
 reemplazar('thompson', { casquillo: 'bala',
-  anclas: { manoDelantera: TH(152, 78), cargador: TH(245, 95), corredera: TH(280, 9), expulsion: TH(300, 22), boca: TH(5, 30) },
+  anclas: { manoDelantera: TH(158, 84), cargador: TH(245, 95), corredera: TH(280, 9), expulsion: TH(300, 22), boca: TH(5, 30) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = TH_FORMAS, P = TH, NEGRO = '#232427';
     pintar(ctx, F.culata, MAT.madera, { lustre: true });
@@ -992,6 +992,8 @@ DIBUJO_ARMAS.recortada.moviles = {
 // bomba nervada y argolla en la culata. La foto muestra el lado izquierdo: MB la espeja y pasa píxeles a cm
 // (0,162 por píxel, origen arriba del pistolete). La bomba y la mano de apoyo corren juntas al bombear.
 const MB = (x, y) => [(430 - x) * 0.162, (y - 52) * 0.162];
+// (En las tres de bombeo la mano de apoyo toma la bomba por su cuarto de atrás: más adelante el brazo no llega y,
+// como la mano tiene que ir sobre la bomba que bombea, no puede correrse fuera de ella.)
 const MBF = pts => pts.map(p => MB(...p));
 const MB_FORMAS = {
   canon: MBF([[12, 17], [322, 16], [322, 31], [12, 31]]),
@@ -1002,7 +1004,7 @@ const MB_FORMAS = {
   cantonera: suave(MBF([[612, 47], [628, 49], [628, 121], [614, 122]]), 0.4, 2),
 };
 reemplazar('mossberg', { casquillo: 'escopeta',
-  anclas: { manoDelantera: MB(200, 54), cargador: MB(355, 52), corredera: MB(200, 54), expulsion: MB(350, 30), boca: MB(8, 24) },
+  anclas: { manoDelantera: MB(233, 54), cargador: MB(355, 52), corredera: MB(233, 54), expulsion: MB(350, 30), boca: MB(8, 24) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = MB_FORMAS, P = MB, GRIS = '#646b7b', CAJON = '#5b6272', ACERO = '#575d6b';
     pintar(ctx, F.tubo, ACERO, { brillo: 0.3 });
@@ -1177,7 +1179,7 @@ const R870_FORMAS = {
   bomba: suave(R870F([[326, 27], [455, 26], [459, 37], [455, 49], [330, 50], [324, 40]]), 0.9, 3),
 };
 reemplazar('rem870', { casquillo: 'escopeta',
-  anclas: { manoDelantera: R870(390, 49), cargador: R870(250, 47), corredera: R870(390, 49), expulsion: R870(270, 24), boca: R870(548, 17) },
+  anclas: { manoDelantera: R870(359, 49), cargador: R870(250, 47), corredera: R870(359, 49), expulsion: R870(270, 24), boca: R870(548, 17) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = R870_FORMAS, P = R870, NEGRO = '#25262a';
     pintar(ctx, F.tubo, MAT.pavonado, { brillo: 0.3 });
@@ -1750,7 +1752,7 @@ const SP_FORMAS = {
   tapa: suave(SPF([[512, 1138], [546, 1138], [546, 1162], [512, 1162]]), 0.4, 2),
 };
 reemplazar('spas12', { casquillo: 'escopeta',
-  anclas: { manoDelantera: SP(415, 1175), cargador: SP(215, 1160), corredera: SP(415, 1175), expulsion: SP(225, 1130), boca: SP(650, 1127) },
+  anclas: { manoDelantera: SP(370, 1175), cargador: SP(215, 1160), corredera: SP(370, 1175), expulsion: SP(225, 1130), boca: SP(650, 1127) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = SP_FORMAS, P = SP, NEGRO = '#2a2b2e', b = e.bombeo * 8, cb = Math.max(e.bombeo, e.cerrojo || 0) * 8;
     pintar(ctx, F.tubo, '#2b2d31', { brillo: 0.4 });
@@ -1992,7 +1994,7 @@ const MGL_FORMAS = {
   miraRiel: MGL_F([[228, 9], [264, 9], [264, 18], [228, 18]]),
 };
 reemplazar('mgl', { casquillo: null, casquilloVaciado: 'granada40',
-  anclas: { manoDelantera: MGL_P(343, 140), cargador: MGL_P(203, 120), corredera: MGL_P(150, 86), expulsion: MGL_P(203, 120), boca: MGL_P(443, 101) },
+  anclas: { manoDelantera: MGL_P(343, 152), cargador: MGL_P(203, 120), corredera: MGL_P(150, 86), expulsion: MGL_P(203, 120), boca: MGL_P(443, 101) },
   dibujarCm(ctx, e) {
     const sil = Pincel.silueta, F = MGL_FORMAS, T = MGL_TIERRA, N = MGL_NEGRO, P = MGL_P;
     // Culata ajustable: cuerpo con la costura ondulada, parte baja calada y cantonera de goma
@@ -2072,7 +2074,7 @@ reemplazar('mgl', { casquillo: null, casquilloVaciado: 'granada40',
     if (!sil) { for (let k = 0; k < 6; k++) trazo(ctx, 'rgba(235,230,215,0.7)', 0.14, [P(214 + k * 1.2, 46 - k * 4.5), P(217 + k * 1.2, 46 - k * 4.5)]); ctx.fillStyle = '#6fb7e8'; ctx.fillRect(...P(262, 24), 0.35, 4.6); }
   } });
 DIBUJO_ARMAS.mgl.culataCm = 22;
-DIBUJO_ARMAS.mgl.moviles = { manoDelantera: e => girarCm(...MGL_P(343, 140), ...MGL_P(196, 178), e.abierto * 0.5), cargador: e => girarCm(...MGL_P(203, 120), ...MGL_P(196, 178), e.abierto * 0.5) };
+DIBUJO_ARMAS.mgl.moviles = { manoDelantera: e => girarCm(...MGL_P(343, 152), ...MGL_P(196, 178), e.abierto * 0.5), cargador: e => girarCm(...MGL_P(203, 120), ...MGL_P(196, 178), e.abierto * 0.5) };
 
 /* ----- Cuerpo a cuerpo: todos de pie, la hoja o la cabeza hacia arriba, el origen donde agarra la mano ----- */
 // Bisel del filo: franja clara a lo largo del borde cortante (como el afilado de una hoja de verdad)
@@ -2296,3 +2298,8 @@ DIBUJO_ARMAS.lanzallamas = modelo({ casquillo: null, agarre: 'pecho', anguloEmpu
       ctx.restore();
     }
   } });
+
+// Las de empuñadura vertical adelante (la mano de apoyo en el centro de esa empuñadura): la agarra con el puño
+// cerrado, los nudillos hacia la boca, como se agarra un mango vertical (gesto «mango» de js/jugador-dibujo.js), y no
+// desde abajo como un guardamanos. Tampoco se corre hacia atrás cuando el brazo queda lejos (js/jugador.js): se estira.
+for (const id of ['vector', 'saiga', 'mgl', 'thompson', 'bazuca', 'lanzallamas']) if (DIBUJO_ARMAS[id]) DIBUJO_ARMAS[id].apoyoVertical = true;
