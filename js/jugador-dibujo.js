@@ -579,11 +579,15 @@ function dibujarUnidad(ctx, tipo, x, y, apunta = -Math.PI / 2, nueva = false, ar
   ctx.restore();
 }
 
-/* Peine apoyado en la guía del cajón, con las balas hacia adelante: van bajando al depósito a medida que el pulgar empuja */
+/* Peine apoyado en la guía del cajón, con las balas hacia adelante: van bajando al depósito a medida que el pulgar empuja.
+ * El en bloque del Garand entra entero, peine y balas juntos: lo que pasa el borde del cajón (0,3 cm debajo del punto de
+ * carga) queda adentro y no se ve */
 function dibujarPeineEnArma(ctx, peine, armaId) {
-  const cal = calibreDe(armaId), n = armaId === 'garand' ? 4 : 5, alto = n * cal.d * 1.08;
-  ctx.save(); ctx.translate(peine.x, peine.y); ctx.rotate(peine.incl || 0); ctx.scale(CM, CM); ctx.translate(0, -alto / 2 - 0.2);
-  dibujarPeine(ctx, armaId, Math.ceil(n * peine.restante));
+  const n = armaId === 'garand' ? 4 : 5, alto = altoPeine(armaId);
+  ctx.save(); ctx.translate(peine.x, peine.y); ctx.rotate(peine.incl || 0); ctx.scale(CM, CM);
+  if (peine.enBloque) { ctx.beginPath(); ctx.rect(-6, -30, 24, 30.3); ctx.clip(); ctx.translate(0, peine.baja); }
+  ctx.translate(0, -alto / 2 - 0.2);
+  dibujarPeine(ctx, armaId, peine.enBloque ? n : Math.ceil(n * peine.restante));
   ctx.restore();
 }
 

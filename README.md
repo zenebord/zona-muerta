@@ -790,7 +790,8 @@ mientras el arma gira para cargarla ya va camino a la canana.
 | Tambor | Magnum .44 | Abre el tambor, boca arriba vacía los seis casquillos, baja el revólver a la altura de la canana, carga bala por bala y cierra. |
 | Cargador rápido | Colt Python | Abre, vacía, mete las seis juntas con el cargador rápido, lo suelta al piso y cierra. |
 | Peine | Mosin-Nagant, Mauser C96 | Vacía: abre el cerrojo, apoya el peine, empuja las balas y al cerrar salta el peine. A medias: completa bala por bala. |
-| Cerrojo | Remington 700 | Abre la recámara, pone bala por bala por arriba y cierra. |
+| Peine en bloque | M1 Garand | Con la última bala el cerrojo queda trabado atrás y el peine vacío salta para arriba girando, con su «ping». Vacía: no toca la manija; apoya el peine lleno en la guía, lo empuja entero con el pulgar (peine y balas bajan juntos y desaparecen en el cajón) y, cuando la mano se va, el cerrojo salta adelante solo. A medias: completa bala por bala. |
+| Cerrojo | Remington 700 | Abre la recámara, pone bala por bala por arriba, metiéndola en la ranura de la recámara abierta (antes la bala se borraba unos centímetros antes), y cierra. |
 | Palanca | Winchester 1894 y 1887 | Gira el arma y carga por la ventana lateral de a una. Si estaba vacía, acciona la palanca: el lazo baja y se adelanta girando sobre su pivote (`GIRO_PALANCA`, unos 57°), con la mano del gatillo adentro. |
 | Bombeo | Mossberg 500, SPAS-12 | Da vuelta el arma y mete los cartuchos por abajo de a uno; bombea si estaba vacía. Disparar interrumpe la carga. |
 | Quiebre | Recortada, M79 | Se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe. |
@@ -862,7 +863,9 @@ pasa:
   punta (la de adelante).
 - **Cabeza**: se dibuja al 88 % alrededor del cuello (`ESCALA_CABEZA`), con lo que lleve puesto. Tal como estaba
   dibujada era un cuarto de la altura; con el cuerpo de proporciones reales quedaba grande. Vale para los nueve
-  personajes y para los zombies.
+  personajes y para los zombies. El cuello (`dibujarCuello` en `js/skins.js`) se dibuja antes que el torso y sale
+  de adentro de la ropa, con la sombra de la mandíbula; antes iba con la cabeza, encima del cuello de la camisa, y
+  en el cazador enmascarado y el centinela se veía despegado del cuerpo.
 - **Zombies** (`js/zombie.js`): los humanoides (las 15 variantes, el tóxico, los jefes y los 17 tipos del bastión,
   que comparten un solo dibujo de pierna, brazo y cabeza) usan los mismos huesos y los mismos rangos. La pierna es
   una forma de piel con su pie descalzo y encima el pantalón roto, que termina en flecos (`tramoCortado`); el brazo
@@ -919,6 +922,11 @@ de dorso, de palma, de canto o en escorzo.
 - **Lo que agarra va por detrás**: la palma y los nudillos lo tapan, y los dedos que lo envuelven por el otro lado
   se dibujan antes que él (cada mano va en dos capas). El cargador se agarra por el medio, con los dedos cruzando su
   costado y doblando en el canto, en vez de quedar parado encima del puño.
+- **Empuñadura vertical y bomba**: en las armas con mango adelante (Vector, Saiga-12, MGL, Thompson, bazuca,
+  lanzallamas: `apoyoVertical` en `js/armas-modelos-3.js`) la mano de apoyo cierra el puño en el mango, no lo sostiene
+  desde abajo como un guardamanos. En las de bombeo (Mossberg, Remington 870, SPAS-12) la mano queda en la bomba y al
+  bombear sólo la lleva atrás y adelante. Si el mango o la bomba quedan lejos, la mano no se corre: el hombro de
+  adelante se adelanta hasta 3 unidades y el brazo se estira.
 
 La granada M67 no sale de golpe: la mano de apoyo engancha la anilla y saca el pasador (se oye el tirón),
 el brazo va atrás, lanza (salta la cuchara) y la mano suelta el pasador, que cae al piso. La granada se
@@ -973,6 +981,10 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
   de armas, recortadas en eventos sueltos y elegidas según el arma. Fuentes y licencias en `sonidos/CREDITOS.md`.
 - Voces de zombies, pasos, impactos de bala en la carne y quejidos del protagonista también son grabaciones reales.
   El viento de fondo, la sirena de cada ronda y el latido con poca vida son sintetizados.
+- El «ping» del M1 Garand (el peine vacío que sale despedido) es síntesis modal desde la física del peine: el modo
+  principal cerca de 2,65 kHz con un gemelo que bate como una campana, la torsión a ×1,49, y se apaga en ~0,9 s.
+  Medido con la mezcla del juego: 7,8 dB A por debajo del disparo y, en su banda (2,2 a 3,3 kHz), de 11 a 19 dB por
+  encima de la cola del disparo durante el primer medio segundo.
 - Los disparos y explosiones son sintetizados y suenan a aire libre (sin eco y casi sin reverberación), salvo en el
   galpón del entrenamiento, donde tienen eco: disparos en capas (chasquido, explosión de gas, golpe grave
   y cola) con eco de exterior y reverberación, y gemidos con formantes de voz.
