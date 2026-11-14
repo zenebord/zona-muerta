@@ -516,6 +516,7 @@ class Jugador {
     if (this.montada || this.inventario.length < 2) return;
     this.indiceArma = (this.indiceArma + delta + this.inventario.length) % this.inventario.length;
     this.cancelarRecarga();
+    Audio_.sacarArma(this.arma());
   }
 
   // Ranura g (0..4): elige el grupo; si ya está en ese grupo, pasa a la siguiente arma del grupo.
@@ -526,7 +527,7 @@ class Jugador {
     if (!ids.length) return false;
     const k = ids.indexOf(this.arma().id);
     const siguiente = ids[(k + 1) % ids.length];
-    if (siguiente !== this.arma().id) { this.indiceArma = this.inventario.indexOf(siguiente); this.cancelarRecarga(); }
+    if (siguiente !== this.arma().id) { this.indiceArma = this.inventario.indexOf(siguiente); this.cancelarRecarga(); Audio_.sacarArma(this.arma()); }
     return true;
   }
 

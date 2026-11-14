@@ -941,7 +941,7 @@ de las montañas, y vuelven a aparecer a los 90 segundos.
 resolución) y, si en 3 s de partida el cuadro promedio tarda más de 24 ms (menos de unos 42 por segundo), baja un
 escalón (normal: 1×; baja: 0,75× y sin el bisel de las piezas) y avisa; recuerda lo medido en cada computadora.
 También se puede fijar a mano. En la portada, «Descargar el juego» (grande, con avance animado) arma un solo `zona-muerta.html` (unos
-7 MB, con el CSS, los 52 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
+8,6 MB, con el CSS, los 53 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
 Claude; su progreso y su configuración se guardan aparte.
 
 **El archivo descargado se actualiza solo.** `zona-muerta.html` es un lanzador (`js/lanzador.js`): trae el juego
@@ -985,9 +985,33 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
   principal cerca de 2,65 kHz con un gemelo que bate como una campana, la torsión a ×1,49, y se apaga en ~0,9 s.
   Medido con la mezcla del juego: 7,8 dB A por debajo del disparo y, en su banda (2,2 a 3,3 kHz), de 11 a 19 dB por
   encima de la cola del disparo durante el primer medio segundo.
-- Los disparos y explosiones son sintetizados y suenan a aire libre (sin eco y casi sin reverberación), salvo en el
-  galpón del entrenamiento, donde tienen eco: disparos en capas (chasquido, explosión de gas, golpe grave
-  y cola) con eco de exterior y reverberación, y gemidos con formantes de voz.
+- **Disparos grabados** (`js/sonidos-armas.js`, `DISPARO_REAL` en `js/audio.js`): armas reales disparadas al aire
+  libre, de The Free Firearm Sound Library (CC0). Cada arma del juego usa las tomas del arma real más parecida, con
+  el mismo cartucho cuando lo hay: Colt 1911, AK-47, AR-15 (M16), Mosin-Nagant (también el Dragunov), .30-06 de un
+  Springfield 1917 y un Tikka (Garand, Remington, y más lentas el Barrett y la M2), Winchester 1894, Bersa .380 (PPK),
+  el tiro suelto de una PPSh (Mauser C96), Walther 9 mm (Glock, Beretta), revólver .38 más lento (Magnum, Python),
+  Carl Gustav 9 mm (las subametralladoras) y cuatro escopetas del 12 distintas. Para que no suenen todos iguales,
+  cada tiro elige una de 2 a 4 tomas sin repetir la anterior y varía ±4 % el tono y ±0,5 dB el volumen. La Desert
+  Eagle, los revólveres grandes, el Barrett, la M2 y la recortada suman por debajo un golpe de presión sintetizado.
+  Al aire libre la toma trae la cola del campo; en el galpón y la cloaca se le suma sala y eco. Cada toma se preparó
+  con un limitador con anticipación (el pico del estallido, 14 dB abajo) y al mismo nivel percibido, y el volumen de
+  cada arma se calibró con la mezcla del juego: con el limitador de la mezcla quedan a la par de los sintetizados de
+  antes en ventanas de 50 y 125 ms (−0,8 y −0,7 dB de media) y con 2,8 dB más de cola en 250 ms. La minigun, el
+  láser, el lanzallamas y los lanzagranadas siguen sintetizados, y donde no se cargó `js/sonidos-armas.js` (la VR)
+  suenan los sintetizados de antes.
+- **Explosiones**: el cuerpo es una explosión grabada (Michel Baradari, CC BY 3.0) con otra sólo de graves por
+  debajo (untamedpixels, CC0), cada vez distintas y a otra velocidad, más la presión, el retumbo y la tierra que cae
+  sintetizados. Respecto de un tiro de AK pasaron de −6,6 / −6,2 / −1,6 dB (125, 250 y 500 ms) a −1,7 / +1,5 / +4,4,
+  con 31 dB más de graves (bajo 120 Hz) en el primer segundo.
+- **Sacar un arma** (elegirla del inventario en el campo de pruebas o el entrenamiento, juntarla de una caja o cambiar
+  de arma con las teclas; `Audio_.sacarArma`): foley grabado, no el tintineo de antes. Las largas salen de la espalda
+  (la correa corre por la ropa, tira, el arma llega a las manos y el anclaje tintinea apenas), las pistolas de la
+  funda, las hojas de la vaina, la granada del portagranadas; las muy pesadas, con ropa gruesa y metal grave. Sutil:
+  entre −14 y −19 dB respecto de un tiro (una recarga queda en −2). El machete del cazador sale en silencio, con su
+  susurro. La munición de una caja suena a bolsa y balas sueltas.
+- **Granada de mano** (foley grabado): tomarla del portagranadas, el pasador (el dedo engancha la anilla, el pasador
+  sale raspando de la espoleta y la anilla queda suelta; −7,5 dB respecto de un tiro) y, al soltarla, la cuchara que
+  salta con el resorte. Antes eran tonos de metal sintetizados.
 
 ## Estructura
 
@@ -996,11 +1020,12 @@ index.html        pantallas (menú, misiones, controles, juego)
 css/estilos.css   interfaz
 js/config.js      configuración guardada (volúmenes, idioma, calidad, táctiles, vibración)
 js/idioma.js      textos en español, portugués e inglés, y t('clave') para usarlos
-js/audio.js       disparos sintetizados con WebAudio y reproducción de las grabaciones de mecanismos
+js/audio.js       sonidos con WebAudio: reproduce las grabaciones (disparos, mecanismos, foley) y sintetiza el resto
 js/musica.js      música de cada escenario, tocada en vivo por capas según la intensidad
 js/sonidos-datos.js  grabaciones de mecanismos embebidas en base64 (generado desde sonidos/)
 js/sonidos-ambiente.js  zombies, pasos, impactos y voz embebidos en base64 (generado desde sonidos/ambiente/)
-sonidos/          recortes WAV de las grabaciones reales y sus créditos
+js/sonidos-armas.js  disparos, explosiones y foley en MP3, embebidos en base64 (generado desde sonidos/armas/)
+sonidos/          recortes de las grabaciones reales (WAV; los de armas/, MP3) y sus créditos
 js/armas.js       catálogo de armas (daño calibrado por tiros)
 js/dificultad.js  tabla de dificultades y tamaño de cada ronda
 js/dibujo.js      degradados, cubos, cilindros y sombras proyectadas (el "2.5D")

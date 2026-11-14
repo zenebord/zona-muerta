@@ -91,7 +91,7 @@ class Juego {
     j.indiceArma = j.inventario.indexOf(armaId);
     j.cancelarRecarga();
     j.ultimoDisparo = -1e9;                              // lista para tirar: no hereda la espera del arma anterior
-    Audio_.recoger();
+    Audio_.sacarArma(armaId);                            // la saca de la espalda, de la funda o de la vaina
     this.aviso(t('aviso.enMano') + ARMAS[armaId].nombre.toUpperCase(), 1300);
   }
 
@@ -599,7 +599,7 @@ class Juego {
       else if (!j.muerto && c.tocaA(j)) {
         const nueva = j.recoger(c.armaId), a = ARMAS[c.armaId];
         this.aviso(t(nueva ? 'aviso.nueva' : 'aviso.municion') + a.nombre.toUpperCase(), 1800);
-        Audio_.recoger();
+        if (nueva) Audio_.sacarArma(a); else Audio_.municion();
         if (this.mision) this.mision.alRecoger(a);
         if (c.especial) this.especialesTomadas.set(c.indiceMontana, this.tiempoJugado);
         if (this.historia && c.historia && nueva) this.historia.armas.push(c.armaId);
