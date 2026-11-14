@@ -49,6 +49,9 @@ const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].
 // Peine en bloque (M1 Garand): con la última bala el resorte lo despide vacío con su «ping» y el cerrojo queda trabado
 // atrás; para recargar se mete el peine lleno por arriba y el cerrojo cierra solo, sin tocar la manija
 const EN_BLOQUE = new Set(['garand']);
+// Escopeta de dos caños con martillos exteriores: con el primer tiro cae el de este lado, con el segundo el de enfrente.
+// [este lado, enfrente]: 1 montado, 0 caído
+const martillosRecortada = (municion, cargador) => { const tiros = cargador - municion; return [tiros >= 1 ? 0 : 1, tiros >= 2 ? 0 : 1]; };
 // Mira telescópica (tecla D, pedido de Enzo): con los rifles que la tienen dibujada, apunta sola al zombie vivo más
 // cercano (en línea recta: también más abajo o más arriba en la montaña, y a los chiquitos sin agacharse) hasta volver a
 // apretarla, y la bala no falla: sale derecho a él y lo sigue (Proyectil.objetivo). En todos los modos menos el bastión
@@ -509,6 +512,13 @@ class Jugador {
         l.fase('vaciar', 240, { a: 'arma', incl: -0.35, eventos: [[0.45, () => juego.expulsarCasquillos(this, gastados)]] });
         deAUna(gastados, (T - 760) / arma.cargador, 0.3, unidad, unidad === 'granada40' ? 'cargador-poner' : 'cartucho');
         l.fase('cerrar', 240, { a: 'arma', llegada: 0.3, ab: 0, snap: 0.25, incl: 0, eventos: [[0.35, s('cerrar')]] });
+        if (arma.id === 'recortada') {   // martillos exteriores (pedido de Enzo): cerrada, el pulgar monta los que cayeron, uno por uno
+          const caidos = martillosRecortada(this.municionActual(), arma.cargador);
+          l.inicial.martillos = caidos;
+          // el de enfrente está 2,8 cm más atrás y 2 más abajo que el de este lado (js/armas-modelos-3.js, E3_EJE_MARTILLO)
+          caidos.forEach((m, k) => { if (!m) l.fase('martillo' + (k + 1), 300, { a: 'corredera', llegada: 0.4, offset: k ? { x: -1.7, y: 1.2 } : { x: 0, y: 0 }, gesto: 'empuja', pulso: { que: 'tiraMartillo', recorrido: 1.4 }, eventos: [[0.55, s('martillo')]] }); });
+          if (caidos.includes(0)) { l.fase('volver', 200, { a: 'arma' }); l.ajustar(T + 450); }
+        }
         break;
       }
 
@@ -644,6 +654,7 @@ class Jugador {
         e.recamara = p < 0.3 ? 'sale' : p >= 0.5 && municion > 0 ? 'entra' : null;
       } else if (trabado) e.cerrojo = 1;
     }
+    if (!this.montada && arma.id === 'recortada') e.martillos = this.recarga && this.recarga.inicial.martillos ? this.recarga.inicial.martillos.slice() : martillosRecortada(municion, arma.cargador);
     if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
     e.sinPasador = !!this.pasadorFuera;
     if (!this.montada && arma.recargaTipo === 'cohete' && municion === 0) e.sinCargador = true;     // ya salió el cohete: el tubo queda vacío hasta recargar
@@ -682,6 +693,11 @@ class Jugador {
         }
       }
       if (this.recarga) { const t = Math.min(ahora - linea.inicio, linea.fin - ahora); e.mirar = suavizar(limitar(t / 200, 0, 1)); }
+      if (e.martillos) for (let k = 0; k < 2; k++) {   // el pulgar tira de la cresta: el martillo va atrás en la primera mitad y queda montado
+        const fm = linea.fases.find(x => x.nombre === 'martillo' + (k + 1));
+        if (fm && ahora >= fm.hasta) e.martillos[k] = 1;
+        else if (fm === f) e.martillos[k] = suavizar(limitar(pAccion / 0.5, 0, 1));
+      }
     }
     if (this.montada) { e.incl = 0; e.tapa = e.abierto; }
     else if (corta && linea && (linea.tipo === 'tambor' || linea.tipo === 'tambor-rapido')) { e.origen.x -= 6 * e.mirar; e.origen.y += 8 * e.mirar; }   // el revólver baja a la altura de la canana
