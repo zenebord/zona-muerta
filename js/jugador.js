@@ -329,10 +329,13 @@ class Jugador {
       encastrar(sonido)();
     };
     // De a una: la mano va a la cadera, trae una unidad y la mete en el arma
-    const deAUna = (cuantas, u, incl, objeto, sonido) => {
+    // De a una: la mano llega con la bala a la boca (el agujero de la recámara, la ventana, la boca del depósito) en el
+    // primer 70 % y en el resto la mete; la bala se ve hasta que entró. (Antes llegaba recién al final y la bala se
+    // borraba al 85 %, todavía en camino: parecía que la ponía lejos del agujero.) empuje: desde dónde la mete
+    const deAUna = (cuantas, u, incl, objeto, sonido, empuje = null) => {
       for (let k = 0; k < cuantas; k++) {
         l.fase('cadera', u * 0.45, { a: 'cadera', incl, mano: [[objeto, 0.5, 1]] });
-        l.fase('cargar', u * 0.55, { a: 'cargador', incl, mano: [[objeto, 0, 0.85]], alTerminar: meterUna(sonido) });
+        l.fase('cargar', u * 0.55, Object.assign({ a: 'cargador', incl, llegada: 0.7, mano: [[objeto, 0, 0.95]], alTerminar: meterUna(sonido) }, empuje));
       }
     };
     const abrirTambor = (dur) => l.fase('abrir', dur, { a: 'cargador', llegada: 0.5, ab: 1, incl: -0.1, eventos: [[0.5, s('abrir')]] });
@@ -416,7 +419,7 @@ class Jugador {
 
       case 'cerrojo':   // rifle de cerrojo con depósito interno: abre la recámara y pone bala por bala
         l.fase('abrir', 320, { a: 'corredera', llegada: 0.45, ab: 1, incl: -0.1, eventos: [[0.5, s('cerrojo-abrir')]] });
-        deAUna(arma.cargador - this.municionActual(), (T - 820) / arma.cargador, 0.05, 'bala', 'bala');
+        deAUna(arma.cargador - this.municionActual(), (T - 820) / arma.cargador, 0.05, 'bala', 'bala', { offset: { x: 0, y: -2.6 }, presionar: 3.2 });   // desde arriba, hacia adentro de la ranura
         l.fase('cerrar', 320, { a: 'corredera', llegada: 0.35, ab: 0, incl: 0, eventos: [[0.4, s('cerrojo')]] });
         l.fase('volver', 180, { a: 'arma' });
         break;
