@@ -938,15 +938,15 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
 - Cada zombie sale distinto: pelo, heridas, desgarros, manchas y a veces un brazo colgando. Al morir cae sobre un charco de sangre.
 - Los mecanismos de recarga (cargadores, correderas, cerrojos, bombeo, cartuchos, balas) son grabaciones reales
   de armas, recortadas en eventos sueltos y elegidas según el arma. Fuentes y licencias en `sonidos/CREDITOS.md`.
-- Al agarrar un arma (teclas, ruedita, una caja, al bajarse de la ametralladora) suenan el cuerpo del personaje y el
-  agarre (`ARMAS_AGARRE` y `genAgarre` en `js/audio.js`): la ropa y el equipo que se mueven (un roce granulado) y el
-  golpe sordo del peso al llegar a las manos; y el agarre según el material: metal (sólo el golpe de un cerrojo real,
-  más lento y apagado cuanto más pesada), madera (un «toc») o plástico (un golpe apagado). Las de dos manos suenan dos
-  veces: la mano de atrás y la de adelante, más suave. Cada arma lleva su peso real (de 0,3 kg el cuchillo a 39 kg la
-  minigun): cuanto más pesada, más fuerte, más grave y más largo (un fusil suena unos 12 dB por debajo de una
-  recarga; la minigun, 5; el cuchillo, 20). Sin tonos que vibran: la mano apaga el metal. Detalles: el tambor del
-  revólver, el guardamanos de bombeo, el tubo de la bazuca, el combustible del lanzallamas, los eslabones de la
-  minigun (balas sueltas reales, apagadas), la hoja de un arma blanca y el zumbido grave del láser. Al empezar la
+- Al agarrar un arma (teclas, ruedita, una caja, al bajarse de la ametralladora) suena foley grabado en capas, como
+  en los juegos (`ARMAS_AGARRE` y `genAgarre` en `js/audio.js`; grabaciones CC0 `sonidos/agarre_*.wav`): el cuerpo
+  del personaje (la ropa que se mueve, tres tomas que se alternan; con pistolas, armas blancas y granadas, el cuero
+  de la funda; con armas pesadas, ropa gruesa; desde 2 kg, el cuero y el equipo que se acomodan con el peso) y el
+  agarre según el material: metal (herramientas de metal que se agarran; desde 8 kg, una más pesada), madera o
+  plástico (la madera, apagada). Las de dos manos suenan dos veces: la mano de atrás y la de adelante, más suave.
+  Cada arma lleva su peso real (de 0,3 kg el cuchillo a 39 kg la minigun): cuanto más pesada, más fuerte y más grave
+  (de −21 dB respecto de una recarga el cuchillo a −12 un fusil y −5 la minigun). Detalles: el tambor del revólver,
+  el guardamanos de bombeo, los eslabones de la minigun, la hoja que sale y el tubo de la bazuca. Al empezar la
   partida no suena; con la ruedita, a lo sumo uno cada 90 ms y siempre el de la última. El machete del cazador no
   tiene: al sacarlo suena su susurro.
 - Voces de zombies, pasos, impactos de bala en la carne y quejidos del protagonista también son grabaciones reales.

@@ -519,18 +519,18 @@ const Audio_ = (() => {
     }
     return t0 + 0.5;
   }
-  /* ---------- Agarrar un arma: el cuerpo que la recibe y el agarre según de qué es ----------
-   * Suenan dos cosas, como en la realidad:
-   *   - el cuerpo del personaje: la ropa y el equipo que se mueven (un roce granulado) y el golpe sordo del peso que
-   *     llega a las manos y al cuerpo;
-   *   - el agarre, según el material del arma: metal (el golpe de un cerrojo real de js/sonidos-datos.js, sólo ese
-   *     golpe, sin el resto del mecanismo), madera (un «toc») o plástico (un golpe apagado). Las de dos manos
-   *     suenan dos veces: la mano de atrás y, enseguida, la de adelante, más suave.
-   * Cuanto más pesada, más suena todo: más fuerte, más grave y más largo (ARMAS_AGARRE tiene el peso de verdad, en kg).
-   * Nada de tonos que vibran: la mano apaga el metal. Algunos detalles de cada una: el tambor del revólver, el
-   * guardamanos de la escopeta de bombeo, el tubo hueco de la bazuca, el combustible del lanzallamas, los eslabones
-   * de la cinta de la minigun, la hoja de un arma blanca, el zumbido grave del láser. El machete del cazador no tiene:
-   * al sacarlo suena su susurro.
+  /* ---------- Agarrar un arma: foley grabado en capas, como en los juegos ----------
+   * Grabaciones reales (sonidos/agarre_*.wav, CC0; fuentes en sonidos/CREDITOS.md), una encima de otra:
+   *   - el cuerpo del personaje: la ropa que se mueve (tres tomas que se alternan; con un arma pesada, además ropa
+   *     gruesa) o, con una pistola, un arma blanca o una granada, el cuero de la funda; y desde 2 kg, el cuero y el
+   *     equipo que se acomodan con el peso;
+   *   - el agarre según el material: metal (una herramienta de metal que se agarra; desde 8 kg, una más pesada, con dos
+   *     golpes), madera (un golpe de madera; grave en las grandes) o plástico (ese golpe de madera, apagado). Las de dos
+   *     manos suenan dos veces: la mano de atrás y la de adelante, más suave;
+   *   - detalles: el clic del tambor del revólver, el traqueteo del guardamanos de bombeo, los eslabones de la cinta de
+   *     la minigun, la hoja que sale (cuchillo y machete; las espadas, una más ancha), el tubo de la bazuca.
+   * Cuanto más pesada, más fuerte y un poco más grave (la grabación, más lenta). El machete del cazador no tiene: al
+   * sacarlo suena su susurro.
    */
   // id: [kg, metal, madera, plástico, detalle]
   const ARMAS_AGARRE = {
@@ -543,105 +543,57 @@ const Audio_ = (() => {
     recortada: [2.5, 0.7, 1, 0], mossberg: [3.2, 0.6, 0, 0.8, 'bombeo'], rem870: [3.6, 0.6, 0.9, 0, 'bombeo'], benelli: [3.8, 0.6, 0, 0.8],
     spas12: [4.4, 1, 0, 0.5, 'bombeo'], aa12: [5.2, 0.9, 0, 0.6], saiga: [3.6, 0.9, 0, 0.4], winchester1887: [3.6, 0.8, 1, 0],
     m79: [2.9, 0.6, 1, 0], mgl: [5.3, 1, 0, 0.3], bazuca: [6.8, 1, 0, 0, 'tubo'], rpg7: [7, 0.9, 0.5, 0, 'tubo'], granadas: [0.4, 1, 0, 0],
-    lanzallamas: [30, 1, 0, 0, 'liquido'], minigun: [39, 1, 0, 0, 'eslabones'], laser: [3, 0.5, 0, 0.7, 'laser'],
+    lanzallamas: [30, 1, 0, 0], minigun: [39, 1, 0, 0, 'eslabones'], laser: [3, 0.5, 0, 0.7],
     cuchillo: [0.3, 0.6, 0, 0.4, 'hoja'], machete: [0.6, 0.8, 0, 0.4, 'hoja'], katana: [1.2, 0.6, 0.4, 0, 'hoja'], hacha: [2.7, 0.8, 0.9, 0],
     bate: [1, 0.2, 1, 0], mazo: [4.5, 1, 0.8, 0],
     mjolnir: [20, 1, 0, 0], excalibur: [1.5, 1, 0, 0, 'hoja'], tridente: [3, 1, 0, 0], egida: [6, 1, 0, 0], gungnir: [2.5, 0.5, 0.9, 0],
   };
-  const NIVEL_AGARRE = 2;   // un fusil, unos 12 dB por debajo de una recarga; la minigun, 5; el cuchillo, 20
-  // Ruido con grano (la tela y el equipo no suenan liso): la ganancia salta al azar unas 40 veces por segundo
-  function conGrano(ac, t, dur, fuente) {
-    const g = ganancia(ac, 0.55), r = aire(ac, t, dur), rl = filtro(ac, 'lowpass', 40, 0.7), rg = ganancia(ac, 9);
-    r.connect(rl); rl.connect(rg); rg.connect(g.gain); fuente.connect(g);
-    return g;
+  // NIVEL_AGARRE: un fusil suena unos 12 dB por debajo de una recarga; con el peso (W) va de −20 dB (cuchillo) a −5 (minigun)
+  const NIVEL_AGARRE = 0.48;
+  // Una capa: una grabación, con su volumen, su velocidad (más lenta = más grave y pesada) y, si hace falta, apagada.
+  // Varía un poco cada vez. Devuelve cuándo termina (si la grabación todavía no está cargada, no suena)
+  function capaGrabada(ac, s, t, nombre, { v = 1, vel = 1, corte = 0 } = {}) {
+    const b = grabaciones[nombre];
+    if (!b) return t;
+    const f = ac.createBufferSource(); f.buffer = b; f.playbackRate.value = vel * (0.97 + Math.random() * 0.06);
+    const g = ganancia(ac, v * (0.92 + Math.random() * 0.12));
+    if (corte) { const lp = filtro(ac, 'lowpass', corte, 0.6); f.connect(lp); lp.connect(g); } else f.connect(g);
+    g.connect(s); f.start(t);
+    return t + b.duration / f.playbackRate.value;
   }
-  // El metal: el golpe de un cerrojo real (sin el resto del mecanismo), más lento y apagado cuanto más pesada el arma.
-  // Si la grabación todavía no está, un golpe sintetizado parecido (ruido por resonancias apagadas)
-  function agarreMetal(ac, s, t, v, kg) {
-    const lw = Math.log2(1 + kg), vel = Math.max(0.6, Math.min(1, 1 - 0.08 * lw)), corte = 3200 - 300 * lw;
-    const lp = filtro(ac, 'lowpass', corte, 0.6), g = ganancia(ac, 0); lp.connect(g); g.connect(s);
-    const b = grabaciones.cerrojo_cerrar;
-    if (b) {
-      const f = ac.createBufferSource(); f.buffer = b; f.playbackRate.value = vel * (0.97 + Math.random() * 0.06);
-      const largo = 0.075 / vel;
-      curva(g.gain, [[t, v], [t + largo * 0.7, v * 0.5], [t + largo, 0.0001]]);
-      f.connect(lp); f.start(t, 0.318, 0.075); f.stop(t + largo + 0.02);
-    } else {
-      const a = aire(ac, t, 0.01), ge = ganancia(ac, 0); curva(ge.gain, [[t, 0.0001], [t + 0.0005, 1], [t + 0.003, 0.0001]]); a.connect(ge);
-      const f0 = 1100 * vel;
-      for (const [r, q, gg] of [[1, 12, 1], [1.62, 10, 0.7], [2.31, 9, 0.5], [3.05, 8, 0.35], [4.1, 7, 0.25]]) {
-        const bp = filtro(ac, 'bandpass', f0 * r, q), bg = ganancia(ac, gg * 6); ge.connect(bp); bp.connect(bg); bg.connect(lp);
-      }
-      curva(g.gain, [[t, v], [t + 0.06 / vel, 0.0001]]);
-    }
-  }
-  // La madera: un «toc» (resonancias apagadas; más grave cuanto más grande)
-  function agarreMadera(ac, s, t, v, kg) {
-    const f = 560 - 45 * Math.log2(1 + kg), a = aire(ac, t, 0.06), g = ganancia(ac, 0);
-    for (const [r, q, gg] of [[1, 6, 1], [2.1, 5, 0.45], [3.4, 4, 0.2]]) { const b = filtro(ac, 'bandpass', f * r, q), bg = ganancia(ac, gg); a.connect(b); b.connect(bg); bg.connect(g); }
-    curva(g.gain, [[t, 0.0001], [t + 0.0015, v * 5], [t + 0.045, 0.0001]]);
-    g.connect(s);
-  }
-  // El plástico: un golpe apagado, sin brillo
-  function agarrePlastico(ac, s, t, v, kg) {
-    const a = aire(ac, t, 0.03), lp = filtro(ac, 'lowpass', 1400, 0.7), b = filtro(ac, 'bandpass', 760 - 50 * Math.log2(1 + kg), 3), g = ganancia(ac, 0);
-    a.connect(lp); lp.connect(b); b.connect(g); g.connect(s);
-    curva(g.gain, [[t, 0.0001], [t + 0.001, v * 3], [t + 0.02, 0.0001]]);
-  }
+  let ultimaRopa = 0;
   function genAgarre(ac, salida, t0, nodos, id) {
-    const datos = ARMAS_AGARRE[id];
-    if (!datos) return t0;
-    const [kg, metal, madera, plastico, detalle] = datos, lw = Math.log2(1 + kg), G = Math.pow(kg / 3, 0.35);
-    const s = ganancia(ac, NIVEL_AGARRE); s.connect(salida);
-    // El cuerpo: la ropa y el equipo que se mueven
-    const dur = 0.08 + 0.035 * lw, ropa = aire(ac, t0, dur), hp = filtro(ac, 'highpass', 200, 0.7), lp = filtro(ac, 'lowpass', 2400 - 150 * lw, 0.7);
-    ropa.connect(hp); hp.connect(lp);
-    const grano = conGrano(ac, t0, dur, lp), gr = ganancia(ac, 0); grano.connect(gr); gr.connect(s);
-    curva(gr.gain, [[t0, 0.0001], [t0 + dur * 0.35, 0.035 * Math.pow(G, 0.7)], [t0 + dur, 0.0001]]);
-    // El peso que llega a las manos y al cuerpo: un golpe sordo, más grave y largo cuanto más pesa
-    const tg = t0 + 0.045, fg = 170 - 18 * lw, dg = 0.05 + 0.012 * lw;
-    const o = ac.createOscillator(), go = ganancia(ac, 0); curva(o.frequency, [[tg, fg], [tg + dg, fg * 0.6]]);
-    curva(go.gain, [[tg, 0.0001], [tg + 0.003, 0.1 * G], [tg + dg, 0.0001]]); o.connect(go); go.connect(s); o.start(tg); o.stop(tg + dg + 0.05);
-    const golpeAire = aire(ac, tg, dg), gl = filtro(ac, 'lowpass', 420 - 35 * lw, 0.7), ga = ganancia(ac, 0);
-    curva(ga.gain, [[tg, 0.0001], [tg + 0.002, 0.08 * G], [tg + dg * 0.7, 0.0001]]); golpeAire.connect(gl); gl.connect(ga); ga.connect(s);
-    // El agarre: la mano de atrás y, en las de dos manos, la de adelante (más suave)
-    const manos = kg >= 2 ? [[0.05, 1], [0.095 + 0.01 * lw, 0.45]] : [[0.05, 1]];
-    for (const [t, f] of manos) {
-      if (metal) agarreMetal(ac, s, t0 + t, 0.22 * metal * G * f, kg);
-      if (madera) agarreMadera(ac, s, t0 + t + 0.002, 0.11 * madera * G * f, kg);
-      if (plastico) agarrePlastico(ac, s, t0 + t + 0.001, 0.1 * plastico * G * f, kg);
+    const d = ARMAS_AGARRE[id];
+    if (!d) return t0;
+    const [kg, metal, madera, plastico, detalle] = d, lw = Math.log2(1 + kg), W = Math.pow(kg / 3, kg <= 3 ? 0.38 : 0.25);   // W: todo suena más cuanto más pesa (arriba de 3 kg, menos: juntan muchas capas)
+    const vel = Math.max(0.82, Math.min(1.08, 1.08 - 0.05 * lw)), s = ganancia(ac, NIVEL_AGARRE), fines = [t0];
+    s.connect(salida);
+    // El cuerpo: el cuero de la funda (pistolas, armas blancas, granadas) o la ropa; con las pesadas, ropa gruesa
+    const funda = (typeof ARMAS !== 'undefined' && ARMAS[id] && ARMAS[id].categoria === 'pistola') || detalle === 'hoja' || id === 'granadas';
+    if (funda) fines.push(capaGrabada(ac, s, t0, 'agarre_cuero', { v: 0.5 * W }));
+    else {
+      ultimaRopa = (ultimaRopa + 1 + Math.floor(Math.random() * 2)) % 3;
+      fines.push(capaGrabada(ac, s, t0, 'agarre_ropa_' + (ultimaRopa + 1), { v: 0.45 * Math.pow(W, 0.7), vel }));
     }
-    let fin = t0 + Math.max(dur, 0.2 + 0.02 * lw);
-    // Detalles de cada arma, bajitos
-    if (detalle === 'tambor') agarreMetal(ac, s, t0 + 0.11, 0.07 * G, 0.3);                              // el tambor que se acomoda
-    if (detalle === 'bombeo') { agarreMetal(ac, s, t0 + 0.13, 0.08 * G, 1.5); agarreMetal(ac, s, t0 + 0.155, 0.05 * G, 1.5); }   // el guardamanos
-    if (detalle === 'tubo') {                                                                               // el tubo hueco
-      const a = aire(ac, t0 + 0.05, 0.02), ge = ganancia(ac, 0); curva(ge.gain, [[t0 + 0.05, 0.0001], [t0 + 0.051, 1], [t0 + 0.062, 0.0001]]); a.connect(ge);
-      for (const [f, q, gg] of [[190, 12, 1], [190 * 2.9, 10, 0.4]]) { const b = filtro(ac, 'bandpass', f, q), bg = ganancia(ac, gg * 0.5 * G); ge.connect(b); b.connect(bg); bg.connect(s); }
+    if (kg >= 6) fines.push(capaGrabada(ac, s, t0 + 0.01, 'agarre_ropa_pesada', { v: 0.4 * W, vel }));
+    if (kg >= 2) fines.push(capaGrabada(ac, s, t0 + 0.04, 'agarre_cuero_cae', { v: 0.3 * W, vel }));
+    // El agarre según el material; las de dos manos, dos veces (la de adelante más suave)
+    const manos = kg >= 2 ? [[0.04, 1, 1], [0.1 + 0.01 * lw, 0.45, 1.06]] : [[0.04, 1, 1]];
+    for (const [t, f, dv] of manos) {
+      if (metal) {
+        const chico = kg < 1.5, nombre = chico ? 'agarre_clic' : kg >= 8 ? 'agarre_metal_pesado' : 'agarre_metal';
+        fines.push(capaGrabada(ac, s, t0 + t, nombre, { v: (chico ? 0.35 : 0.45) * metal * W * f, vel: vel * dv }));
+      }
+      if (madera) fines.push(capaGrabada(ac, s, t0 + t + 0.003, kg >= 4 ? 'agarre_madera_pesada' : 'agarre_madera', { v: 0.45 * madera * W * f, vel: vel * dv }));
+      if (plastico) fines.push(capaGrabada(ac, s, t0 + t + 0.002, 'agarre_madera', { v: 0.35 * plastico * W * f, vel: 1.12 * dv, corte: 1800 }));
     }
-    if (detalle === 'liquido') {                                                                            // el combustible que se mueve
-      const tl = t0 + 0.07, d = 0.3, a = aire(ac, tl, d), l = filtro(ac, 'lowpass', 600, 1), g = ganancia(ac, 0), am = ac.createOscillator(), gam = ganancia(ac, 0.012 * G);
-      am.frequency.value = 7; am.connect(gam); gam.connect(g.gain); am.start(tl); am.stop(tl + d + 0.05);
-      curva(g.gain, [[tl, 0.0001], [tl + d * 0.3, 0.025 * G], [tl + d, 0.0001]]); a.connect(l); l.connect(g); g.connect(s);
-      fin = Math.max(fin, tl + d);
-    }
-    if (detalle === 'eslabones' && grabaciones.balas_sueltas) {                                              // la cinta: eslabones de verdad, apagados
-      const f = ac.createBufferSource(), l = filtro(ac, 'lowpass', 2600, 0.6), g = ganancia(ac, 0); f.buffer = grabaciones.balas_sueltas; f.playbackRate.value = 0.8;
-      const tl = t0 + 0.09; curva(g.gain, [[tl, 0.0001], [tl + 0.01, 0.12], [tl + 0.2, 0.05], [tl + 0.3, 0.0001]]);
-      f.connect(l); l.connect(g); g.connect(s); f.start(tl, 0, 0.3); f.stop(tl + 0.35);
-      fin = Math.max(fin, tl + 0.35);
-    }
-    if (detalle === 'hoja') {                                                                               // la hoja: un roce corto
-      const th = t0 + 0.03, a = aire(ac, th, 0.07), b = filtro(ac, 'bandpass', 1800, 1.5), g = ganancia(ac, 0);
-      curva(g.gain, [[th, 0.0001], [th + 0.02, 0.03], [th + 0.07, 0.0001]]); a.connect(b); b.connect(g); g.connect(s);
-    }
-    if (detalle === 'laser') {                                                                              // se enciende: un zumbido grave
-      const tl = t0 + 0.06, d = 0.18, o2 = ac.createOscillator(), l = filtro(ac, 'lowpass', 700, 0.7), g = ganancia(ac, 0); o2.type = 'sawtooth';
-      curva(o2.frequency, [[tl, 90], [tl + d, 140]]); curva(g.gain, [[tl, 0.0001], [tl + d * 0.5, 0.03], [tl + d, 0.0001]]);
-      o2.connect(l); l.connect(g); g.connect(s); o2.start(tl); o2.stop(tl + d + 0.05);
-      fin = Math.max(fin, tl + d);
-    }
-    return fin + 0.1;
+    // Detalles de cada arma
+    if (detalle === 'tambor') fines.push(capaGrabada(ac, s, t0 + 0.13, 'agarre_clic', { v: 0.2 * W, vel: 1.05 }));
+    if (detalle === 'bombeo') fines.push(capaGrabada(ac, s, t0 + 0.12, 'agarre_traqueteo', { v: 0.3 * W, vel }));
+    if (detalle === 'eslabones') fines.push(capaGrabada(ac, s, t0 + 0.08, 'agarre_eslabones', { v: 0.4 * W, vel: 0.9 }));
+    if (detalle === 'hoja') fines.push(capaGrabada(ac, s, t0, kg < 1 ? 'agarre_cuchillo' : 'agarre_hoja', { v: 0.45 * W }));
+    if (detalle === 'tubo') fines.push(capaGrabada(ac, s, t0 + 0.05, 'agarre_metal_pesado', { v: 0.3 * W, vel: 0.75, corte: 1500 }));
+    return Math.max(...fines) + 0.1;
   }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
   function sonar(generador, rev, vol, ...args) {
