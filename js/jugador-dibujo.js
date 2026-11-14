@@ -463,7 +463,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
 
   // Cuello, torso según el personaje (chaleco táctico, armadura, traje…) y cabeza. El cuello va antes que el torso, para
   // que salga de adentro de la ropa; cuello y cabeza con la misma inclinación (durante la recarga baja la mirada hacia el arma)
-  const inclinarCabeza = () => { ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62 - ty); };
+  const inclinarCabeza = () => { ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta + 0.6 * (e.miraAng || 0)) /* con la mira, la cabeza acompaña al arma */; ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62 - ty); };
   ctx.save(); inclinarCabeza(); dibujarCuello(ctx, S, C, ty); ctx.restore();
   dibujarTorso(ctx, S, C, ty);
   ctx.save(); inclinarCabeza(); dibujarCabeza(ctx, S, C, ty, e); ctx.restore();
@@ -576,6 +576,29 @@ function dibujarUnidad(ctx, tipo, x, y, apunta = -Math.PI / 2, nueva = false, ar
       if (!Pincel.silueta) { ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 8; }
       esfera(ctx, 0, 0, 3.5, '#39ff14'); break;
   }
+  ctx.restore();
+}
+
+/* Retícula de la mira telescópica sobre el zombie elegido (tecla D, js/jugador.js), como la imagen de referencia que
+ * mandó Enzo: el anillo negro del tubo con el borde difuso, los cuatro postes gruesos que entran desde el anillo hasta
+ * el círculo fino de adentro, y la cruz fina hasta el centro. Adentro queda transparente (se ve el zombie) y un halo
+ * claro la despega en los escenarios oscuros. Al elegir un zombie nuevo se cierra sobre él desde 1,5 veces su tamaño. */
+function dibujarMiraTelescopica(ctx, cam, j, ahora) {
+  const z = j.objetivoMira, c = z.caja(), x = c.x + c.w / 2 - cam, y = c.y + c.h * 0.4;
+  const k = limitar((ahora - (j.miraDesde || 0)) / 180, 0, 1), R = 30 * (1 + 0.5 * (1 - suavizar(k)));
+  ctx.save(); ctx.translate(x, y); ctx.globalAlpha = 0.35 + 0.65 * k;
+  const borde = ctx.createRadialGradient(0, 0, R * 0.86, 0, 0, R * 1.2);
+  borde.addColorStop(0, 'rgba(0,0,0,0)'); borde.addColorStop(0.35, 'rgba(0,0,0,0.88)'); borde.addColorStop(0.6, 'rgba(0,0,0,0.88)'); borde.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = borde; ctx.beginPath(); ctx.arc(0, 0, R * 1.2, 0, Math.PI * 2); ctx.arc(0, 0, R * 0.86, 0, Math.PI * 2, true); ctx.fill();
+  const trazos = () => {
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.6, 0, Math.PI * 2);                                                   // círculo fino
+    ctx.moveTo(-R * 0.6, 0); ctx.lineTo(R * 0.6, 0); ctx.moveTo(0, -R * 0.6); ctx.lineTo(0, R * 0.6);          // cruz fina
+  };
+  const postes = () => { for (let a = 0; a < 4; a++) { ctx.save(); ctx.rotate(a * Math.PI / 2); ctx.rect(R * 0.6, -R * 0.055, R * 0.44, R * 0.11); ctx.restore(); } };
+  ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 2.2; trazos(); ctx.stroke();                    // halo claro
+  ctx.beginPath(); postes(); ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,0,0,0.9)'; ctx.lineWidth = 0.8; trazos(); ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.beginPath(); postes(); ctx.fill();
   ctx.restore();
 }
 

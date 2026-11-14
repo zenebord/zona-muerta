@@ -49,6 +49,11 @@ const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].
 // Peine en bloque (M1 Garand): con la última bala el resorte lo despide vacío con su «ping» y el cerrojo queda trabado
 // atrás; para recargar se mete el peine lleno por arriba y el cerrojo cierra solo, sin tocar la manija
 const EN_BLOQUE = new Set(['garand']);
+// Mira telescópica (tecla D, pedido de Enzo): con los rifles que la tienen dibujada, apunta sola al zombie vivo más
+// cercano (en línea recta: también más abajo o más arriba en la montaña, y a los chiquitos sin agacharse) hasta volver a
+// apretarla, y la bala no falla: sale derecho a él y lo sigue (Proyectil.objetivo). En todos los modos menos el bastión
+const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
+const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
@@ -98,6 +103,10 @@ class Jugador {
     this.ultimoDisparo = -10000;       // bien atrás, para poder disparar desde el primer cuadro
     this.tiroEn = -10000;              // último tiro de verdad (el gatillo en vacío no mueve el cerrojo)
     this.vainaPendiente = null;        // la vaina del último tiro, que sale cuando el cerrojo llega atrás
+    this.mira = false;                 // mira telescópica puesta (tecla D)
+    this.objetivoMira = null;          // el zombie al que apunta
+    this.anguloMira = 0;               // cuánto se inclina el arma hacia él (radianes, suavizado)
+    this.miraDesde = 0;                // cuándo eligió ese zombie (la retícula se cierra sobre él)
     this.invulnerableHasta = 0;
     this.montada = null;               // ametralladora fija que está usando, si hay
     this.fase = 0; this.retroceso = 0; this.caminando = false;
@@ -167,6 +176,7 @@ class Jugador {
       }
     }
     entrada.saltarPulsado = false;
+    this.actualizarMira(juego, dt);
 
     this.cubierto += ((this.protegido ? 1 : 0) - this.cubierto) * Math.min(1, dt * 10);   // agacharse detrás del parapeto
     if (this.veneno > 0) {
@@ -199,6 +209,43 @@ class Jugador {
       if (f.eventos) for (const ev of f.eventos) if (!ev.hecho && this.ahora >= f.desde + ev[0] * (f.hasta - f.desde)) { ev.hecho = true; ev[1](); }
       if (!f.terminada && this.ahora >= f.hasta) { f.terminada = true; if (f.alTerminar) f.alTerminar(); }
     }
+  }
+
+  // Tecla D: pone o saca la mira telescópica (sólo con un rifle que la tiene; en el bastión la tecla es de otra cosa)
+  alternarMira(juego) {
+    if (juego.estrategia || this.muerto) return;
+    if (this.montada || !MIRA_TELESCOPICA.has(this.arma().id)) { juego.aviso(t('aviso.sinMira'), 1500); return; }
+    this.mira = !this.mira; this.objetivoMira = null;
+    juego.aviso(t(this.mira ? 'aviso.miraOn' : 'aviso.miraOff'), 1300);
+  }
+  // Cada cuadro, con la mira puesta: el zombie vivo más cercano al hombro, dentro del alcance del arma (en Defensa ultra,
+  // del carril propio, porque la bala no sale de su carril). No salta a otro por un pelo: el que ya tenía sigue si el
+  // nuevo no está al menos 10 más cerca. El personaje se da vuelta hacia él y el arma se inclina (hasta 34°)
+  actualizarMira(juego, dt) {
+    const arma = this.arma();
+    if (this.mira && (this.montada || this.muerto || juego.estrategia || !MIRA_TELESCOPICA.has(arma.id))) this.mira = false;
+    let angulo = 0;
+    if (!this.mira) this.objetivoMira = null;
+    else {
+      const hx = this.x, hy = this.y - 52 * ESCALA_JUGADOR, dist = z => { const c = centroZombie(z); return Math.hypot(c.x - hx, c.y - hy); };
+      let mejor = null, dMejor = Infinity;
+      for (const z of juego.zombies) {
+        if (z.estado === 'muerto' || (juego.ultra && z.carril !== this.carril)) continue;
+        const d = dist(z);
+        if (d <= arma.alcance && d < dMejor) { dMejor = d; mejor = z; }
+      }
+      const antes = this.objetivoMira;
+      if (antes && mejor !== antes && antes.estado !== 'muerto' && juego.zombies.includes(antes) && dist(antes) <= Math.min(arma.alcance, dMejor + 10)) mejor = antes;
+      if (mejor !== antes) this.miraDesde = juego.ahora;
+      this.objetivoMira = mejor;
+      if (mejor) {
+        const c = centroZombie(mejor);
+        this.direccion = c.x >= this.x ? 1 : -1;
+        angulo = limitar(Math.atan2(c.y - hy, Math.abs(c.x - hx)), -0.6, 0.6);
+      }
+    }
+    this.anguloMira += (angulo - this.anguloMira) * Math.min(1, dt * 12);
+    if (Math.abs(this.anguloMira) < 1e-4) this.anguloMira = 0;
   }
 
   // Posición en el mundo de un punto del arma (boca, expulsión, cargador), con la inclinación de la animación
@@ -247,7 +294,7 @@ class Jugador {
       const retraso = arma.recargaTipo === 'cargador-pistola' ? 20 : cicloCerrojo(arma) * 0.3;
       this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id, peine: EN_BLOQUE.has(arma.id) && this.municion[arma.id] === 0 };
     }
-    juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null);
+    juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null, this.mira && !this.montada ? this.objetivoMira : null);
     Audio_.disparo(arma.categoria, arma.id);
     if (accion) this.iniciarCiclo(juego, arma, accion, tipoCasquillo);
     return true;
@@ -516,6 +563,7 @@ class Jugador {
     if (this.montada || this.inventario.length < 2) return;
     this.indiceArma = (this.indiceArma + delta + this.inventario.length) % this.inventario.length;
     this.cancelarRecarga();
+    Audio_.sacarArma(this.arma());
   }
 
   // Ranura g (0..4): elige el grupo; si ya está en ese grupo, pasa a la siguiente arma del grupo.
@@ -526,7 +574,7 @@ class Jugador {
     if (!ids.length) return false;
     const k = ids.indexOf(this.arma().id);
     const siguiente = ids[(k + 1) % ids.length];
-    if (siguiente !== this.arma().id) { this.indiceArma = this.inventario.indexOf(siguiente); this.cancelarRecarga(); }
+    if (siguiente !== this.arma().id) { this.indiceArma = this.inventario.indexOf(siguiente); this.cancelarRecarga(); Audio_.sacarArma(this.arma()); }
     return true;
   }
 
@@ -641,6 +689,14 @@ class Jugador {
     if (corta) e.incl -= empuje * 0.3;                                  // la pistola levanta la boca al disparar
     else if (!this.montada) e.incl -= empuje * 0.05;                    // el fusil, apenas
     if (d.agarre === 'hombro') e.apunta = 1 - e.mirar;                  // con el arma al hombro, la cabeza va a la culata
+
+    // Mira telescópica: el arma se inclina hacia el zombie elegido girando sobre la cantonera apoyada en el hombro
+    if (this.anguloMira && !this.montada && !this.recarga) {
+      const P = { x: -(d.culataCm || 30) * CM, y: 0 }, f = e.incl, g = f + this.anguloMira;
+      const W = { x: e.origen.x + P.x * Math.cos(f) - P.y * Math.sin(f), y: e.origen.y + P.x * Math.sin(f) + P.y * Math.cos(f) };
+      e.origen = { x: W.x - (P.x * Math.cos(g) - P.y * Math.sin(g)), y: W.y - (P.x * Math.sin(g) + P.y * Math.cos(g)) };
+      e.incl = g; e.miraAng = this.anguloMira;
+    }
 
     // 2) Puntos de agarre: siguen a la pieza móvil que sostienen (definida en cm en cada modelo)
     const c = Math.cos(e.incl), s = Math.sin(e.incl);

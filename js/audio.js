@@ -100,24 +100,45 @@ const Audio_ = (() => {
   function cargarGrabaciones() {
     if (grabacionesPedidas) return;
     grabacionesPedidas = true;
-    const todas = Object.assign({}, typeof SONIDOS_GRABADOS !== 'undefined' ? SONIDOS_GRABADOS : {}, typeof SONIDOS_AMBIENTE !== 'undefined' ? SONIDOS_AMBIENTE : {});
+    const armas = typeof SONIDOS_ARMAS !== 'undefined' ? SONIDOS_ARMAS : {};
+    const todas = Object.assign({}, typeof SONIDOS_GRABADOS !== 'undefined' ? SONIDOS_GRABADOS : {}, typeof SONIDOS_AMBIENTE !== 'undefined' ? SONIDOS_AMBIENTE : {}, armas);
     for (const [nombre, b64] of Object.entries(todas)) {
       const bin = atob(b64), bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      ctx.decodeAudioData(bytes.buffer).then(b => { grabaciones[nombre] = b; }).catch(() => {});
+      ctx.decodeAudioData(bytes.buffer).then(b => { grabaciones[nombre] = armas[nombre] ? sinSilencioInicial(b) : b; }).catch(() => {});
     }
   }
-  // Reproduce una grabación; la velocidad cambia el peso (más lenta = arma más pesada) y varía un poco cada vez
-  function grabacion(nombre, { vol = 1, vel = 1, retraso = 0, rev = 0.12, pasoBajo = 0 } = {}) {
+  // El MP3 puede llegar con unos milisegundos de silencio adelante (el relleno del codificador; depende del navegador):
+  // se corta desde 1 ms antes del primer sonido, así el tiro sale en el mismo momento que el clic
+  function sinSilencioInicial(b) {
+    const d = b.getChannelData(0); let i = 0;
+    while (i < d.length && Math.abs(d[i]) < 0.003) i++;
+    const desde = Math.max(0, i - Math.round(b.sampleRate * 0.001));
+    if (desde < 64 || desde >= b.length) return b;
+    const c = ctx.createBuffer(b.numberOfChannels, b.length - desde, b.sampleRate);
+    for (let k = 0; k < b.numberOfChannels; k++) c.copyToChannel(b.getChannelData(k).subarray(desde), k);
+    return c;
+  }
+  // Reproduce una grabación; la velocidad cambia el peso (más lenta = arma más pesada) y varía un poco cada vez.
+  // desde/dur: sólo un pedazo (en segundos de la grabación); pasoAlto/pasoBajo: filtros; eco: envío al eco de exterior
+  function grabacion(nombre, { vol = 1, vel = 1, retraso = 0, rev = 0.12, eco = 0, pasoBajo = 0, pasoAlto = 0, desde = 0, dur = 0, variar = 0.03 } = {}) {
     const b = grabaciones[nombre];
     if (!b) return false;
     const fuente = ctx.createBufferSource(); fuente.buffer = b;
-    fuente.playbackRate.value = vel * (0.97 + Math.random() * 0.06);
-    const g = ctx.createGain(); g.gain.value = vol * (0.92 + Math.random() * 0.12);
-    if (pasoBajo) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = pasoBajo; f.Q.value = 0.5; fuente.connect(f); f.connect(g); }
-    else fuente.connect(g);
-    conectar(g, rev, 0);
-    fuente.start(ctx.currentTime + retraso);
+    const ritmo = vel * (1 - variar + Math.random() * variar * 2);
+    fuente.playbackRate.value = ritmo;
+    const g = ctx.createGain(), nivel = vol * (0.92 + Math.random() * 0.12); g.gain.value = nivel;
+    let nodo = fuente;
+    if (pasoAlto) { const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = pasoAlto; f.Q.value = 0.6; nodo.connect(f); nodo = f; }
+    if (pasoBajo) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = pasoBajo; f.Q.value = 0.5; nodo.connect(f); nodo = f; }
+    nodo.connect(g);
+    conectar(g, rev, eco);
+    const t = ctx.currentTime + retraso;
+    if (dur) {   // el pedazo termina con una salida de 12 ms, sin clic
+      const fin = t + dur / ritmo;
+      g.gain.setValueAtTime(nivel, Math.max(t, fin - 0.012)); g.gain.linearRampToValueAtTime(0.0001, fin);
+      fuente.start(t, desde, dur + 0.02);
+    } else fuente.start(t, desde);
     return true;
   }
 
@@ -287,6 +308,89 @@ const Audio_ = (() => {
     tono({ desde: golpeHz * v, hasta: golpeHz * 0.3, dur: golpeDur, vol: golpeVol, ataque: 0.0008, sat: 2.2 });
     ruido({ dur: colaDur, vol: cola, filtro: 'lowpass', freq: 1100, freqFin: 160, ataque: 0.012, retraso: 0.015, rev, eco });
     if (mecanismo) metal({ f: 2300, dur: 0.05, vol: mecanismo, retraso: 0.035, rev: 0 });   // la corredera o el cerrojo ciclando
+  }
+
+  /* ---------- Disparos grabados (js/sonidos-armas.js) ----------
+   * Armas reales disparadas al aire libre (The Free Firearm Sound Library, CC0): cada arma del juego usa las tomas del
+   * arma real más parecida, con el mismo cartucho cuando lo hay (Colt 1911, AK-47, AR-15, Mosin-Nagant, .30-06 de un
+   * Springfield 1917 y un Tikka, Winchester 1894, .380 de una Bersa, el 7,62 × 25 de la PPSh para la Mauser C96,
+   * cuatro escopetas del 12 distintas). La velocidad da el peso (más lenta = más grave). Cada tiro elige una toma al
+   * azar sin repetir la anterior y varía un poco tono y volumen: así no suenan todos iguales. Las muy grandes (Desert
+   * Eagle, Magnum, Barrett, M2, recortada) suman el golpe de presión sintetizado por debajo. Al aire libre la toma ya
+   * trae la cola del campo; en el galpón y la cloaca se le suma la sala y el eco. Sin grabación, el disparo sintetizado.
+   * [tomas, velocidad, volumen, golpe grave (0…1)] */
+  const TOMAS_DISPARO = { tiro_pistola9: 3, tiro_pistola45: 2, tiro_pistola380: 2, tiro_pistola762: 3, tiro_revolver: 2, tiro_smg9: 3, tiro_ak: 3, tiro_ar15: 2,
+    tiro_mosin: 3, tiro_3006: 4, tiro_palanca: 2, tiro_escopeta_cd: 2, tiro_escopeta_m12: 2, tiro_escopeta_mossberg: 2, tiro_escopeta_nova: 2 };
+  const DISPARO_REAL = {
+    glock: ['tiro_pistola9', 1, 2.98], beretta92: ['tiro_pistola9', 0.96, 2.92], colt1911: ['tiro_pistola45', 1, 2.2], ppk: ['tiro_pistola380', 1.02, 2.36],
+    mauser: ['tiro_pistola762', 1, 2.35], deagle: ['tiro_pistola45', 0.82, 2.69, 0.6], magnum: ['tiro_revolver', 0.8, 3.37, 0.7], python: ['tiro_revolver', 0.9, 3.23, 0.4],
+    uzi: ['tiro_smg9', 1.04, 1.38], mp5: ['tiro_smg9', 1, 1.69], p90: ['tiro_smg9', 1.12, 1.76], thompson: ['tiro_smg9', 0.9, 2.76], vector: ['tiro_smg9', 0.95, 1.59],
+    ak47: ['tiro_ak', 1, 1.98], m16: ['tiro_ar15', 1, 2.94], garand: ['tiro_3006', 1, 2.57], svd: ['tiro_mosin', 1.03, 2.25], mosin: ['tiro_mosin', 1, 2.22],
+    remington700: ['tiro_3006', 1.05, 2.54], barrett: ['tiro_3006', 0.7, 3.09, 1], winchester1894: ['tiro_palanca', 1, 2],
+    recortada: ['tiro_escopeta_cd', 0.92, 2.03, 0.5], mossberg: ['tiro_escopeta_mossberg', 1, 1.1], spas12: ['tiro_escopeta_nova', 1, 1.54], benelli: ['tiro_escopeta_nova', 1.04, 1.67],
+    rem870: ['tiro_escopeta_m12', 1, 1.55], saiga: ['tiro_escopeta_m12', 1.05, 1.73], aa12: ['tiro_escopeta_cd', 1.06, 1.97], winchester1887: ['tiro_escopeta_m12', 0.95, 1.39],
+    m2: ['tiro_3006', 0.72, 3.66, 0.9],
+  };
+  const NIVEL_TIRO = 1;   // los volúmenes de arriba igualan el nivel de los sintetizados de antes (ventanas de 125 ms, con el limitador)
+  function tiroGrabado(armaId) {
+    const r = DISPARO_REAL[armaId];
+    if (!r || !grabaciones[r[0] + '_1']) return false;
+    const [tomas, vel, nivel, grave = 0] = r;
+    variante(tomas, TOMAS_DISPARO[tomas], { vol: nivel * NIVEL_TIRO, vel, rev: interior ? 0.3 : 0.05, eco: interior ? 0.2 : 0, variar: 0.04 });
+    if (grave) {   // el golpe de presión que la grabación de un arma más chica no trae
+      tono({ desde: 125, hasta: 36, dur: 0.16 + grave * 0.14, vol: 0.55 * grave, ataque: 0.0008, sat: 1.6 });
+      ruido({ dur: 0.1 + grave * 0.1, vol: 0.4 * grave, filtro: 'lowpass', freq: 700, freqFin: 110, ataque: 0.0008, sat: 1.5, rev: interior ? 0.2 : 0 });
+    }
+    return true;
+  }
+
+  /* ---------- Granada de mano y sacar el arma: foley grabado (Kenney y otros, CC0; sonidos/CREDITOS.md) ----------
+   * Nada de tonos de metal sintetizados (sonaban a xilófono): roce de tela, cuero, madera y metal de verdad.
+   * pasador: el dedo engancha la anilla (un clic), el pasador sale raspando de la espoleta (un roce de metal corto y
+   * agudo) y la anilla queda suelta (otro clic). cuchara: al soltar la granada salta la cuchara con el resorte y el
+   * percutor pega. granada: la saca del portagranadas. Los pedazos (desde, dur) se midieron en cada grabación. */
+  const FOLEY_GRANADA = {
+    granada: () => grabacion('foley_cuero', { vol: 0.24, vel: 1.1, rev: 0.05 }),
+    pasador: () => {
+      if (!grabaciones.foley_raspa || !grabaciones.foley_clic) return false;
+      grabacion('foley_clic', { vol: 0.19, vel: 1.15, desde: 0.08, dur: 0.05, rev: 0.04 });
+      grabacion('foley_raspa', { vol: 0.33, vel: 1.5, retraso: 0.03, desde: 0.05, dur: 0.19, pasoAlto: 1800, rev: 0.04 });
+      grabacion('foley_clic', { vol: 0.14, vel: 1.35, retraso: 0.16, desde: 0.235, dur: 0.06, rev: 0.04 });
+      return true;
+    },
+    cuchara: () => {
+      if (!grabaciones.foley_pestillo) return false;
+      grabacion('foley_pestillo', { vol: 0.4, vel: 1.3, dur: 0.16, rev: 0.06 });
+      grabacion('foley_clic', { vol: 0.3, vel: 0.9, retraso: 0.015, desde: 0.08, dur: 0.05, rev: 0.04 });
+      return true;
+    },
+  };
+  // Sacar un arma: las largas, de la espalda (el brazo va atrás y la correa corre por la ropa, la correa tira, el arma
+  // llega a las manos y el anclaje de la correa tintinea apenas); las pistolas, de la funda; las hojas, de la vaina; la
+  // granada, del portagranadas. Las muy pesadas, con ropa gruesa y un golpe de metal grave.
+  const PESADAS_A_LA_ESPALDA = new Set(['minigun', 'm2', 'barrett', 'bazuca', 'lanzallamas', 'mgl']);
+  let ultimoSacar = -1;
+  function sacar(a) {
+    if (a.id === 'macheteCazador') return true;   // el del cazador sale en silencio: sólo su susurro (js/armas-especiales.js)
+    if (!grabaciones.foley_ropa || !grabaciones.foley_cuero) return false;
+    const t = ctx.currentTime;
+    if (t - ultimoSacar < 0.12) return true;   // cambiar de arma muy rápido no amontona sonidos
+    ultimoSacar = t;
+    // Niveles medidos con la mezcla del juego, en ventanas de 125 ms respecto de un tiro de AK: fusil -18 dB, pistola -19,
+    // hoja -17, granada -18, muy pesadas -15 (una recarga queda en -2). Sutil: se oye sin tapar nada
+    let k = 1;
+    const op = (vol, vel, retraso = 0, extra = {}) => Object.assign({ vol: vol * k, vel, retraso, rev: 0.05 }, extra);
+    if (a.categoria === 'pistola') { k = 0.29; grabacion('foley_cuero', op(0.6, 1.05)); grabacion('foley_clic', op(0.15, 1.1, 0.13, { desde: 0.08, dur: 0.05 })); return true; }
+    if (a.categoria === 'granada') { k = 0.35; grabacion('foley_cuero', op(0.55, 1.15)); return true; }
+    if (a.cuerpo && a.filo) { k = 0.26; grabacion('foley_ropa', op(0.25, 1.1, 0, { dur: 0.25 })); grabacion('foley_hoja', op(0.6, 1, 0.05)); return true; }
+    const pesada = PESADAS_A_LA_ESPALDA.has(a.id);
+    k = pesada ? 0.28 : a.cuerpo ? 0.41 : 0.37;
+    grabacion(pesada ? 'foley_ropa_gruesa' : 'foley_ropa', op(pesada ? 0.6 : 0.5, 1, 0, { dur: 0.45 }));
+    grabacion('foley_cuero', op(0.35, 0.9, 0.1));
+    if (a.cuerpo) { grabacion('foley_madera', op(0.4, 0.9, 0.28, { pasoBajo: 2500 })); return true; }   // bate, hacha, mazo: el mango en la mano
+    grabacion(pesada ? 'foley_metal_pesado' : 'foley_madera', op(0.42, pesada ? 0.85 : 1, 0.28, { pasoBajo: pesada ? 4500 : 2800, desde: pesada ? 0.07 : 0 }));
+    grabacion('foley_traqueteo', op(0.1, 1, 0.3, { pasoAlto: 1500, dur: 0.12 }));
+    return true;
   }
 
   const PESADAS = new Set(['magnum', 'deagle', 'python', 'barrett', 'm2', 'mosin', 'svd', 'garand']);
@@ -573,6 +677,7 @@ const Audio_ = (() => {
     disparo(categoria, armaId) {
       if (!asegurar()) return;
       if (armaId === 'minigun') { tiroMinigun(); return; }   // el rugido de la ráfaga lo pone Audio_.minigun
+      if (tiroGrabado(armaId)) return;                       // arma real grabada (arriba); si no hay, el sintetizado
       const pesado = PESADAS.has(armaId) ? 1.35 : LIVIANAS.has(armaId) ? 0.85 : 1;
       switch (categoria) {
         case 'pistola':       detonacion({ crack: 0.9, boom: 0.75 * pesado, boomHz: 650 / pesado, golpeVol: 0.55 * pesado, golpeHz: 190, golpeDur: 0.09 * pesado, cola: 0.22 * pesado, colaDur: 0.45 * pesado, mecanismo: armaId === 'magnum' || armaId === 'python' ? 0 : 0.07 }); break;
@@ -597,12 +702,21 @@ const Audio_ = (() => {
       }
     },
 
-    // Explosión de granada o proyectil: sin chasquido agudo, sin tonos ni eco de videojuego. Un frente de presión
-    // ancho y corto, el cuerpo grave que se apaga, una presión sorda casi sin tono, el retumbo que rueda y la
-    // tierra que cae (ruido apagado, no golpecitos con nota). Volumen moderado.
+    // Explosión de granada o proyectil, fuerte y con peso, sin tonos ni eco de videojuego. El cuerpo es una explosión
+    // grabada (Michel Baradari, CC BY 3.0: el estallido ancho y los agudos que se apagan antes que los graves) con
+    // otra grabada sólo de graves por debajo (untamedpixels, CC0), cada vez una distinta y a otra velocidad. Encima, lo
+    // sintetizado: la presión que se siente en el pecho, el retumbo que rueda y la tierra que cae. Es lo más fuerte
+    // del juego: el limitador de la mezcla la contiene sin saturar.
     explosion() {
       asegurar();
       const v = 0.9 + Math.random() * 0.2, rev = interior ? 0.35 : 0.12;
+      if (variante('explosion_cuerpo', 2, { vol: 2.6, vel: 0.86 + Math.random() * 0.16, rev, variar: 0 })) {
+        variante('explosion_grave', 2, { vol: 2.2, vel: 0.85 + Math.random() * 0.2, rev: 0, variar: 0 });
+        tono({ desde: 58 * v, hasta: 24, dur: 0.95, vol: 0.8, ataque: 0.003, sat: 0.6 });
+        ruido({ dur: 3.4, vol: 0.28, filtro: 'lowpass', freq: 260, freqFin: 38, q: 0.5, ataque: 0.3, retraso: 0.1, rev: rev * 1.5 });
+        for (let k = 0; k < 9; k++) ruido({ dur: 0.03 + Math.random() * 0.06, vol: 0.03 + Math.random() * 0.04, filtro: 'bandpass', freq: 700 + Math.random() * 1600, q: 1.1, ataque: 0.003, retraso: 0.45 + Math.random() * 1.5 });
+        return;
+      }
       ruido({ dur: 0.12, vol: 0.5, filtro: 'lowpass', freq: 3200 * v, freqFin: 400, q: 0.5, ataque: 0.002, sat: 0.8 });
       ruido({ dur: 1.5, vol: 0.58, filtro: 'lowpass', freq: 700 * v, freqFin: 70, q: 0.6, ataque: 0.008, rev });
       tono({ desde: 62 * v, hasta: 28, dur: 0.7, vol: 0.45, ataque: 0.004 });
@@ -613,6 +727,7 @@ const Audio_ = (() => {
     // Sonidos de cada fase de las recargas y del accionamiento: grabaciones reales con respaldo sintético
     recarga(evento, armaId) {
       asegurar();
+      if (FOLEY_GRANADA[evento] && FOLEY_GRANADA[evento]()) return;   // granada de mano: foley real
       const real = grabacionDeRecarga(evento, armaId);
       if (real && grabacion(real[0], real[1])) return;
       switch (evento) {
@@ -944,6 +1059,19 @@ const Audio_ = (() => {
       tono({ desde: 55, hasta: 38, dur: 0.14, vol: 0.32 * fuerza, ataque: 0.005, retraso: 0.2 });
     },
     recoger() { asegurar(); metal({ f: 1700, dur: 0.1, vol: 0.18 }); golpe({ f: 200, dur: 0.05, vol: 0.2 }); tono({ desde: 880, hasta: 1320, dur: 0.14, vol: 0.06, retraso: 0.05, rev: 0.4 }); },
+    // Sacar un arma (elegirla del inventario, juntarla de una caja o cambiar de arma): foley grabado, ver `sacar`.
+    // arma: el objeto de ARMAS o su id. Sin las grabaciones todavía decodificadas, apenas un roce
+    sacarArma(arma) {
+      asegurar();
+      const a = typeof arma === 'string' ? (typeof ARMAS !== 'undefined' && ARMAS[arma]) || { id: arma } : arma || {};
+      if (!sacar(a)) ruido({ dur: 0.18, vol: 0.05, filtro: 'bandpass', freq: 900, q: 0.8, ataque: 0.04 });
+    },
+    // Munición de una caja (el arma ya la tenía): la mano en la bolsa y las balas sueltas
+    municion() {
+      asegurar();
+      if (!grabacion('foley_cuero', { vol: 0.16, vel: 1.1, rev: 0.05 })) { this.recoger(); return; }
+      grabacion('balas_sueltas', { vol: 0.11, vel: 1.1, retraso: 0.06, rev: 0.05 });
+    },
     mision() { asegurar(); [523, 659, 784, 1047].forEach((f, k) => tono({ desde: f, hasta: f, dur: 0.6, vol: 0.09, ataque: 0.01, retraso: k * 0.09, rev: 0.6 })); },
   };
 })();

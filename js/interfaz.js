@@ -518,6 +518,7 @@
       case 'ArrowDown':  en.abajo = true; if (!e.repeat) { en.abajoPulsado = true; juego.alternarMontar(); } break;   // mantenida: agacharse; junto a una M2: montarla
       case 'KeyF':       en.disparar = true; if (!e.repeat) en.dispararPulsado = true; break;
       case 'KeyS':       if (!e.repeat) j.recargar(juego); break;
+      case 'KeyD':       if (!e.repeat) j.alternarMira(juego); break;   // mira telescópica: apunta sola al zombie más cercano
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
       case 'KeyT':       if (!e.repeat && juego.ultra) juego.comprarTorreta(); break;
       case 'KeyB':       if (!e.repeat && juego.ultra) juego.alternarTienda(); break;

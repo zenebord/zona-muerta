@@ -2,6 +2,7 @@
 class Juego {
   constructor(lienzo, mision, dificultad, opciones = {}) {
     this.ctx = lienzo.getContext('2d');
+    document.body.classList.remove('con-mira');   // el botón táctil MIRA aparece recién con un rifle con mira en la mano
     this.dificultad = dificultad || DIFICULTADES.medio;
     this.pruebas = !!opciones.pruebas;    // campo de pruebas: planicie, sin rondas, todas las armas
     this.torreta = !!opciones.torreta;    // torreta: fijo en una M2, olas por los dos lados, cada una peor
@@ -91,7 +92,7 @@ class Juego {
     j.indiceArma = j.inventario.indexOf(armaId);
     j.cancelarRecarga();
     j.ultimoDisparo = -1e9;                              // lista para tirar: no hereda la espera del arma anterior
-    Audio_.recoger();
+    Audio_.sacarArma(armaId);                            // la saca de la espalda, de la funda o de la vaina
     this.aviso(t('aviso.enMano') + ARMAS[armaId].nombre.toUpperCase(), 1300);
   }
 
@@ -173,7 +174,8 @@ class Juego {
   }
 
   /* ---------- Armas ---------- */
-  dispararArma(arma, x, y, direccion, casquillo) {
+  // objetivo: el zombie de la mira telescópica (js/jugador.js): la bala sale derecho a él y lo sigue, no falla
+  dispararArma(arma, x, y, direccion, casquillo, objetivo = null) {
     if (this.historia) this.historia.disparos++;
     const v = arma.velocidad;
     const antes = this.proyectiles.length;
@@ -207,7 +209,10 @@ class Juego {
       for (let k = 0; k < 14; k++) this.particulas.push(new Particula(cola, y + (Math.random() - 0.5) * 6, -direccion * (2 + Math.random() * 4), (Math.random() - 0.6) * 1.6, k % 3 ? '#b1a89c' : '#ffcf6a', 0.5 + Math.random() * 0.6, 4 + Math.random() * 5, false));
     } else {
       const desvio = arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0;
-      this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
+      if (objetivo && objetivo.estado !== 'muerto') {
+        const c = objetivo.caja(), tx = c.x + c.w / 2, ty = c.y + c.h * 0.4, d = Math.hypot(tx - x, ty - y) || 1;
+        const p = new Proyectil(arma, x, y, (tx - x) / d * v, (ty - y) / d * v); p.objetivo = objetivo; this.proyectiles.push(p);
+      } else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
       if (arma.categoria === 'rifle') this.sacudida = 3;
     }
     if (arma.categoria !== 'granada' && !arma.fuego) {
@@ -219,7 +224,7 @@ class Juego {
       p.desdeX = this.jugador.x; p.disparoId = this.disparoId;   // barrido desde el cuerpo
       if (this.ultra) {   // la bala va por su carril, apuntada al pecho del zombie más cercano
         p.carril = this.jugador.carril; p.pisoY = this.jugador.y;
-        if (!p.arma.explosivo) p.vy += this.apuntarUltra(p);
+        if (!p.arma.explosivo && !p.objetivo) p.vy += this.apuntarUltra(p);
       }
     }
     // El casquillo sale por la ventana de expulsión, vuela, rebota y se esfuma
@@ -570,6 +575,8 @@ class Juego {
     this.ahora += dt * 1000;
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
+    const conMira = !j.montada && !j.muerto && MIRA_TELESCOPICA.has(j.arma().id);
+    if (conMira !== this.conMira) { this.conMira = conMira; document.body.classList.toggle('con-mira', conMira); }
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
     else if (this.historia) this.moverJugadorHistoria(dt, e);   // escaleras, sogas y cuerpo a tierra (js/historia.js)
@@ -599,7 +606,7 @@ class Juego {
       else if (!j.muerto && c.tocaA(j)) {
         const nueva = j.recoger(c.armaId), a = ARMAS[c.armaId];
         this.aviso(t(nueva ? 'aviso.nueva' : 'aviso.municion') + a.nombre.toUpperCase(), 1800);
-        Audio_.recoger();
+        if (nueva) Audio_.sacarArma(a); else Audio_.municion();
         if (this.mision) this.mision.alRecoger(a);
         if (c.especial) this.especialesTomadas.set(c.indiceMontana, this.tiempoJugado);
         if (this.historia && c.historia && nueva) this.historia.armas.push(c.armaId);
@@ -748,6 +755,7 @@ class Juego {
       Pincel.bisel = !Lienzo.liviano;
       if (!j.montada) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }
     }
+    if (j.mira && j.objetivoMira && !j.muerto) dibujarMiraTelescopica(ctx, cam, j, this.ahora);   // tecla D
     for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) Fuego.cuerpo(ctx, cam, z, this.ahora);
     for (const p of this.proyectiles) p.dibujar(ctx, cam);
     for (const e2 of this.escupitajos) e2.dibujar(ctx, cam);
