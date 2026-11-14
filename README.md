@@ -686,8 +686,9 @@ Armas especiales de `js/armas-especiales.js`, que se engancha envolviendo métod
   escuchan fuera del juego con `Audio_.generadores` en un `OfflineAudioContext`):
   - *Susurro* «ki ki ki ki… ma ma ma ma» como voz susurrada: la «k» es un estallido de aire en 2,7 kHz y la «i», aire
     por sus formantes (320, ~2250, 3050 y 4300 Hz); la «m», un murmullo nasal grave, y la «a», aire con un hilo de voz
-    que cae de 108 a 93 Hz por sus formantes (780, 1180, 2500 y 3400 Hz). Eco que rebota de izquierda a derecha y se
-    oscurece, y una sala larga. Suena al sacar el machete (2,5 s como mínimo entre uno y otro) y, si pasaron 8 s del
+    grave (88 Hz, más bajo en cada «ma») por sus formantes (780, 1180, 2500 y 3400 Hz). Lento: un «ki» cada 0,2 s y un
+    «ma» cada 0,3 s. Eco de 0,3 s que rebota de izquierda a derecha y se oscurece, y una sala larga. Se eligió entre
+    cuatro variantes (`SUSURRO` en `js/audio.js` tiene el ritmo, la voz y el eco). Suena al sacar el machete (2,5 s como mínimo entre uno y otro) y, si pasaron 8 s del
     último, al matar con él o en 4 de cada 10 golpes.
   - *Machete*: al desenfundarlo, un roce metálico que sube y termina en un «shing»; el tajo, aire que barre de grave a
     agudo y vuelve, con el silbido del filo y el peso de la hoja, de izquierda a derecha; el golpe, el filo que muerde,

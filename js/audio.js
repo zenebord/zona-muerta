@@ -359,8 +359,8 @@ const Audio_ = (() => {
    *   «ki»  la «k» es un estallido corto de aire alrededor de 2,7 kHz; la «i», aire por sus formantes (320, ~2250,
    *         3050 y 4300 Hz), con el segundo bajando de 2650 al soltar la «k».
    *   «ma»  la «m», un murmullo nasal grave (voz por debajo de 300 Hz); la «a», aire con un hilo de voz grave que cae
-   *         (de 108 a 93 Hz, con un temblor) por sus formantes (780, 1180, 2500 y 3400 Hz), el primero subiendo de
-   *         320 a 780 al abrir la boca.
+   *         (de 88 Hz, más bajo en cada «ma», con un temblor) por sus formantes (780, 1180, 2500 y 3400 Hz), el
+   *         primero subiendo de 320 a 780 al abrir la boca. Lento: un «ki» cada 0,2 s y un «ma» cada 0,3 s.
    *   El espacio: un eco que rebota de un lado al otro y se oscurece en cada vuelta, y una sala larga.
    * Machete: el tajo en el aire (aire que barre de grave a agudo y vuelve, el silbido del filo y el peso de la hoja,
    * de izquierda a derecha); el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
@@ -443,7 +443,8 @@ const Audio_ = (() => {
   }
   // op: ki y ma (cuántas), paso (s entre sílabas), pausa (s entre los «ki» y los «ma»), altura (Hz de la voz de la «a»),
   // voz (cuánta voz lleva la «a»: 0 susurro puro), eco (s), vuelta (cuánto vuelve el eco), sala (envío a la sala)
-  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.15, pasoMa: 0.22, pausa: 0.35, altura: 108, voz: 0.2, eco: 0.24, vuelta: 0.48, sala: 0.3 };
+  // La elegida (la «B» de las pruebas): lenta y grave, con la voz de los «ma» presente y un eco largo
+  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.2, pasoMa: 0.3, pausa: 0.45, altura: 88, voz: 0.35, eco: 0.3, vuelta: 0.55, sala: 0.35 };
   function genSusurro(ac, salida, t0, nodos, op = {}) {
     const o = { ...SUSURRO, ...op };
     const seco = ganancia(ac, 1); seco.connect(salida);
