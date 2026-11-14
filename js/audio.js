@@ -519,25 +519,24 @@ const Audio_ = (() => {
     }
     return t0 + 0.5;
   }
-  /* ---------- Agarrar un arma: foley grabado en capas, como en los juegos ----------
-   * Grabaciones reales (sonidos/agarre_*.wav, CC0; fuentes en sonidos/CREDITOS.md), una encima de otra:
-   *   - el cuerpo del personaje: la ropa que se mueve (tres tomas que se alternan; con un arma pesada, además ropa
-   *     gruesa) o, con una pistola, un arma blanca o una granada, el cuero de la funda; y desde 2 kg, el cuero y el
-   *     equipo que se acomodan con el peso;
-   *   - el agarre según el material: metal (una herramienta de metal que se agarra; desde 8 kg, una más pesada, con dos
-   *     golpes), madera (un golpe de madera; grave en las grandes) o plástico (ese golpe de madera, apagado). Las de dos
-   *     manos suenan dos veces: la mano de atrás y la de adelante, más suave;
-   *   - detalles: el clic del tambor del revólver, el traqueteo del guardamanos de bombeo, los eslabones de la cinta de
-   *     la minigun, la hoja que sale (cuchillo y machete; las espadas, una más ancha), el tubo de la bazuca.
-   * Cuanto más pesada, más fuerte y un poco más grave (la grabación, más lenta). El machete del cazador no tiene: al
-   * sacarlo suena su susurro.
+  /* ---------- Agarrar un arma: un sonido leve, grabado ----------
+   * Grabaciones reales (sonidos/agarre_*.wav, CC0; fuentes en sonidos/CREDITOS.md). Leandro: «las pistolas están bien,
+   * salvo la Desert Eagle; las metralletas, muy exageradas: sólo el sonido metálico, y el agarre, muchísimo más bajo».
+   *   - Pistolas (y la granada): el cuero de la funda y un clic de metal (la de plástico, un golpe apagado; las de cachas
+   *     de madera, además un toque de madera); los revólveres, el tambor. La Desert Eagle, como una pistola más.
+   *   - Las demás (metralletas, rifles, escopetas, especiales, de golpe): sólo un sonido metálico sutil, como el de la
+   *     granada («perfecto, algo bien sutil»), que crece un poco con el tamaño (desde 8 kg, uno más pesado). Las de
+   *     plástico, más bajo todavía.
+   *   - Armas blancas: la hoja que sale, más bajo (cuchillo y machete; las espadas, una más ancha). El bate, de madera,
+   *     no suena: no tiene metal que lo amerite.
+   * El machete del cazador no tiene: al sacarlo suena su susurro.
    */
   // id: [kg, metal, madera, plástico, detalle]
   const ARMAS_AGARRE = {
     glock: [0.7, 0.3, 0, 1], beretta92: [0.95, 1, 0, 0], colt1911: [1.1, 1, 0, 0], ppk: [0.6, 1, 0, 0], deagle: [2, 1, 0, 0],
     mauser: [1.1, 1, 0.5, 0], magnum: [1.4, 1, 0, 0, 'tambor'], python: [1.2, 1, 0.4, 0, 'tambor'],
     uzi: [3.5, 1, 0, 0], ak47: [3.9, 0.8, 0.8, 0], m16: [3.3, 0.7, 0, 0.7], mp5: [2.5, 0.8, 0, 0.5], thompson: [4.9, 0.9, 0.8, 0],
-    vector: [2.7, 0.3, 0, 1], p90: [2.6, 0, 0, 1],
+    vector: [2.7, 0.3, 0, 1], p90: [2.6, 0.3, 0, 1],
     remington700: [3.6, 0.5, 1, 0], barrett: [14, 1, 0, 0], mosin: [4, 0.6, 1, 0], garand: [4.3, 0.7, 1, 0], svd: [4.3, 0.8, 0.8, 0],
     winchester1894: [3, 0.6, 1, 0],
     recortada: [2.5, 0.7, 1, 0], mossberg: [3.2, 0.6, 0, 0.8, 'bombeo'], rem870: [3.6, 0.6, 0.9, 0, 'bombeo'], benelli: [3.8, 0.6, 0, 0.8],
@@ -545,10 +544,10 @@ const Audio_ = (() => {
     m79: [2.9, 0.6, 1, 0], mgl: [5.3, 1, 0, 0.3], bazuca: [6.8, 1, 0, 0, 'tubo'], rpg7: [7, 0.9, 0.5, 0, 'tubo'], granadas: [0.4, 1, 0, 0],
     lanzallamas: [30, 1, 0, 0], minigun: [39, 1, 0, 0, 'eslabones'], laser: [3, 0.5, 0, 0.7],
     cuchillo: [0.3, 0.6, 0, 0.4, 'hoja'], machete: [0.6, 0.8, 0, 0.4, 'hoja'], katana: [1.2, 0.6, 0.4, 0, 'hoja'], hacha: [2.7, 0.8, 0.9, 0],
-    bate: [1, 0.2, 1, 0], mazo: [4.5, 1, 0.8, 0],
+    bate: [1, 0, 1, 0], mazo: [4.5, 1, 0.8, 0],   // el bate, de madera: sin metal, no suena
     mjolnir: [20, 1, 0, 0], excalibur: [1.5, 1, 0, 0, 'hoja'], tridente: [3, 1, 0, 0], egida: [6, 1, 0, 0], gungnir: [2.5, 0.5, 0.9, 0],
   };
-  // NIVEL_AGARRE: un fusil suena unos 12 dB por debajo de una recarga; con el peso (W) va de −20 dB (cuchillo) a −5 (minigun)
+  // NIVEL_AGARRE: una pistola suena unos 16 dB por debajo de una recarga; el resto, más bajo (ver genAgarre)
   const NIVEL_AGARRE = 0.48;
   // Una capa: una grabación, con su volumen, su velocidad (más lenta = más grave y pesada) y, si hace falta, apagada.
   // Varía un poco cada vez. Devuelve cuándo termina (si la grabación todavía no está cargada, no suena)
@@ -561,38 +560,27 @@ const Audio_ = (() => {
     g.connect(s); f.start(t);
     return t + b.duration / f.playbackRate.value;
   }
-  let ultimaRopa = 0;
   function genAgarre(ac, salida, t0, nodos, id) {
     const d = ARMAS_AGARRE[id];
     if (!d) return t0;
-    const [kg, metal, madera, plastico, detalle] = d, lw = Math.log2(1 + kg), W = Math.pow(kg / 3, kg <= 3 ? 0.38 : 0.25);   // W: todo suena más cuanto más pesa (arriba de 3 kg, menos: juntan muchas capas)
-    const vel = Math.max(0.82, Math.min(1.08, 1.08 - 0.05 * lw)), s = ganancia(ac, NIVEL_AGARRE), fines = [t0];
+    const [kg, metal, madera, plastico, detalle] = d, lw = Math.log2(1 + kg), s = ganancia(ac, NIVEL_AGARRE), fines = [t0];
+    const vel = Math.max(0.82, Math.min(1.08, 1.08 - 0.05 * lw));   // más pesada, más lenta: más grave
     s.connect(salida);
-    // El cuerpo: el cuero de la funda (pistolas, armas blancas, granadas) o la ropa; con las pesadas, ropa gruesa
-    const funda = (typeof ARMAS !== 'undefined' && ARMAS[id] && ARMAS[id].categoria === 'pistola') || detalle === 'hoja' || id === 'granadas';
-    if (funda) fines.push(capaGrabada(ac, s, t0, 'agarre_cuero', { v: 0.5 * W }));
-    else {
-      ultimaRopa = (ultimaRopa + 1 + Math.floor(Math.random() * 2)) % 3;
-      fines.push(capaGrabada(ac, s, t0, 'agarre_ropa_' + (ultimaRopa + 1), { v: 0.45 * Math.pow(W, 0.7), vel }));
+    if ((typeof ARMAS !== 'undefined' && ARMAS[id] && ARMAS[id].categoria === 'pistola') || id === 'granadas') {
+      // Pistolas, como estaban: la funda y el clic (la Desert Eagle, de 2 kg, suena como una pistola grande)
+      const W = Math.pow(Math.min(kg, 1.4) / 3, 0.38);
+      fines.push(capaGrabada(ac, s, t0, 'agarre_cuero', { v: 0.5 * W }));
+      if (metal) fines.push(capaGrabada(ac, s, t0 + 0.04, 'agarre_clic', { v: 0.35 * metal * W, vel }));
+      if (madera) fines.push(capaGrabada(ac, s, t0 + 0.043, 'agarre_madera', { v: 0.45 * madera * W, vel }));
+      if (plastico) fines.push(capaGrabada(ac, s, t0 + 0.042, 'agarre_madera', { v: 0.35 * plastico * W, vel: 1.12, corte: 1800 }));
+      if (detalle === 'tambor') fines.push(capaGrabada(ac, s, t0 + 0.13, 'agarre_clic', { v: 0.2 * W, vel: 1.05 }));
+    } else {
+      // Lo demás: sólo un sonido metálico sutil, como el de la granada (unos 20 dB por debajo de una recarga), un poco
+      // más cuanto más grande (la minigun, unos 15); las armas blancas, la hoja, más bajo; sin metal (el bate), nada
+      const W = Math.pow(kg / 3, kg <= 3 ? 0.35 : 0.25);
+      if (detalle === 'hoja') fines.push(capaGrabada(ac, s, t0, kg < 1 ? 'agarre_cuchillo' : 'agarre_hoja', { v: 0.25 * W }));
+      else if (metal) fines.push(capaGrabada(ac, s, t0, kg >= 8 ? 'agarre_metal_pesado' : 'agarre_metal', { v: 0.2 * Math.max(metal, 0.5) * W, vel }));
     }
-    if (kg >= 6) fines.push(capaGrabada(ac, s, t0 + 0.01, 'agarre_ropa_pesada', { v: 0.4 * W, vel }));
-    if (kg >= 2) fines.push(capaGrabada(ac, s, t0 + 0.04, 'agarre_cuero_cae', { v: 0.3 * W, vel }));
-    // El agarre según el material; las de dos manos, dos veces (la de adelante más suave)
-    const manos = kg >= 2 ? [[0.04, 1, 1], [0.1 + 0.01 * lw, 0.45, 1.06]] : [[0.04, 1, 1]];
-    for (const [t, f, dv] of manos) {
-      if (metal) {
-        const chico = kg < 1.5, nombre = chico ? 'agarre_clic' : kg >= 8 ? 'agarre_metal_pesado' : 'agarre_metal';
-        fines.push(capaGrabada(ac, s, t0 + t, nombre, { v: (chico ? 0.35 : 0.45) * metal * W * f, vel: vel * dv }));
-      }
-      if (madera) fines.push(capaGrabada(ac, s, t0 + t + 0.003, kg >= 4 ? 'agarre_madera_pesada' : 'agarre_madera', { v: 0.45 * madera * W * f, vel: vel * dv }));
-      if (plastico) fines.push(capaGrabada(ac, s, t0 + t + 0.002, 'agarre_madera', { v: 0.35 * plastico * W * f, vel: 1.12 * dv, corte: 1800 }));
-    }
-    // Detalles de cada arma
-    if (detalle === 'tambor') fines.push(capaGrabada(ac, s, t0 + 0.13, 'agarre_clic', { v: 0.2 * W, vel: 1.05 }));
-    if (detalle === 'bombeo') fines.push(capaGrabada(ac, s, t0 + 0.12, 'agarre_traqueteo', { v: 0.3 * W, vel }));
-    if (detalle === 'eslabones') fines.push(capaGrabada(ac, s, t0 + 0.08, 'agarre_eslabones', { v: 0.4 * W, vel: 0.9 }));
-    if (detalle === 'hoja') fines.push(capaGrabada(ac, s, t0, kg < 1 ? 'agarre_cuchillo' : 'agarre_hoja', { v: 0.45 * W }));
-    if (detalle === 'tubo') fines.push(capaGrabada(ac, s, t0 + 0.05, 'agarre_metal_pesado', { v: 0.3 * W, vel: 0.75, corte: 1500 }));
     return Math.max(...fines) + 0.1;
   }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)

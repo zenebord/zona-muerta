@@ -938,17 +938,13 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
 - Cada zombie sale distinto: pelo, heridas, desgarros, manchas y a veces un brazo colgando. Al morir cae sobre un charco de sangre.
 - Los mecanismos de recarga (cargadores, correderas, cerrojos, bombeo, cartuchos, balas) son grabaciones reales
   de armas, recortadas en eventos sueltos y elegidas según el arma. Fuentes y licencias en `sonidos/CREDITOS.md`.
-- Al agarrar un arma (teclas, ruedita, una caja, al bajarse de la ametralladora) suena foley grabado en capas, como
-  en los juegos (`ARMAS_AGARRE` y `genAgarre` en `js/audio.js`; grabaciones CC0 `sonidos/agarre_*.wav`): el cuerpo
-  del personaje (la ropa que se mueve, tres tomas que se alternan; con pistolas, armas blancas y granadas, el cuero
-  de la funda; con armas pesadas, ropa gruesa; desde 2 kg, el cuero y el equipo que se acomodan con el peso) y el
-  agarre según el material: metal (herramientas de metal que se agarran; desde 8 kg, una más pesada), madera o
-  plástico (la madera, apagada). Las de dos manos suenan dos veces: la mano de atrás y la de adelante, más suave.
-  Cada arma lleva su peso real (de 0,3 kg el cuchillo a 39 kg la minigun): cuanto más pesada, más fuerte y más grave
-  (de −21 dB respecto de una recarga el cuchillo a −12 un fusil y −5 la minigun). Detalles: el tambor del revólver,
-  el guardamanos de bombeo, los eslabones de la minigun, la hoja que sale y el tubo de la bazuca. Al empezar la
-  partida no suena; con la ruedita, a lo sumo uno cada 90 ms y siempre el de la última. El machete del cazador no
-  tiene: al sacarlo suena su susurro.
+- Al agarrar un arma (teclas, ruedita, una caja, al bajarse de la ametralladora) suena algo sutil, grabado
+  (`ARMAS_AGARRE` y `genAgarre` en `js/audio.js`; grabaciones CC0 `sonidos/agarre_*.wav`): las pistolas y la granada,
+  el cuero de la funda y un clic de metal (las de plástico, un golpe apagado; los revólveres, el tambor); el resto,
+  sólo un sonido metálico sutil, como el de la granada (unos 19 dB por debajo de una recarga), que crece un poco con
+  el tamaño (la minigun, unos 15); las armas blancas, la hoja que sale, más bajo; el bate, de madera, no suena. Al
+  empezar la partida no suena; con la ruedita, a lo sumo uno cada 90 ms y siempre el de la última. El machete del
+  cazador no tiene: al sacarlo suena su susurro.
 - Voces de zombies, pasos, impactos de bala en la carne y quejidos del protagonista también son grabaciones reales.
   El viento de fondo, la sirena de cada ronda y el latido con poca vida son sintetizados.
 - Los disparos y explosiones son sintetizados y suenan a aire libre (sin eco y casi sin reverberación), salvo en el
