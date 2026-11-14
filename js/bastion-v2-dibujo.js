@@ -1,138 +1,15 @@
 /* ===== Último bastión v2: el dibujo de lo nuevo =====
  * Unidades (como las demás de js/bastion-dibujo.js: pies en (0, 0), el centro de la celda, mirando a la derecha y con
- * la pose quieta guardada como imagen): francotirador, lanzallamas, médico, mortero, antiaérea, alambrado, señuelo y
- * el soldado caído. Zombies: lo que se le suma al zombie de siempre (js/zombie.js) para el acorazado (casco con visor
+ * la pose quieta guardada como imagen): francotirador, lanzallamas y médico (su cuerpo, el de toda la infantería, está
+ * en js/bastion-dibujo.js), mortero, antiaérea, alambrado, señuelo y el soldado caído. Zombies: lo que se le suma al zombie de siempre (js/zombie.js) para el acorazado (casco con visor
  * y escudo), el gritón (megáfono), el hinchado (panza con pústulas) y el dinamitero (cartuchos a la espalda con la
  * mecha prendida), el topo (casco de minero con su lámpara; enterrado es un montículo que avanza) y el escupidor (el
  * buche lleno de ácido), y las aves, que son nuevas: cuervo y buitre. La torre de vigía. Al final, lo que se pinta
  * sobre la escena en cada cuadro: fuego, gas, ácido, granadas, lo que arroja la horda, estelas, gritos, avisos,
  * anillos y cursores.
  */
-/* ---------- Infantería: el mismo cuerpo, con el equipo de cada oficio ---------- */
-const TRAJES_BASTION = {
-  soldado:       { tela: '#5b6340', chaleco: '#8f7d57', casco: '#6f7850' },
-  francotirador: { tela: '#5a5c36', chaleco: '#6a6a40', casco: '#6e6a40', hilachas: ['#8a8250', '#4f5a30', '#77703f'] },
-  lanzallamas:   { tela: '#4b4a42', chaleco: '#3a3a35', casco: '#3f423a', tanque: '#b5462a', banda: '#e2d9c2' },
-  medico:        { tela: '#5b6340', chaleco: '#e6e3d6', casco: '#eceadf', cruz: '#c0282a', bolso: '#d8d0b8' },
-};
+/* ---------- Infantería: el cuerpo y los trajes están en js/bastion-dibujo.js (infanteCuerpo); acá, cómo se usa ---------- */
 const CAJA_INFANTE = [-15, -46, 35, 6];
-function infanteCuerpo(ctx, tipo, s) {
-  const P = PAL_BASTION, T = TRAJES_BASTION[tipo] || TRAJES_BASTION.soldado;
-  const paso = s.caminando ? Math.sin(s.fase || 0) : 0, sube = s.caminando ? Math.abs(Math.cos(s.fase || 0)) * 0.8 : 0;
-  const rodilla = tipo === 'francotirador' && !s.caminando;   // el tirador espera con una rodilla en tierra
-  sombraPiso(ctx, rodilla ? 12 : 9, 2.8, 0.32, 4, 1.2);
-  const bota = c => { c.moveTo(-2, 10.6); c.lineTo(2.2, 10.6); c.quadraticCurveTo(5, 11.6, 5.1, 14.2); c.lineTo(-2.3, 14.2); c.closePath(); };
-  const pierna = (x, ang, col) => {
-    ctx.save(); ctx.translate(x, -14.6); ctx.rotate(ang);
-    pb(ctx, tramo(0, 0, 0.4, 11.8, 4.4, 3.4, 0.4), col, { sombra: 0.5, linea: 0.4 });
-    pb(ctx, bota, P.bota, { sombra: 0.4, linea: 0.4 });
-    ctx.restore();
-  };
-  const baja = rodilla ? 6.4 : 0;
-  if (rodilla) {   // pierna de atrás: rodilla al piso y la canilla tendida hacia atrás
-    pb(ctx, tramo(-0.6, -8.4, 1.6, -1.6, 4.4, 3.8), ajustarColor(T.tela, -0.2), { sombra: 0.5, linea: 0.4 });
-    pb(ctx, tramo(1.6, -1.6, -8, -1.4, 3.6, 3), ajustarColor(T.tela, -0.2), { sombra: 0.5, linea: 0.4 });
-    pb(ctx, rr(-12.6, -3.4, 5, 3.6, 1.2), P.bota, { sombra: 0.4, linea: 0.4 });
-  } else pierna(-0.6, -paso * 0.5, ajustarColor(T.tela, -0.2));
-  ctx.save(); ctx.translate(0, baja - sube);
-  const ang = s.apunta || 0, hom = tipo === 'lanzallamas' ? { x: 1.2, y: -20.6 } : { x: 0.8, y: -23.6 };
-  const enArma = (x, y) => ({ x: hom.x + x * Math.cos(ang) - y * Math.sin(ang), y: hom.y + x * Math.sin(ang) + y * Math.cos(ang) });
-  // Lo que lleva a la espalda
-  if (tipo === 'lanzallamas') {   // dos tanques de combustible y la botella de presión
-    pb(ctx, rr(-11.6, -29.6, 4, 14, 1.8), ajustarColor(T.tanque, -0.12), { sombra: 0.5, brillo: 0.35 });
-    pb(ctx, rr(-8.2, -30.4, 4.2, 14.8, 1.9), T.tanque, { sombra: 0.5, brillo: 0.4 });
-    pb(ctx, rr(-11.8, -24.6, 8, 1.8, 0.6), T.banda, { sombra: 0.3, linea: 0.35, brillo: false });
-    pb(ctx, rr(-10.2, -15.4, 6, 2.6, 1.2), P.acero, { sombra: 0.3, linea: 0.35, brillo: 0.3 });
-    if (!Pincel.silueta) { linea(ctx, P.aceroOsc, 0.8, [[-6, -30.6], [-6, -32.4]]); linea(ctx, P.aceroOsc, 0.8, [[-9.6, -29.8], [-9.6, -31.4]]); }
-  } else if (tipo === 'medico') {
-    pb(ctx, rr(-8, -27.4, 4.8, 9.6, 1.6), T.bolso, { sombra: 0.5 });
-    if (!Pincel.silueta) { detalle(ctx, T.cruz, c => { c.rect(-6.4, -24.6, 1.5, 4.4); c.rect(-7.8, -23.2, 4.3, 1.5); }); }
-  } else if (tipo !== 'francotirador') pb(ctx, rr(-7.4, -27.6, 4.2, 9.2, 1.6), P.odOsc, { sombra: 0.5 });
-  // Brazo de atrás
-  if (tipo === 'medico') brazoB(ctx, -0.4, -24.4, 4.6, -15.4, ajustarColor(T.tela, -0.22));
-  else { const apoyo = enArma(tipo === 'lanzallamas' ? 9 : tipo === 'francotirador' ? 13 : 11, 1.1); brazoB(ctx, -0.4, -24.4, apoyo.x, apoyo.y, ajustarColor(T.tela, -0.22), tipo === 'francotirador' ? 6.6 : 5.6); }
-  if (rodilla) {   // pierna de adelante: el muslo hacia adelante y la canilla derecha
-    pb(ctx, tramo(0.8, -14.6, 7.4, -14.4, 4.6, 4), T.tela, { sombra: 0.5, linea: 0.4 });
-    pb(ctx, tramo(7.4, -14.4, 7.8, -8.6, 3.8, 3.2), T.tela, { sombra: 0.5, linea: 0.4 });
-    ctx.save(); ctx.translate(7.6, -20.6 + 0.2); pb(ctx, bota, P.bota, { sombra: 0.4, linea: 0.4 }); ctx.restore();
-  } else pierna(0.8, paso * 0.5, T.tela);
-  // Torso, chaleco y cinturón
-  pb(ctx, c => { c.moveTo(-4, -14); c.lineTo(-4.4, -25); c.quadraticCurveTo(-4, -27.6, -1.4, -27.8); c.lineTo(2.2, -27.8); c.quadraticCurveTo(4.6, -27.4, 4.6, -24.8); c.lineTo(4, -14); c.closePath(); }, T.tela);
-  pb(ctx, rr(-3.8, -26.4, 8.2, 9.6, 1.4), T.chaleco, { sombra: 0.6 });
-  if (!Pincel.silueta) {
-    if (tipo === 'medico') detalle(ctx, T.cruz, c => { c.rect(-0.6, -24.6, 1.8, 5.6); c.rect(-2.5, -22.7, 5.6, 1.8); });   // la cruz roja en el pecho
-    else {
-      pb(ctx, rr(3.2, -23.4, 2.4, 4.2, 0.6), ajustarColor(T.chaleco, -0.12), { sombra: 0.3, linea: 0.35, brillo: 0.2 });
-      linea(ctx, ajustarColor(T.chaleco, -0.35), 0.4, [[-3.6, -22.6], [3, -22.6]]); linea(ctx, ajustarColor(T.chaleco, -0.35), 0.4, [[-3.6, -20.4], [3, -20.4]]);
-    }
-  }
-  pb(ctx, rr(-4.4, -15.8, 8.8, 2, 0.6), P.correa, { sombra: 0.3, linea: 0.35, brillo: false });
-  if (tipo === 'medico') {   // el botiquín, colgado adelante
-    pb(ctx, rr(1.6, -17.2, 7.4, 6, 1), T.bolso, { sombra: 0.4, linea: 0.4, brillo: 0.3 });
-    if (!Pincel.silueta) { detalle(ctx, T.cruz, c => { c.rect(4.6, -16.2, 1.4, 4); c.rect(3.3, -14.9, 4, 1.4); }); linea(ctx, P.correa, 0.7, [[2.4, -17.2], [-1, -27]]); }
-  }
-  // Cabeza: cuello, cara de perfil y lo que lleva puesto
-  pb(ctx, rr(-0.6, -29.4, 3, 2.4, 0.6), ajustarColor(P.piel, -0.1), { sombra: 0.3, linea: 0.3, brillo: false });
-  pb(ctx, c => { c.moveTo(-2.4, -31); c.quadraticCurveTo(-2.6, -34.6, 0.6, -34.8); c.quadraticCurveTo(3.8, -34.8, 4.2, -32.4); c.lineTo(4.9, -31.2); c.lineTo(4.3, -30.6); c.quadraticCurveTo(4.2, -28.6, 1.6, -28.4); c.quadraticCurveTo(-1.8, -28.4, -2.4, -31); }, P.piel, { sombra: 0.5, linea: 0.4 });
-  if (tipo === 'francotirador') {   // capucha de camuflaje con hilachas que le caen por la espalda y sobre la cara
-    pb(ctx, c => { c.moveTo(-5.4, -29.6); c.quadraticCurveTo(-6.2, -38.6, 1, -38.4); c.quadraticCurveTo(6.4, -38, 6.2, -32.6); c.lineTo(4.4, -33); c.quadraticCurveTo(1, -34.4, -1.2, -31.6); c.lineTo(-2, -27); c.lineTo(-5.6, -17.4); c.lineTo(-8.4, -19); c.closePath(); }, T.casco, { sombra: 0.7, brillo: 0.2 });
-    if (!Pincel.silueta) {
-      for (let k = 0; k < 9; k++) {
-        const x = -7.6 + azar(k, 71) * 12.6, y = -37.4 + azar(k, 72) * 10, l = 2.4 + azar(k, 73) * 3.4;
-        linea(ctx, T.hilachas[k % 3], 0.7, [[x, y], [x - 0.8 + azar(k, 74) * 1.2, y + l]]);
-      }
-      detalle(ctx, '#1e1a16', circulo(2.6, -31.5, 0.42));
-    }
-  } else {
-    pb(ctx, c => { c.moveTo(-3.6, -31.4); c.quadraticCurveTo(-3.8, -37.4, 1, -37.6); c.quadraticCurveTo(5.6, -37.4, 5.4, -32.6); c.lineTo(6, -32); c.lineTo(-3.9, -31); c.closePath(); }, T.casco, { sombra: 0.7, brillo: 0.3 });
-    if (!Pincel.silueta) {
-      linea(ctx, ajustarColor(T.casco, -0.35), 0.5, [[-3.4, -33.2], [5.2, -33.4]]);
-      if (tipo === 'medico') detalle(ctx, T.cruz, c => { c.rect(0.2, -37, 1.5, 3.4); c.rect(-0.8, -36, 3.5, 1.4); });   // cruz en el casco
-      if (tipo === 'lanzallamas') {   // antiparras ámbar y máscara
-        pb(ctx, rr(1, -32.9, 3.9, 2.4, 1), '#e0a030', { sombra: 0.3, linea: 0.4, brillo: 0.5 });
-        pb(ctx, c => { c.moveTo(1.8, -30.6); c.lineTo(5.4, -30.8); c.lineTo(5.8, -28.6); c.lineTo(3, -27.6); c.lineTo(1.4, -28.4); c.closePath(); }, '#26272a', { sombra: 0.3, linea: 0.35, brillo: 0.2 });
-        detalle(ctx, '#4a4c50', circulo(4.9, -28.9, 0.9));
-      } else { detalle(ctx, '#1e1a16', circulo(2.6, -31.5, 0.42)); linea(ctx, '#2a2620', 0.35, [[-1.6, -31], [-0.6, -28.6]]); }
-    }
-  }
-  // El arma (gira desde el hombro)
-  if (tipo !== 'medico') {
-    ctx.save(); ctx.translate(hom.x, hom.y); ctx.rotate(ang);
-    if (tipo === 'francotirador') {   // fusil largo envuelto en arpillera, con la mira grande, el bípode y el freno de boca
-      pb(ctx, c => { c.moveTo(-6.4, -1.4); c.lineTo(-0.6, -1.7); c.lineTo(-0.4, 1.3); c.lineTo(-6, 2.6); c.closePath(); }, '#6f6844', { sombra: 0.3, linea: 0.35, brillo: 0.2 });
-      pb(ctx, rr(-0.6, -1.8, 10, 3.2, 0.5), '#7d7550', { sombra: 0.4, linea: 0.35, brillo: 0.25 });
-      pb(ctx, c => { c.moveTo(4, 1.2); c.lineTo(5.6, 1.2); c.lineTo(5.9, 3.6); c.lineTo(4.6, 3.8); c.closePath(); }, '#2a2b28', { sombra: 0.3, linea: 0.3, brillo: false });
-      pb(ctx, rr(1, -4.9, 9.4, 2.5, 1.1), '#202122', { sombra: 0.2, linea: 0.3, brillo: 0.4 });
-      if (!Pincel.silueta) { detalle(ctx, '#6fa8c8', elipse(10.4, -3.65, 0.5, 1)); linea(ctx, '#202122', 0.6, [[3.4, -2.6], [3.4, -1.8]]); linea(ctx, '#202122', 0.6, [[8, -2.6], [8, -1.8]]); }
-      pb(ctx, rr(9.2, -1.3, 7.4, 2.4, 0.6), '#756d4a', { sombra: 0.3, linea: 0.35, brillo: 0.2 });
-      pb(ctx, rr(16.4, -0.7, 11, 1.2, 0.3), '#1f201e', { sombra: 0.2, linea: 0.3, brillo: false });
-      pb(ctx, rr(26.6, -1.2, 2.8, 2.2, 0.4), '#2a2b2c', { sombra: 0.2, linea: 0.3 });
-      if (rodilla && !Pincel.silueta) { linea(ctx, '#2a2b2c', 0.7, [[15.4, 1], [13.6, 7.6]]); linea(ctx, '#2a2b2c', 0.7, [[15.4, 1], [17.6, 7.6]]); }
-    } else if (tipo === 'lanzallamas') {   // lanza: caño con funda perforada, la boquilla y la manguera a los tanques
-      if (!Pincel.silueta) { ctx.strokeStyle = '#1c1d1f'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(-1.6, 0.8); ctx.quadraticCurveTo(-7, 6, -9, -1); ctx.stroke(); }
-      pb(ctx, rr(-2.4, -1.5, 5.4, 3.4, 0.8), '#3a3c40', { sombra: 0.3, linea: 0.35, brillo: 0.25 });
-      pb(ctx, c => { c.moveTo(0.4, 1.6); c.lineTo(2.4, 1.6); c.lineTo(1.8, 4.8); c.lineTo(0.2, 4.6); c.closePath(); }, '#2a2b28', { sombra: 0.3, linea: 0.3, brillo: false });
-      pb(ctx, rr(3, -1, 11, 2.2, 0.6), '#55595e', { sombra: 0.3, linea: 0.35, brillo: 0.35 });
-      if (!Pincel.silueta) for (let k = 0; k < 4; k++) detalle(ctx, '#17181a', circulo(5 + k * 2.2, 0.1, 0.45));
-      pb(ctx, c => { c.moveTo(13.6, -1.6); c.lineTo(17.6, -2.2); c.lineTo(17.6, 2.4); c.lineTo(13.6, 1.8); c.closePath(); }, '#2b2c2e', { sombra: 0.3, linea: 0.35, brillo: 0.3 });
-      pb(ctx, rr(8, 1.2, 2, 3.2, 0.6), '#2a2b28', { sombra: 0.3, linea: 0.3, brillo: false });
-    } else {
-      pb(ctx, c => { c.moveTo(-5.4, -1.4); c.lineTo(-0.6, -1.6); c.lineTo(-0.4, 1.4); c.lineTo(-5, 2.4); c.closePath(); }, '#2b2c2a', { sombra: 0.3, linea: 0.35, brillo: 0.2 });
-      pb(ctx, rr(-0.6, -1.8, 9, 3.2, 0.5), '#33352f', { sombra: 0.4, linea: 0.35, brillo: 0.25 });
-      pb(ctx, c => { c.moveTo(4, 1.2); c.lineTo(5.8, 1.2); c.lineTo(6.4, 4.8); c.lineTo(4.9, 5); c.closePath(); }, '#2a2b28', { sombra: 0.3, linea: 0.3, brillo: false });
-      pb(ctx, rr(2, -3.6, 3.6, 1.8, 0.5), '#202122', { sombra: 0.2, linea: 0.3, brillo: 0.3 });
-      pb(ctx, rr(8.2, -1.5, 6, 2.6, 0.6), '#3b3d36', { sombra: 0.3, linea: 0.35, brillo: 0.2 });
-      pb(ctx, rr(14, -0.8, 6.4, 1.2, 0.3), '#1f201e', { sombra: 0.2, linea: 0.3, brillo: false });
-    }
-    ctx.restore();
-  }
-  // Brazo de adelante
-  if (tipo === 'medico') {
-    brazoB(ctx, 1.6, -25.2, 6.6, -17.4, T.tela);
-    if (!Pincel.silueta) { pb(ctx, rr(0.2, -24.2, 3.6, 2.8, 0.6), '#f0eee4', { sombra: 0.2, linea: 0.3, brillo: false }); detalle(ctx, T.cruz, c => { c.rect(1.6, -23.8, 0.8, 2); c.rect(1, -23.2, 2, 0.8); }); }   // brazalete
-  } else { const gatillo = enArma(tipo === 'lanzallamas' ? 1.2 : 4, tipo === 'lanzallamas' ? 3 : 1.3); brazoB(ctx, 1.6, -25.2, gatillo.x, gatillo.y, T.tela); }
-  ctx.restore();
-}
 // Cada oficio: caminando (8 cuadros), quieto apuntando o tendido en el piso si lo derribaron
 function infanteBastion(tipo) {
   return function (ctx, s, t) {
@@ -149,7 +26,7 @@ function infanteBastion(tipo) {
     const ang = tipo === 'medico' ? 0 : cuant(s.apunta, 0.04);
     conSprite(ctx, 'i' + tipo + 'a' + ang.toFixed(2), CAJA_INFANTE, g => infanteCuerpo(g, tipo, { apunta: ang }));
     if (Pincel.silueta) return;
-    if (tipo === 'francotirador' && s.fuego > 0) fogonazoB(ctx, 0.8 + 29.6 * Math.cos(ang), -17.2 + 29.6 * Math.sin(ang), s.fuego, 0.9, ang);
+    if (tipo === 'francotirador' && s.fuego > 0) fogonazoB(ctx, 0.8 + 29.6 * Math.cos(ang), -23.6 + BAJA_RODILLA + 29.6 * Math.sin(ang), s.fuego, 0.9, ang);
     if (tipo === 'lanzallamas') {   // la llama piloto, siempre prendida
       const x = 1.2 + 18.6 * Math.cos(ang), y = -20.6 + 18.6 * Math.sin(ang);
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; Fuego.lengua(ctx, x + 1, y + 1.2, 1.3, 3.4 + Math.sin((t || 0) / 60) * 1, Math.sin((t || 0) / 80) * 0.8, 0.9); ctx.restore();
@@ -379,7 +256,7 @@ Object.assign(DibujoBastion, {
     const f = Math.min(1, (u.t || 0) / BASTION2.contagio), pulso = 0.5 + 0.5 * Math.sin((t || 0) / 110);
     if (!Pincel.silueta) { ctx.fillStyle = 'rgba(90,8,8,0.55)'; ctx.beginPath(); ctx.ellipse(-13, 1.5, 16, 3.8, 0, 0, Math.PI * 2); ctx.fill(); }
     ctx.save(); ctx.translate(3, -2.6); ctx.rotate(-Math.PI / 2 + 0.07);
-    conSprite(ctx, '34' + 'sa0.00', [-11, -42, 26, 3], g => DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0));
+    conSprite(ctx, '34' + 'sa0.00', CAJA_SOLDADO, g => DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0));
     ctx.restore();
     if (Pincel.silueta) return;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -395,7 +272,7 @@ Object.assign(DibujoBastion, {
   DibujoBastion.soldado = function (ctx, s, t) {
     if (!(s.aturdidoHasta > t)) return soldadoV1(ctx, s, t);
     ctx.save(); ctx.translate(3, -2.6); ctx.rotate(-Math.PI / 2 + 0.07);
-    conSprite(ctx, '34' + 'sa0.00', [-11, -42, 26, 3], g => DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0));
+    conSprite(ctx, '34' + 'sa0.00', CAJA_SOLDADO, g => DibujoBastion.soldadoCuerpo(g, { apunta: 0 }, 0));
     ctx.restore();
   };
   const MARCA = { soldado: '#8f9a62', francotirador: '#d8c98a', lanzallamas: '#e8672c', medico: '#f4f2ea' };
@@ -564,12 +441,11 @@ const AVES_BASTION = { cuervo: { ancho: 22, alto: 14 }, buitre: { ancho: 40, alt
 // Ala desde el hombro (x, y), de largo L. a: de -1 (abajo) a 1 (arriba)
 function alaAve(ctx, x, y, L, a, color, dedos) {
   const ty = -a * L * 0.92, tx = -L * (0.3 + 0.12 * Math.abs(a));
-  pieza(ctx, c => {
+  plana(ctx, c => {
     c.moveTo(x + L * 0.24, y);
     c.quadraticCurveTo(x + L * 0.12 + tx * 0.2, y + ty * 0.8, x + tx, y + ty);
     c.quadraticCurveTo(x + tx - L * 0.3, y + ty * 0.5 + L * 0.12, x - L * 0.46, y + 1.4);
-    c.closePath();
-  }, color, x - L * 0.8, x + L * 0.26);
+  }, color, 0.35);
   if (Pincel.silueta) return;
   // Plumas: del borde de ataque al de fuga, y el borde de ataque con luz
   for (let k = 1; k <= (dedos ? 5 : 3); k++) {
@@ -578,34 +454,47 @@ function alaAve(ctx, x, y, L, a, color, dedos) {
   }
   linea(ctx, ajustarColor(color, 0.35), 0.5, [[x + L * 0.22, y - 0.3], [x + L * 0.14 + tx * 0.35, y + ty * 0.62], [x + tx, y + ty]]);
 }
+/* Cuervo y buitre en vuelo. El cuerpo, la cola y la cabeza del cuervo son una sola forma (antes eran un óvalo, un
+ * círculo y un triángulo, cada uno con su contorno); en el buitre, el cuerpo con la cola por un lado y el cuello pelado
+ * con la cabeza por el otro, con la gola de plumas blancas en el medio. Las patas van como las lleva un ave: el cuervo,
+ * recogidas hacia atrás contra la panza; el buitre, que baja a agarrar, con el muslo emplumado, la caña y las garras
+ * abiertas. Pintura plana, como los demás animales (js/zombies-autoctonos.js). */
 function dibujarAve(ctx, z, golpeado) {
   const col = c => golpeado ? ajustarColor(c, 0.7) : c, sil = Pincel.silueta, muerto = z.estado === 'muerto';
   const a = muerto ? 0.85 : Math.sin(z.fase);
   if (z.especie === 'cuervo') {
-    const negro = col('#23252e'), azul = col('#3b4159');
+    const negro = col('#23252e'), azul = col('#3b4159'), pico = col('#5a5440');
     alaAve(ctx, -0.6, -2.6, 13, a * 0.9 + 0.1, col('#15161b'));
-    pieza(ctx, poli([[-5.6, -1.8], [-13.6, -4], [-14, -1], [-12.6, 1.2], [-5.6, 2]]), negro, -14, -5.6);
-    pieza(ctx, elipse(0, 0, 7.6, 4.2, -0.12), negro, -7.6, 7.6);
-    pieza(ctx, circulo(6.6, -2.8, 3.2), negro, 3.4, 9.8);
-    pieza(ctx, poli([[8.8, -4], [15, -1.6], [8.8, -0.8]]), col('#5a5440'), 8.8, 15);
+    // Patas recogidas hacia atrás, con los dedos cerrados
+    pielAnimal(ctx, k => c => { tramoMusculo(-1.6, 3, -5.4, 4.5, 1.3 - k, 0.9 - k * 0.6)(c); tramoMusculo(0.6, 3.4, -3.4, 5.2, 1.3 - k, 0.9 - k * 0.6)(c); }, pico, { linea: 0.35, mete: 0.3 });
+    const cuerpo = [[-14, -1.2], [-12.8, 1.4], [-6.5, 2.4], [-1, 4.2], [4.6, 3], [8.4, 0.6], [9.9, -2.4], [8.6, -5.4], [5.6, -6.1], [2.4, -4.4], [-3.5, -4.1], [-9.5, -3.4], [-13.6, -4.3]];
+    plana(ctx, poli([[8.6, -4.2], [15, -1.6], [8.8, -0.7]]), pico, 0.4);                                 // pico
+    pielAnimal(ctx, k => c => curvaCerrada(c, meter(cuerpo, k)), negro, { linea: 0.4, mete: 0.7, oscuro: true });
     if (!sil) {
+      linea(ctx, 'rgba(0, 0, 0, 0.35)', 0.4, [[-12.6, -3], [-6, -1.6]]); linea(ctx, 'rgba(0, 0, 0, 0.35)', 0.4, [[-12.8, -0.4], [-6, 0.6]]);   // plumas de la cola
       detalle(ctx, golpeado ? '#fff' : '#ff3b2e', circulo(7.6, -3.4, 0.8));
       if (!golpeado) { for (let k = 0; k < 3; k++) linea(ctx, 'rgba(225,215,195,0.75)', 0.45, [[-2.4 + k * 1.9, -0.6], [-1.8 + k * 1.9, 2.4]]); detalle(ctx, 'rgba(110,11,11,0.8)', elipse(-0.4, 1, 2.6, 1.4)); }
-      linea(ctx, '#5a5440', 0.6, [[-1, 3.6], [-2.2, 6.8]]); linea(ctx, '#5a5440', 0.6, [[1.6, 3.6], [0.8, 6.8]]);
     }
     alaAve(ctx, 0.6, -2, 14, a, azul);
   } else {
-    const pardo = col('#3b3026'), claro = col('#57483a'), carne = col('#b89088');
+    const pardo = col('#3b3026'), claro = col('#57483a'), carne = col('#b89088'), cana = col('#8a7a56');
     alaAve(ctx, -1, -4, 27, a * 0.9 + 0.1, col('#241d17'), true);
-    pieza(ctx, poli([[-9, -3], [-21, -5.4], [-22.4, -1], [-20, 3], [-9, 3.4]]), pardo, -22.4, -9);
-    pieza(ctx, elipse(0, 0, 12.4, 7.2, -0.1), pardo, -12.4, 12.4);
-    if (!sil && !golpeado) { for (let k = 0; k < 4; k++) linea(ctx, 'rgba(225,215,195,0.7)', 0.5, [[-4 + k * 2.6, -1], [-3 + k * 2.6, 4]]); detalle(ctx, 'rgba(110,11,11,0.8)', elipse(-0.6, 1.6, 4.4, 2.2)); }
-    // Patas con las garras abiertas
-    if (!sil) for (const x of [-2, 3]) { linea(ctx, '#8a7a56', 1, [[x, 6], [x + 1, 11.4]]); for (const d of [-2, 0, 2]) linea(ctx, '#2a2620', 0.7, [[x + 1, 11.4], [x + 1 + d, 14.4]]); }
-    pieza(ctx, poli(segmento(9.4, -3.4, 15.6, -9.4, 4.6, 3.4)), carne, 8, 17);   // cuello pelado
-    pieza(ctx, elipse(9.6, -3, 4.6, 3.6), col('#ddd6c6'), 5, 14.2);               // gola
-    pieza(ctx, circulo(17, -10.4, 3.5), carne, 13.5, 20.5);
-    pieza(ctx, k => { k.moveTo(19.6, -12); k.lineTo(24.6, -10.4); k.quadraticCurveTo(25.2, -8, 23.4, -6.6); k.lineTo(22.8, -8.6); k.lineTo(19.6, -8.4); k.closePath(); }, col('#d8cfae'), 19.6, 25.2);
+    // Patas: el muslo emplumado, la caña y las tres garras abiertas
+    for (const x of [-2.4, 2.8]) {
+      pielAnimal(ctx, k => c => { tramoMusculo(x + 0.5, 7.2, x + 1.2, 11.6, 1.5 - k, 1.2 - k)(c); for (const d of [-2.2, 0, 2.2]) tramoMusculo(x + 1.2, 11.6, x + 1.2 + d, 14.6, 1.0 - k * 0.6, 0.5)(c); }, cana, { linea: 0.35, mete: 0.3 });
+      pielAnimal(ctx, k => c => tramoMusculo(x, 4.5, x + 0.5, 7.6, 3.6 - k, 2.2 - k)(c), pardo, { linea: 0.5, mete: 0.5 });
+    }
+    // Cuello pelado y cabeza: una sola forma, que nace de la gola
+    const cabeza = [[13.6, -10], [15.6, -7.2], [19.2, -7.6], [20.6, -10.2], [19.4, -13.2], [16, -13.8]], cuello = cuelloCurvo([8.4, -2.4], [12.6, -5.2], [16.8, -10.2], 5.4, 3.6);
+    pielAnimal(ctx, k => c => { cuello(k)(c); curvaCerrada(c, meter(cabeza, k * 0.8)); }, carne, { linea: 0.45, mete: 0.6 });
+    const cuerpo = [[-22.4, -1.2], [-20.4, 3.2], [-10, 4.2], [-2, 7.4], [6.5, 5.6], [11.6, 1.6], [12.2, -2.6], [8.5, -6.2], [0, -7.4], [-8, -6.2], [-15, -4.6], [-21.2, -5.6]];
+    pielAnimal(ctx, k => c => curvaCerrada(c, meter(cuerpo, k)), pardo, { linea: 0.5, mete: 0.9 });
+    if (!sil && !golpeado) {
+      linea(ctx, 'rgba(0, 0, 0, 0.3)', 0.5, [[-20.4, -3.6], [-10, -1.6]]); linea(ctx, 'rgba(0, 0, 0, 0.3)', 0.5, [[-20.6, 0.4], [-10, 1.6]]);                  // plumas de la cola
+      for (let k = 0; k < 4; k++) linea(ctx, 'rgba(225,215,195,0.7)', 0.5, [[-4 + k * 2.6, -1], [-3 + k * 2.6, 4]]); detalle(ctx, 'rgba(110,11,11,0.8)', elipse(-0.6, 1.6, 4.4, 2.2));
+    }
+    plana(ctx, elipse(9.6, -3, 4.6, 3.6), col('#ddd6c6'), 0.4);                                           // gola
+    plana(ctx, k => { k.moveTo(19.6, -12); k.lineTo(24.6, -10.4); k.quadraticCurveTo(25.2, -8, 23.4, -6.6); k.lineTo(22.8, -8.6); k.lineTo(19.6, -8.4); }, col('#d8cfae'), 0.45);   // pico ganchudo
     if (!sil) { detalle(ctx, golpeado ? '#fff' : '#ff3b2e', circulo(18.2, -11.2, 0.85)); detalle(ctx, '#2a2620', poli([[23.6, -9.6], [25, -8.6], [23.4, -6.6], [23, -8.4]])); }
     alaAve(ctx, 0.6, -3.4, 28, a, claro, true);
   }
