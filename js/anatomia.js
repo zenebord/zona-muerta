@@ -282,6 +282,8 @@ MANO.pulgar.unidades = Object.fromEntries(Object.entries(MANO.pulgar.gestos).map
  * 'adelante' el resto, y sin capa, todo. Cada dedo es una sola forma (las tres falanges en un trazado), pintada mate,
  * y las piezas van de la más lejana a la más cercana. En la pasada de la sombra, todo en un solo relleno. */
 // op.indiceDetras: el índice entero va del otro lado de lo agarrado (el de la mano del gatillo, en la cola del disparador)
+// op.pulgarDetras: el pulgar también (el de la mano del gatillo: estirado a lo largo del armazón del lado de la palma;
+// cuando cruzaba hacia este lado, de costado parecía que atravesaba el arma)
 function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0, op = {}) {
   const M = MANO, P = M.palma, { dedos, pulgar, pr } = nudosMano(O, B, pose), eb = B.eb;
   const piezas = [];   // { lejos, tramos, z, tono }
@@ -297,7 +299,7 @@ function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0, op = {}) {
   };
   dedos.forEach((pts, k) => { const w = M.dedos[k].w; cadena(pts, [w, w * 0.96, w * 0.9, w * 0.8], 0, k === 0 && op.indiceDetras); });
   const Q = M.pulgar;
-  cadena(pulgar, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03);
+  cadena(pulgar, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03, !!op.pulgarDetras);
   // Palma: la caja de la palma proyectada, con el bulto de la base del pulgar
   const caja = [];
   for (const b of [P.b0, P.b1]) {   // muñeca angosta, el canto de la mano, y el arco de los nudillos (más salido en el mayor)

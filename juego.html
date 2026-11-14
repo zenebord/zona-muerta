@@ -327,7 +327,7 @@ kbd {
 .boton-tactil.apretado { background: rgba(201,169,110,.6); color: var(--noche); transform: scale(.94); }
 .boton-tactil.fuego.apretado { background: rgba(229,57,53,.75); color: var(--texto); }
 .tactil:not(.en-pruebas) .solo-pruebas { display: none; }
-.tactil:not(.con-mira) .solo-mira { display: none; }   /* MIRA: sólo con un rifle con mira telescópica en la mano */
+.tactil:not(.con-mira) .solo-mira { display: none; }   /* MIRA: sólo con un arma con mira (telescópica o de punto rojo) en la mano */
 .en-entrenamiento .boton-tactil.boton-zombie { display: none; }   /* el zombie de prueba es solo del campo de pruebas */
 /* Defensa ultra: ▲ ▼ cambian de carril donde estaba la barra de caminar; sin caminar, saltar ni agacharse */
 .solo-ultra { display: none; }
@@ -1392,7 +1392,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261114-1918-e32e3ac';
+const VERSION_JUEGO = '20261114-2021-6e855e3';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1543,7 +1543,7 @@ const TEXTOS = {
     'controles.abajo': 'Mantener: agacharse con rodilla en tierra (el arma baja para los blancos bajos). Junto a la ametralladora fija: montarla / soltarla',
     'controles.entrenamiento': 'Entrenamiento', 'controles.entrenamiento.texto': 'Blancos en movimiento por series de 15: tirale cuando cruzan tu línea de tiro; los altos y los platos se alcanzan saltando y los bajos, agachado. <kbd>C</kbd> elige arma',
     'controles.torreta': 'Defensa zombie', 'controles.torreta.texto': '<kbd>←</kbd> <kbd>→</kbd> giran la M2, <kbd>F</kbd> dispara, <kbd>S</kbd> cambia la cinta, <kbd>A</kbd> pide un ataque aéreo (cada 20 s)',
-    'controles.disparar': 'Disparar (mantén presionado con las metralletas)', 'controles.recargar': 'Recargar', 'controles.mira': 'Mira telescópica (Remington 700, Barrett, Mosin-Nagant y Dragunov): apunta sola al zombie más cercano, también abajo en la montaña o a los chiquitos, y no falla. Presiónala otra vez para quitarla', 'controles.clic': 'clic', 'controles.clicDerecho': 'clic derecho', 'controles.cambiar': 'Arma anterior / siguiente',
+    'controles.disparar': 'Disparar (mantén presionado con las metralletas)', 'controles.recargar': 'Recargar', 'controles.mira': 'Mira telescópica (Remington 700, Barrett, Mosin-Nagant y Dragunov) o de punto rojo (Kriss Vector, P90, Saiga-12, Milkor MGL y bazuca M9): apunta sola al zombie más cercano, también abajo en la montaña o a los chiquitos, y no falla. Presiónala otra vez para quitarla', 'controles.clic': 'clic', 'controles.clicDerecho': 'clic derecho', 'controles.cambiar': 'Arma anterior / siguiente',
     'controles.c': 'Campo de pruebas: abrir el menú de cajas y ametralladoras (<kbd>X</kbd> borra todo lo generado)',
     'controles.grupos': 'Grupo de armas: 1 pistolas, 2 metralletas, 3 rifles, 4 escopetas, 5 especiales, 6 cuerpo a cuerpo, 7 legendarias (otra vez: siguiente del grupo)',
     'controles.rueda': 'Rueda del mouse', 'controles.pausa': 'Pausa', 'controles.celular': 'Celular o tablet',
@@ -1565,7 +1565,7 @@ const TEXTOS = {
     'fin.record': '¡Nuevo récord!', 'fin.tuRecord': v => `Tu récord: ola ${v.ola}.`,
     'aviso.entrenamiento': 'ENTRENAMIENTO · C ELIGE ARMA · 1-7 GRUPO', 'aviso.torreta': 'DEFENSA ZOMBIE · ← → GIRAN · F DISPARA · S CAMBIA LA CINTA',
     'aviso.pruebas': 'CAMPO DE PRUEBAS · ← → CAMINAN · ↑ SALTA · Q E CAMBIAN DE ARMA · L: CÁMARA LENTA · C: MENÚ', 'aviso.pruebasTactil': 'CAMPO DE PRUEBAS · TOCA «ARMAS» PARA ELEGIR', 'aviso.torretaTactil': 'DEFENSA ZOMBIE · ◀ ▶ GIRAN · FUEGO DISPARA · RECARGAR CAMBIA LA CINTA', 'aviso.entrenamientoTactil': 'ENTRENAMIENTO · TOCA «ARMAS» PARA ELEGIR', 'aviso.mision': v => 'MISIÓN: ' + v.nombre, 'aviso.cloaca': '¡SOBREVIVE EN LA CLOACA! · ↓ AGACHARSE', 'aviso.sobrevive': '¡SOBREVIVE!',
-    'aviso.sinGrupo': v => `TODAVÍA NO TENÉS ${v.grupo}`, 'aviso.enMano': 'EN MANO: ', 'aviso.miraOn': 'MIRA: APUNTANDO AL ZOMBIE MÁS CERCANO', 'aviso.miraOff': 'MIRA QUITADA', 'aviso.sinMira': 'SOLO LOS RIFLES CON MIRA TELESCÓPICA', 'aviso.caja': 'CAJA: ', 'aviso.m2Puesta': 'M2 BROWNING PUESTA · ↓ PARA MONTARLA',
+    'aviso.sinGrupo': v => `TODAVÍA NO TENÉS ${v.grupo}`, 'aviso.enMano': 'EN MANO: ', 'aviso.miraOn': 'MIRA: APUNTANDO AL ZOMBIE MÁS CERCANO', 'aviso.miraOff': 'MIRA QUITADA', 'aviso.puntoRojoOn': 'PUNTO ROJO: APUNTANDO AL ZOMBIE MÁS CERCANO', 'aviso.puntoRojoOff': 'PUNTO ROJO QUITADO', 'aviso.sinMira': 'SOLO LAS ARMAS CON MIRA TELESCÓPICA O DE PUNTO ROJO', 'aviso.caja': 'CAJA: ', 'aviso.m2Puesta': 'M2 BROWNING PUESTA · ↓ PARA MONTARLA',
     'aviso.m2Quitada': 'M2 QUITADA', 'aviso.borrado': 'TODO BORRADO', 'aviso.bajaste': 'BAJASTE DE LA AMETRALLADORA', 'aviso.m2Montada': 'M2 BROWNING · ↓ PARA SOLTARLA',
     'aviso.aereoEn': v => `ATAQUE AÉREO EN ${v.s} S`, 'aviso.aereo': '¡ATAQUE AÉREO EN CAMINO! ¡A CUBIERTO!', 'aviso.nueva': 'NUEVA ARMA: ', 'aviso.municion': 'MUNICIÓN: ',
     'aviso.sinMunicion': 'SIN MUNICIÓN PARA ',
@@ -1713,7 +1713,7 @@ const TEXTOS = {
     'controles.abajo': 'Segurar: abaixar com um joelho no chão (a arma desce para os alvos baixos). Junto à metralhadora fixa: montá-la / soltá-la',
     'controles.entrenamiento': 'Treinamento', 'controles.entrenamiento.texto': 'Alvos em movimento em séries de 15: atire quando cruzarem sua linha de tiro; os altos e os pratos se alcançam pulando e os baixos, abaixado. <kbd>C</kbd> escolhe a arma',
     'controles.torreta': 'Defesa zumbi', 'controles.torreta.texto': '<kbd>←</kbd> <kbd>→</kbd> giram a M2, <kbd>F</kbd> atira, <kbd>S</kbd> troca a fita, <kbd>A</kbd> pede um ataque aéreo (a cada 20 s)',
-    'controles.disparar': 'Atirar (segure com as submetralhadoras)', 'controles.recargar': 'Recarregar', 'controles.mira': 'Luneta (Remington 700, Barrett, Mosin-Nagant e Dragunov): mira sozinha no zumbi mais próximo, também lá embaixo na montanha ou nos pequenos, e não erra. Aperte de novo para tirar', 'controles.clic': 'clique', 'controles.clicDerecho': 'clique direito', 'controles.cambiar': 'Arma anterior / seguinte',
+    'controles.disparar': 'Atirar (segure com as submetralhadoras)', 'controles.recargar': 'Recarregar', 'controles.mira': 'Luneta (Remington 700, Barrett, Mosin-Nagant e Dragunov) ou mira de ponto vermelho (Kriss Vector, P90, Saiga-12, Milkor MGL e bazuca M9): mira sozinha no zumbi mais próximo, também lá embaixo na montanha ou nos pequenos, e não erra. Aperte de novo para tirar', 'controles.clic': 'clique', 'controles.clicDerecho': 'clique direito', 'controles.cambiar': 'Arma anterior / seguinte',
     'controles.c': 'Campo de testes: abrir o menu de caixas e metralhadoras (<kbd>X</kbd> apaga tudo o que foi gerado)',
     'controles.grupos': 'Grupo de armas: 1 pistolas, 2 submetralhadoras, 3 fuzis, 4 espingardas, 5 especiais, 6 corpo a corpo, 7 lendárias (de novo: a seguinte do grupo)',
     'controles.rueda': 'Roda do mouse', 'controles.pausa': 'Pausa', 'controles.celular': 'Celular ou tablet',
@@ -1721,7 +1721,7 @@ const TEXTOS = {
     'controles.engranaje': 'Engrenagem (no canto superior esquerdo)', 'controles.engranaje.texto': 'Configurações: volume dos efeitos e da música, idioma, qualidade gráfica e controles',
     'controles.ayuda': 'As armas são pegas ao passar sobre as caixas. As metralhadoras fixas e as armas especiais (lança-granadas, granadas e laser alienígena) só ficam no alto das montanhas.',
     'hud.aereo.aria': 'Pedir ataque aéreo', 'tactil.aria': 'Controles de toque', 'tactil.mover': 'Mover: toque ou deslize para a esquerda ou para a direita',
-    'tactil.fuego': 'FOGO', 'tactil.salto': 'PULO', 'tactil.saltar': 'Pular', 'tactil.recargar': 'RECARREGAR', 'tactil.mira': 'LUNETA', 'tactil.armaAnt': '◀ ARMA', 'tactil.armaSig': 'ARMA ▶',
+    'tactil.fuego': 'FOGO', 'tactil.salto': 'PULO', 'tactil.saltar': 'Pular', 'tactil.recargar': 'RECARREGAR', 'tactil.mira': 'MIRA', 'tactil.armaAnt': '◀ ARMA', 'tactil.armaSig': 'ARMA ▶',
     'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma seguinte', 'tactil.abajo': '▼ ABAIXAR', 'tactil.abajo.aria': 'Abaixar ou montar a M2',
     'tactil.cajas': 'ARMAS', 'tactil.zombie': 'ZUMBI', 'tactil.pausa': 'Pausa', 'girar': 'Gire o celular para jogar', 'girarNota': 'Se a tela não girar, ative a rotação automática.',
     'pausa.titulo': 'PAUSA', 'pausa.seguir': 'CONTINUAR', 'pausa.salir': 'SAIR PARA O MENU',
@@ -1735,7 +1735,7 @@ const TEXTOS = {
     'fin.record': 'Novo recorde!', 'fin.tuRecord': v => `Seu recorde: onda ${v.ola}.`,
     'aviso.entrenamiento': 'TREINAMENTO · C ESCOLHE A ARMA · 1-7 GRUPO', 'aviso.torreta': 'DEFESA ZUMBI · ← → GIRAM · F ATIRA · S TROCA A FITA',
     'aviso.pruebas': 'CAMPO DE TESTES · ← → ANDAM · ↑ PULA · Q E TROCAM DE ARMA · L: CÂMERA LENTA · C: MENU', 'aviso.pruebasTactil': 'CAMPO DE TESTES · TOQUE «ARMAS» PARA ESCOLHER', 'aviso.torretaTactil': 'DEFESA ZUMBI · ◀ ▶ GIRAM · FOGO ATIRA · RECARREGAR TROCA A FITA', 'aviso.entrenamientoTactil': 'TREINAMENTO · TOQUE «ARMAS» PARA ESCOLHER', 'aviso.mision': v => 'MISSÃO: ' + v.nombre, 'aviso.cloaca': 'SOBREVIVA NO ESGOTO! · ↓ ABAIXAR', 'aviso.sobrevive': 'SOBREVIVA!',
-    'aviso.sinGrupo': v => `VOCÊ AINDA NÃO TEM ${v.grupo}`, 'aviso.enMano': 'NA MÃO: ', 'aviso.miraOn': 'LUNETA: MIRANDO O ZUMBI MAIS PRÓXIMO', 'aviso.miraOff': 'LUNETA DESLIGADA', 'aviso.sinMira': 'SÓ OS FUZIS COM LUNETA', 'aviso.caja': 'CAIXA: ', 'aviso.m2Puesta': 'M2 BROWNING COLOCADA · ↓ PARA MONTÁ-LA',
+    'aviso.sinGrupo': v => `VOCÊ AINDA NÃO TEM ${v.grupo}`, 'aviso.enMano': 'NA MÃO: ', 'aviso.miraOn': 'LUNETA: MIRANDO O ZUMBI MAIS PRÓXIMO', 'aviso.miraOff': 'LUNETA DESLIGADA', 'aviso.puntoRojoOn': 'PONTO VERMELHO: MIRANDO O ZUMBI MAIS PRÓXIMO', 'aviso.puntoRojoOff': 'PONTO VERMELHO DESLIGADO', 'aviso.sinMira': 'SÓ AS ARMAS COM LUNETA OU MIRA DE PONTO VERMELHO', 'aviso.caja': 'CAIXA: ', 'aviso.m2Puesta': 'M2 BROWNING COLOCADA · ↓ PARA MONTÁ-LA',
     'aviso.m2Quitada': 'M2 RETIRADA', 'aviso.borrado': 'TUDO APAGADO', 'aviso.bajaste': 'VOCÊ SAIU DA METRALHADORA', 'aviso.m2Montada': 'M2 BROWNING · ↓ PARA SOLTÁ-LA',
     'aviso.aereoEn': v => `ATAQUE AÉREO EM ${v.s} S`, 'aviso.aereo': 'ATAQUE AÉREO A CAMINHO! PROTEJA-SE!', 'aviso.nueva': 'NOVA ARMA: ', 'aviso.municion': 'MUNIÇÃO: ',
     'aviso.sinMunicion': 'SEM MUNIÇÃO PARA ',
@@ -1882,7 +1882,7 @@ const TEXTOS = {
     'controles.abajo': 'Hold: crouch on one knee (the gun drops for low targets). Next to the fixed machine gun: mount / dismount it',
     'controles.entrenamiento': 'Training', 'controles.entrenamiento.texto': 'Moving targets in series of 15: shoot when they cross your line of fire; high targets and clays are reached by jumping and low ones by crouching. <kbd>C</kbd> picks a weapon',
     'controles.torreta': 'Zombie defense', 'controles.torreta.texto': '<kbd>←</kbd> <kbd>→</kbd> turn the M2, <kbd>F</kbd> shoots, <kbd>S</kbd> changes the belt, <kbd>A</kbd> calls an air strike (every 20 s)',
-    'controles.disparar': 'Shoot (hold with submachine guns)', 'controles.recargar': 'Reload', 'controles.mira': 'Scope (Remington 700, Barrett, Mosin-Nagant and Dragunov): locks onto the nearest zombie, even below you on the mountain or the small ones, and never misses. Press again to release', 'controles.clic': 'click', 'controles.clicDerecho': 'right click', 'controles.cambiar': 'Previous / next weapon',
+    'controles.disparar': 'Shoot (hold with submachine guns)', 'controles.recargar': 'Reload', 'controles.mira': 'Scope (Remington 700, Barrett, Mosin-Nagant and Dragunov) or red dot sight (Kriss Vector, P90, Saiga-12, Milkor MGL and M9 bazooka): locks onto the nearest zombie, even below you on the mountain or the small ones, and never misses. Press again to release', 'controles.clic': 'click', 'controles.clicDerecho': 'right click', 'controles.cambiar': 'Previous / next weapon',
     'controles.c': 'Test field: open the crates and machine guns menu (<kbd>X</kbd> clears everything spawned)',
     'controles.grupos': 'Weapon group: 1 pistols, 2 SMGs, 3 rifles, 4 shotguns, 5 specials, 6 melee, 7 legendary (again: next in the group)',
     'controles.rueda': 'Mouse wheel', 'controles.pausa': 'Pause', 'controles.celular': 'Phone or tablet',
@@ -1890,7 +1890,7 @@ const TEXTOS = {
     'controles.engranaje': 'Gear (top left)', 'controles.engranaje.texto': 'Settings: effects and music volume, language, graphics quality and controls',
     'controles.ayuda': 'Weapons are picked up by walking over crates. Fixed machine guns and special weapons (grenade launcher, grenades and alien laser) are only on top of the mountains.',
     'hud.aereo.aria': 'Call an air strike', 'tactil.aria': 'Touch controls', 'tactil.mover': 'Move: tap or slide left or right',
-    'tactil.fuego': 'FIRE', 'tactil.salto': 'JUMP', 'tactil.saltar': 'Jump', 'tactil.recargar': 'RELOAD', 'tactil.mira': 'SCOPE', 'tactil.armaAnt': '◀ GUN', 'tactil.armaSig': 'GUN ▶',
+    'tactil.fuego': 'FIRE', 'tactil.salto': 'JUMP', 'tactil.saltar': 'Jump', 'tactil.recargar': 'RELOAD', 'tactil.mira': 'AIM', 'tactil.armaAnt': '◀ GUN', 'tactil.armaSig': 'GUN ▶',
     'tactil.armaAnt.aria': 'Previous weapon', 'tactil.armaSig.aria': 'Next weapon', 'tactil.abajo': '▼ DOWN', 'tactil.abajo.aria': 'Crouch or mount the M2',
     'tactil.cajas': 'WEAPONS', 'tactil.zombie': 'ZOMBIE', 'tactil.pausa': 'Pause', 'girar': 'Turn your phone sideways to play', 'girarNota': 'If the screen doesn’t turn, switch on auto-rotate.',
     'pausa.titulo': 'PAUSED', 'pausa.seguir': 'RESUME', 'pausa.salir': 'QUIT TO MENU',
@@ -1904,7 +1904,7 @@ const TEXTOS = {
     'fin.record': 'New record!', 'fin.tuRecord': v => `Your record: wave ${v.ola}.`,
     'aviso.entrenamiento': 'TRAINING · C PICKS A WEAPON · 1-7 GROUP', 'aviso.torreta': 'ZOMBIE DEFENSE · ← → TURN · F SHOOTS · S CHANGES THE BELT',
     'aviso.pruebas': 'TEST FIELD · ← → WALK · ↑ JUMP · Q E SWITCH WEAPON · L: SLOW MOTION · C: MENU', 'aviso.pruebasTactil': 'TEST FIELD · TAP «WEAPONS» TO PICK', 'aviso.torretaTactil': 'ZOMBIE DEFENSE · ◀ ▶ TURN · FIRE SHOOTS · RELOAD CHANGES THE BELT', 'aviso.entrenamientoTactil': 'TRAINING · TAP «WEAPONS» TO PICK', 'aviso.mision': v => 'MISSION: ' + v.nombre, 'aviso.cloaca': 'SURVIVE THE SEWER! · ↓ CROUCH', 'aviso.sobrevive': 'SURVIVE!',
-    'aviso.sinGrupo': v => `NO ${v.grupo} YET`, 'aviso.enMano': 'IN HAND: ', 'aviso.miraOn': 'SCOPE: LOCKED ON THE NEAREST ZOMBIE', 'aviso.miraOff': 'SCOPE OFF', 'aviso.sinMira': 'ONLY RIFLES WITH A SCOPE', 'aviso.caja': 'CRATE: ', 'aviso.m2Puesta': 'M2 BROWNING PLACED · ↓ TO MOUNT IT',
+    'aviso.sinGrupo': v => `NO ${v.grupo} YET`, 'aviso.enMano': 'IN HAND: ', 'aviso.miraOn': 'SCOPE: LOCKED ON THE NEAREST ZOMBIE', 'aviso.miraOff': 'SCOPE OFF', 'aviso.puntoRojoOn': 'RED DOT: LOCKED ON THE NEAREST ZOMBIE', 'aviso.puntoRojoOff': 'RED DOT OFF', 'aviso.sinMira': 'ONLY GUNS WITH A SCOPE OR A RED DOT SIGHT', 'aviso.caja': 'CRATE: ', 'aviso.m2Puesta': 'M2 BROWNING PLACED · ↓ TO MOUNT IT',
     'aviso.m2Quitada': 'M2 REMOVED', 'aviso.borrado': 'ALL CLEARED', 'aviso.bajaste': 'YOU LEFT THE MACHINE GUN', 'aviso.m2Montada': 'M2 BROWNING · ↓ TO LET GO',
     'aviso.aereoEn': v => `AIR STRIKE IN ${v.s} S`, 'aviso.aereo': 'AIR STRIKE INBOUND! TAKE COVER!', 'aviso.nueva': 'NEW WEAPON: ', 'aviso.municion': 'AMMO: ',
     'aviso.sinMunicion': 'NO AMMO FOR ',
@@ -9583,6 +9583,12 @@ const martillosRecortada = (municion, cargador) => { const tiros = cargador - mu
 // cercano (en línea recta: también más abajo o más arriba en la montaña, y a los chiquitos sin agacharse) hasta volver a
 // apretarla, y la bala no falla: sale derecho a él y lo sigue (Proyectil.objetivo). En todos los modos menos el bastión
 const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
+// Mira de punto rojo (otro pedido de Enzo, con la imagen de su retícula): las que tienen dibujada una mira holográfica o
+// réflex, que no aumenta (Kriss Vector, P90, Saiga-12, Milkor MGL y la caja de la mira de la bazuca M9). La D hace lo
+// mismo que con la telescópica; cambia la retícula (dibujarMiraPuntoRojo), y los perdigones, la granada y el cohete
+// también van derecho al zombie (js/juego.js: dispararArma)
+const MIRA_PUNTO_ROJO = new Set(['vector', 'p90', 'saiga', 'mgl', 'bazuca']);
+const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : null;
 const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
@@ -9741,19 +9747,22 @@ class Jugador {
     }
   }
 
-  // Tecla D: pone o saca la mira telescópica (sólo con un rifle que la tiene; en el bastión la tecla es de otra cosa)
+  // Tecla D: pone o saca la mira (sólo con un arma que la tiene, telescópica o de punto rojo; en el bastión la tecla es
+  // de otra cosa)
   alternarMira(juego) {
     if (juego.estrategia || this.muerto) return;
-    if (this.montada || !MIRA_TELESCOPICA.has(this.arma().id)) { juego.aviso(t('aviso.sinMira'), 1500); return; }
+    const tipo = this.montada ? null : tipoMira(this.arma().id);
+    if (!tipo) { juego.aviso(t('aviso.sinMira'), 1500); return; }
     this.mira = !this.mira; this.objetivoMira = null;
-    juego.aviso(t(this.mira ? 'aviso.miraOn' : 'aviso.miraOff'), 1300);
+    const aviso = tipo === 'puntoRojo' ? (this.mira ? 'aviso.puntoRojoOn' : 'aviso.puntoRojoOff') : (this.mira ? 'aviso.miraOn' : 'aviso.miraOff');
+    juego.aviso(t(aviso), 1300);
   }
   // Cada cuadro, con la mira puesta: el zombie vivo más cercano al hombro, dentro del alcance del arma (en Defensa ultra,
   // del carril propio, porque la bala no sale de su carril). No salta a otro por un pelo: el que ya tenía sigue si el
   // nuevo no está al menos 10 más cerca. El personaje se da vuelta hacia él y el arma se inclina (hasta 34°)
   actualizarMira(juego, dt) {
     const arma = this.arma();
-    if (this.mira && (this.montada || this.muerto || juego.estrategia || !MIRA_TELESCOPICA.has(arma.id))) this.mira = false;
+    if (this.mira && (this.montada || this.muerto || juego.estrategia || !tipoMira(arma.id))) this.mira = false;
     let angulo = 0;
     if (!this.mira) this.objetivoMira = null;
     else {
@@ -10233,9 +10242,10 @@ class Jugador {
     else if (!this.montada) e.incl -= empuje * 0.05;                    // el fusil, apenas
     if (d.agarre === 'hombro') e.apunta = 1 - e.mirar;                  // con el arma al hombro, la cabeza va a la culata
 
-    // Mira telescópica: el arma se inclina hacia el zombie elegido girando sobre la cantonera apoyada en el hombro
+    // Con la mira: el arma se inclina hacia el zombie elegido girando sobre la cantonera apoyada en el hombro (la P90,
+    // que va en las manos y no al hombro, sobre la empuñadura)
     if (this.anguloMira && !this.montada && !this.recarga) {
-      const P = { x: -(d.culataCm || 30) * CM, y: 0 }, f = e.incl, g = f + this.anguloMira;
+      const P = { x: d.agarre === 'hombro' ? -(d.culataCm || 30) * CM : 0, y: 0 }, f = e.incl, g = f + this.anguloMira;
       const W = { x: e.origen.x + P.x * Math.cos(f) - P.y * Math.sin(f), y: e.origen.y + P.x * Math.sin(f) + P.y * Math.cos(f) };
       e.origen = { x: W.x - (P.x * Math.cos(g) - P.y * Math.sin(g)), y: W.y - (P.x * Math.sin(g) + P.y * Math.cos(g)) };
       e.incl = g; e.miraAng = this.anguloMira;
@@ -10623,6 +10633,8 @@ MANO.pulgar.unidades = Object.fromEntries(Object.entries(MANO.pulgar.gestos).map
  * 'adelante' el resto, y sin capa, todo. Cada dedo es una sola forma (las tres falanges en un trazado), pintada mate,
  * y las piezas van de la más lejana a la más cercana. En la pasada de la sombra, todo en un solo relleno. */
 // op.indiceDetras: el índice entero va del otro lado de lo agarrado (el de la mano del gatillo, en la cola del disparador)
+// op.pulgarDetras: el pulgar también (el de la mano del gatillo: estirado a lo largo del armazón del lado de la palma;
+// cuando cruzaba hacia este lado, de costado parecía que atravesaba el arma)
 function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0, op = {}) {
   const M = MANO, P = M.palma, { dedos, pulgar, pr } = nudosMano(O, B, pose), eb = B.eb;
   const piezas = [];   // { lejos, tramos, z, tono }
@@ -10638,7 +10650,7 @@ function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0, op = {}) {
   };
   dedos.forEach((pts, k) => { const w = M.dedos[k].w; cadena(pts, [w, w * 0.96, w * 0.9, w * 0.8], 0, k === 0 && op.indiceDetras); });
   const Q = M.pulgar;
-  cadena(pulgar, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03);
+  cadena(pulgar, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03, !!op.pulgarDetras);
   // Palma: la caja de la palma proyectada, con el bulto de la base del pulgar
   const caja = [];
   for (const b of [P.b0, P.b1]) {   // muñeca angosta, el canto de la mano, y el arco de los nudillos (más salido en el mayor)
@@ -10903,7 +10915,7 @@ const GESTOS_MANO = {
   palmada:     { cierre: 0.04, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.7 },
   empuja:      { cierre: 0.8, nudillo: 0.9, pulgar: { sube: 1 }, abre: 0 },                                  // el pulgar empuja las balas del peine
   bandeja:     { cierre: 0.3, nudillo: 0.5, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.4 },               // la palma hacia arriba, sosteniendo
-  empunadura:  { cierre: [0.4, 0.86, 0.9, 0.92], nudillo: 0.92, pulgar: { cierra: 0.6, largo: 0.4 }, abre: 0 },   // el índice, en el disparador
+  empunadura:  { cierre: [0.4, 0.86, 0.9, 0.92], nudillo: 0.92, pulgar: { largo: 1 }, abre: 0 },               // el índice, en el disparador; el pulgar, estirado del otro lado
   guardamanos: { cierre: 0.62, nudillo: 0.75, pulgar: { arriba: 0.4, sube: 0.6 }, abre: 0 },                 // la palma por debajo del arma; el pulgar sube en diagonal por este costado
   envuelve:    { cierre: 0.7, nudillo: 0.3, pulgar: { largo: 1 }, abre: 0 },                                 // sobre los dedos de la otra mano
   cabeza:      { cierre: 0.4, pulgar: { suelto: 1 }, abre: 0.4 },
@@ -10931,10 +10943,10 @@ function armarBrazo(j, cual, hx, hy, armar, opBrazo) {
   for (let k = 0; k < 3; k++) { g = armar(ante3); R = resolver(g.B)[1]; ante3 = R.ante3; }
   const S = poseSuave(j, cual, g.gesto, g.B, normalizarPose(g.pose), g.rigido), [W, R2] = resolver(S.B);
   (j.brazos || (j.brazos = {}))[cual] = { cx: R2.cx, cy: R2.cy, flexion: R2.flexion, extension: R2.extension };   // para las pruebas: dónde quedó el codo y cuánto dobla
-  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null, indiceDetras: !!g.indiceDetras };
+  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null, indiceDetras: !!g.indiceDetras, pulgarDetras: !!g.pulgarDetras };
 }
 const pintarBrazo = (ctx, A, C) => dibujarBrazo(ctx, A.hx, A.hy, A.W[0], A.W[1], A.R, C);
-const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj, { indiceDetras: A.indiceDetras });
+const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj, { indiceDetras: A.indiceDetras, pulgarDetras: A.pulgarDetras });
 /* El índice en el gatillo (pedido de Enzo): con la mano en la empuñadura, la curvatura del índice que deja la yema (el
  * 65 % de la última falange) en el punto del disparador de ese arma (dedoGatillo, js/armas-modelos-3.js) moviendo menos
  * la mano; el índice también puede separarse hacia arriba en el plano de la palma (giro), como hace uno para buscar la
@@ -11014,11 +11026,13 @@ function gestoApoyo(gesto, p, e, op = {}) {
 function gestoGatillo(gesto, g, ang, ajuste = null) {
   const c = Math.cos(ang), s = Math.sin(ang);
   switch (gesto) {
-    case 'empunadura': {    // la palma del otro lado de la empuñadura; de este lado, los dedos que la envuelven y el pulgar
+    case 'empunadura': {    // la palma del otro lado de la empuñadura; de este lado, los dedos que la envuelven
       // Con el ajuste del arma (ajusteGatillo), el índice va del otro lado del armazón, como el de una mano derecha de
-      // verdad: se ve por el hueco del guardamonte, con la yema en la cola del disparador
+      // verdad: se ve por el hueco del guardamonte, con la yema en la cola del disparador. El pulgar también va del otro
+      // lado, estirado a lo largo del armazón (pedido de Enzo): cuando envolvía la empuñadura hacia este lado, de costado
+      // cruzaba el cajón en diagonal y parecía que atravesaba el arma
       const B = baseMano([c, s, -0.12], [0.1, 0, 1], false), pose = ajuste ? Object.assign({}, GESTOS_MANO.empunadura, { cierre: [ajuste.cierre, 0.86, 0.9, 0.92], giroIndice: ajuste.giro }) : GESTOS_MANO.empunadura;
-      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma', indiceDetras: !!ajuste });
+      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma', indiceDetras: !!ajuste, pulgarDetras: true });
     }
     case 'mango': {         // el mango pasa por el puño
       const B = baseMano([c, s, 0], [0, 0, 1], false);
@@ -11323,6 +11337,29 @@ function dibujarMiraTelescopica(ctx, cam, j, ahora) {
   ctx.beginPath(); postes(); ctx.lineWidth = 1.6; ctx.stroke();
   ctx.strokeStyle = 'rgba(0,0,0,0.9)'; ctx.lineWidth = 0.8; trazos(); ctx.stroke();
   ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.beginPath(); postes(); ctx.fill();
+  ctx.restore();
+}
+
+/* Retícula de la mira de punto rojo (tecla D con la Kriss Vector, la P90, la Saiga-12, el Milkor MGL o la bazuca M9),
+ * como la segunda imagen que mandó Enzo: un anillo rojo de trazo parejo, cuatro marcas cortas que salen de él hacia
+ * afuera (arriba, abajo y a los costados) y el punto en el centro; adentro no hay nada más (se ve el zombie). Es la luz
+ * de una mira réflex: un resplandor rojo por debajo la hace leer de noche y un contorno oscuro, apenas, la despega de
+ * los fondos claros. Al elegir un zombie se cierra sobre él como la telescópica. */
+function dibujarMiraPuntoRojo(ctx, cam, j, ahora) {
+  const z = j.objetivoMira, c = z.caja(), x = c.x + c.w / 2 - cam, y = c.y + c.h * 0.4;
+  const k = limitar((ahora - (j.miraDesde || 0)) / 180, 0, 1), R = 22 * (1 + 0.5 * (1 - suavizar(k)));
+  ctx.save(); ctx.translate(x, y); ctx.globalAlpha = 0.35 + 0.65 * k; ctx.lineCap = 'butt';
+  const figura = () => {   // el anillo y las cuatro marcas (del anillo hacia afuera, un 30 % del radio)
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2);
+    for (let a = 0; a < 4; a++) { const ux = Math.round(Math.cos(a * Math.PI / 2)), uy = Math.round(Math.sin(a * Math.PI / 2)); ctx.moveTo(ux * R, uy * R); ctx.lineTo(ux * R * 1.3, uy * R * 1.3); }
+  };
+  const capa = (color, ancho, radioPunto) => {
+    ctx.strokeStyle = ctx.fillStyle = color; ctx.lineWidth = ancho; figura(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, radioPunto, 0, Math.PI * 2); ctx.fill();
+  };
+  capa('rgba(255,46,32,0.2)', 5.5, R * 0.17);       // resplandor
+  capa('rgba(48,0,0,0.42)', 2.7, R * 0.075 + 0.5);  // contorno
+  capa('#ec2a1f', 1.6, R * 0.075);                   // la luz roja
   ctx.restore();
 }
 
@@ -13009,13 +13046,15 @@ class Proyectil {
     // para que un zombie pegado al jugador (entre él y la boca del arma) también reciba el tiro
     const antesX = this.desdeX ?? this.x, antesY = this.y;
     this.desdeX = undefined;
-    if (this.arma.gravedad) this.vy += this.arma.gravedad * paso;
+    if (this.arma.gravedad && !this.objetivo) this.vy += this.arma.gravedad * paso;   // la granada que sigue a su zombie va derecho
     if (this.arma.cohete) {   // el motor del cohete lo acelera y deja una estela de humo
-      this.vx = Math.sign(this.vx) * Math.min(26, Math.abs(this.vx) * (1 + 0.07 * paso));
+      const v = Math.hypot(this.vx, this.vy), nv = Math.min(26, v * (1 + 0.07 * paso));
+      if (this.objetivo && v > 0) { this.vx *= nv / v; this.vy *= nv / v; }                 // con la mira, a lo largo de su rumbo
+      else this.vx = Math.sign(this.vx) * Math.min(26, Math.abs(this.vx) * (1 + 0.07 * paso));
       if (juego.particulas.length < 600) juego.particulas.push(new Particula(this.x - this.direccion * 6, this.y + (Math.random() - 0.5) * 2, -this.direccion * 0.4, -0.15 - Math.random() * 0.3, '#a49c92', 0.7, 3 + Math.random() * 3, false));
     }
     if (this.arma.fuego) this.vx *= Math.pow(0.986, paso);   // la llama frena con el aire
-    if (this.objetivo) {   // tiro con mira telescópica (js/jugador.js): corrige el rumbo hacia el pecho del zombie, no falla
+    if (this.objetivo) {   // tiro con mira (js/jugador.js): corrige el rumbo hacia el pecho del zombie, no falla
       const z = this.objetivo;
       if (z.estado === 'muerto' || !juego.zombies.includes(z)) this.objetivo = null;
       else {
@@ -13061,7 +13100,7 @@ class Proyectil {
 
     // Granadas y lanzagranadas: tocan el piso
     const piso = this.pisoY ?? alturaSuelo(this.x);   // en un carril, el piso es el del carril
-    if (this.arma.explosivo && this.y >= piso - 3) {
+    if (this.arma.explosivo && !this.objetivo && this.y >= piso - 3) {   // (la de la mira no explota contra la montaña: va al zombie)
       if (this.arma.mecha) {         // granada de mano: rebota y rueda
         this.y = piso - 3; this.vy = -Math.abs(this.vy) * 0.35; this.vx *= 0.6; this.rebotes++;
       } else { this.explotar(juego); return; }
@@ -13100,7 +13139,7 @@ class Proyectil {
       ctx.restore(); return;
     }
     if (this.arma.cohete) {
-      ctx.translate(sx, this.y); ctx.scale(this.direccion, 1);
+      ctx.translate(sx, this.y); ctx.rotate(Math.atan2(this.vy, Math.abs(this.vx)) * this.direccion); ctx.scale(this.direccion, 1);   // apunta hacia donde va (con la mira puede ir en diagonal)
       ctx.fillStyle = `rgba(255, ${170 + Math.random() * 60}, 60, 0.9)`;
       ctx.beginPath(); ctx.moveTo(-6, -1.4); ctx.lineTo(-13 - Math.random() * 5, 0); ctx.lineTo(-6, 1.4); ctx.fill();   // llama del motor
       parte(ctx, -6, -1.4, 9, 2.8, '#4b5634');                                                                           // cuerpo
@@ -13794,11 +13833,17 @@ class Juego {
   }
 
   /* ---------- Armas ---------- */
-  // objetivo: el zombie de la mira telescópica (js/jugador.js): la bala sale derecho a él y lo sigue, no falla
+  // objetivo: el zombie de la mira, telescópica o de punto rojo (js/jugador.js): la bala sale derecho a él y lo sigue,
+  // no falla; con la mira de punto rojo también los perdigones de la Saiga, la granada del MGL y el cohete de la bazuca
   dispararArma(arma, x, y, direccion, casquillo, objetivo = null) {
     if (this.historia) this.historia.disparos++;
     const v = arma.velocidad;
     const antes = this.proyectiles.length;
+    const vivo = objetivo && objetivo.estado !== 'muerto' ? objetivo : null;
+    const alZombie = (abre = 0) => {   // al pecho del zombie (abre: cuánto se separa del rumbo, en radianes); lo sigue (Proyectil.objetivo)
+      const c = centroZombie(vivo), a = Math.atan2(c.y - y, c.x - x) + abre, p = new Proyectil(arma, x, y, Math.cos(a) * v, Math.sin(a) * v);
+      p.objetivo = vivo; this.proyectiles.push(p);
+    };
     this.disparoId = (this.disparoId || 0) + 1;
     if (this.entrenamiento) {
       this.ent.disparos++; if (this.ent.serieActual) this.ent.serieActual.disparos++;
@@ -13812,16 +13857,17 @@ class Juego {
     } else if (arma.categoria === 'escopeta') {
       for (let k = 0; k < arma.perdigones; k++) {
         const ang = (Math.random() - 0.5) * arma.dispersion;
-        this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
+        if (vivo) alZombie(ang * 0.5);   // salen abiertos y se juntan en el zombie: ninguno se pierde
+        else this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
       }
       this.sacudida = 6;
     } else if (arma.categoria === 'granada') {
       this.proyectiles.push(new Proyectil(arma, x, y - 10, v * direccion, -7));
     } else if (arma.categoria === 'lanzagranadas') {
-      this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, -3));
+      if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, -3));
       this.sacudida = 4;
     } else if (arma.categoria === 'bazuca') {
-      this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, 0));
+      if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, 0));
       this.sacudida = 7;
       // Fogonazo de gases por la cola del tubo: el arma no tiene casi retroceso porque los gases salen por atrás
       const cola = x - direccion * (arma.colaCm || 157) * CM;   // la cola del tubo (RPG-7 más corto)
@@ -13829,10 +13875,7 @@ class Juego {
       for (let k = 0; k < 14; k++) this.particulas.push(new Particula(cola, y + (Math.random() - 0.5) * 6, -direccion * (2 + Math.random() * 4), (Math.random() - 0.6) * 1.6, k % 3 ? '#b1a89c' : '#ffcf6a', 0.5 + Math.random() * 0.6, 4 + Math.random() * 5, false));
     } else {
       const desvio = arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0;
-      if (objetivo && objetivo.estado !== 'muerto') {
-        const c = objetivo.caja(), tx = c.x + c.w / 2, ty = c.y + c.h * 0.4, d = Math.hypot(tx - x, ty - y) || 1;
-        const p = new Proyectil(arma, x, y, (tx - x) / d * v, (ty - y) / d * v); p.objetivo = objetivo; this.proyectiles.push(p);
-      } else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
+      if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
       if (arma.categoria === 'rifle') this.sacudida = 3;
     }
     if (arma.categoria !== 'granada' && !arma.fuego) {
@@ -14195,7 +14238,7 @@ class Juego {
     this.ahora += dt * 1000;
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
-    const conMira = !j.montada && !j.muerto && MIRA_TELESCOPICA.has(j.arma().id);
+    const conMira = !j.montada && !j.muerto && !!tipoMira(j.arma().id);
     if (conMira !== this.conMira) { this.conMira = conMira; document.body.classList.toggle('con-mira', conMira); }
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
@@ -14375,7 +14418,7 @@ class Juego {
       Pincel.bisel = !Lienzo.liviano;
       if (!j.montada) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }
     }
-    if (j.mira && j.objetivoMira && !j.muerto) dibujarMiraTelescopica(ctx, cam, j, this.ahora);   // tecla D
+    if (j.mira && j.objetivoMira && !j.muerto) (tipoMira(j.arma().id) === 'puntoRojo' ? dibujarMiraPuntoRojo : dibujarMiraTelescopica)(ctx, cam, j, this.ahora);   // tecla D
     for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) Fuego.cuerpo(ctx, cam, z, this.ahora);
     for (const p of this.proyectiles) p.dibujar(ctx, cam);
     for (const e2 of this.escupitajos) e2.dibujar(ctx, cam);
