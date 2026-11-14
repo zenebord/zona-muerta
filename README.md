@@ -116,6 +116,29 @@ ilumina el piso debajo de la boca (una mancha anaranjada, más ancha y tenue cua
 cuerpo y arma, más fuerte cerca de la boca. Dura 90 ms (un poco más que la llama) y se apaga en curva. Lo del tirador
 se hace con su silueta en un lienzo aparte, sin la sombra; con la calidad liviana se omite.
 
+### Campo de pruebas en realidad virtual (versión mínima, `vr/`)
+
+`vr/index.html` (publicado en `…/zona-muerta/vr/`): el campo de pruebas en primera persona para el Meta Quest 3S, con
+WebXR desde el navegador del visor (necesita HTTPS: GitHub Pages; dentro del artefacto de claude.ai no entra en VR).
+Por ahora solo la AK-47. Usa Three.js 0.170.0 desde jsDelivr y, del juego, el modelo del arma y los sonidos.
+
+- **El arma es la del juego**: `vr/campo.js` graba los polígonos que pinta el modelo 2D de la AK (`pintar`, en cm) y
+  extruye cada pieza con su espesor real (tabla `PIEZAS_AK`; si el modelo cambia y no son 25 piezas, el espesor sale
+  del alto de cada una). Aparte, porque se mueven: el cargador (lo que falta al pintarla sin cargador), la manija de
+  carga (lo que cambia con la corredera) y el cerrojo de la ventana de expulsión, que va atrás con cada tiro y deja ver
+  la recámara; la vaina sale de ahí a los 0,3 del ciclo (75 ms), como en el juego.
+- **Visor**: gatillo derecho dispara (600 por minuto, con vibración); el agarre izquierdo junto al guardamanos sostiene
+  con las dos manos (manda la línea entre las manos); `A` suelta el cargador, que cae al piso; con la mano izquierda
+  libre el agarre saca uno nuevo del portacargador y, llevándolo al pozo, encastra; si la recámara quedó vacía, se tira
+  de la manija con la mano izquierda (o `B`). Palanca izquierda camina, derecha gira de a 30°.
+- **Sin visor** (para probar en la computadora): mouse apunta, clic dispara, `R` recarga, `WASD` camina.
+- **El galpón**: chapa gris azulada, columnas cada 10 m, vigas y lámparas, línea de tiro amarilla, banco con cargadores,
+  postes con bandas amarillas, blancos de papel a 10, 25 y 50 m (quedan los agujeros) y un zombie de cartón a 17 m que
+  se cae a los 6 impactos y se levanta a los 3 s. Tablero con disparos, impactos y precisión; contador de balas en el
+  costado del cajón. Las vainas y los cargadores caen y rebotan con su sonido; suena con el eco del galpón.
+- `js/audio.js` tiene `sinSilencioAutomatico()`: con el visor puesto la página no pinta cuadros con
+  `requestAnimationFrame` y el silencio automático la dejaría muda.
+
 ## Último bastión (defensa con estrategia)
 
 **Lo que se juega hoy es el rediseño por bandos**, que se describe más abajo, en «El juego: dos bandos con

@@ -19,6 +19,8 @@ shutil.copy(proyecto / 'css/estilos.css', salida / 'css/estilos.css')
 html = (proyecto / 'index.html').read_text()
 scripts = re.findall(r'<script src="(js/[^"]+)"></script>', html)
 for s in scripts: shutil.copy(proyecto / s, salida / s)
+# vr/: el campo de pruebas en realidad virtual (Meta Quest, WebXR); usa los mismos js/ de arriba
+if (proyecto / 'vr').is_dir(): shutil.copytree(proyecto / 'vr', salida / 'vr')
 (salida / 'js/version.js').write_text(
     "/* Versión publicada (la escribe herramientas/armar-web.py). */\n"
     f"const VERSION_JUEGO = '{version}';\nconst URL_ACTUALIZACION = '{url}';\n")
