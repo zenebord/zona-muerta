@@ -369,8 +369,8 @@ const Audio_ = (() => {
    *   y la cola del eco −14 · −20 · −27.
    *   El espacio: un eco al mismo paso (0,4 s) que rebota de un lado al otro y se oscurece, y una sala larga.
    * Machete: el tajo en el aire (aire que barre de grave a agudo y vuelve, el silbido del filo y el peso de la hoja,
-   * de izquierda a derecha); el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
-   * hoja que queda vibrando); y el roce metálico al desenfundar, que termina en un «shing» limpio.
+   * de izquierda a derecha) y el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
+   * hoja que queda vibrando). Al sacarlo no suena nada de arma: sólo el susurro.
    */
   const ruidosPorContexto = new WeakMap(), salasPorContexto = new WeakMap();
   function ruidoDe(ac) {
@@ -518,21 +518,6 @@ const Audio_ = (() => {
       curva(gp.gain, [[t0 + 0.003, 0.0001], [t0 + 0.006, v], [t0 + d, 0.0001]]); p.connect(gp); gp.connect(salida); p.start(t0); p.stop(t0 + d + 0.05);
     }
     return t0 + 0.5;
-  }
-  function genDesenfundar(ac, salida, t0, nodos) {
-    const d = 0.34, a = aire(ac, t0, d);
-    const barrido = filtro(ac, 'bandpass', 1800, 6), aspero = ganancia(ac, 0.5), g = ganancia(ac, 0);   // el roce que sube
-    curva(barrido.frequency, [[t0, 1800], [t0 + d, 4200]]);
-    curva(g.gain, [[t0, 0.0001], [t0 + 0.04, 1.0], [t0 + d - 0.04, 0.85], [t0 + d, 0.0001]]);
-    const rugo = aire(ac, t0, d), rl = filtro(ac, 'lowpass', 40, 0.7), rg = ganancia(ac, 8);   // la aspereza: el volumen tiembla
-    rugo.connect(rl); rl.connect(rg); rg.connect(aspero.gain);
-    a.connect(barrido); barrido.connect(aspero); aspero.connect(g); g.connect(salida);
-    for (const f of [2200, 3500, 5000]) { const r = filtro(ac, 'bandpass', f, 30), gr = ganancia(ac, 0.5); a.connect(r); r.connect(gr); gr.connect(aspero); }
-    for (const [f, v, dd] of [[2900, 0.11, 0.55], [4350, 0.07, 0.4], [6100, 0.03, 0.25]]) {   // el «shing»
-      const p = ac.createOscillator(), gp = ganancia(ac, 0); p.frequency.value = f;
-      curva(gp.gain, [[t0 + d - 0.02, 0.0001], [t0 + d, v], [t0 + d + dd, 0.0001]]); p.connect(gp); gp.connect(salida); p.start(t0 + d - 0.03); p.stop(t0 + d + dd + 0.05);
-    }
-    return t0 + d + 0.7;
   }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
   function sonar(generador, rev, vol, ...args) {
@@ -783,14 +768,11 @@ const Audio_ = (() => {
       ruido({ dur: 0.6, vol: 0.35, filtro: 'bandpass', freq: 2500, q: 0.8, ataque: 0.05, retraso: 0.3, rev: 0.3 });
     },
     // Machete del cazador: el susurro «ch ch ch ch… ja ja ja ja» (bajito, con eco). Cuándo suena lo decide
-    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera). retraso: s hasta el primer «ki»
-    // (al sacarlo, después del «shing»)
-    susurroCazador(retraso = 0) { sonar(genSusurro, 0.12, 0.9, { retraso }); },
+    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
+    susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
     duracionSusurro,
-    // Machete del cazador: el tajo, el golpe y el desenfundar (síntesis propia, ver arriba)
-    desenfundarMachete() { sonar(genDesenfundar, 0.08, 0.7); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
-    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, desenfundar: genDesenfundar },
+    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {
