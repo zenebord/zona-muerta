@@ -30,12 +30,13 @@
 <body>
 <div id="portada">
   <h1>ZONA MUERTA VR</h1>
-  <p class="sub">Campo de pruebas · AK-47</p>
+  <p class="sub">Campo de pruebas · Las armas de la mesa</p>
   <ul class="ayuda">
-    <li><b>Gatillo derecho:</b> disparar (automática).</li>
-    <li><b>Agarre izquierdo cerca del guardamanos:</b> sostén el arma con las dos manos.</li>
-    <li><b>Botón A:</b> soltar el cargador. Con la mano izquierda libre, aprieta el agarre para sacar uno nuevo del portacargador y llévalo al pozo del cargador.</li>
-    <li><b>Manija de carga:</b> agárrala con la mano izquierda y jálala hacia atrás (o aprieta <b>B</b>) si la recámara quedó vacía.</li>
+    <li><b>Tomar un arma:</b> acerca la mano derecha a un arma de la mesa (o apúntale con el mando) y aprieta el agarre. Otra vez el agarre y la dejas (sobre la mesa vuelve a su lugar).</li>
+    <li><b>Gatillo derecho:</b> disparar.</li>
+    <li><b>Agarre izquierdo en el guardamanos:</b> sostén el arma con las dos manos. En la escopeta es la bomba: jálala hacia atrás y adelante después de cada tiro.</li>
+    <li><b>Corredera, manija o cerrojo:</b> agárralos con la mano izquierda y jálalos hacia atrás (o aprieta <b>B</b>).</li>
+    <li><b>Botón A:</b> soltar el cargador. Con la mano izquierda lejos del arma, el agarre saca munición nueva: llévala al pozo, al portillo o a la ventana.</li>
     <li><b>Palanca izquierda:</b> caminar · <b>palanca derecha:</b> girar.</li>
   </ul>
   <div class="botones">
@@ -45,11 +46,13 @@
   <p id="estado">Buscando el visor…</p>
 </div>
 <div id="mira"></div>
-<div id="pista">Mouse: apuntar · Clic: disparar · R: recargar · W A S D: caminar · Esc: soltar el mouse</div>
+<div id="pista">Mouse: apuntar · Clic: disparar · Clic derecho: miras · E: tomar el arma que miras · 1 a 0 y las dos teclas que siguen: tomar directo · Q: dejarla · R: recargar · B: montar · W A S D: caminar · Esc: soltar el mouse</div>
 
-<!-- Del juego: los sonidos y el modelo de la AK-47 (en cm), que vr/campo.js pasa a 3D -->
+<!-- Del juego: los sonidos, el catálogo de armas, los calibres y los modelos de las armas (en cm), que vr/ pasa a 3D -->
 <script src="../js/sonidos-datos.js"></script>
 <script src="../js/audio.js"></script>
+<script src="../js/armas.js"></script>
+<script src="../js/municion.js"></script>
 <script src="../js/dibujo.js"></script>
 <script src="../js/armas-dibujo.js"></script>
 <script src="../js/armas-dibujo-2.js"></script>
@@ -58,6 +61,9 @@
 <script src="../js/armas-modelos-3.js"></script>
 <script src="../js/armas-recamara.js"></script>
 <script src="../js/cargadores.js"></script>
+<!-- js/armas-especiales.js trae el modelo de la minigun; al cargar parcha clases del juego que acá no están: van vacías -->
+<script>class Jugador {} class Juego {} const FUERZA_RETROCESO_ARMA = {};</script>
+<script src="../js/armas-especiales.js"></script>
 <script type="importmap">
   { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
                  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }

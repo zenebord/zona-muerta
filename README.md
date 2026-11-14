@@ -116,28 +116,61 @@ ilumina el piso debajo de la boca (una mancha anaranjada, más ancha y tenue cua
 cuerpo y arma, más fuerte cerca de la boca. Dura 90 ms (un poco más que la llama) y se apaga en curva. Lo del tirador
 se hace con su silueta en un lienzo aparte, sin la sombra; con la calidad liviana se omite.
 
-### Campo de pruebas en realidad virtual (versión mínima, `vr/`)
+### Campo de pruebas en realidad virtual (`vr/`)
 
 `vr/index.html` (publicado en `…/zona-muerta/vr/`): el campo de pruebas en primera persona para el Meta Quest 3S, con
 WebXR desde el navegador del visor (necesita HTTPS: GitHub Pages; dentro del artefacto de claude.ai no entra en VR).
-Por ahora solo la AK-47. Usa Three.js 0.170.0 desde jsDelivr y, del juego, el modelo del arma y los sonidos.
+Three.js 0.170.0 desde jsDelivr; del juego usa los modelos de las armas, los cargadores, los calibres (`js/municion.js`),
+el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo de la minigun) se carga con `Jugador`,
+`Juego` y `FUERZA_RETROCESO_ARMA` vacíos, porque al cargar parcha esas clases del juego.
 
-- **El arma es la del juego**: `vr/campo.js` graba los polígonos que pinta el modelo 2D de la AK (`pintar`, en cm) y
-  extruye cada pieza con su espesor real (tabla `PIEZAS_AK`; si el modelo cambia y no son 25 piezas, el espesor sale
-  del alto de cada una). Aparte, porque se mueven: el cargador (lo que falta al pintarla sin cargador), la manija de
-  carga (lo que cambia con la corredera) y el cerrojo de la ventana de expulsión, que va atrás con cada tiro y deja ver
-  la recámara; la vaina sale de ahí a los 0,3 del ciclo (75 ms), como en el juego.
-- **Visor**: gatillo derecho dispara (600 por minuto, con vibración); el agarre izquierdo junto al guardamanos sostiene
-  con las dos manos (manda la línea entre las manos); `A` suelta el cargador, que cae al piso; con la mano izquierda
-  libre el agarre saca uno nuevo del portacargador y, llevándolo al pozo, encastra; si la recámara quedó vacía, se tira
-  de la manija con la mano izquierda (o `B`). Palanca izquierda camina, derecha gira de a 30°.
-- **Sin visor** (para probar en la computadora): mouse apunta, clic dispara, `R` recarga, `WASD` camina.
-- **El galpón**: chapa gris azulada, columnas cada 10 m, vigas y lámparas, línea de tiro amarilla, banco con cargadores,
-  postes con bandas amarillas, blancos de papel a 10, 25 y 50 m (quedan los agujeros) y un zombie de cartón a 17 m que
-  se cae a los 6 impactos y se levanta a los 3 s. Tablero con disparos, impactos y precisión; contador de balas en el
-  costado del cajón. Las vainas y los cargadores caen y rebotan con su sonido; suena con el eco del galpón.
-- `js/audio.js` tiene `sinSilencioAutomatico()`: con el visor puesto la página no pinta cuadros con
-  `requestAnimationFrame` y el silencio automático la dejaría muda.
+- **Las armas son las del juego** (`vr/modelo3d.js`): se graban los polígonos que pinta el modelo 2D de cada arma, con la
+  transformación del lienzo (la bomba de la Mossberg y el quiebre del M79 se dibujan con `translate`/`rotate`), y cada
+  pieza se extruye con su espesor o se tornea alrededor de su eje (cañones, tubos, miras telescópicas, cohetes, mangos).
+  Lo que se mueve sale de comparar el dibujo en reposo con el del otro extremo: un desplazamiento o un giro con su
+  pivote. Las piezas fijas de cada arma se juntan en una malla por material: con las 12 armas, el zombie y el galpón
+  son 162 llamadas de dibujo por cuadro (281 sin juntar) y 112 000 triángulos.
+- **La mesa**: una de cada tipo de `NOMBRE_CATEGORIA`, acostadas con la empuñadura hacia el jugador y un cartel con el
+  nombre. Agarre derecho cerca de una la toma; otra vez la deja (sobre la mesa vuelve a su lugar; lejos, cae y vuelve).
+
+| Tipo | Arma | Cómo funciona (`vr/armas-vr.js`, `vr/especiales.js`) |
+|---|---|---|
+| Pistola | Glock 17 | Semiautomática; la corredera cicla y, vacía, queda atrás (B o la mano la sueltan) |
+| Metralleta | AK-47 | Automática; manija de carga a mano o con B |
+| Rifle | Remington 700 | Cerrojo a mano después de cada tiro; mira telescópica de 6× que aumenta de verdad (una cámara angosta en la lente) |
+| Escopeta | Mossberg 500 | La bomba es el guardamanos donde apoya la mano izquierda; 6 perdigones; cartuchos de a uno por el portillo |
+| Ametralladora | Minigun M134 | Los cañones arrancan en 0,35 s y frenan en 1,4 s; 2000 por minuto; caja de 300; una de cada tres es trazadora |
+| Lanzagranadas | M79 | B lo quiebra (sale la vaina) y lo cierra; la granada de 40 mm vuela en parábola y explota |
+| Bazuca | RPG-7 | El cohete sale con estela, acelera y explota; otro se encastra en la boca |
+| Granada | M67 | Gatillo: anilla; al soltarla con el brazo en movimiento vuela, rebota y explota a los 3,5 s |
+| Lanzallamas | M2 | Chorro de llamas que prende al zombie (4 de vida por segundo, la piel se chamusca) |
+| Láser | Alienígena | Energía que atraviesa (hasta 3); la celda es el huevo verde |
+| Cuerpo a cuerpo | Machete | Pega según la velocidad de la mano (más de 2 m/s); silba al blandirlo |
+| Legendaria | Mjölnir | Pega con un rayo; se tira soltándolo rápido y vuelve con el agarre de la mano vacía |
+
+- **Miras**: el dibujo es de costado y, pasado a 3D tal cual, de atrás no servía (el bloque del alza de la AK tapaba la
+  vista y el guion era una placa maciza). Las armas de fuego tienen muesca y poste (o la mira telescópica) y la bala sale
+  por la línea de mira: medido con la AK, a 50 m pasó de 0 de 5 a 5 de 5 en el papel.
+- **Mano izquierda**: agarre en el guardamanos sostiene con las dos manos (la recta entre las manos manda; en pistolas,
+  minigun y RPG solo afirma); en la corredera, la manija o el cerrojo los lleva atrás; lejos del arma saca munición
+  nueva (cargador, cartucho, bala, granada de 40 mm, cohete, caja, cilindro o celda), que entra al acercarla a su lugar.
+- **El zombie** (`vr/zombie3d.js`): el caminante del juego (camisa escocesa abierta, pantalón marrón roto, descalzo,
+  ojos amarillos). Una sola superficie hecha de primitivas anatómicas unidas con mínimo suave (sin costuras), pasada a
+  malla con surface nets; manos aparte con dedos y uñas; la ropa son capas a 1 y 1,6 cm del cuerpo con bordes rotos;
+  piel sobre 19 huesos. Camina hacia el jugador arrastrando una pierna, reacciona a cada impacto, la sangre se pinta en
+  la piel y la ropa, la cabeza lo mata, se cae y a los 6,5 s vuelve a aparecer lejos. La mesa lo frena: desde el otro
+  lado solo estira los brazos; fuera de la mesa muerde (vibran los mandos y se ve rojo). Vida 15, como en dificultad
+  media; daño de `ARMAS`, ×4 en la cabeza y ×0,6 en brazos y piernas.
+- **Sin visor**: mouse apunta, clic dispara (o golpea, o saca la anilla y al soltar tira la granada), clic derecho apunta
+  con las miras (con Mjölnir: lo tira y lo llama), E toma el arma que mira la cruz, números la toman directo, Q la deja,
+  R recarga entera, B monta, WASD camina.
+- **Probar los controles del visor en la computadora**: la extensión Immersive Web Emulator 2.0 de Meta para Chrome
+  simula un Quest 3 con sus mandos; en el modo juego del panel el mouse mira, clic izquierdo es el gatillo, `W A S D` la
+  palanca izquierda, las flechas la derecha, `E` el agarre izquierdo, `Enter` A y `Shift` derecho B.
+- **Publicar**: `herramientas/armar-web.py` copia `vr/` y le pone huellas `?v=` a los `js/` del juego que usa, a
+  `campo.js` y, con el mapa de importación, a los módulos, así el visor no mezcla versiones después de publicar.
+- **Pruebas automáticas**: `window.__campo` (tomar, apretar, apuntar, recargar, montar, golpe, tirar, llamar, avanzar la
+  simulación del zombie, contadores de dibujo).
 
 ## Último bastión (defensa con estrategia)
 

@@ -42,6 +42,16 @@ huella = lambda ruta: hashlib.sha1((salida / ruta).read_bytes()).hexdigest()[:10
 pagina = re.sub(r'<script src="(js/[^"?]+)"></script>', lambda m: f'<script src="{m.group(1)}?v={huella(m.group(1))}"></script>', html)
 pagina = pagina.replace('href="css/estilos.css"', f'href="css/estilos.css?v={huella("css/estilos.css")}"')
 (salida / 'index.html').write_text(pagina)
+# vr/: lo mismo con los js/ del juego que usa, con campo.js y con los módulos que importa (mapa de importación), así el
+# navegador del visor no mezcla archivos viejos y nuevos después de publicar
+vr = salida / 'vr' / 'index.html'
+if vr.exists():
+    t = re.sub(r'<script src="\.\./(js/[^"?]+)"></script>', lambda m: f'<script src="../{m.group(1)}?v={huella(m.group(1))}"></script>', vr.read_text())
+    modulos = sorted(f.name for f in (salida / 'vr').glob('*.js') if f.name != 'campo.js')
+    mapa = ''.join(f',\n                 "./{n}": "./{n}?v={huella("vr/" + n)}"' for n in modulos)
+    t = t.replace('"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" }', '"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"' + mapa + ' }')
+    t = t.replace('src="campo.js"', f'src="campo.js?v={huella("vr/campo.js")}"')
+    vr.write_text(t)
 (salida / 'version.json').write_text(json.dumps({'version': version}) + '\n')
 (salida / '.nojekyll').write_text('')   # GitHub Pages: servir todo tal cual
 print(version, '·', len(scripts), 'scripts ·', len(juego) // 1024, 'KB juego.html ·', len(lanzador) // 1024, 'KB zona-muerta.html')
