@@ -707,16 +707,20 @@ en mano se dibuja igual y no cuesta más. La ficha mide el arma en chico y la di
 ### Recargas
 
 Cada arma se recarga con su mecanismo real. Durante la recarga el arma se acerca al cuerpo y se
-inclina, y el personaje baja la mirada.
+inclina, y el personaje baja la mirada. Lo que carga lo saca de adelante del cuerpo (`BOLSAS` en `js/jugador.js`):
+los cargadores, del portacargadores del cinturón; las balas, los cartuchos, los peines y los cargadores rápidos, de la
+canana del pecho. Antes todo salía de un punto detrás de la cadera y el brazo cruzaba hasta la espalda en cada viaje
+(ocho veces seguidas con una Winchester). La mano no va en línea recta sino en arco, arranca y llega sin tirón, y
+mientras el arma gira para cargarla ya va camino a la canana.
 
 | Mecanismo | Armas | Qué hace |
 |---|---|---|
-| Cargador de pistola | Glock, Desert Eagle, Colt 1911 | Saca el cargador, lo cambia en la cadera y lo mete. Si quedó vacía, la corredera está trabada atrás: la Glock y la Deagle la tiran, la 1911 suelta el retén. |
-| Tambor | Magnum .44 | Abre el tambor, boca arriba vacía los seis casquillos, boca abajo carga bala por bala y cierra. |
+| Cargador de pistola | Glock, Desert Eagle, Colt 1911 | Saca el cargador, toma otro del cinturón y lo mete. Si quedó vacía, la corredera está trabada atrás: la Glock y la Deagle la tiran, la 1911 suelta el retén. |
+| Tambor | Magnum .44 | Abre el tambor, boca arriba vacía los seis casquillos, baja el revólver a la altura de la canana, carga bala por bala y cierra. |
 | Cargador rápido | Colt Python | Abre, vacía, mete las seis juntas con el cargador rápido, lo suelta al piso y cierra. |
 | Peine | Mosin-Nagant, Mauser C96 | Vacía: abre el cerrojo, apoya el peine, empuja las balas y al cerrar salta el peine. A medias: completa bala por bala. |
 | Cerrojo | Remington 700 | Abre la recámara, pone bala por bala por arriba y cierra. |
-| Palanca | Winchester 1894 y 1887 | Gira el arma y carga por la ventana lateral de a una. Si estaba vacía, acciona la palanca. |
+| Palanca | Winchester 1894 y 1887 | Gira el arma y carga por la ventana lateral de a una. Si estaba vacía, acciona la palanca: el lazo baja y se adelanta girando sobre su pivote (`GIRO_PALANCA`, unos 57°), con la mano del gatillo adentro. |
 | Bombeo | Mossberg 500, SPAS-12 | Da vuelta el arma y mete los cartuchos por abajo de a uno; bombea si estaba vacía. Disparar interrumpe la carga. |
 | Quiebre | Recortada, M79 | Se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe. |
 | Cargador extraíble | Uzi, AK-47, M16, MP5, P90, Barrett, AA-12, Saiga-12, láser | El vacío cae al piso. La AK y la Saiga lo enganchan con balanceo; la M16 palmea el retén; la MP5 traba la manija al empezar y la baja de un palmazo al final; las demás tiran del cerrojo si estaban vacías. |
@@ -743,16 +747,66 @@ cargador y de esa medida; antes eran un palito de 2 × 10 o tres cubitos apilado
 base y lo saca y lo mete a lo largo de su eje (inclinado como la empuñadura en las pistolas) y no lo suelta hasta
 que encastra. En la mano se dibuja antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
 (el de la P90, que va encima, después). En las pistolas y la Uzi, puesto se ve solo la base; suelto, el cuerpo
-entero con los agujeros de control. El nuevo trae la bala de arriba asomando. Al piso cae girado como estaba en la
-mano, se va acostando y queda tendido sobre su lado largo.
+entero con los agujeros de control. El nuevo trae asomando la bala de arriba, que es la de su calibre. Al piso cae
+girado como estaba en la mano, se va acostando y queda tendido sobre su lado largo.
 
-**Manos**: todas son la misma mano con guante (mismo color, el mismo trazo que el resto del cuerpo, mismas
-medidas), empuñe lo que empuñe; antes cada agarre tenía su dibujo, con degradados y contornos distintos, y al
-recargar la mano cambiaba de color y de forma. La mano libre sigue al antebrazo: la muñeca dobla como mucho 50° y
-lo demás lo gira el brazo, que llega a la muñeca y no al centro de la mano. Se abre o se cierra según la fase:
-entreabierta mientras viaja, se cierra al agarrar, en puño mientras sostiene un cargador, en pinza con una bala o
-un cartucho, abierta al soltar o al palmear, con los dedos hacia abajo en el portacargador. En cuerpo a cuerpo los
-dos puños giran con el mango.
+**Munición** (`js/municion.js`): cada arma tira su calibre y se ve. `CALIBRES` tiene las medidas reales de 17
+cartuchos (largo de la vaina, diámetro, cuánto asoma la bala, si la vaina lleva cuello o reborde) y `CALIBRE_ARMA`
+dice cuál usa cada arma: de los 3 cm de un 9 × 19 (Glock, Uzi, MP5) a los 5,6 del 7,62 × 39 de la AK, los 7,7 del
+7,62 × 54 R del Mosin y los 13,8 de la .50 del Barrett y la M2. Un solo dibujo (`dibujarCartucho`) sirve para la
+bala de arriba del cargador, la que entra por la ventana de la recámara, la vaina servida, la que lleva la mano al
+cargar de a una, el peine (cinco balas tomadas del culote; el en bloque del Garand, ocho en dos hileras), el cargador
+rápido del revólver y la cinta. Antes había cuatro tamaños genéricos (la Desert Eagle mostraba una .50 de
+ametralladora) y la bala suelta era una barra de 10 unidades, 17 cm a escala, siempre parada. El latón y el cobre son
+apagados y no llevan contorno: el canto lo da la sombra del cilindro. Lo que lleva la mano apunta hacia donde va
+(`e.apuntaMano`): sale de la canana con la punta hacia abajo y en el camino gira hasta quedar en línea con el arma,
+que es como entra.
+
+**Cuerpo y anatomía** (`js/anatomia.js`): el cuerpo se ve de costado, pero los brazos y las manos se resuelven en
+tres dimensiones y después se proyectan. `ANATOMIA` tiene los rangos de movimiento normales de un adulto y nada los
+pasa:
+
+| Articulación | Rango |
+|---|---|
+| Hombro | 180° hacia adelante y arriba, 60° hacia atrás |
+| Codo | de recto a 150° de flexión, y solo hacia adelante |
+| Antebrazo | 85° de pronación y 85° de supinación desde la posición neutra |
+| Muñeca | 80° de flexión, 70° de extensión, 20° hacia el pulgar y 30° hacia el meñique |
+| Dedos | 90° en el nudillo, 100° y 80° en las otras dos articulaciones |
+| Cadera, rodilla y tobillo | 120° y 20°; de recta a 140°; 20° hacia arriba y 50° hacia abajo |
+
+- **Brazo** (`resolverBrazo`): con el largo verdadero de los huesos (`HUESOS`, uno solo para los dos brazos y para
+  todas las armas; antes el de apoyo medía 31,5 con un fusil y 26,5 con una pistola) sale el ángulo del codo, y el
+  codo cae sobre un círculo alrededor de la línea hombro–muñeca: se elige el punto hacia donde tira un brazo de
+  verdad (abajo, un poco hacia afuera y en línea con la mano si agarra algo). Un brazo que viene hacia el que mira se
+  ve en escorzo en vez de encogerse. Si quedara más atrás de lo que da el hombro, el codo se abre hacia el costado.
+- **Una sola forma por miembro** (`forma`, `tramoMusculo`): la manga arranca ancha en el hombro, afina hacia el codo
+  y sigue por el antebrazo; el muslo y la canilla son un trazado con el cuádriceps adelante y la pantorrilla atrás.
+  El contorno va por detrás del relleno, así queda solo en la silueta del conjunto. Antes cada tramo era una cápsula
+  con su contorno y había un círculo en el hombro, un rollo en el codo y una elipse en la rodilla: se leía como
+  pelotas unidas. La pintura es mate (sin el filo de brillo, que era lo que daba aspecto de plástico).
+- **Piernas**: 14,5 de muslo y 14 de canilla (antes 13 y 12, con una bota de 9 de alto); la rodillera es una
+  coquilla chica sobre el frente de la rodilla y la bota tiene tobillo. El pie apoya de plano mientras el tobillo da:
+  si la canilla se inclina más, se levanta el talón (la pierna de atrás al caminar, la que apoya la rodilla) o la
+  punta (la de adelante).
+
+**Manos** (`dibujarMano` en `js/anatomia.js`, los gestos en `js/jugador-dibujo.js`): todas son la misma mano con
+guante, empuñe lo que empuñe, en reposo y en cada fase de la recarga: una palma, cuatro dedos de tres falanges y el
+pulgar, con las medidas de una mano. Tiene su propio marco (hacia la punta de los dedos, hacia el pulgar y hacia donde
+mira la palma), así que puede quedar orientada hacia cualquier lado, no solo con los dedos para arriba o para abajo:
+de dorso, de palma, de canto o en escorzo.
+
+- **Gestos** (`GESTOS_MANO`): cada uno dice cuánto cierra cada dedo y qué hace el pulgar (en camino, soltando,
+  envolviendo un cargador, en pinza con una bala, metida en la bolsa, en gancho sobre la manija, de palmada, en la
+  empuñadura con el índice en el disparador, por debajo del guardamanos, sobre los dedos de la otra mano). La
+  orientación sale del antebrazo (`manoDesdeAntebrazo`: giro, flexión y desvío, dentro de los rangos) o de lo que
+  agarra, y entonces `limitarMuneca` no deja que la muñeca se quiebre.
+- **Fluidez** (`poseSuave`): la mano pasa de un gesto a otro girando y cerrando de a poco (65 ms), no de golpe. A 60
+  cuadros por segundo, en las 76 recargas (38 armas, vacías y a medias), lo máximo de un cuadro al otro son 16° de
+  giro y 0,14 de cierre; antes cambiaba de pose en un cuadro. Un agarre firme sobre el arma la sigue sin retraso.
+- **Lo que agarra va por detrás**: la palma y los nudillos lo tapan, y los dedos que lo envuelven por el otro lado
+  se dibujan antes que él (cada mano va en dos capas). El cargador se agarra por el medio, con los dedos cruzando su
+  costado y doblando en el canto, en vez de quedar parado encima del puño.
 
 La granada M67 no sale de golpe: la mano de apoyo engancha la anilla y saca el pasador (se oye el tirón),
 el brazo va atrás, lanza (salta la cuchara) y la mano suelta el pasador, que cae al piso. La granada se
@@ -767,7 +821,7 @@ de las montañas, y vuelven a aparecer a los 90 segundos.
 resolución) y, si en 3 s de partida el cuadro promedio tarda más de 24 ms (menos de unos 42 por segundo), baja un
 escalón (normal: 1×; baja: 0,75× y sin el bisel de las piezas) y avisa; recuerda lo medido en cada computadora.
 También se puede fijar a mano. En la portada, «Descargar el juego» (grande, con avance animado) arma un solo `zona-muerta.html` (unos
-4,6 MB, con el CSS, los 36 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
+7 MB, con el CSS, los 52 scripts y los sonidos adentro) para jugar con el navegador sin pasar por la página de
 Claude; su progreso y su configuración se guardan aparte.
 
 **El archivo descargado se actualiza solo.** `zona-muerta.html` es un lanzador (`js/lanzador.js`): trae el juego

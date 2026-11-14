@@ -2,7 +2,18 @@
 const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;   // el salto llega a unos 120 px de alto
 const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay que saltar
 const ORIGEN_ARMA = { x: 12, y: -47 };   // mano del gatillo, respecto de los pies
-const CADERA = { x: -4, y: -30 };        // de ahí saca cargadores, balas y cartuchos
+// De dónde saca la mano de apoyo lo que carga. Todo queda por delante del cuerpo y cerca del arma: antes era un solo
+// punto detrás de la cadera y el brazo cruzaba hasta la espalda en cada viaje (con las armas que cargan de a una, ocho
+// veces seguidas), más atrás de lo que da el hombro.
+const BOLSAS = {
+  cargador: { x: 8.5, y: -38 },          // portacargadores del cinturón, adelante
+  balas: { x: 10.5, y: -42 },            // canana del pecho: balas y cartuchos sueltos, peines y cargadores rápidos
+  cohete: { x: 1, y: -33 },              // bolsa al costado
+  granada: { x: 6, y: -36 },
+  cinta: { x: 2, y: -32 },               // cajón de cintas de la M2, al pie del trípode
+};
+const BOLSA_DE = { 'cargador-pistola': 'cargador', cargador: 'cargador', ignicion: 'cargador', tambor: 'balas', 'tambor-rapido': 'balas', peine: 'balas', cerrojo: 'balas',
+  palanca: 'balas', cartuchos: 'balas', quiebre: 'balas', cinta: 'cinta', cohete: 'cohete', granada: 'granada' };
 const DETRAS_M2 = 20;                    // a cuánto detrás de la M2 se para el tirador
 // El cuerpo se dibuja 16 % más grande que su esqueleto (proporciones reales sin quedar más bajo que los zombies):
 // todo punto del dibujo que se lleva al mundo (boca del arma, cargador, pasador) se multiplica por esto
@@ -23,6 +34,7 @@ const POSTURAS = {
 /* Golpe cuerpo a cuerpo: dónde va la mano del gatillo y cuánto se inclina el arma (0 = parada hacia arriba)
  * en guardia, con el arma alzada atrás y al terminar el golpe adelante y abajo. */
 const GOLPE = { guardia: { x: 13, y: -47, a: -0.15 }, guardiaUnaMano: { x: 14, y: -46, a: 0.35 }, alzada: { x: 2, y: -68, a: -2.1 }, golpe: { x: 25, y: -42, a: 1.85 }, lanzar: { x: 24, y: -56, a: 1.1 } };
+const masSuave = t => t * t * t * (t * (t * 6 - 15) + 10);   // arranca y llega sin tirón (velocidad y aceleración cero en las puntas)
 const mezclaPose = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, a: a.a + (b.a - a.a) * k });
 
 // Armas de acción manual: después de cada tiro se acciona el mecanismo y recién ahí sale el casquillo
@@ -39,7 +51,7 @@ const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
  *   llegada  fracción de la fase que tarda la mano en llegar; el resto es la acción
  *   ab, co   estado al terminar la fase del arma abierta (tambor, cerrojo, quiebre, tapa) y de la corredera trabada
- *   snap     si está, ab/co cambian de golpe en ese punto de la acción en vez de gradualmente
+ *   snap     si está, ab/co encastran de golpe en ese punto de la acción (en un quinto de la acción) en vez de gradualmente
  *   incl     inclinación del arma al terminar la fase (radianes, positivo = boca abajo)
  *   pulso    { que: corredera | bombeo | palanca, recorrido } va y vuelve durante la acción
  *   tiron, offset, presionar  desplazamientos extra de la mano
@@ -410,16 +422,16 @@ class Jugador {
         break;
 
       case 'palanca':   // por la ventana lateral, de a una; si estaba vacía, palanca para alimentar la recámara
-        l.fase('girar', 220, { a: 'arma', incl: -0.3 });
+        l.fase('girar', 220, { a: 'cadera', incl: -0.3 });   // mientras gira el arma, la mano ya va a la canana
         deAUna(arma.cargador - this.municionActual(), (T - 800) / arma.cargador, -0.3, unidad, unidad === 'cartucho' ? 'cartucho' : 'bala');
         if (vacio) l.fase('palanca', 400, { a: 'arma', llegada: 0.2, incl: 0, pulso: { que: 'palanca', recorrido: 0 }, eventos: [[0.25, s('palanca')]] });
         l.fase('volver', 180, { a: 'arma', incl: 0 });
         break;
 
       case 'cartuchos':   // escopeta de bombeo: se da vuelta, cartucho por cartucho por abajo, y bombea si estaba vacía
-        l.fase('girar', 200, { a: 'arma', incl: -0.3 });
+        l.fase('girar', 200, { a: 'cadera', incl: -0.3 });   // mientras gira el arma, la mano ya va a la canana
         deAUna(arma.cargador - this.municionActual(), (T - 680) / arma.cargador, -0.3, 'cartucho', 'cartucho');
-        if (vacio) l.fase('bombear', 320, { a: 'corredera', llegada: 0.25, incl: 0, pulso: { que: 'bombeo', recorrido: 0 }, eventos: [[0.3, s('bombear')]] });
+        if (vacio) l.fase('bombear', 320, { a: 'corredera', llegada: 0.4, incl: 0, pulso: { que: 'bombeo', recorrido: 0 }, eventos: [[0.45, s('bombear')]] });
         l.fase('volver', 160, { a: 'arma', incl: 0 });
         break;
 
@@ -443,9 +455,13 @@ class Jugador {
         break;
 
       case 'cohete':   // bazuca: cohete de la espalda, se mete por la cola del tubo hasta que traba
-        l.fase('cadera', 700, { a: 'cadera', incl: -0.05, mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0.5, 1]], alInicio: () => { this.sinCargador = true; } });
-        l.fase('cargar', 900, { a: 'cargador', mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0, 0.9]], eventos: [[0.85, llenar('cargador-poner')]] });
-        l.fase('volver', 500, { a: 'arma', incl: 0 });
+        // La bazuca se carga por la cola: el tubo se corre hacia adelante y baja la boca, así la cola sube hasta detrás de
+        // la oreja y la mano llega por arriba del hombro (antes el brazo iba recto hacia atrás, 89° de extensión: el hombro
+        // da 60). El RPG-7 se carga por la boca: no hace falta
+        const corre = arma.id === 'rpg7' ? { x: 0, y: 0 } : { x: 16, y: 6 }, baja = arma.id === 'rpg7' ? -0.05 : 0.5;
+        l.fase('cadera', 700, { a: 'cadera', incl: baja, org: corre, mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0.5, 1]], alInicio: () => { this.sinCargador = true; } });
+        l.fase('cargar', 900, { a: 'cargador', incl: baja, org: corre, mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0, 0.9]], eventos: [[0.85, llenar('cargador-poner')]] });
+        l.fase('volver', 500, { a: 'arma', incl: 0, org: { x: 0, y: 0 } });
         l.ajustar(T);
         break;
 
@@ -572,7 +588,7 @@ class Jugador {
       const previo = i > 0 ? linea.fases[i - 1] : linea.inicial;
       p = limitar((ahora - f.desde) / Math.max(1, f.hasta - f.desde), 0, 1);
       const llegada = f.llegada ?? 1;
-      pm = suavizar(Math.min(1, p / llegada));
+      pm = masSuave(Math.min(1, p / llegada));
       pAccion = llegada >= 1 ? p : (p - llegada) / (1 - llegada);
       q = suavizar(limitar(pAccion, 0, 1));
       e.incl = previo.incl + (f.incl - previo.incl) * suavizar(p);
@@ -580,7 +596,8 @@ class Jugador {
         const a = previo.org || { x: 0, y: 0 }, b = f.org || a, k = suavizar(p);
         e.origen.x += a.x + (b.x - a.x) * k; e.origen.y += a.y + (b.y - a.y) * k;
       }
-      const valor = clave => f.snap !== undefined ? (pAccion >= f.snap ? f[clave] : previo[clave]) : previo[clave] + (f[clave] - previo[clave]) * q;
+      // snap: la pieza encastra de golpe en ese punto de la acción; es rápido (un quinto de la acción) pero no un salto de un cuadro
+      const valor = clave => previo[clave] + (f[clave] - previo[clave]) * (f.snap !== undefined ? suavizar(limitar((pAccion - f.snap) / 0.2, 0, 1)) : q);
       e.abierto = valor('ab');
       e.corredera = valor('co');
       if (f.pulso) {                                                     // cerrojo, bomba o palanca que va y vuelve
@@ -589,11 +606,15 @@ class Jugador {
         // Por la ventana: al accionar después de un tiro sale la vaina (hasta la mitad) y después entra otra bala;
         // al cargar la primera, la recámara estaba vacía y solo entra
         e.recamara = this.ciclo === linea && q < 0.5 ? 'sale' : q >= 0.5 && municion > 0 ? 'entra' : null;
-        if (f.pulso.que === 'palanca') e.manoGatillo = { x: 2 * v, y: 5 * v };
+        if (f.pulso.que === 'palanca') {   // la mano del gatillo va en el lazo de la palanca: baja y se adelanta con ella
+          const lazo = d.moviles && d.moviles.gatillo, [mx, my] = lazo ? lazo(e) : [2 * v / CM, 5 * v / CM];
+          e.manoGatillo = { x: mx * CM, y: my * CM };
+        }
       }
       if (this.recarga) { const t = Math.min(ahora - linea.inicio, linea.fin - ahora); e.mirar = suavizar(limitar(t / 200, 0, 1)); }
     }
     if (this.montada) { e.incl = 0; e.tapa = e.abierto; }
+    else if (corta && linea && (linea.tipo === 'tambor' || linea.tipo === 'tambor-rapido')) { e.origen.x -= 6 * e.mirar; e.origen.y += 8 * e.mirar; }   // el revólver baja a la altura de la canana
     else { e.origen.x -= 4 * e.mirar; e.origen.y += 3 * e.mirar; }     // durante la recarga el arma se acerca al cuerpo
     if (corta) e.incl -= empuje * 0.3;                                  // la pistola levanta la boca al disparar
     else if (!this.montada) e.incl -= empuje * 0.05;                    // el fusil, apenas
@@ -603,8 +624,17 @@ class Jugador {
     const c = Math.cos(e.incl), s = Math.sin(e.incl);
     const enArma = pt => ({ x: e.origen.x + pt.x * c - pt.y * s, y: e.origen.y + pt.x * s + pt.y * c });
     const CLAVES = { arma: 'manoDelantera', cargador: 'cargador', corredera: 'corredera' };
+    // Si el guardamanos queda lejos para el brazo, la mano de apoyo se toma más atrás sobre el arma (hasta 12 unidades),
+    // así el codo queda doblado debajo y no con el brazo tieso. Se calcula acá y no al dibujar: ese es el lugar de donde
+    // sale y adonde vuelve la mano en la recarga (antes saltaba hasta 8 unidades de un cuadro al otro al empezarla)
+    let atrasApoyo = 0;
+    if (!this.montada && (d.agarre === 'hombro' || d.agarre === 'pecho')) {
+      const q = enArma(d.manoDelantera), vx = q.x + retroX - (d.agarre === 'hombro' ? 6 : 3), vy = q.y + retroY + 2 + 52;   // desde el hombro, sin el retroceso
+      const R = Math.sqrt(Math.pow((HUESOS.brazo + HUESOS.antebrazo) * 0.95, 2) - 25), va = vx * c + vy * s, falta = vx * vx + vy * vy - R * R;
+      if (falta > 0) atrasApoyo = limitar(va * va >= falta ? va - Math.sqrt(va * va - falta) : va, 0, 12);
+    }
     const punto = nombre => {
-      if (nombre === 'cadera') return { x: CADERA.x, y: CADERA.y };
+      if (nombre === 'cadera') return BOLSAS[this.montada ? 'cinta' : BOLSA_DE[arma.recargaTipo] || 'cargador'];
       if (nombre === 'frente') return { x: 19, y: -58 };                 // brazo de apoyo estirado adelante, para el lanzamiento
       if (nombre === 'anilla') return enArma({ x: 0.3 * CM, y: -5.6 * CM });
       if (nombre === 'agarreCargador') {   // donde la mano agarra el cargador puesto (js/cargadores.js)
@@ -612,10 +642,10 @@ class Jugador {
         if (M) return enArma({ x: M.agarre[0] * CM, y: M.agarre[1] * CM });
         nombre = 'cargador';
       }
-      const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave];
-      if (!movil) return enArma(ancla);
+      const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave], atras = nombre === 'arma' ? atrasApoyo : 0;
+      if (!movil) return enArma({ x: ancla.x - atras, y: ancla.y });
       const [dx, dy] = movil(e);
-      return enArma({ x: ancla.x + dx * CM, y: ancla.y + dy * CM });
+      return enArma({ x: ancla.x + dx * CM - atras, y: ancla.y + dy * CM });
     };
     e.apoyo = punto('arma');
     e.reposoApoyo = { x: e.apoyo.x + retroX, y: e.apoyo.y + retroY };   // dónde estaría sin retroceso
@@ -636,36 +666,39 @@ class Jugador {
       return { x: b.x + o.x, y: b.y + o.y };
     };
     const inicio = finDe(i - 1), destino = punto(f.a);
-    const o0 = { x: f.offset ? f.offset.x : 0, y: f.offset ? f.offset.y : 0 }, oq = desplazamiento(f, q);
+    // (o0 va por el mismo eje que oq: con el crudo, la mano saltaba al empezar a poner un cargador inclinado; con el de la P90, 14 unidades)
+    const o0 = desplazamiento(f, 0), oq = desplazamiento(f, q);
     e.mano = { x: inicio.x + (destino.x + o0.x - inicio.x) * pm + (oq.x - o0.x), y: inicio.y + (destino.y + o0.y - inicio.y) * pm + (oq.y - o0.y) };
+    // La mano no va en línea recta: el brazo gira desde el hombro y el codo, así que el recorrido hace una comba hacia abajo
+    const tramoViaje = Math.hypot(destino.x + o0.x - inicio.x, destino.y + o0.y - inicio.y), comba = Math.sin(pm * Math.PI) * Math.min(3.2, tramoViaje * 0.13);
+    e.mano.y += comba; e.mano.x -= comba * 0.3;
 
     if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
     e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
-    if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q }; }
+    if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q, incl: e.incl }; }
 
-    // 4) Cómo va la mano: abierta mientras viaja vacía o suelta algo, se cierra al agarrar, cerrada mientras sostiene;
-    // y hacia dónde apunta (e.dirMano, en el marco del cuerpo; null: sigue al antebrazo). El dibujo limita cuánto
-    // dobla la muñeca, así que el que gira es el brazo entero.
-    const cerrar = (desde, k) => desde + (0.85 - desde) * suavizar(limitar(k, 0, 1));
-    const objeto = e.enMano;
-    if (objeto) {
-      const chico = objeto === 'bala' || objeto === 'cartucho' || objeto === 'granada40' || objeto === 'speedloader' || objeto === 'pasador';
-      e.cierre = chico ? 0.62 : 0.82;                                  // pinza para lo chico, puño para cargadores y cohetes
-      e.dirMano = e.incl - (chico ? 0.55 : 0.1);                       // la punta de los dedos hacia el arma
-    } else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) {
-      e.cierre = 0.1; e.dirMano = null;                                // abre la mano: suelta el cargador o la granada
-    } else if (pm < 1) {
-      e.cierre = 0.3; e.dirMano = null;                                // viajando: mano entreabierta, sigue al brazo
-    } else if (f.a === 'cadera') {
-      e.cierre = cerrar(0.25, (p - 0.35) / 0.15); e.dirMano = 1.35;     // dedos hacia abajo, al portacargador
-    } else if (f.a === 'corredera') {
+    // 4) Qué está haciendo la mano de apoyo (e.gesto) y cuánto cerró ya sobre lo que agarra (e.agarra, 0..1). La pose
+    // la arma el dibujo con la anatomía (js/anatomia.js): cada gesto sigue al antebrazo dentro de lo que da la muñeca,
+    // y la mano pasa de uno a otro girando y cerrando de a poco, no de golpe.
+    const objeto = e.enMano, cerrando = k => suavizar(limitar(k, 0, 1));
+    const CHICOS = { bala: 1, cartucho: 1, granada40: 1, speedloader: 1, peine: 1, pasador: 1 };
+    e.agarra = 1;
+    if (objeto) e.gesto = CHICOS[objeto] ? 'pinza' : ES_CARGADOR.has(objeto) ? 'cargador' : 'punio';
+    else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) e.gesto = 'suelta';       // abre la mano: suelta el cargador o la granada
+    else if (pm < 1 && tramoViaje > 1.5) { e.gesto = 'viaja'; e.agarra = pm; }                      // en camino, entreabierta
+    else if (f.a === 'cadera') { e.gesto = 'bolsa'; e.agarra = cerrando((p - 0.35) / 0.15); }       // dedos hacia abajo, a la bolsa
+    else if (f.a === 'corredera') {
       const palmea = /palmada|liberar/.test(f.nombre);
-      e.cierre = palmea ? 0.05 : cerrar(0.3, pAccion / 0.25); e.dirMano = palmea ? e.incl - 0.4 : null;
-    } else if (f.a === 'cargador') {
-      e.cierre = cerrar(0.3, pAccion / 0.3); e.dirMano = e.incl - 0.1;   // agarra el cargador o la boca del arma
-    } else {
-      e.cierre = 0.7; e.dirMano = null;
+      e.gesto = palmea ? 'palmada' : corta ? 'corredera' : 'manija'; e.agarra = cerrando(pAccion / 0.25);
+    } else if (f.a === 'cargador' || f.a === 'agarreCargador') { e.gesto = f.peine ? 'empuja' : 'cargador'; e.agarra = tramoViaje > 1.5 ? cerrando(pAccion / 0.3) : 1; }   // agarra el cargador o la boca del arma (si ya estaba ahí, lo sigue teniendo)
+    else if (f.a === 'anilla') { e.gesto = 'pinza'; e.agarra = cerrando(pAccion / 0.3); }
+    else e.gesto = f.a === 'arma' ? 'apoyo' : 'viaja';
+    // Hacia dónde apunta lo que lleva (balas, cartuchos, peines, cohetes): en la bolsa sale con la punta hacia abajo y
+    // en el camino gira hasta quedar en línea con el arma, que es como entra
+    if (objeto && objeto !== 'granada' && objeto !== 'cinta' && objeto !== 'cajaMinigun' && objeto !== 'celda' && objeto !== 'pasador') {
+      const haciaArma = e.incl + (linea.tipo === 'quiebre' ? e.abierto * 0.58 : 0), enBolsa = /cohete/.test(objeto) ? -Math.PI / 2 : 1.15;
+      e.apuntaMano = f.a === 'cadera' ? enBolsa : enBolsa + (haciaArma - enBolsa) * suavizar(Math.min(1, pm * 1.25));
     }
     return e;
   }

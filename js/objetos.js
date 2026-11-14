@@ -418,7 +418,7 @@ class Casquillo {
     ctx.globalAlpha = Math.min(1, this.vida / 0.3);   // se desvanece en los últimos 0,3 s
     ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot);
     if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
-      ctx.fillStyle = 'rgba(255, 236, 160, 0.55)'; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255, 240, 190, 0.3)'; ctx.beginPath(); ctx.arc(0, 0, 1.8, 0, Math.PI * 2); ctx.fill();
     }
     if (this.cargador) {   // el cargador de su arma, en cm, girado alrededor de donde lo tenía la mano
       const M = this.cargador, K = ESCALA_JUGADOR * CM;
@@ -427,19 +427,21 @@ class Casquillo {
       ctx.restore();
       return;
     }
+    // Proporciones reales (vaina de 9 mm, de fusil, de .50 y cartucho de escopeta), agrandadas para que se vean al volar.
+    // El latón y el plástico, de los mismos tonos apagados que la munición (js/municion.js)
+    const [, laton, latonSombra] = TONOS_MUNICION.laton, rojo = TONOS_MUNICION.plastico[1];
     switch (this.tipo) {
-      // Proporciones reales (vaina de 9 mm, de fusil, de .50 y cartucho de escopeta), agrandadas para que se vean al volar
-      case 'pistola':  bloque(ctx, -1.0, -0.45, 2.0, 0.9, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-1.0, -0.45, 0.35, 0.9); break;
-      case 'escopeta': bloque(ctx, -2.2, -0.8, 4.4, 1.6, '#b4251e'); ctx.fillStyle = '#d4ac2c'; ctx.fillRect(-2.2, -0.8, 1.1, 1.6); break;
-      case 'grande':   bloque(ctx, -3.0, -0.8, 6.0, 1.6, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-3.0, -0.8, 0.6, 1.6); ctx.fillRect(1.6, -0.5, 1.4, 1.0); break;
+      case 'pistola':  bloque(ctx, -1.0, -0.45, 2.0, 0.9, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-1.0, -0.45, 0.3, 0.9); break;
+      case 'escopeta': bloque(ctx, -2.2, -0.8, 4.4, 1.6, rojo); ctx.fillStyle = laton; ctx.fillRect(-2.2, -0.8, 1.1, 1.6); break;
+      case 'grande':   bloque(ctx, -3.0, -0.8, 6.0, 1.6, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-3.0, -0.8, 0.5, 1.6); ctx.fillRect(1.6, -0.5, 1.4, 1.0); break;
       case 'cargador': bloque(ctx, -1.0, -5.2, 2.0, 10.4, '#222'); ctx.fillStyle = '#555'; ctx.fillRect(-1.0, 4.4, 2.0, 0.8); break;
       case 'cargadorPistola': bloque(ctx, -0.8, -3.4, 1.6, 6.8, '#222'); ctx.fillStyle = '#444'; ctx.fillRect(-1.0, 2.8, 2.0, 0.7); break;
-      case 'granada40': bloque(ctx, -4, -2.5, 8, 5, '#c9a227'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-4, -2.5, 2, 5); break;
-      case 'peine':    bloque(ctx, -5, -1, 10, 2, '#777'); break;
+      case 'granada40': bloque(ctx, -1.7, -1.4, 3.4, 2.8, TONOS_MUNICION.aluminio[1]); ctx.fillStyle = TONOS_MUNICION.aluminio[2]; ctx.fillRect(-1.7, -1.4, 0.5, 2.8); break;   // la vaina corta de aluminio
+      case 'peine':    bloque(ctx, -0.3, -2.2, 0.6, 4.4, TONOS_MUNICION.acero[1]); break;                                                                                       // la lámina del peine
       case 'pasador':  ctx.beginPath(); ctx.arc(-1.4, 0, 2.0, 0, Math.PI * 2); ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 0.7; ctx.stroke(); bloque(ctx, 0.4, -0.3, 3.8, 0.6, '#9a9a9a'); break;   // anilla y pasador
       case 'tambor':   esfera(ctx, 0, 0, 6.5, '#1e2226'); bloque(ctx, -2, -8, 4, 3, '#2b2f33'); break;
-      case 'speedloader': esfera(ctx, 0, 0, 4.5, '#2a2a2e'); bloque(ctx, -1.5, -6, 3, 3, '#4a4a52'); break;
-      default:         bloque(ctx, -1.8, -0.5, 3.6, 1.0, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-1.8, -0.5, 0.4, 1.0); ctx.fillRect(1.0, -0.32, 0.8, 0.64);   // vaina de fusil con cuello
+      case 'speedloader': bloque(ctx, -1.3, -1.5, 2.0, 3.0, '#2f3136'); bloque(ctx, -2.3, -0.5, 1.1, 1.0, '#2f3136'); break;                                                   // el cuerpo vacío, a su medida
+      default:         bloque(ctx, -1.8, -0.5, 3.6, 1.0, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-1.8, -0.5, 0.35, 1.0); ctx.fillRect(1.0, -0.32, 0.8, 0.64);   // vaina de fusil con cuello
     }
     ctx.restore();
   }
