@@ -10,7 +10,7 @@
  *   machete      pega según la velocidad de la mano (y silba al blandirlo)
  *   mjolnir      legendaria: pega con un rayo; se tira soltándolo con el brazo en movimiento y vuelve con el agarre
  * El mundo (vr/campo.js) da: disparo, lanzar (proyectiles), explotar, barrer (golpes de hoja), golpearZombie, rayo,
- * volverAMesa y el zombie. */
+ * volverAMesa y fuego (llamas contra zombies y blancos). */
 import * as THREE from 'three';
 import { Arma, DEFS, A_METROS, cartucho3d } from './armas-vr.js';
 import { extruir, tornear, caja, v3, fusionar } from './modelo3d.js';
@@ -287,11 +287,10 @@ class Lanzallamas extends Arma {
       this.mundo.vibrar('right', this.def.vibra, 30);
       if (this.municion % 10 === 0) this.dibujarContador();
     } else if (this.pulso && (!this.puesto || this.municion <= 0)) { this.pulso = false; Audio_.vacio(); } else this.pulso = false;
-    // Las llamas que tocan al zombie lo prenden
-    const z = this.mundo.zombie;
+    // Las llamas que tocan a un zombie lo prenden (y tiran los blancos que suben)
     for (let i = this.llamas.length - 1; i >= 0; i--) {
       const q = this.llamas[i]; if (q.vida <= 0) { this.llamas.splice(i, 1); continue; }
-      if (!q.pego && z && z.cerca(q.s.position, 0.35)) { q.pego = true; z.incendiar(3); z.recibir({ dano: this.datos.dano, tipo: 'fuego' }); }
+      if (!q.pego && this.mundo.fuego(q.s.position, 0.35, this.datos.dano)) q.pego = true;
     }
     this.retrocesoYCola(ahora, dt);
   }

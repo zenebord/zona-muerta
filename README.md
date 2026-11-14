@@ -132,6 +132,27 @@ el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo d
   son 162 llamadas de dibujo por cuadro (281 sin juntar) y 112 000 triángulos.
 - **La mesa**: una de cada tipo de `NOMBRE_CATEGORIA`, acostadas con la empuñadura hacia el jugador y un cartel con el
   nombre. Agarre derecho cerca de una la toma; otra vez la deja (sobre la mesa vuelve a su lugar; lejos, cae y vuelve).
+- **Menú** (`vr/menu.js`): un panel en el aire que aparece al empezar y se abre cuando quieras con **Y** (mando
+  izquierdo) o **M** sin visor (Esc también, al soltar el mouse); se apunta con el rayo de cualquier mando, el gatillo
+  aprieta, y mientras está abierto el juego está en pausa (no corren los zombies, los blancos ni el reloj del nivel; el
+  arma sigue la mano pero no tira, y al cerrar hay que soltar el gatillo antes de volver a disparar). Páginas: inicio
+  (los tres modos), niveles, pausa, modo libre (con pestañas), resultado, guía (con «Tipos de zombie»: qué hace cada
+  uno, en dos páginas) y configuración.
+- **Modos** (`vr/modos.js`; al elegir un modo se ven sus niveles; las reglas están en la guía, que pausa):
+
+| Modo | Qué es | Niveles |
+|---|---|---|
+| Entrenamiento | Blancos de chapa (`vr/blancos.js`) que suben detrás de un parapeto, se quedan un rato y bajan: +1, la cabeza roja +2, −1 si baja sin tiro. Caen con bala, explosión, llamas o golpe | 10: de 10 blancos de a uno a 8–12 m y 4 s arriba, a 30 de a cuatro a 20–60 m y 1,4 s, con móviles desde el 5 y chicos desde el 8. Se pasa con el 60 % (★★ 80 %, ★★★ todos) |
+| Ataque zombie | El campo vacío; los zombies salen del piso al fondo, caminan, rodean la mesa y muerden (−20 de 100 hasta el nivel 5 y −25 después, por lo que muerde cada tipo); explosiones, gas, ácido, cascotes, fardos y embestidas también quitan vida | 10: de 4 caminantes (2 a la vez) a 28 de todos los tipos de Último bastión (10 a la vez, más rápidos y con más vida, también por los costados). Cada nivel suma tipos (gordo y jauría en el 3, acorazado, soldado y cuervos en el 4, gritón e hinchado en el 5…) y, cuando cayó el 60 %, los jefes: El Coloso en el 5, La Sirena en el 8, El Escudo (con cuatro que cubre) en el 9, La Cisterna y El Coloso en el 10. Se pasa matando a todos (★★ con media vida, ★★★ sin perder vida) |
+| Libre | El campo de pruebas: papel a 10, 25 y 50 m, el zombie de cartón y un caminante | Sin niveles: el menú tiene pestañas (comunes, Último bastión, animales, jefes, blancos) para aparecer cada tipo (perros, cuervos y rabiosos en manada; El Escudo con los que cubre) o una horda de 6, y blancos a 10/25/50 m o móvil; zombies quietos, que reaparezcan o no, quitar todo |
+
+  Los niveles se destraban de a uno; el progreso (superado, estrellas, récord) se guarda en `localStorage`
+  (`zonaMuerta.vr.progreso`). Tablero sobre la mesa, cartel arriba a la izquierda sin visor y, en el visor, un reloj en
+  la muñeca izquierda con la vida o los puntos. Cuenta regresiva al empezar cada nivel y los puntos suben sobre cada
+  blanco.
+- **Configuración** (`zonaMuerta.vr.config`): volumen general y de efectos, silencio, vibración de los mandos, giro con
+  la palanca (30°, 45° o suave), velocidad al caminar, altura (de pie o sentado: el piso baja 40 cm) y sensibilidad del
+  mouse.
 
 | Tipo | Arma | Cómo funciona (`vr/armas-vr.js`, `vr/especiales.js`) |
 |---|---|---|
@@ -154,23 +175,64 @@ el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo d
 - **Mano izquierda**: agarre en el guardamanos sostiene con las dos manos (la recta entre las manos manda; en pistolas,
   minigun y RPG solo afirma); en la corredera, la manija o el cerrojo los lleva atrás; lejos del arma saca munición
   nueva (cargador, cartucho, bala, granada de 40 mm, cohete, caja, cilindro o celda), que entra al acercarla a su lugar.
-- **El zombie** (`vr/zombie3d.js`): el caminante del juego (camisa escocesa abierta, pantalón marrón roto, descalzo,
-  ojos amarillos). Una sola superficie hecha de primitivas anatómicas unidas con mínimo suave (sin costuras), pasada a
-  malla con surface nets; manos aparte con dedos y uñas; la ropa son capas a 1 y 1,6 cm del cuerpo con bordes rotos;
-  piel sobre 19 huesos. Camina hacia el jugador arrastrando una pierna, reacciona a cada impacto, la sangre se pinta en
-  la piel y la ropa, la cabeza lo mata, se cae y a los 6,5 s vuelve a aparecer lejos. La mesa lo frena: desde el otro
-  lado solo estira los brazos; fuera de la mesa muerde (vibran los mandos y se ve rojo). Vida 15, como en dificultad
-  media; daño de `ARMAS`, ×4 en la cabeza y ×0,6 en brazos y piernas.
+- **Los zombies** (`vr/zombie3d.js`; los tipos en `vr/zombie-tipos.js`, los animales en `vr/animales3d.js`): los 20
+  humanos del juego, con los colores del 2D (`js/zombie.js`, `js/bastion-v2-horda.js`) y lo que hace cada uno, y los 4
+  animales de Último bastión. Vida 15 y paso de 0,55 m/s para el común; el resto, multiplicado:
+
+| Grupo | Tipo | Cómo se ve | Qué hace |
+|---|---|---|---|
+| Comunes | Caminante, Camisa roja, Enfermero, Policía, Corredor | Camisa escocesa abierta (azul o roja); ambo celeste con barbijo; uniforme con gorra, placa y cinturón; musculosa con dorsal y una sola zapatilla | Caminan y rodean la mesa. El policía aguanta ×1,6; el corredor corre a 2,4 m/s |
+| Último bastión | Gordo | Camisa amarilla abierta sobre la panza, papada | Vida ×3,2; va derecho, trepa la mesa y tira las armas; muerde ×1,5 |
+| | Acorazado | Casco antidisturbios, hombreras y escudo con ventana y «POLICÍA» | Blindaje 2; el escudo para las balas chicas, el rifle lo atraviesa |
+| | Soldado zombie | Casco, portaplacas y portacargadores | Blindaje 1, vida ×1,5 |
+| | Gritón | Buzo violeta con capucha y megáfono | Se planta a gritar cada 5 s: los que están a 10 m se apuran ×1,3 durante 6 s |
+| | Hinchado | Sin camisa, hinchado, con pústulas que laten | Estalla al tocarte o al morir (2,6 m, 45 de daño), también a los zombies |
+| | Dinamitero | Casco de obra, chaleco naranja y la dinamita en la espalda con la mecha prendida | Corre a la mesa (2,5 m/s) y la vuela: las armas salen volando. A balazos cae sin estallar; con fuego o explosión, estalla |
+| | Tóxico | Traje amarillo roto, sangre verde y baba | Al morir deja gas (2,2 m, 5 s) |
+| | Topo | Casco de minero y overol | Avanza bajo tierra (no se le puede tirar) y sale a 1 m detrás del jugador |
+| | Lanzador | Brazos enormes, vincha y short rojo | Agarra al de al lado y lo arroja (cae con 30 % menos de vida); si no tiene, tira cascotes (15) |
+| | Escupidor | Piel amarilla y el buche hinchado | Se planta a 9 m y escupe ácido en arco: golpe y charco |
+| | Rabioso | Remera blanca, pelo largo, el más flaco | Corre a 4,5 m/s en zigzag, en manada de 4, y esquiva el 60 % de los tiros pesados |
+| Animales | Jauría, Toro, Cuervos, Buitre | Perros flacos con sarna y ojos amarillos; toro negro con cuernos y argolla; aves con las costillas al aire | 5 perros que saltan la mesa y no cruzan el fuego; el toro escarba, embiste (40, aturde 2 s) y queda quieto; 6 cuervos que rodean la cabeza y picotean; el buitre baja, te levanta y te suelta en medio de la horda |
+| Jefes | El Coloso, El Escudo, La Cisterna, La Sirena | Casi el doble de alto | Coloso (vida ×22): trepa la mesa y tira fardos (25). Escudo (×22): pavés con ventana enrejada y franjas de obra, cubre a los que trae detrás (cuatro en Ataque zombie, tres en Libre) y las balas chicas le hacen 1. Cisterna (×18): estalla a 6 m (90). Sirena (×18): mientras vive, todos se apuran ×1,33 |
+
+  Cómo están hechos: el cuerpo es una sola superficie de primitivas anatómicas unidas con mínimo suave (`vr/forma3d.js`,
+  el mismo núcleo que usan los animales), pasada a malla con surface nets (cada triángulo se orienta por el lado de
+  adentro de su arista); manos con dedos y uñas; la ropa son capas a 1 y 1,6 cm del cuerpo recortadas por prenda (la
+  camisa abierta se abre más cuanto más panza); piel sobre 19 huesos. Cinco cuerpos con su esqueleto: normal, gordo
+  (panza y papada), fuerte (brazos ×1,75), coloso (brazos ×2, piernas ×1,6, abdominales) e hinchado (pústulas). El
+  material (`vr/piel3d.js`) hace en el sombreador lo que en los juegos sale de texturas pintadas, pegado al cuerpo en
+  reposo y proyectado en los tres ejes: poros, venas moradas, manchas, mugre hacia los pies, brillo húmedo en la sangre
+  y la boca, relieve y la luz que atraviesa la piel en los bordes; en la tela, el tejido y el revés más oscuro. Heridas
+  como las de Left 4 Dead 2 (Valve, GDC 2010): hasta dos por zombie, un elipsoide que recorta piel y ropa con borde
+  desparejo, sangre alrededor y la carne adentro. Los escudos llevan una textura dibujada como en el 2D (ventana,
+  «POLICÍA» o franjas de obra, remaches, grieta, sangre y barro) y otra de rugosidad (el vidrio brilla, el barro no).
+
+  Costo: cada cuerpo se arma la primera vez que hace falta, mientras el menú dice «Preparando…» (0,6–1 s cada uno en la
+  computadora; los 20 tipos y los animales, 4,4–4,9 s). De cerca (los 4 más cercanos a menos de 7 m; los jefes, desde
+  más lejos) va el cuerpo fino con la ropa en capas: 39 500 triángulos el normal, 46 600 el gordo, 50 500 el fuerte,
+  51 000 el hinchado y 55 600 el coloso; de lejos, una malla gruesa con la ropa pintada (11 500 a 15 600). El perro tiene
+  18 200 y el toro 42 300, sin niveles de detalle. Peor caso medido: 18 enemigos a la vista (el máximo de la horda:
+  jauría, los cuatro jefes, el toro, cuervos y comunes), con las armas y el galpón, 287 llamadas y 296 000 triángulos.
+
+  Caminan hacia el jugador por el camino más corto alrededor de la mesa (sus esquinas), no se enciman, reaccionan a
+  cada impacto, la cabeza los mata; muerden a menos de 0,78 m (vibran los mandos y se ve rojo). Daño de `ARMAS`, ×4 en la
+  cabeza y ×0,6 en brazos y piernas; las balas chicas (pistola, metralleta, escopeta, minigun) hacen 1/(1 + blindaje) y
+  el rifle no; a los jefes la cabeza les hace ×2 y no los mata de un tiro. Aturdido o en las garras del buitre no se
+  puede tirar ni caminar y la vista se pone gris. Las granadas, cohetes y el martillo chocan con el cuerpo entero (un
+  cilindro de 20 cm), no sólo con las zonas de las balas.
 - **Sin visor**: mouse apunta, clic dispara (o golpea, o saca la anilla y al soltar tira la granada), clic derecho apunta
   con las miras (con Mjölnir: lo tira y lo llama), E toma el arma que mira la cruz, números la toman directo, Q la deja,
-  R recarga entera, B monta, WASD camina.
+  R recarga entera, B monta, WASD camina, M el menú (con el mouse suelto se aprieta como cualquier botón).
 - **Probar los controles del visor en la computadora**: la extensión Immersive Web Emulator 2.0 de Meta para Chrome
   simula un Quest 3 con sus mandos; en el modo juego del panel el mouse mira, clic izquierdo es el gatillo, `W A S D` la
-  palanca izquierda, las flechas la derecha, `E` el agarre izquierdo, `Enter` A y `Shift` derecho B.
+  palanca izquierda, las flechas la derecha, `E` el agarre izquierdo, `Enter` A, `Shift` derecho B y `Z` el botón Y (el
+  menú).
 - **Publicar**: `herramientas/armar-web.py` copia `vr/` y le pone huellas `?v=` a los `js/` del juego que usa, a
   `campo.js` y, con el mapa de importación, a los módulos, así el visor no mezcla versiones después de publicar.
-- **Pruebas automáticas**: `window.__campo` (tomar, apretar, apuntar, recargar, montar, golpe, tirar, llamar, avanzar la
-  simulación del zombie, contadores de dibujo).
+- **Pruebas automáticas**: `window.__campo` (tomar, apretar, apuntar, recargar, montar, golpe, tirar, llamar, avanzar el
+  juego, el menú: `pagina()` y `clic(texto)`, mandos simulados con `visorFalso`, horda, blancos, modos, contadores de
+  dibujo y `molde`).
 
 ## Último bastión (defensa con estrategia)
 

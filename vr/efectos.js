@@ -32,6 +32,8 @@ export class Efectos {
     this.matChispa = new THREE.SpriteMaterial({ map: radial([[0, 'rgba(255,240,190,1)'], [0.4, 'rgba(255,170,60,0.8)'], [1, 'rgba(255,120,20,0)']]), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
     this.matSangre = new THREE.SpriteMaterial({ map: radial([[0, 'rgba(120,10,6,0.95)'], [0.6, 'rgba(90,6,4,0.7)'], [1, 'rgba(70,0,0,0)']]), depthWrite: false, transparent: true });
     this.matFuego = new THREE.SpriteMaterial({ map: texturaCanvas(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 1, 32, 32, 30); r.addColorStop(0, 'rgba(255,250,210,1)'); r.addColorStop(0.3, 'rgba(255,190,70,0.95)'); r.addColorStop(0.7, 'rgba(230,80,20,0.6)'); r.addColorStop(1, 'rgba(120,20,0,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); }), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+    this.matSangreVerde = new THREE.SpriteMaterial({ map: radial([[0, 'rgba(130,220,40,0.95)'], [0.6, 'rgba(70,140,20,0.7)'], [1, 'rgba(40,90,10,0)']]), depthWrite: false, transparent: true });
+    this.matGas = new THREE.SpriteMaterial({ map: radial([[0, 'rgba(150,210,60,0.42)'], [0.6, 'rgba(110,170,40,0.22)'], [1, 'rgba(90,140,30,0)']]), depthWrite: false, transparent: true });
     this.matHumoOscuro = new THREE.SpriteMaterial({ map: radial([[0, 'rgba(60,56,52,0.75)'], [0.6, 'rgba(70,66,60,0.45)'], [1, 'rgba(80,76,70,0)']]), depthWrite: false, transparent: true });
     this.luces = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffa040, 0, 12, 2); escena.add(l); return { luz: l, vida: 0, total: 1, max: 0 }; });
     this.geoAgujero = new THREE.CircleGeometry(1, 12);
@@ -51,8 +53,8 @@ export class Efectos {
     const q = { s, vel, vida, total: vida, crece, gravedad }; this.particulas.push(q); return q;
   }
   /* Donde pega la bala: polvo (madera, papel, tierra), chispas (metal) o sangre */
-  impacto(punto, normal, tipo) {
-    if (tipo === 'carne') { for (let k = 0; k < 5; k++) this.particula(this.matSangre, punto.clone().addScaledVector(normal, 0.02), normal.clone().multiplyScalar(0.6 + Math.random()).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, Math.random() * 0.8, (Math.random() - 0.5) * 1.2)), 0.05 + Math.random() * 0.05, 0.45, 1.2, 6); return; }
+  impacto(punto, normal, tipo, sangre) {
+    if (tipo === 'carne') { for (let k = 0; k < 5; k++) this.particula(sangre ? this.matSangreVerde : this.matSangre, punto.clone().addScaledVector(normal, 0.02), normal.clone().multiplyScalar(0.6 + Math.random()).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, Math.random() * 0.8, (Math.random() - 0.5) * 1.2)), 0.05 + Math.random() * 0.05, 0.45, 1.2, 6); return; }
     if (tipo === 'metal') for (let k = 0; k < 6; k++) this.particula(this.matChispa, punto.clone().addScaledVector(normal, 0.01), normal.clone().multiplyScalar(1.5 + Math.random() * 2).add(new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 2, (Math.random() - 0.5) * 3)), 0.025, 0.25, 0.5, 9.8);
     this.particula(this.matPolvo, punto.clone().addScaledVector(normal, 0.03), normal.clone().multiplyScalar(0.3), tipo === 'papel' ? 0.06 : 0.16, 0.35, 2);
   }
@@ -79,6 +81,13 @@ export class Efectos {
     for (let k = 0; k < 16; k++) this.particula(this.matFuego, pos.clone().add(al(0.5)), al(radio * 1.6).setY(Math.random() * radio * 0.9), 0.35 + Math.random() * 0.45, 0.45 + Math.random() * 0.35, 3.2, -1.5);
     for (let k = 0; k < 14; k++) this.particula(this.matHumoOscuro, pos.clone().add(al(0.8)), al(1.4).setY(0.5 + Math.random() * 1.2), 0.6 + Math.random() * 0.6, 2.4 + Math.random() * 1.6, 0.9, -0.25);
     for (let k = 0; k < 24; k++) this.particula(this.matChispa, pos.clone().add(al(0.2)), al(14).setY(2 + Math.random() * 7), 0.05, 0.9 + Math.random() * 0.4, 0.1, 9.8);
+  }
+  /* El hinchado que revienta: una nube de tripas y líquido, sin fuego */
+  reventar(pos, radio = 2.5, color) {
+    const al = r => new THREE.Vector3((Math.random() - 0.5) * r, (Math.random() - 0.5) * r, (Math.random() - 0.5) * r);
+    this.destello(pos, 0xc8ff60, 10, radio * 3, 0.25);
+    for (let k = 0; k < 30; k++) this.particula(k % 3 ? this.matSangre : this.matSangreVerde, pos.clone().add(al(0.4)), al(radio * 3).setY(1 + Math.random() * radio * 2), 0.08 + Math.random() * 0.12, 0.8 + Math.random() * 0.5, 1.4, 9.8);
+    for (let k = 0; k < 10; k++) this.particula(this.matGas, pos.clone().add(al(0.6)), al(1.2).setY(0.3 + Math.random() * 0.6), 0.6 + Math.random() * 0.5, 1.6 + Math.random(), 1.6, -0.1);
   }
   llama(pos, vel, tam = 0.06) { return this.particula(this.matFuego, pos, vel, tam, 0.75 + Math.random() * 0.25, 2.6, -1.2); }
   estela(pos) { this.particula(this.matHumo, pos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04, (Math.random() - 0.5) * 0.04)), new THREE.Vector3(0, 0.15, 0), 0.12, 1.4, 1.5); }

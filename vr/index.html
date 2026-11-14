@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zona Muerta VR · Campo de pruebas</title>
-<!-- Versión mínima en realidad virtual (Meta Quest, WebXR): el campo de pruebas en primera persona con la AK-47.
-     El arma sale del mismo modelo que el juego (js/armas-modelos-3.js) y los sonidos de js/audio.js; la escena está
-     en vr/campo.js. Sin visor se puede probar con mouse y teclado. -->
+<!-- Versión en realidad virtual (Meta Quest, WebXR): el campo de pruebas en primera persona, con las armas del juego
+     sobre una mesa y tres modos (entrenamiento, ataque zombie y libre). Los modelos de las armas salen de los del
+     juego (js/armas-modelos*.js) y los sonidos de js/audio.js; la escena está en vr/campo.js. Sin visor se puede
+     probar con mouse y teclado. -->
 <style>
   :root { color-scheme: dark; --arena: #c9a96e; --texto: #f1e6d0; --noche: #141018; }
   html, body { margin: 0; height: 100%; background: var(--noche); color: var(--texto); font-family: "Trebuchet MS", "Segoe UI", sans-serif; overflow: hidden; }
@@ -25,12 +26,15 @@
   #estado { min-height: 1.4em; font-size: 13px; opacity: .75; margin: 0; }
   #mira { position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255, 220, 140, .9); box-shadow: 0 0 0 1px #000; display: none; z-index: 1; }
   #pista { position: fixed; left: 12px; bottom: 10px; font-size: 13px; opacity: .8; display: none; z-index: 1; text-shadow: 0 1px 2px #000; }
+  #hud { position: fixed; left: 12px; top: 10px; font-size: 15px; line-height: 1.45; white-space: pre-line; display: none; z-index: 1; padding: 8px 12px;
+    background: rgba(20, 16, 24, .72); border: 1px solid var(--arena); text-shadow: 0 1px 2px #000; }
+  #hud::first-line { color: var(--arena); font-weight: 700; }
 </style>
 </head>
 <body>
 <div id="portada">
   <h1>ZONA MUERTA VR</h1>
-  <p class="sub">Campo de pruebas · Las armas de la mesa</p>
+  <p class="sub">Campo de pruebas · Entrenamiento · Ataque zombie</p>
   <ul class="ayuda">
     <li><b>Tomar un arma:</b> acerca la mano derecha a un arma de la mesa (o apúntale con el mando) y aprieta el agarre. Otra vez el agarre y la dejas (sobre la mesa vuelve a su lugar).</li>
     <li><b>Gatillo derecho:</b> disparar.</li>
@@ -38,6 +42,7 @@
     <li><b>Corredera, manija o cerrojo:</b> agárralos con la mano izquierda y jálalos hacia atrás (o aprieta <b>B</b>).</li>
     <li><b>Botón A:</b> soltar el cargador. Con la mano izquierda lejos del arma, el agarre saca munición nueva: llévala al pozo, al portillo o a la ventana.</li>
     <li><b>Palanca izquierda:</b> caminar · <b>palanca derecha:</b> girar.</li>
+    <li><b>Botón Y</b> (mando izquierdo): el menú, con los modos, la pausa y la configuración. Apunta con cualquier mando y aprieta el gatillo.</li>
   </ul>
   <div class="botones">
     <button id="entrar" disabled>ENTRAR EN REALIDAD VIRTUAL</button>
@@ -46,7 +51,8 @@
   <p id="estado">Buscando el visor…</p>
 </div>
 <div id="mira"></div>
-<div id="pista">Mouse: apuntar · Clic: disparar · Clic derecho: miras · E: tomar el arma que miras · 1 a 0 y las dos teclas que siguen: tomar directo · Q: dejarla · R: recargar · B: montar · W A S D: caminar · Esc: soltar el mouse</div>
+<div id="pista">Mouse: apuntar · Clic: disparar · Clic derecho: miras · E: tomar el arma que miras · 1 a 0 y las dos teclas que siguen: tomar directo · Q: dejarla · R: recargar · B: montar · W A S D: caminar · M o Esc: menú y pausa</div>
+<div id="hud"></div>
 
 <!-- Del juego: los sonidos, el catálogo de armas, los calibres y los modelos de las armas (en cm), que vr/ pasa a 3D -->
 <script src="../js/sonidos-datos.js"></script>
