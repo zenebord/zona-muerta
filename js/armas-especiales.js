@@ -4,8 +4,9 @@
  *     en el campo de pruebas, ni en el inventario de otro personaje.
  *   - En cada cuadro se revisa el inventario: con el cazador el machete está siempre (como el cuchillo de la historia);
  *     con otro personaje se saca, y si estaba en la mano pasa a la siguiente arma.
- *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo (2,5 s como mínimo entre uno y otro) y, cuando
- *     pasaron 8 s del último, al matar con él (siempre) o al pegar (4 de cada 10 golpes).
+ *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo, medio segundo después, cuando se apaga el
+ *     «shing» (4 s como mínimo entre uno y otro, así no se pisan), y, cuando pasaron 8 s del último, al matar con él
+ *     (siempre) o al pegar (4 de cada 10 golpes).
  * Minigun M134 (minigun): seis cañones que gira un motor eléctrico.
  *   - Estado en jugador.minigun: vel (0 quietos … 1 a velocidad de tiro), angulo (giro del grupo), calor de los cañones.
  *   - Con el gatillo apretado los cañones arrancan (arma.giratoria.arranque ms) sin tirar; recién a velocidad tiran a su
@@ -323,7 +324,9 @@ class CajaMinigunCae {
 /* ---------- Enganches en Jugador y Juego ---------- */
 FUERZA_RETROCESO_ARMA.minigun = 0.28;   // chico, pero con cada tiro: el arma tiembla mientras tira
 const GIRO_MAX = 26;                    // rad/s del grupo de cañones a velocidad de tiro (lo que se ve)
-const SUSURRO = { alSacar: 2500, entreGolpes: 8000, alPegar: 0.4 };
+// Susurro del cazador: espera mínima (ms) entre uno y otro al sacar el machete (dura ~3,2 s con el retraso: dos no se
+// pisan) y entre golpes; probabilidad al pegar sin matar; y al sacarlo, cuánto espera (s) a que se apague el «shing»
+const SUSURRO = { alSacar: 4000, entreGolpes: 8000, alPegar: 0.4, trasElShing: 0.5 };
 
 function estadoMinigun(j) { return j.minigun || (j.minigun = { vel: 0, angulo: 0, calor: 0, gatillo: false, vacioAvisado: false }); }
 
@@ -359,7 +362,7 @@ function susurrar(j, juego, motivo) {
   const espera = motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes;
   if (j.susurroEn !== undefined && juego.ahora - j.susurroEn < espera) return;
   j.susurroEn = juego.ahora;
-  Audio_.susurroCazador();
+  Audio_.susurroCazador(motivo === 'sacar' ? SUSURRO.trasElShing : 0);
 }
 
 // La minigun en cada cuadro: velocidad y giro de los cañones, calor, sonido del motor y las vainas
