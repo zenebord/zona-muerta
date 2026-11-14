@@ -4,9 +4,9 @@
  *     en el campo de pruebas, ni en el inventario de otro personaje.
  *   - En cada cuadro se revisa el inventario: con el cazador el machete está siempre (como el cuchillo de la historia);
  *     con otro personaje se saca, y si estaba en la mano pasa a la siguiente arma.
- *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo, medio segundo después, cuando se apaga el
- *     «shing» (nunca antes de que termine el anterior: dos no se pisan), y, cuando pasaron 8 s del último, al matar con
- *     él (siempre) o al pegar (4 de cada 10 golpes).
+ *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo, sin ruido de arma antes (nunca antes de
+ *     que termine el anterior: dos no se pisan), y, cuando pasaron 8 s del último, al matar con él (siempre) o al pegar
+ *     (4 de cada 10 golpes).
  * Minigun M134 (minigun): seis cañones que gira un motor eléctrico.
  *   - Estado en jugador.minigun: vel (0 quietos … 1 a velocidad de tiro), angulo (giro del grupo), calor de los cañones.
  *   - Con el gatillo apretado los cañones arrancan (arma.giratoria.arranque ms) sin tirar; recién a velocidad tiran a su
@@ -325,9 +325,8 @@ class CajaMinigunCae {
 FUERZA_RETROCESO_ARMA.minigun = 0.28;   // chico, pero con cada tiro: el arma tiembla mientras tira
 const GIRO_MAX = 26;                    // rad/s del grupo de cañones a velocidad de tiro (lo que se ve)
 // Susurro del cazador: espera mínima (ms) entre uno y otro al sacar el machete y entre golpes (nunca menos de lo que
-// dura el susurro: dos no se pisan); probabilidad al pegar sin matar; y al sacarlo, cuánto espera (s) a que se apague
-// el «shing»
-const SUSURRO = { alSacar: 4000, entreGolpes: 8000, alPegar: 0.4, trasElShing: 0.5 };
+// dura el susurro: dos no se pisan) y probabilidad al pegar sin matar
+const SUSURRO = { alSacar: 4000, entreGolpes: 8000, alPegar: 0.4 };
 
 function estadoMinigun(j) { return j.minigun || (j.minigun = { vel: 0, angulo: 0, calor: 0, gatillo: false, vacioAvisado: false }); }
 
@@ -360,11 +359,10 @@ function revisarArmasDePersonaje(j) {
 
 // Susurro del cazador, con su tiempo de espera
 function susurrar(j, juego, motivo) {
-  const dura = (Audio_.duracionSusurro() + (motivo === 'sacar' ? SUSURRO.trasElShing : 0)) * 1000 + 300;
-  const espera = Math.max(dura, motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes);
+  const espera = Math.max(Audio_.duracionSusurro() * 1000 + 300, motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes);
   if (j.susurroEn !== undefined && juego.ahora - j.susurroEn < espera) return;
   j.susurroEn = juego.ahora;
-  Audio_.susurroCazador(motivo === 'sacar' ? SUSURRO.trasElShing : 0);
+  Audio_.susurroCazador();
 }
 
 // La minigun en cada cuadro: velocidad y giro de los cañones, calor, sonido del motor y las vainas
@@ -396,7 +394,7 @@ Jugador.prototype.actualizar = function (dt, entrada, juego) {
   actualizarBase.call(this, dt, entrada, juego);
   revisarArmasDePersonaje(this);
   const id = this.montada ? null : this.inventario[this.indiceArma];
-  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) { Audio_.desenfundarMachete(); susurrar(this, juego, 'sacar'); }
+  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) susurrar(this, juego, 'sacar');
   this.armaAntes = id;
   actualizarMinigun(this, dt, juego, casquillosAntes);
 };

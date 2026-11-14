@@ -1389,7 +1389,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261114-0057-3c747c1';
+const VERSION_JUEGO = '20261114-1107-c2eccf7';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -2470,8 +2470,8 @@ const Audio_ = (() => {
    *   y la cola del eco −14 · −20 · −27.
    *   El espacio: un eco al mismo paso (0,4 s) que rebota de un lado al otro y se oscurece, y una sala larga.
    * Machete: el tajo en el aire (aire que barre de grave a agudo y vuelve, el silbido del filo y el peso de la hoja,
-   * de izquierda a derecha); el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
-   * hoja que queda vibrando); y el roce metálico al desenfundar, que termina en un «shing» limpio.
+   * de izquierda a derecha) y el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
+   * hoja que queda vibrando). Al sacarlo no suena nada de arma: sólo el susurro.
    */
   const ruidosPorContexto = new WeakMap(), salasPorContexto = new WeakMap();
   function ruidoDe(ac) {
@@ -2619,21 +2619,6 @@ const Audio_ = (() => {
       curva(gp.gain, [[t0 + 0.003, 0.0001], [t0 + 0.006, v], [t0 + d, 0.0001]]); p.connect(gp); gp.connect(salida); p.start(t0); p.stop(t0 + d + 0.05);
     }
     return t0 + 0.5;
-  }
-  function genDesenfundar(ac, salida, t0, nodos) {
-    const d = 0.34, a = aire(ac, t0, d);
-    const barrido = filtro(ac, 'bandpass', 1800, 6), aspero = ganancia(ac, 0.5), g = ganancia(ac, 0);   // el roce que sube
-    curva(barrido.frequency, [[t0, 1800], [t0 + d, 4200]]);
-    curva(g.gain, [[t0, 0.0001], [t0 + 0.04, 1.0], [t0 + d - 0.04, 0.85], [t0 + d, 0.0001]]);
-    const rugo = aire(ac, t0, d), rl = filtro(ac, 'lowpass', 40, 0.7), rg = ganancia(ac, 8);   // la aspereza: el volumen tiembla
-    rugo.connect(rl); rl.connect(rg); rg.connect(aspero.gain);
-    a.connect(barrido); barrido.connect(aspero); aspero.connect(g); g.connect(salida);
-    for (const f of [2200, 3500, 5000]) { const r = filtro(ac, 'bandpass', f, 30), gr = ganancia(ac, 0.5); a.connect(r); r.connect(gr); gr.connect(aspero); }
-    for (const [f, v, dd] of [[2900, 0.11, 0.55], [4350, 0.07, 0.4], [6100, 0.03, 0.25]]) {   // el «shing»
-      const p = ac.createOscillator(), gp = ganancia(ac, 0); p.frequency.value = f;
-      curva(gp.gain, [[t0 + d - 0.02, 0.0001], [t0 + d, v], [t0 + d + dd, 0.0001]]); p.connect(gp); gp.connect(salida); p.start(t0 + d - 0.03); p.stop(t0 + d + dd + 0.05);
-    }
-    return t0 + d + 0.7;
   }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
   function sonar(generador, rev, vol, ...args) {
@@ -2884,14 +2869,11 @@ const Audio_ = (() => {
       ruido({ dur: 0.6, vol: 0.35, filtro: 'bandpass', freq: 2500, q: 0.8, ataque: 0.05, retraso: 0.3, rev: 0.3 });
     },
     // Machete del cazador: el susurro «ch ch ch ch… ja ja ja ja» (bajito, con eco). Cuándo suena lo decide
-    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera). retraso: s hasta el primer «ki»
-    // (al sacarlo, después del «shing»)
-    susurroCazador(retraso = 0) { sonar(genSusurro, 0.12, 0.9, { retraso }); },
+    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
+    susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
     duracionSusurro,
-    // Machete del cazador: el tajo, el golpe y el desenfundar (síntesis propia, ver arriba)
-    desenfundarMachete() { sonar(genDesenfundar, 0.08, 0.7); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
-    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, desenfundar: genDesenfundar },
+    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {
@@ -14231,9 +14213,9 @@ class ArmaLanzada {
  *     en el campo de pruebas, ni en el inventario de otro personaje.
  *   - En cada cuadro se revisa el inventario: con el cazador el machete está siempre (como el cuchillo de la historia);
  *     con otro personaje se saca, y si estaba en la mano pasa a la siguiente arma.
- *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo, medio segundo después, cuando se apaga el
- *     «shing» (nunca antes de que termine el anterior: dos no se pisan), y, cuando pasaron 8 s del último, al matar con
- *     él (siempre) o al pegar (4 de cada 10 golpes).
+ *   - El susurro «ch ch ch… ja ja ja» (Audio_.susurroCazador): al sacarlo, sin ruido de arma antes (nunca antes de
+ *     que termine el anterior: dos no se pisan), y, cuando pasaron 8 s del último, al matar con él (siempre) o al pegar
+ *     (4 de cada 10 golpes).
  * Minigun M134 (minigun): seis cañones que gira un motor eléctrico.
  *   - Estado en jugador.minigun: vel (0 quietos … 1 a velocidad de tiro), angulo (giro del grupo), calor de los cañones.
  *   - Con el gatillo apretado los cañones arrancan (arma.giratoria.arranque ms) sin tirar; recién a velocidad tiran a su
@@ -14552,9 +14534,8 @@ class CajaMinigunCae {
 FUERZA_RETROCESO_ARMA.minigun = 0.28;   // chico, pero con cada tiro: el arma tiembla mientras tira
 const GIRO_MAX = 26;                    // rad/s del grupo de cañones a velocidad de tiro (lo que se ve)
 // Susurro del cazador: espera mínima (ms) entre uno y otro al sacar el machete y entre golpes (nunca menos de lo que
-// dura el susurro: dos no se pisan); probabilidad al pegar sin matar; y al sacarlo, cuánto espera (s) a que se apague
-// el «shing»
-const SUSURRO = { alSacar: 4000, entreGolpes: 8000, alPegar: 0.4, trasElShing: 0.5 };
+// dura el susurro: dos no se pisan) y probabilidad al pegar sin matar
+const SUSURRO = { alSacar: 4000, entreGolpes: 8000, alPegar: 0.4 };
 
 function estadoMinigun(j) { return j.minigun || (j.minigun = { vel: 0, angulo: 0, calor: 0, gatillo: false, vacioAvisado: false }); }
 
@@ -14587,11 +14568,10 @@ function revisarArmasDePersonaje(j) {
 
 // Susurro del cazador, con su tiempo de espera
 function susurrar(j, juego, motivo) {
-  const dura = (Audio_.duracionSusurro() + (motivo === 'sacar' ? SUSURRO.trasElShing : 0)) * 1000 + 300;
-  const espera = Math.max(dura, motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes);
+  const espera = Math.max(Audio_.duracionSusurro() * 1000 + 300, motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes);
   if (j.susurroEn !== undefined && juego.ahora - j.susurroEn < espera) return;
   j.susurroEn = juego.ahora;
-  Audio_.susurroCazador(motivo === 'sacar' ? SUSURRO.trasElShing : 0);
+  Audio_.susurroCazador();
 }
 
 // La minigun en cada cuadro: velocidad y giro de los cañones, calor, sonido del motor y las vainas
@@ -14623,7 +14603,7 @@ Jugador.prototype.actualizar = function (dt, entrada, juego) {
   actualizarBase.call(this, dt, entrada, juego);
   revisarArmasDePersonaje(this);
   const id = this.montada ? null : this.inventario[this.indiceArma];
-  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) { Audio_.desenfundarMachete(); susurrar(this, juego, 'sacar'); }
+  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) susurrar(this, juego, 'sacar');
   this.armaAntes = id;
   actualizarMinigun(this, dt, juego, casquillosAntes);
 };
