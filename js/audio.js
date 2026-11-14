@@ -355,13 +355,19 @@ const Audio_ = (() => {
    * con tiempos y timbres propios. Los generadores reciben el contexto, la salida y el momento, así se pueden escuchar
    * fuera del juego (Audio_.generadores con un OfflineAudioContext); en el juego pasan por la mezcla de efectos.
    *
-   * Susurro «ki ki ki ki… ma ma ma ma», como una voz susurrada de verdad:
-   *   «ki»  la «k» es un estallido corto de aire alrededor de 2,7 kHz; la «i», aire por sus formantes (320, ~2250,
-   *         3050 y 4300 Hz), con el segundo bajando de 2650 al soltar la «k».
+   * Susurro «ki ki ki ki… ma ma ma ma», medido contra una grabación de referencia del efecto clásico (Leandro la
+   * eligió: «así debe sonar»). Lo que se copió son medidas, no el sonido: pulso, volumen de cada sílaba y timbre.
+   *   Pulso: una sílaba cada 0,4 s de punta a punta, y el primer «ma» un pulso después del último «ki» (sin pausa).
+   *   «ki»  corto y casi un «ch»: un soplido ancho al soltar la «k» (pico a los ~25 ms), una resonancia angosta en
+   *         2,78 kHz (ancho ~300 Hz, como la de la referencia) que pica a los 55 ms, y la «i» floja (F1 500 y F2
+   *         1800 Hz) que asoma a los 70 ms; a los 100 ms está 7 dB abajo y a los 150 ms, 17. Reparto: la mitad de la
+   *         energía entre 2,6 y 3,6 kHz, como en la referencia.
    *   «ma»  la «m», un murmullo nasal grave (voz por debajo de 300 Hz); la «a», aire con un hilo de voz grave que cae
    *         (de 88 Hz, más bajo en cada «ma», con un temblor) por sus formantes (780, 1180, 2500 y 3400 Hz), el
-   *         primero subiendo de 320 a 780 al abrir la boca. Lento: un «ki» cada 0,2 s y un «ma» cada 0,3 s.
-   *   El espacio: un eco que rebota de un lado al otro y se oscurece en cada vuelta, y una sala larga.
+   *         primero subiendo de 320 a 780 al abrir la boca.
+   *   Volúmenes (dB A, re el primer «ki»), como en la referencia: «ki» 0 · 0 · −5 · −9,5; «ma» +6 · +6,5 · −2 · −7,
+   *   y la cola del eco −14 · −20 · −27.
+   *   El espacio: un eco al mismo paso (0,4 s) que rebota de un lado al otro y se oscurece, y una sala larga.
    * Machete: el tajo en el aire (aire que barre de grave a agudo y vuelve, el silbido del filo y el peso de la hoja,
    * de izquierda a derecha); el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
    * hoja que queda vibrando); y el roce metálico al desenfundar, que termina en un «shing» limpio.
@@ -408,19 +414,31 @@ const Audio_ = (() => {
     nodos.push(entrada, dI, dD, fI, fD, gI, gD, une);   // el lazo se desarma al terminar (si no, quedaría vivo)
     return entrada;
   }
-  function silabaKi(ac, destino, t, v, f2) {
-    const a = aire(ac, t, 0.2);
-    const k = filtro(ac, 'bandpass', 2700, 2.2), gk = ganancia(ac, 0);                      // la «k»
-    curva(gk.gain, [[t, 0.0001], [t + 0.0015, 1.1 * v], [t + 0.02, 0.12 * v], [t + 0.045, 0.0001]]);
-    a.connect(k); k.connect(gk); gk.connect(destino);
-    const gi = ganancia(ac, 0);                                                              // la «i» susurrada
-    curva(gi.gain, [[t + 0.01, 0.0001], [t + 0.03, 0.85 * v], [t + 0.075, 0.5 * v], [t + 0.17, 0.0001]]);
-    for (const [fr, q, g] of [[320, 3.5, 0.45], [f2, 9, 1.0], [3050, 11, 0.6], [4300, 5, 0.25]]) {
-      const b = filtro(ac, 'bandpass', fr, q);
-      if (fr === f2) { b.frequency.setValueAtTime(2650, t + 0.01); b.frequency.exponentialRampToValueAtTime(f2, t + 0.045); }
-      const bg = ganancia(ac, g); a.connect(b); b.connect(bg); bg.connect(gi);
-    }
-    gi.connect(destino);
+  // El «ki», ajustable para probar variantes (op de silabaKi): cuánto suenan la «k», el soplido, la resonancia
+  // (cuerpo), F1 y F2 de la «i», dónde están las resonancias y cuánto tiembla el aire
+  const SILABA_KI = { k: 0.1, soplo: 0.14, cuerpo: 1, f1g: 0.21, f2g: 0.35, f2: 1800, q2: 4, f3: 2780, q3: 9, f4: 3680, q4: 8, g4: 0.3, aspereza: 8 };
+  // variacion (0…1): corre la resonancia ±30 Hz, para que los cuatro «ki» no salgan iguales
+  function silabaKi(ac, destino, t, v, variacion, op = {}) {
+    const p = { ...SILABA_KI, ...op }, d = 0.23, f3 = p.f3 + (variacion - 0.5) * 60;
+    const raspa = ganancia(ac, 1); raspa.connect(destino);                     // el aire tiembla: susurro rasposo, con fuerza
+    if (p.aspereza) { const r = aire(ac, t, d), rl = filtro(ac, 'lowpass', 45, 0.7), rg = ganancia(ac, p.aspereza); r.connect(rl); rl.connect(rg); rg.connect(raspa.gain); }
+    const ae = aire(ac, t, 0.04), eh = filtro(ac, 'highpass', 1500, 0.7), eb = filtro(ac, 'bandpass', 2900, 1), ge = ganancia(ac, 0);   // la «k»
+    curva(ge.gain, [[t, 0.0001], [t + 0.0008, p.k * v], [t + 0.012, 0.09 * p.k * v], [t + 0.03, 0.0001]]);
+    ae.connect(eh); eh.connect(eb); eb.connect(ge); ge.connect(destino);
+    const as = aire(ac, t, d), sh = filtro(ac, 'highpass', 1500, 0.7), sl = filtro(ac, 'lowpass', 10000, 0.7), gs = ganancia(ac, 0);   // el soplido ancho al soltarla
+    curva(gs.gain, [[t, 0.0001], [t + 0.008, 0.3 * p.soplo * v], [t + 0.025, p.soplo * v], [t + 0.04, 0.9 * p.soplo * v], [t + 0.06, 0.5 * p.soplo * v], [t + 0.085, 0.15 * p.soplo * v], [t + 0.105, 0.0001]]);
+    as.connect(sh); sh.connect(sl); sl.connect(gs); gs.connect(raspa);
+    // El cuerpo: la resonancia angosta en ~2,78 kHz (y la de 3,68), que sube despacio hasta los 55 ms y se apaga como
+    // en la referencia (−7 dB a los 100 ms, −17 a los 150)
+    const ar = aire(ac, t, d), gc = ganancia(ac, 0);
+    for (const [fr, q, g] of [[f3, p.q3, 1], [p.f4, p.q4, p.g4]]) { const b = filtro(ac, 'bandpass', fr, q), bg = ganancia(ac, g); ar.connect(b); b.connect(bg); bg.connect(gc); }
+    const c = p.cuerpo * v;
+    curva(gc.gain, [[t + 0.004, 0.0001], [t + 0.012, 0.15 * c], [t + 0.022, 0.35 * c], [t + 0.032, 0.55 * c], [t + 0.042, 0.75 * c], [t + 0.055, c], [t + 0.07, 0.95 * c],
+      [t + 0.085, 0.68 * c], [t + 0.1, 0.5 * c], [t + 0.12, 0.38 * c], [t + 0.14, 0.25 * c], [t + 0.16, 0.14 * c], [t + 0.19, 0.06 * c], [t + d, 0.0001]]);
+    gc.connect(raspa);
+    const b2 = filtro(ac, 'bandpass', p.f2, p.q2), b1 = filtro(ac, 'bandpass', 500, 2), g1 = ganancia(ac, p.f1g / p.f2g), g2 = ganancia(ac, 0);   // F1 y F2: la «i» que asoma
+    ar.connect(b2); b2.connect(g2); ar.connect(b1); b1.connect(g1); g1.connect(g2); g2.connect(raspa);
+    curva(g2.gain, [[t + 0.03, 0.0001], [t + 0.07, p.f2g * v], [t + 0.11, 0.55 * p.f2g * v], [t + 0.15, 0.2 * p.f2g * v], [t + 0.21, 0.0001]]);
   }
   function silabaMa(ac, destino, t, v, altura, voz0 = 0.2) {
     const dur = 0.32, a = aire(ac, t, dur);
@@ -441,19 +459,25 @@ const Audio_ = (() => {
     curva(ga.gain, [[t + 0.045, 0.0001], [t + 0.08, v], [t + 0.15, 0.7 * v], [t + dur, 0.0001]]);
     ga.connect(destino);
   }
-  // op: ki y ma (cuántas), paso (s entre sílabas), pausa (s entre los «ki» y los «ma»), altura (Hz de la voz de la «a»),
-  // voz (cuánta voz lleva la «a»: 0 susurro puro), eco (s), vuelta (cuánto vuelve el eco), sala (envío a la sala)
-  // La elegida (la «B» de las pruebas): lenta y grave, con la voz de los «ma» presente y un eco largo
-  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.2, pasoMa: 0.3, pausa: 0.45, altura: 88, voz: 0.35, eco: 0.3, vuelta: 0.55, sala: 0.35 };
+  // op: ki y ma (cuántas), paso (s entre sílabas), pausa (s del último «ki» al primer «ma»), altura (Hz de la voz de la
+  // «a»), voz (cuánta voz lleva la «a»: 0 susurro puro), eco (s), vuelta (cuánto vuelve el eco en cada rebote), mojado
+  // (cuánto eco se oye), sala (envío a la sala), nivelKi (los «ki» contra los «ma»), fuerzaKi y fuerzaMa (cada sílaba),
+  // retraso (s hasta el primer «ki») y silabaKi (cambios al «ki»: ver SILABA_KI)
+  // Todo medido contra la referencia (ver arriba): queda a menos de 1 dB de ella en cada uno de los 11 pulsos
+  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.4, pasoMa: 0.4, pausa: 0.4, altura: 88, voz: 0.35, eco: 0.4, vuelta: 0.5, mojado: 0.55, sala: 0.35,
+    nivelKi: 0.5, fuerzaKi: [1, 0.94, 0.4, 0.28], fuerzaMa: [1, 1, 0.27, 0.135], retraso: 0 };
+  // Cuánto dura el susurro (s) desde el primer «ki» hasta que termina el último «ma» (sin la cola del eco)
+  const duracionSusurro = (op = {}) => { const o = { ...SUSURRO, ...op }; return (o.ki - 1) * o.pasoKi + o.pausa + (o.ma - 1) * o.pasoMa + 0.35; };
   function genSusurro(ac, salida, t0, nodos, op = {}) {
-    const o = { ...SUSURRO, ...op };
+    const o = { ...SUSURRO, ...op }; t0 += o.retraso;
     const seco = ganancia(ac, 1); seco.connect(salida);
-    seco.connect(ecoIdaVuelta(ac, salida, o.eco, o.vuelta, 2600, nodos));
-    const sala = salaLarga(ac), envio = ganancia(ac, o.sala); seco.connect(envio); envio.connect(sala); sala.connect(salida); nodos.push(seco, envio, sala);
-    const v = 0.9 + Math.random() * 0.15, jit = () => (Math.random() - 0.5) * 0.015;
-    for (let k = 0; k < o.ki; k++) silabaKi(ac, seco, t0 + k * o.pasoKi + jit(), v * (1 - k * 0.06), 2200 + Math.random() * 120);
+    const mojado = ganancia(ac, o.mojado); mojado.connect(salida);
+    seco.connect(ecoIdaVuelta(ac, mojado, o.eco, o.vuelta, 2600, nodos));
+    const sala = salaLarga(ac), envio = ganancia(ac, o.sala); seco.connect(envio); envio.connect(sala); sala.connect(salida); nodos.push(seco, mojado, envio, sala);
+    const v = 0.9 + Math.random() * 0.15, jit = () => (Math.random() - 0.5) * 0.015, fuerza = (l, k) => l[Math.min(k, l.length - 1)];
+    for (let k = 0; k < o.ki; k++) silabaKi(ac, seco, t0 + k * o.pasoKi + jit(), v * o.nivelKi * fuerza(o.fuerzaKi, k), Math.random(), o.silabaKi);
     const tMa = t0 + (o.ki - 1) * o.pasoKi + o.pausa;
-    for (let k = 0; k < o.ma; k++) silabaMa(ac, seco, tMa + k * o.pasoMa + jit(), v * 0.9 * (1 - k * 0.07), o.altura * (1 - k * 0.032), o.voz);
+    for (let k = 0; k < o.ma; k++) silabaMa(ac, seco, tMa + k * o.pasoMa + jit(), v * 0.9 * fuerza(o.fuerzaMa, k), o.altura * (1 - k * 0.032), o.voz);
     return tMa + (o.ma - 1) * o.pasoMa + 0.35 + o.eco * 14;   // hasta que se apaga el eco
   }
   function genTajo(ac, salida, t0, nodos, fuerza = 1) {
@@ -759,8 +783,10 @@ const Audio_ = (() => {
       ruido({ dur: 0.6, vol: 0.35, filtro: 'bandpass', freq: 2500, q: 0.8, ataque: 0.05, retraso: 0.3, rev: 0.3 });
     },
     // Machete del cazador: el susurro «ch ch ch ch… ja ja ja ja» (bajito, con eco). Cuándo suena lo decide
-    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
-    susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
+    // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera). retraso: s hasta el primer «ki»
+    // (al sacarlo, después del «shing»)
+    susurroCazador(retraso = 0) { sonar(genSusurro, 0.12, 0.9, { retraso }); },
+    duracionSusurro,
     // Machete del cazador: el tajo, el golpe y el desenfundar (síntesis propia, ver arriba)
     desenfundarMachete() { sonar(genDesenfundar, 0.08, 0.7); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
