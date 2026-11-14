@@ -174,11 +174,17 @@ class Juego {
   }
 
   /* ---------- Armas ---------- */
-  // objetivo: el zombie de la mira telescópica (js/jugador.js): la bala sale derecho a él y lo sigue, no falla
+  // objetivo: el zombie de la mira, telescópica o de punto rojo (js/jugador.js): la bala sale derecho a él y lo sigue,
+  // no falla; con la mira de punto rojo también los perdigones de la Saiga, la granada del MGL y el cohete de la bazuca
   dispararArma(arma, x, y, direccion, casquillo, objetivo = null) {
     if (this.historia) this.historia.disparos++;
     const v = arma.velocidad;
     const antes = this.proyectiles.length;
+    const vivo = objetivo && objetivo.estado !== 'muerto' ? objetivo : null;
+    const alZombie = (abre = 0) => {   // al pecho del zombie (abre: cuánto se separa del rumbo, en radianes); lo sigue (Proyectil.objetivo)
+      const c = centroZombie(vivo), a = Math.atan2(c.y - y, c.x - x) + abre, p = new Proyectil(arma, x, y, Math.cos(a) * v, Math.sin(a) * v);
+      p.objetivo = vivo; this.proyectiles.push(p);
+    };
     this.disparoId = (this.disparoId || 0) + 1;
     if (this.entrenamiento) {
       this.ent.disparos++; if (this.ent.serieActual) this.ent.serieActual.disparos++;
@@ -192,16 +198,17 @@ class Juego {
     } else if (arma.categoria === 'escopeta') {
       for (let k = 0; k < arma.perdigones; k++) {
         const ang = (Math.random() - 0.5) * arma.dispersion;
-        this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
+        if (vivo) alZombie(ang * 0.5);   // salen abiertos y se juntan en el zombie: ninguno se pierde
+        else this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
       }
       this.sacudida = 6;
     } else if (arma.categoria === 'granada') {
       this.proyectiles.push(new Proyectil(arma, x, y - 10, v * direccion, -7));
     } else if (arma.categoria === 'lanzagranadas') {
-      this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, -3));
+      if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, -3));
       this.sacudida = 4;
     } else if (arma.categoria === 'bazuca') {
-      this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, 0));
+      if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, 0));
       this.sacudida = 7;
       // Fogonazo de gases por la cola del tubo: el arma no tiene casi retroceso porque los gases salen por atrás
       const cola = x - direccion * (arma.colaCm || 157) * CM;   // la cola del tubo (RPG-7 más corto)
@@ -209,10 +216,7 @@ class Juego {
       for (let k = 0; k < 14; k++) this.particulas.push(new Particula(cola, y + (Math.random() - 0.5) * 6, -direccion * (2 + Math.random() * 4), (Math.random() - 0.6) * 1.6, k % 3 ? '#b1a89c' : '#ffcf6a', 0.5 + Math.random() * 0.6, 4 + Math.random() * 5, false));
     } else {
       const desvio = arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0;
-      if (objetivo && objetivo.estado !== 'muerto') {
-        const c = objetivo.caja(), tx = c.x + c.w / 2, ty = c.y + c.h * 0.4, d = Math.hypot(tx - x, ty - y) || 1;
-        const p = new Proyectil(arma, x, y, (tx - x) / d * v, (ty - y) / d * v); p.objetivo = objetivo; this.proyectiles.push(p);
-      } else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
+      if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
       if (arma.categoria === 'rifle') this.sacudida = 3;
     }
     if (arma.categoria !== 'granada' && !arma.fuego) {
@@ -575,7 +579,7 @@ class Juego {
     this.ahora += dt * 1000;
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
-    const conMira = !j.montada && !j.muerto && MIRA_TELESCOPICA.has(j.arma().id);
+    const conMira = !j.montada && !j.muerto && !!tipoMira(j.arma().id);
     if (conMira !== this.conMira) { this.conMira = conMira; document.body.classList.toggle('con-mira', conMira); }
 
     if (this.ultra) this.actualizarJugadorUltra(dt, e);
@@ -755,7 +759,7 @@ class Juego {
       Pincel.bisel = !Lienzo.liviano;
       if (!j.montada) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }
     }
-    if (j.mira && j.objetivoMira && !j.muerto) dibujarMiraTelescopica(ctx, cam, j, this.ahora);   // tecla D
+    if (j.mira && j.objetivoMira && !j.muerto) (tipoMira(j.arma().id) === 'puntoRojo' ? dibujarMiraPuntoRojo : dibujarMiraTelescopica)(ctx, cam, j, this.ahora);   // tecla D
     for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) Fuego.cuerpo(ctx, cam, z, this.ahora);
     for (const p of this.proyectiles) p.dibujar(ctx, cam);
     for (const e2 of this.escupitajos) e2.dibujar(ctx, cam);

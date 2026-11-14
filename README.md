@@ -743,7 +743,7 @@ recarga a la derecha, y abajo cambio de arma, M2, cajas (en el campo de pruebas)
 | `S` o clic derecho | Recargar (las escopetas cargan cartucho por cartucho; disparar interrumpe la carga). El clic derecho no abre el menú del navegador |
 | `1` … `5` | Grupo de armas: 1 pistolas, 2 metralletas, 3 rifles, 4 escopetas, 5 especiales (otra vez: la siguiente del grupo) |
 | `Q` / `E`, `G` / `H` o rueda del mouse | Arma anterior / siguiente |
-| `D` | Mira telescópica (sólo Remington 700, Barrett M82, Mosin-Nagant y Dragunov SVD): apunta sola al zombie más cercano; otra vez, la quita |
+| `D` | Mira: telescópica (Remington 700, Barrett M82, Mosin-Nagant y Dragunov SVD) o de punto rojo (Kriss Vector, P90, Saiga-12, Milkor MGL y bazuca M9): apunta sola al zombie más cercano; otra vez, la quita |
 | `A` | Defensa zombie: pedir un ataque aéreo (cada 20 s) |
 | `C` | Campo de pruebas: menú de cajas y ametralladoras (`X` borra todo lo generado) |
 | `P` / `Esc` | Pausa |
@@ -759,6 +759,18 @@ montaña. Si el zombie muere pasa solo al siguiente, y no salta a otro por un pe
 Probado con las cuatro: un zombie 100 px más arriba y otros de 60 a 160 px más abajo murieron de un tiro; en una
 partida normal, 10 de 10 tiros pegaron. Código: `alternarMira` y `actualizarMira` en `js/jugador.js`,
 `Proyectil.objetivo` en `js/objetos.js` y `dibujarMiraTelescopica` en `js/jugador-dibujo.js`.
+
+**Mira de punto rojo** (`D`, igual que la telescópica; otro pedido de Enzo, con la imagen de su retícula): con las armas
+que tienen dibujada una mira holográfica o réflex, que no aumenta (`MIRA_PUNTO_ROJO`: Kriss Vector, P90, Saiga-12,
+Milkor MGL y la caja de la mira de la bazuca M9). Elige el zombie, gira al personaje e inclina el arma igual (la P90,
+que no va al hombro, sobre la empuñadura); cambia la retícula: un anillo rojo de trazo parejo con cuatro marcas cortas
+hacia afuera y el punto en el centro, con un resplandor rojo para la noche y un contorno oscuro apenas marcado para
+los fondos claros (`dibujarMiraPuntoRojo`). Tampoco falla: los perdigones de la Saiga salen abiertos y se juntan en el
+zombie, y la granada del MGL y el cohete de la bazuca van derecho a él (sin caer por el peso ni explotar contra la
+montaña mientras lo siguen; el cohete se dibuja apuntando hacia donde va). Probado con el juego avanzado a mano, tres
+tiros por caso, contra un zombie 75 y 150 px más arriba en la montaña, 75 y 150 px más abajo y uno chiquito: 75 de
+75 (la Saiga, 9 de 9 con los 54 perdigones adentro: los de 150 px quedan fuera de su alcance; el MGL y la bazuca,
+todas las explosiones en el zombie); la telescópica, 15 de 15. Con un arma sin mira, el aviso dice cuáles la tienen.
 
 ## Armas y tiros para matar un zombie
 
@@ -1003,6 +1015,10 @@ de dorso, de palma, de canto o en escorzo.
   y el Barrett va 2,6 cm atrás. El índice va del otro lado del armazón, como el de una mano derecha de verdad: se ve
   por el hueco del guardamonte, con la punta delante de la cola. En las pistolas la mano izquierda envuelve 0,8 más
   abajo, por debajo del guardamonte, que queda a la vista.
+- **El pulgar de la mano del gatillo** (pedido: «el pulgar atraviesa el arma y parece fusionado con ella»):
+  va del otro lado, estirado a lo largo del armazón (`pulgar: { largo: 1 }` y `op.pulgarDetras` en `dibujarMano`),
+  y no se ve. Antes envolvía la empuñadura hacia este lado y, de costado, cruzaba el cajón en diagonal en las 33 armas
+  de fuego (en las pistolas llegaba hasta la corredera). Los otros cuatro dedos quedan donde estaban.
 - **Lo que agarra va por detrás**: la palma y los nudillos lo tapan, y los dedos que lo envuelven por el otro lado
   se dibujan antes que él (cada mano va en dos capas). El cargador se agarra por el medio, con los dedos cruzando su
   costado y doblando en el canto, en vez de quedar parado encima del puño.

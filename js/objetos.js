@@ -32,13 +32,15 @@ class Proyectil {
     // para que un zombie pegado al jugador (entre él y la boca del arma) también reciba el tiro
     const antesX = this.desdeX ?? this.x, antesY = this.y;
     this.desdeX = undefined;
-    if (this.arma.gravedad) this.vy += this.arma.gravedad * paso;
+    if (this.arma.gravedad && !this.objetivo) this.vy += this.arma.gravedad * paso;   // la granada que sigue a su zombie va derecho
     if (this.arma.cohete) {   // el motor del cohete lo acelera y deja una estela de humo
-      this.vx = Math.sign(this.vx) * Math.min(26, Math.abs(this.vx) * (1 + 0.07 * paso));
+      const v = Math.hypot(this.vx, this.vy), nv = Math.min(26, v * (1 + 0.07 * paso));
+      if (this.objetivo && v > 0) { this.vx *= nv / v; this.vy *= nv / v; }                 // con la mira, a lo largo de su rumbo
+      else this.vx = Math.sign(this.vx) * Math.min(26, Math.abs(this.vx) * (1 + 0.07 * paso));
       if (juego.particulas.length < 600) juego.particulas.push(new Particula(this.x - this.direccion * 6, this.y + (Math.random() - 0.5) * 2, -this.direccion * 0.4, -0.15 - Math.random() * 0.3, '#a49c92', 0.7, 3 + Math.random() * 3, false));
     }
     if (this.arma.fuego) this.vx *= Math.pow(0.986, paso);   // la llama frena con el aire
-    if (this.objetivo) {   // tiro con mira telescópica (js/jugador.js): corrige el rumbo hacia el pecho del zombie, no falla
+    if (this.objetivo) {   // tiro con mira (js/jugador.js): corrige el rumbo hacia el pecho del zombie, no falla
       const z = this.objetivo;
       if (z.estado === 'muerto' || !juego.zombies.includes(z)) this.objetivo = null;
       else {
@@ -84,7 +86,7 @@ class Proyectil {
 
     // Granadas y lanzagranadas: tocan el piso
     const piso = this.pisoY ?? alturaSuelo(this.x);   // en un carril, el piso es el del carril
-    if (this.arma.explosivo && this.y >= piso - 3) {
+    if (this.arma.explosivo && !this.objetivo && this.y >= piso - 3) {   // (la de la mira no explota contra la montaña: va al zombie)
       if (this.arma.mecha) {         // granada de mano: rebota y rueda
         this.y = piso - 3; this.vy = -Math.abs(this.vy) * 0.35; this.vx *= 0.6; this.rebotes++;
       } else { this.explotar(juego); return; }
@@ -123,7 +125,7 @@ class Proyectil {
       ctx.restore(); return;
     }
     if (this.arma.cohete) {
-      ctx.translate(sx, this.y); ctx.scale(this.direccion, 1);
+      ctx.translate(sx, this.y); ctx.rotate(Math.atan2(this.vy, Math.abs(this.vx)) * this.direccion); ctx.scale(this.direccion, 1);   // apunta hacia donde va (con la mira puede ir en diagonal)
       ctx.fillStyle = `rgba(255, ${170 + Math.random() * 60}, 60, 0.9)`;
       ctx.beginPath(); ctx.moveTo(-6, -1.4); ctx.lineTo(-13 - Math.random() * 5, 0); ctx.lineTo(-6, 1.4); ctx.fill();   // llama del motor
       parte(ctx, -6, -1.4, 9, 2.8, '#4b5634');                                                                           // cuerpo

@@ -56,6 +56,12 @@ const martillosRecortada = (municion, cargador) => { const tiros = cargador - mu
 // cercano (en línea recta: también más abajo o más arriba en la montaña, y a los chiquitos sin agacharse) hasta volver a
 // apretarla, y la bala no falla: sale derecho a él y lo sigue (Proyectil.objetivo). En todos los modos menos el bastión
 const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
+// Mira de punto rojo (otro pedido de Enzo, con la imagen de su retícula): las que tienen dibujada una mira holográfica o
+// réflex, que no aumenta (Kriss Vector, P90, Saiga-12, Milkor MGL y la caja de la mira de la bazuca M9). La D hace lo
+// mismo que con la telescópica; cambia la retícula (dibujarMiraPuntoRojo), y los perdigones, la granada y el cohete
+// también van derecho al zombie (js/juego.js: dispararArma)
+const MIRA_PUNTO_ROJO = new Set(['vector', 'p90', 'saiga', 'mgl', 'bazuca']);
+const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : null;
 const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
@@ -214,19 +220,22 @@ class Jugador {
     }
   }
 
-  // Tecla D: pone o saca la mira telescópica (sólo con un rifle que la tiene; en el bastión la tecla es de otra cosa)
+  // Tecla D: pone o saca la mira (sólo con un arma que la tiene, telescópica o de punto rojo; en el bastión la tecla es
+  // de otra cosa)
   alternarMira(juego) {
     if (juego.estrategia || this.muerto) return;
-    if (this.montada || !MIRA_TELESCOPICA.has(this.arma().id)) { juego.aviso(t('aviso.sinMira'), 1500); return; }
+    const tipo = this.montada ? null : tipoMira(this.arma().id);
+    if (!tipo) { juego.aviso(t('aviso.sinMira'), 1500); return; }
     this.mira = !this.mira; this.objetivoMira = null;
-    juego.aviso(t(this.mira ? 'aviso.miraOn' : 'aviso.miraOff'), 1300);
+    const aviso = tipo === 'puntoRojo' ? (this.mira ? 'aviso.puntoRojoOn' : 'aviso.puntoRojoOff') : (this.mira ? 'aviso.miraOn' : 'aviso.miraOff');
+    juego.aviso(t(aviso), 1300);
   }
   // Cada cuadro, con la mira puesta: el zombie vivo más cercano al hombro, dentro del alcance del arma (en Defensa ultra,
   // del carril propio, porque la bala no sale de su carril). No salta a otro por un pelo: el que ya tenía sigue si el
   // nuevo no está al menos 10 más cerca. El personaje se da vuelta hacia él y el arma se inclina (hasta 34°)
   actualizarMira(juego, dt) {
     const arma = this.arma();
-    if (this.mira && (this.montada || this.muerto || juego.estrategia || !MIRA_TELESCOPICA.has(arma.id))) this.mira = false;
+    if (this.mira && (this.montada || this.muerto || juego.estrategia || !tipoMira(arma.id))) this.mira = false;
     let angulo = 0;
     if (!this.mira) this.objetivoMira = null;
     else {
@@ -706,9 +715,10 @@ class Jugador {
     else if (!this.montada) e.incl -= empuje * 0.05;                    // el fusil, apenas
     if (d.agarre === 'hombro') e.apunta = 1 - e.mirar;                  // con el arma al hombro, la cabeza va a la culata
 
-    // Mira telescópica: el arma se inclina hacia el zombie elegido girando sobre la cantonera apoyada en el hombro
+    // Con la mira: el arma se inclina hacia el zombie elegido girando sobre la cantonera apoyada en el hombro (la P90,
+    // que va en las manos y no al hombro, sobre la empuñadura)
     if (this.anguloMira && !this.montada && !this.recarga) {
-      const P = { x: -(d.culataCm || 30) * CM, y: 0 }, f = e.incl, g = f + this.anguloMira;
+      const P = { x: d.agarre === 'hombro' ? -(d.culataCm || 30) * CM : 0, y: 0 }, f = e.incl, g = f + this.anguloMira;
       const W = { x: e.origen.x + P.x * Math.cos(f) - P.y * Math.sin(f), y: e.origen.y + P.x * Math.sin(f) + P.y * Math.cos(f) };
       e.origen = { x: W.x - (P.x * Math.cos(g) - P.y * Math.sin(g)), y: W.y - (P.x * Math.sin(g) + P.y * Math.cos(g)) };
       e.incl = g; e.miraAng = this.anguloMira;

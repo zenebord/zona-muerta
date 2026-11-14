@@ -202,7 +202,7 @@ const GESTOS_MANO = {
   palmada:     { cierre: 0.04, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.7 },
   empuja:      { cierre: 0.8, nudillo: 0.9, pulgar: { sube: 1 }, abre: 0 },                                  // el pulgar empuja las balas del peine
   bandeja:     { cierre: 0.3, nudillo: 0.5, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.4 },               // la palma hacia arriba, sosteniendo
-  empunadura:  { cierre: [0.4, 0.86, 0.9, 0.92], nudillo: 0.92, pulgar: { cierra: 0.6, largo: 0.4 }, abre: 0 },   // el índice, en el disparador
+  empunadura:  { cierre: [0.4, 0.86, 0.9, 0.92], nudillo: 0.92, pulgar: { largo: 1 }, abre: 0 },               // el índice, en el disparador; el pulgar, estirado del otro lado
   guardamanos: { cierre: 0.62, nudillo: 0.75, pulgar: { arriba: 0.4, sube: 0.6 }, abre: 0 },                 // la palma por debajo del arma; el pulgar sube en diagonal por este costado
   envuelve:    { cierre: 0.7, nudillo: 0.3, pulgar: { largo: 1 }, abre: 0 },                                 // sobre los dedos de la otra mano
   cabeza:      { cierre: 0.4, pulgar: { suelto: 1 }, abre: 0.4 },
@@ -230,10 +230,10 @@ function armarBrazo(j, cual, hx, hy, armar, opBrazo) {
   for (let k = 0; k < 3; k++) { g = armar(ante3); R = resolver(g.B)[1]; ante3 = R.ante3; }
   const S = poseSuave(j, cual, g.gesto, g.B, normalizarPose(g.pose), g.rigido), [W, R2] = resolver(S.B);
   (j.brazos || (j.brazos = {}))[cual] = { cx: R2.cx, cy: R2.cy, flexion: R2.flexion, extension: R2.extension };   // para las pruebas: dónde quedó el codo y cuánto dobla
-  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null, indiceDetras: !!g.indiceDetras };
+  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null, indiceDetras: !!g.indiceDetras, pulgarDetras: !!g.pulgarDetras };
 }
 const pintarBrazo = (ctx, A, C) => dibujarBrazo(ctx, A.hx, A.hy, A.W[0], A.W[1], A.R, C);
-const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj, { indiceDetras: A.indiceDetras });
+const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj, { indiceDetras: A.indiceDetras, pulgarDetras: A.pulgarDetras });
 /* El índice en el gatillo (pedido de Enzo): con la mano en la empuñadura, la curvatura del índice que deja la yema (el
  * 65 % de la última falange) en el punto del disparador de ese arma (dedoGatillo, js/armas-modelos-3.js) moviendo menos
  * la mano; el índice también puede separarse hacia arriba en el plano de la palma (giro), como hace uno para buscar la
@@ -313,11 +313,13 @@ function gestoApoyo(gesto, p, e, op = {}) {
 function gestoGatillo(gesto, g, ang, ajuste = null) {
   const c = Math.cos(ang), s = Math.sin(ang);
   switch (gesto) {
-    case 'empunadura': {    // la palma del otro lado de la empuñadura; de este lado, los dedos que la envuelven y el pulgar
+    case 'empunadura': {    // la palma del otro lado de la empuñadura; de este lado, los dedos que la envuelven
       // Con el ajuste del arma (ajusteGatillo), el índice va del otro lado del armazón, como el de una mano derecha de
-      // verdad: se ve por el hueco del guardamonte, con la yema en la cola del disparador
+      // verdad: se ve por el hueco del guardamonte, con la yema en la cola del disparador. El pulgar también va del otro
+      // lado, estirado a lo largo del armazón (pedido de Enzo): cuando envolvía la empuñadura hacia este lado, de costado
+      // cruzaba el cajón en diagonal y parecía que atravesaba el arma
       const B = baseMano([c, s, -0.12], [0.1, 0, 1], false), pose = ajuste ? Object.assign({}, GESTOS_MANO.empunadura, { cierre: [ajuste.cierre, 0.86, 0.9, 0.92], giroIndice: ajuste.giro }) : GESTOS_MANO.empunadura;
-      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma', indiceDetras: !!ajuste });
+      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma', indiceDetras: !!ajuste, pulgarDetras: true });
     }
     case 'mango': {         // el mango pasa por el puño
       const B = baseMano([c, s, 0], [0, 0, 1], false);
@@ -622,6 +624,29 @@ function dibujarMiraTelescopica(ctx, cam, j, ahora) {
   ctx.beginPath(); postes(); ctx.lineWidth = 1.6; ctx.stroke();
   ctx.strokeStyle = 'rgba(0,0,0,0.9)'; ctx.lineWidth = 0.8; trazos(); ctx.stroke();
   ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.beginPath(); postes(); ctx.fill();
+  ctx.restore();
+}
+
+/* Retícula de la mira de punto rojo (tecla D con la Kriss Vector, la P90, la Saiga-12, el Milkor MGL o la bazuca M9),
+ * como la segunda imagen que mandó Enzo: un anillo rojo de trazo parejo, cuatro marcas cortas que salen de él hacia
+ * afuera (arriba, abajo y a los costados) y el punto en el centro; adentro no hay nada más (se ve el zombie). Es la luz
+ * de una mira réflex: un resplandor rojo por debajo la hace leer de noche y un contorno oscuro, apenas, la despega de
+ * los fondos claros. Al elegir un zombie se cierra sobre él como la telescópica. */
+function dibujarMiraPuntoRojo(ctx, cam, j, ahora) {
+  const z = j.objetivoMira, c = z.caja(), x = c.x + c.w / 2 - cam, y = c.y + c.h * 0.4;
+  const k = limitar((ahora - (j.miraDesde || 0)) / 180, 0, 1), R = 22 * (1 + 0.5 * (1 - suavizar(k)));
+  ctx.save(); ctx.translate(x, y); ctx.globalAlpha = 0.35 + 0.65 * k; ctx.lineCap = 'butt';
+  const figura = () => {   // el anillo y las cuatro marcas (del anillo hacia afuera, un 30 % del radio)
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2);
+    for (let a = 0; a < 4; a++) { const ux = Math.round(Math.cos(a * Math.PI / 2)), uy = Math.round(Math.sin(a * Math.PI / 2)); ctx.moveTo(ux * R, uy * R); ctx.lineTo(ux * R * 1.3, uy * R * 1.3); }
+  };
+  const capa = (color, ancho, radioPunto) => {
+    ctx.strokeStyle = ctx.fillStyle = color; ctx.lineWidth = ancho; figura(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, radioPunto, 0, Math.PI * 2); ctx.fill();
+  };
+  capa('rgba(255,46,32,0.2)', 5.5, R * 0.17);       // resplandor
+  capa('rgba(48,0,0,0.42)', 2.7, R * 0.075 + 0.5);  // contorno
+  capa('#ec2a1f', 1.6, R * 0.075);                   // la luz roja
   ctx.restore();
 }
 
