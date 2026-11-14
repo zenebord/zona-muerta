@@ -528,6 +528,22 @@ kbd {
 .boton.mini { font-size: 12px; padding: 6px 12px; letter-spacing: .08em; }
 .panel-config .nota { margin: 2px 0 0; font-size: 12px; opacity: .65; text-align: right; }
 .panel-config .fila-botones { justify-content: center; margin-top: 12px; }
+/* Teclas (js/teclas.js): cada acción con sus teclas como botones; se toca una y se presiona la nueva */
+#config-teclas > .nota { text-align: left; margin-bottom: 6px; }
+#config-teclas .fila-doble .nota { text-align: left; flex: 1 1 14em; opacity: .85; color: var(--luz); }
+.lista-teclas h4 { margin: 10px 0 2px; font-size: 11px; letter-spacing: .18em; color: var(--arena); opacity: .8; }
+.fila-tecla { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 14px; border-bottom: 1px dashed rgba(201,169,110,.12); }
+.teclas-accion { display: inline-flex; gap: 6px; flex-shrink: 0; }
+.tecla-boton {
+  min-width: 46px; min-height: 32px; padding: 3px 10px; font: 14px monospace; color: var(--texto); cursor: pointer;
+  background: #221c2a; border: 1px solid var(--arena); border-bottom-width: 3px;
+}
+.tecla-boton:hover { background: rgba(201,169,110,.18); }
+.tecla-boton:focus-visible { outline: 2px solid var(--luz); outline-offset: 2px; }
+.tecla-boton.cambiada { border-color: var(--luz); color: var(--luz); }   /* distinta de la original */
+.tecla-boton.esperando { background: var(--arena); color: var(--noche); font-family: inherit; font-size: 12px; animation: tecla-espera 0.9s ease-in-out infinite alternate; }
+@keyframes tecla-espera { from { box-shadow: 0 0 0 0 rgba(201,169,110,.6); } to { box-shadow: 0 0 0 5px rgba(201,169,110,0); } }
+#panel-controles .fila-botones { justify-content: center; }
 @media (max-width: 760px), (max-height: 460px) {
   .boton-config { width: 36px; height: 36px; padding: 6px; top: 6px; left: 6px; }
   .hud-izq { margin-left: 36px; }

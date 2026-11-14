@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=de60ec6cd2">
+  <link rel="stylesheet" href="css/estilos.css?v=bb437005a4">
 </head>
 <body>
 
@@ -102,27 +102,31 @@
   <section id="panel-controles" class="pantalla">
     <h2 data-t="controles.titulo">CONTROLES</h2>
     <table class="tabla-controles">
-      <tr><td><kbd>→</kbd></td><td data-t="controles.avanzar">Avanzar</td></tr>
-      <tr><td><kbd>←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
-      <tr><td><kbd>↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
-      <tr><td><kbd>↓</kbd></td><td data-t="controles.abajo"></td></tr>
+      <tr><td><kbd data-tecla-de="derecha">→</kbd></td><td data-t="controles.avanzar">Avanzar</td></tr>
+      <tr><td><kbd data-tecla-de="izquierda">←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
+      <tr><td><kbd data-tecla-de="saltar">↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
+      <tr><td><kbd data-tecla-de="abajo">↓</kbd></td><td data-t="controles.abajo"></td></tr>
       <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
       <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
       <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
       <tr><td data-t="controles.bastion"></td><td data-t-html="controles.bastion.texto"></td></tr>
-      <tr><td><kbd>F</kbd> / <span data-t="controles.clic">clic</span></td><td data-t="controles.disparar"></td></tr>
-      <tr><td><kbd>S</kbd> / <span data-t="controles.clicDerecho">clic derecho</span></td><td data-t="controles.recargar"></td></tr>
-      <tr><td><kbd>D</kbd></td><td data-t="controles.mira"></td></tr>
-      <tr><td><kbd>Q</kbd> / <kbd>E</kbd> · <kbd>G</kbd> / <kbd>H</kbd></td><td data-t="controles.cambiar"></td></tr>
-      <tr><td><kbd>C</kbd></td><td data-t-html="controles.c"></td></tr>
-      <tr><td><kbd>1</kbd> … <kbd>5</kbd></td><td data-t="controles.grupos"></td></tr>
+      <tr><td><kbd data-tecla-de="disparar">F</kbd> / <span data-t="controles.clic">clic</span></td><td data-t="controles.disparar"></td></tr>
+      <tr><td><kbd data-tecla-de="recargar">S</kbd> / <span data-t="controles.clicDerecho">clic derecho</span></td><td data-t="controles.recargar"></td></tr>
+      <tr><td><kbd data-tecla-de="mira">D</kbd></td><td data-t="controles.mira"></td></tr>
+      <tr><td><kbd data-tecla-de="ataqueAereo">A</kbd></td><td data-t="controles.ataqueAereo"></td></tr>
+      <tr><td><kbd data-tecla-de="armaAnterior">Q</kbd> / <kbd data-tecla-de="armaSiguiente">E</kbd> · <kbd data-tecla-de="armaAnterior" data-ranura="1">G</kbd> / <kbd data-tecla-de="armaSiguiente" data-ranura="1">H</kbd></td><td data-t="controles.cambiar"></td></tr>
+      <tr><td><kbd data-tecla-de="menuPruebas">C</kbd></td><td data-t-html="controles.c"></td></tr>
+      <tr><td><kbd data-tecla-de="grupo1">1</kbd> … <kbd data-tecla-de="grupo7">7</kbd></td><td data-t="controles.grupos"></td></tr>
       <tr><td data-t="controles.rueda"></td><td data-t="controles.cambiar"></td></tr>
-      <tr><td><kbd>P</kbd> / <kbd>Esc</kbd></td><td data-t="controles.pausa"></td></tr>
+      <tr><td><kbd data-tecla-de="pausa">P</kbd> / <kbd>Esc</kbd></td><td data-t="controles.pausa"></td></tr>
       <tr><td data-t="controles.engranaje"></td><td data-t="controles.engranaje.texto"></td></tr>
       <tr><td data-t="controles.celular"></td><td data-t="controles.celular.texto"></td></tr>
     </table>
     <p class="ayuda" data-t="controles.ayuda"></p>
-    <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    <div class="fila-botones">
+      <button class="boton chico" data-accion="teclas-cambiar" data-t="controles.cambiarTeclas">CAMBIAR TECLAS</button>
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
   </section>
 
   <!-- ===== JUEGO ===== -->
@@ -418,6 +422,15 @@
           <button class="boton mini" type="button" id="boton-completa" data-accion="config-completa" data-t="config.completa">Pantalla completa</button>
         </div>
       </section>
+      <section id="config-teclas">
+        <h3 data-t="config.teclas">TECLAS</h3>
+        <p class="nota" data-t="config.teclasNota">Toca la tecla de una acción y presiona la nueva. Esc cancela.</p>
+        <div id="lista-teclas" class="lista-teclas"></div>
+        <div class="fila-doble">
+          <span id="teclas-aviso" class="nota" aria-live="polite"></span>
+          <button class="boton mini" type="button" data-accion="teclas-originales" data-t="config.teclasOriginales">Teclas originales</button>
+        </div>
+      </section>
       <section>
         <h3 data-t="asist.seccion">ASISTENTE DE PRUEBAS</h3>
         <div class="fila-opcion"><span data-t="asist.notaConfig">Pide cambios en armas o jugabilidad mientras se arma el juego</span>
@@ -431,13 +444,14 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=de31add150"></script>
+  <script src="js/version.js?v=88ffcf9c65"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
   <script src="js/sonidos-armas.js?v=e377a1bd0a"></script>
-  <script src="js/config.js?v=3c345f9de3"></script>
-  <script src="js/idioma.js?v=deb699d191"></script>
+  <script src="js/config.js?v=3e8b9d330b"></script>
+  <script src="js/idioma.js?v=b92e67f118"></script>
+  <script src="js/teclas.js?v=1f3ce9c429"></script>
   <script src="js/audio.js?v=28f2c3629c"></script>
   <script src="js/musica.js?v=50afd150ca"></script>
   <script src="js/armas.js?v=047c637500"></script>
@@ -467,7 +481,7 @@
   <script src="js/juego.js?v=2e4a49f7c5"></script>
   <script src="js/poderes.js?v=93de692929"></script>
   <script src="js/armas-especiales.js?v=2df0a2414c"></script>
-  <script src="js/defensa-ultra.js?v=cf29653513"></script>
+  <script src="js/defensa-ultra.js?v=54c14cb81a"></script>
   <script src="js/escenario-historia.js?v=3224c7c117"></script>
   <script src="js/zombies-autoctonos.js?v=884203034e"></script>
   <script src="js/historia.js?v=8bffdb3dff"></script>
@@ -482,7 +496,7 @@
   <script src="js/bastion-v2-ui.js?v=95400acff3"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=7bcf596264"></script>
-  <script src="js/interfaz.js?v=fdbffd95fb"></script>
+  <script src="js/interfaz.js?v=409af6069b"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>

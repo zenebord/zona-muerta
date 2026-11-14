@@ -21,6 +21,8 @@ const Config = (() => {
     tactil: 'auto',    // auto | si | no: botones en pantalla
     vibracion: true,   // vibración corta al tocar los botones en pantalla
     skin: 'sobreviviente',   // personaje elegido (js/skins.js)
+    teclas: null,      // { acción: [códigos] } si se cambió alguna (js/teclas.js); null: las originales
+    teclasNombres: {}, // código → cómo se ve esa tecla en el teclado de quien la eligió (la Ñ es 'Semicolon')
   };
   let datos = { ...PREDETERMINADA };
   try { Object.assign(datos, JSON.parse(localStorage.getItem(CLAVE) || '{}')); } catch { /* sin almacenamiento */ }
