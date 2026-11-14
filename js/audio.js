@@ -364,8 +364,9 @@ const Audio_ = (() => {
    *   «ma»  la «m», un murmullo nasal grave (voz por debajo de 300 Hz); la «a», aire con un hilo de voz grave que cae
    *         (de 88 Hz, más bajo en cada «ma», con un temblor) por sus formantes (780, 1180, 2500 y 3400 Hz), el
    *         primero subiendo de 320 a 780 al abrir la boca.
-   *   Lento y parejo: un «ki» y un «ma» cada 0,3 s, con un pulso de pausa entre los dos grupos que llena el eco del
-   *   último «ki»; cada «ki» suena casi tan fuerte como cada «ma» (−1 dB A).
+   *   Lento y parejo: un «ki» y un «ma» cada 0,5 s, con un pulso de pausa entre los dos grupos que llena el eco del
+   *   último «ki»; el eco repite al mismo paso (si fuera más corto, rellenaría los huecos y sonaría rápido). Cada «ki»
+   *   suena casi tan fuerte como cada «ma» (−1 dB A).
    *   El espacio: un eco que rebota de un lado al otro y se oscurece en cada vuelta, y una sala larga.
    * Machete: el tajo en el aire (aire que barre de grave a agudo y vuelve, el silbido del filo y el peso de la hoja,
    * de izquierda a derecha); el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
@@ -464,8 +465,10 @@ const Audio_ = (() => {
   // op: ki y ma (cuántas), paso (s entre sílabas), pausa (s del último «ki» al primer «ma»), altura (Hz de la voz de la
   // «a»), voz (cuánta voz lleva la «a»: 0 susurro puro), eco (s), vuelta (cuánto vuelve el eco), sala (envío a la sala),
   // retraso (s hasta el primer «ki») y silabaKi (cambios al «ki»: ver SILABA_KI)
-  // Los «ma» son los de la «B» de las pruebas (lentos y graves, con voz y eco largo); los «ki», al mismo paso
-  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.3, pasoMa: 0.3, pausa: 0.6, altura: 88, voz: 0.35, eco: 0.3, vuelta: 0.55, sala: 0.35, retraso: 0 };
+  // Los «ma» son los de la «B» de las pruebas (graves, con voz y eco largo); los «ki», al mismo paso, y el eco también
+  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.5, pasoMa: 0.5, pausa: 1.0, altura: 88, voz: 0.35, eco: 0.5, vuelta: 0.55, sala: 0.35, retraso: 0 };
+  // Cuánto dura el susurro (s) desde el primer «ki» hasta que termina el último «ma» (sin la cola del eco)
+  const duracionSusurro = (op = {}) => { const o = { ...SUSURRO, ...op }; return (o.ki - 1) * o.pasoKi + o.pausa + (o.ma - 1) * o.pasoMa + 0.35; };
   function genSusurro(ac, salida, t0, nodos, op = {}) {
     const o = { ...SUSURRO, ...op }; t0 += o.retraso;
     const seco = ganancia(ac, 1); seco.connect(salida);
@@ -783,6 +786,7 @@ const Audio_ = (() => {
     // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera). retraso: s hasta el primer «ki»
     // (al sacarlo, después del «shing»)
     susurroCazador(retraso = 0) { sonar(genSusurro, 0.12, 0.9, { retraso }); },
+    duracionSusurro,
     // Machete del cazador: el tajo, el golpe y el desenfundar (síntesis propia, ver arriba)
     desenfundarMachete() { sonar(genDesenfundar, 0.08, 0.7); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext

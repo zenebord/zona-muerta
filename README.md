@@ -689,12 +689,12 @@ Armas especiales de `js/armas-especiales.js`, que se engancha envolviendo métod
     «i» susurrada, por resonadores en cadena como el tracto vocal (formantes 420, ~2300, 2980 y 3650 Hz; nada por encima
     de 5 kHz). Las medidas salen de «key» y «kill» dichos por voces de referencia (aire de 70–90 ms con el pico entre
     2,8 y 3,3 kHz). La «m», un murmullo nasal grave, y la «a», aire con un hilo de voz grave (88 Hz, más bajo en cada
-    «ma») por sus formantes (780, 1180, 2500 y 3400 Hz). Lento y parejo: un «ki» y un «ma» cada 0,3 s, con un pulso
+    «ma») por sus formantes (780, 1180, 2500 y 3400 Hz). Lento y parejo: un «ki» y un «ma» cada 0,5 s, con un pulso
     de pausa entre los dos grupos que llena el eco; cada «ki» suena casi tan fuerte como cada «ma» (−1 dB A; antes,
-    −4 dB). Eco de 0,3 s que rebota de izquierda a derecha y se oscurece, y una sala larga. `SUSURRO` (ritmo, voz,
-    eco) y `SILABA_KI` (explosión, «ch», «i», aspereza) en `js/audio.js` permiten probar variantes. Suena al sacar el
-    machete, medio segundo después, cuando se apaga el «shing» (4 s como mínimo entre uno y otro, así no se pisan) y,
-    si pasaron 8 s del último, al matar con él o en 4 de cada 10 golpes.
+    −4 dB). Eco al mismo paso (0,5 s), que rebota de izquierda a derecha y se oscurece, y una sala larga. `SUSURRO`
+    (ritmo, voz, eco) y `SILABA_KI` (explosión, «ch», «i», aspereza) en `js/audio.js` permiten probar variantes. Suena
+    al sacar el machete, medio segundo después, cuando se apaga el «shing» (nunca antes de que termine el anterior, así
+    no se pisan) y, si pasaron 8 s del último, al matar con él o en 4 de cada 10 golpes.
   - *Machete*: al desenfundarlo, un roce metálico que sube y termina en un «shing»; el tajo, aire que barre de grave a
     agudo y vuelve, con el silbido del filo y el peso de la hoja, de izquierda a derecha; el golpe, el filo que muerde,
     el golpe sordo, la carne, el hueso si es fuerte y la hoja que queda vibrando (más la grabación de carne de siempre).
