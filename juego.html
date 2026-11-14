@@ -1389,7 +1389,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261113-1942-bd9481a';
+const VERSION_JUEGO = '20261113-2117-482f39e';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -6661,9 +6661,11 @@ reemplazar('laser', { casquillo: null,
 
 /* ======================= ARMAS DE PALANCA (medidas sobre foto de un Winchester de palanca) ======================= */
 // Palanca integrada: placa gruesa pegada bajo el cajón desde el pivote, lazo chico que rodea el disparador
-// y lazo para los dedos justo debajo de la garganta de la culata. Gira sobre el pivote al accionarla.
+// y lazo para los dedos justo debajo de la garganta de la culata. Al accionarla gira sobre el pivote, que está adelante:
+// el lazo baja y se va hacia adelante (GIRO_PALANCA), y la mano del gatillo va con él (moviles.gatillo).
+const GIRO_PALANCA = 1.0;   // radianes de recorrido: unos 57°
 function palancaLazo(ctx, e, px, py, base) {
-  ctx.save(); ctx.translate(px, py); ctx.rotate(e.palanca * 0.95); ctx.translate(-px, -py);
+  ctx.save(); ctx.translate(px, py); ctx.rotate(-e.palanca * GIRO_PALANCA); ctx.translate(-px, -py);
   pintar(ctx, suave([[px + 0.6, base - 0.2], [px + 0.6, base + 1.1], [4.4, base + 1.3], [3.4, base + 0.1]], 0.4, 2), MAT.pavonado, { brillo: 0.35 });   // placa
   pintar(ctx, Cc(px, py, 0.45, 10), MAT.acero);                                                              // pivote
   if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fillRect(-7.6, base + 1.8, 12, 5.4); ctx.restore(); return; }
@@ -6678,19 +6680,25 @@ function palancaLazo(ctx, e, px, py, base) {
   ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 0.22; ctx.stroke();
   ctx.restore();
 }
+// Lo que se mueve con la palanca: el lazo de los dedos (la mano del gatillo va adentro) gira con ella sobre el pivote
+const movilesPalanca = (px, py, base) => ({
+  corredera: e => girarCm(-4, base + 4.5, px, py, -e.palanca * GIRO_PALANCA),
+  gatillo: e => girarCm(-4, base + 4.5, px, py, -e.palanca * GIRO_PALANCA),
+});
 
-// Winchester 1894 (96 cm): culata de nogal de garganta recta con caída, cajón bajo con la ventana de carga y
-// el cerrojo a la vista, martillo, palanca integrada, fuste sobre el tubo de balas, abrazaderas, alza y guion
+// Winchester 1894 (96 cm): culata de nogal de garganta recta con caída, cajón bajo (apenas más alto que la garganta
+// de la culata) con la ventana de carga y el cerrojo a la vista, martillo, palanca integrada, fuste sobre el tubo de
+// balas, abrazaderas, alza y guion
 reemplazar('winchester1894', { casquillo: 'bala',
-  anclas: { manoDelantera: [23, -1.4], cargador: [10.6, -2.4], corredera: [-4, 4.6], expulsion: [6, -5.4], boca: [64, -4.7] },
+  anclas: { manoDelantera: [23, -1.4], cargador: [10.6, -2.6], corredera: [-4, 3.9], expulsion: [6, -5.4], boca: [64, -4.7] },
   dibujarCm(ctx, e) {
-    pintar(ctx, suave([[0, -4.6], [-2.2, -3.8], [-8, -1.6], [-31.8, 0.6], [-32.2, 1.4], [-32.2, 12.2], [-31.4, 12.6], [-10, 3.2], [-6, 1.8], [-2.6, 1.2], [0, -0.2]], 0.9, 4), MAT.maderaClara);   // culata
+    pintar(ctx, suave([[0, -4.6], [-2.2, -3.8], [-8, -1.6], [-31.8, 0.6], [-32.2, 1.4], [-32.2, 12.2], [-31.4, 12.6], [-10, 2.9], [-6, 1.5], [-2.6, 0.8], [0, -0.6]], 0.9, 4), MAT.maderaClara);   // culata
     pintar(ctx, suave([[-33, 0.6], [-32, 0.6], [-32, 12.6], [-33, 12.4]], 0.3, 2), MAT.pavonado);             // cantonera
-    pintar(ctx, Rc(1.0, -0.3, 0.9, 2.3), MAT.acero);                                                          // disparador
-    palancaLazo(ctx, e, 13, 0.4, -0.2);
-    pintar(ctx, suave([[0, -0.3], [0, -4.8], [1.2, -5.4], [14, -5.4], [14, 0], [12.4, 0.2], [0, -0.3]], 0.6, 3), MAT.pavonado, { brillo: 0.4 });   // cajón
-    if (!Pincel.silueta) { ctx.fillStyle = '#9aa0a8'; ctx.fillRect(3.2, -4.8, 4.2, 0.7); ctx.fillStyle = '#0a0a0c'; ctx.fillRect(9.2, -2.6, 3.6, 0.9); }   // cerrojo y ventana de carga
-    tornillo(ctx, 2.0, -2.2, 0.26); tornillo(ctx, 11.8, -4.2, 0.24);
+    pintar(ctx, Rc(1.0, -0.7, 0.9, 2.3), MAT.acero);                                                          // disparador
+    palancaLazo(ctx, e, 13, 0, -0.6);
+    pintar(ctx, suave([[0, -0.7], [0, -4.4], [1.4, -5.4], [14, -5.4], [14, -0.4], [12.4, -0.2], [0, -0.7]], 0.6, 3), MAT.pavonado, { brillo: 0.4 });   // cajón
+    if (!Pincel.silueta) { ctx.fillStyle = '#9aa0a8'; ctx.fillRect(3.2, -4.8, 4.2, 0.7); ctx.fillStyle = '#0a0a0c'; ctx.fillRect(9.2, -2.8, 3.6, 0.9); }   // cerrojo y ventana de carga
+    tornillo(ctx, 2.0, -2.4, 0.26); tornillo(ctx, 11.8, -4.2, 0.24);
     pintar(ctx, suave([[0.2, -4.8], [-0.4, -6.6], [0.6, -7.0], [1.6, -5.2]], 0.3, 2), MAT.pavonado);       // martillo
     pintar(ctx, Rc(14, -5.4, 50, 1.4), MAT.pavonado, { brillo: 0.45 });                                       // cañón
     pintar(ctx, Rc(14, -3.8, 48.6, 1.6), MAT.pavonado, { brillo: 0.35 });                                    // tubo de balas
@@ -6701,31 +6709,32 @@ reemplazar('winchester1894', { casquillo: 'bala',
     pintar(ctx, suave([[62.2, -5.4], [62.4, -6.8], [63.4, -6.8], [63.6, -5.4]], 0.3, 2), MAT.pavonado);      // guion encapuchado
   } });
 DIBUJO_ARMAS.winchester1894.culataCm = 32;
-DIBUJO_ARMAS.winchester1894.moviles = { corredera: e => girarCm(-4, 4.6, 13, 0.4, e.palanca * 0.95) };   // la mano viaja con la palanca
+DIBUJO_ARMAS.winchester1894.moviles = movilesPalanca(13, 0, -0.6);   // la mano viaja con la palanca
 
-// Winchester 1887 (101 cm), según la imagen de referencia: culata recta de madera con cantonera, cajón negro grande
-// de bloque redondeado, palanca con lazo, delantera de madera larga que cubre el tubo hasta dos tercios del cañón
+// Winchester 1887 (101 cm), según la imagen de referencia: culata recta de madera con cantonera, cajón negro de bloque
+// redondeado (más alto adelante, donde lleva el cañón y el tubo, y a la altura de la garganta de la culata atrás),
+// palanca con lazo, delantera de madera larga que cubre el tubo hasta dos tercios del cañón
 reemplazar('winchester1887', { casquillo: 'escopeta',
-  anclas: { manoDelantera: [30, -1.8], cargador: [14, -1], corredera: [-4, 6.8], expulsion: [10, -7], boca: [68, -5.5] },
+  anclas: { manoDelantera: [30, -1.8], cargador: [14, -0.6], corredera: [-4, 4.5], expulsion: [10, -6], boca: [67, -5.5] },
   dibujarCm(ctx, e) {
-    pintar(ctx, suave([[0, -5.0], [-2.4, -4.0], [-8, -1.6], [-33.4, 1.2], [-33.8, 2.0], [-33.8, 13.2], [-33.0, 13.6], [-10, 5.6], [-6, 4.2], [-2.6, 3.6], [0, 2.2]], 0.9, 4), MAT.madera);   // culata
-    pintar(ctx, suave([[-34.6, 1.2], [-33.6, 1.2], [-33.6, 13.6], [-34.6, 13.4]], 0.3, 2), MAT.pavonado);
-    pintar(ctx, Rc(1.0, 2.2, 0.9, 2.3), MAT.acero);
-    palancaLazo(ctx, e, 15.6, 2.8, 2.2);
-    pintar(ctx, suave([[0, 2.4], [0, -5.6], [2.4, -7.6], [6.6, -8.0], [21, -8.0], [21, 2.6], [15, 2.8], [0, 2.4]], 1.0, 4), MAT.pavonado, { brillo: 0.4 });   // cajón grande
-    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[2, -6.4], [20.6, -6.6]]);
-    tornillo(ctx, 5, -2); tornillo(ctx, 17, -4);
-    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(11, -1.8, 5, 1.6); }
-    pintar(ctx, suave([[-1, -6.6], [-2.6, -8.8], [-1.2, -9.0], [1, -6.8]], 0.3, 2), MAT.pavonado);
-    pintar(ctx, Rc(21, -6.4, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
-    pintar(ctx, Rc(21, -4.4, 34, 2.0), MAT.pavonado);                                                       // tubo del depósito
+    pintar(ctx, suave([[0, -3.8], [-2.4, -3.2], [-8, -1.4], [-33.4, 1.2], [-33.8, 2.0], [-33.8, 13.0], [-33.0, 13.4], [-10, 3.2], [-6, 1.9], [-2.6, 1.0], [0, 0.4]], 0.9, 4), MAT.madera);   // culata
+    pintar(ctx, suave([[-34.6, 1.2], [-33.6, 1.2], [-33.6, 13.4], [-34.6, 13.2]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, Rc(1.0, 0.2, 0.9, 2.2), MAT.acero);
+    palancaLazo(ctx, e, 15, 0.6, 0);
+    pintar(ctx, suave([[0, 0.4], [0, -4.0], [2.2, -6.1], [6.0, -6.9], [20, -6.9], [20, -0.3], [14.6, 0.2], [0, 0.4]], 1.0, 4), MAT.pavonado, { brillo: 0.4 });   // cajón
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[2.6, -5.5], [19.6, -5.7]]);
+    tornillo(ctx, 5, -1.8); tornillo(ctx, 16.6, -3.4);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(10.6, -2.6, 4.6, 1.3); }
+    pintar(ctx, suave([[-0.8, -4.6], [-2.4, -6.8], [-1.0, -7.0], [1.2, -5.0]], 0.3, 2), MAT.pavonado);       // martillo
+    pintar(ctx, Rc(20, -6.4, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, Rc(20, -4.4, 35, 2.0), MAT.pavonado);                                                       // tubo del depósito
     pintar(ctx, suave([[54.6, -4.6], [56, -4.6], [56, -2.0], [54.6, -2.0]], 0.3, 2), MAT.pavonado);         // tapa del tubo
-    pintar(ctx, suave([[21, -5.6], [53, -5.4], [54.2, -3.6], [53, -1.6], [21, -1.2]], 0.9, 3), MAT.madera, { lustre: true });   // delantera larga
+    pintar(ctx, suave([[20, -5.6], [53, -5.4], [54.2, -3.6], [53, -1.6], [20, -1.2]], 0.9, 3), MAT.madera, { lustre: true });   // delantera larga
     punto(ctx, 41, -3.4, 0.28, '#2a2016');
-    punto(ctx, 67.4, -6.9, 0.4, '#e0d8c0');
+    punto(ctx, 66.4, -6.9, 0.4, '#e0d8c0');
   } });
 DIBUJO_ARMAS.winchester1887.culataCm = 33.6;
-DIBUJO_ARMAS.winchester1887.moviles = { corredera: e => girarCm(-4, 6.8, 15.6, 2.8, e.palanca * 0.95) };
+DIBUJO_ARMAS.winchester1887.moviles = movilesPalanca(15, 0.6, 0);
 
 /* ======================= M16 (calcada de una foto de perfil de un M16A1) ======================= */
 // 99 cm: culata fija A1 con argolla, pistolete sin saliente, cajón inferior gris con guardamonte y selector,
@@ -7431,6 +7440,143 @@ DIBUJO_ARMAS.lanzallamas = modelo({ casquillo: null, agarre: 'pecho', anguloEmpu
 
 </script>
   <script>
+/* ===== Munición: el cartucho de cada arma, a escala =====
+ * Cada arma tira su calibre y eso se ve: la bala que asoma arriba del cargador, la que entra por la ventana de la
+ * recámara, la que lleva la mano al cargar de a una, el peine, el cargador rápido y la cinta son ese cartucho, con sus
+ * medidas reales en centímetros (se dibujan en el marco de los modelos: CM). Así las pistolas y las metralletas llevan
+ * balas chicas, los fusiles medianas y solo los de francotirador y la .50 del Barrett y la M2 las llevan grandes.
+ * Antes había cuatro tamaños genéricos, y la bala suelta era una barra de 10 unidades (17 cm a escala), siempre parada,
+ * amarilla y con contorno negro.
+ *   vaina   largo de la vaina            d      diámetro del cuerpo
+ *   punta   cuánto asoma la bala         forma  recta (pistola y revólver) | cuello (fusil: la vaina se angosta) |
+ *   nariz   redonda | punta | chata             escopeta (plástico y culote) | granada (40 mm)
+ *   pestana la vaina tiene reborde (revólveres, .30-30, 7,62 × 54 R)
+ *   cuello  diámetro del cuello sobre el del cuerpo (por defecto 0,68)
+ */
+const CALIBRES = {
+  '9x19':     { vaina: 1.92, d: 0.99, punta: 1.05, forma: 'recta', nariz: 'redonda' },                 // 2,97 cm
+  '.380':     { vaina: 1.73, d: 0.95, punta: 0.77, forma: 'recta', nariz: 'redonda' },                 // PPK
+  '7.63x25':  { vaina: 2.5, d: 0.98, punta: 0.98, forma: 'cuello', nariz: 'redonda', cuello: 0.82 },   // Mauser C96
+  '.45':      { vaina: 2.28, d: 1.21, punta: 0.96, forma: 'recta', nariz: 'redonda' },
+  '.50AE':    { vaina: 3.27, d: 1.37, punta: 0.82, forma: 'recta', nariz: 'chata' },                   // Desert Eagle: 4,1 cm
+  '.44':      { vaina: 3.26, d: 1.16, punta: 0.83, forma: 'recta', nariz: 'chata', pestana: true },
+  '.357':     { vaina: 3.28, d: 0.96, punta: 0.76, forma: 'recta', nariz: 'chata', pestana: true },
+  '5.7x28':   { vaina: 2.89, d: 0.79, punta: 1.16, forma: 'cuello', nariz: 'punta', cuello: 0.74 },    // P90
+  '7.62x39':  { vaina: 3.87, d: 1.13, punta: 1.73, forma: 'cuello', nariz: 'punta', cuello: 0.76 },    // AK: 5,6 cm
+  '5.56x45':  { vaina: 4.47, d: 0.96, punta: 1.27, forma: 'cuello', nariz: 'punta', cuello: 0.66 },    // M16: 5,7 cm
+  '.30-30':   { vaina: 5.18, d: 1.07, punta: 1.3, forma: 'cuello', nariz: 'chata', cuello: 0.8, pestana: true },
+  '7.62x51':  { vaina: 5.12, d: 1.19, punta: 1.98, forma: 'cuello', nariz: 'punta', cuello: 0.72 },    // .308: 7,1 cm
+  '7.62x54R': { vaina: 5.37, d: 1.24, punta: 2.33, forma: 'cuello', nariz: 'punta', cuello: 0.7, pestana: true },   // Mosin y SVD: 7,7 cm
+  '.30-06':   { vaina: 6.35, d: 1.2, punta: 2.13, forma: 'cuello', nariz: 'punta', cuello: 0.72 },     // Garand: 8,5 cm
+  '.50BMG':   { vaina: 9.9, d: 2.04, punta: 3.9, forma: 'cuello', nariz: 'punta', cuello: 0.7 },       // Barrett y M2: 13,8 cm
+  '12':       { vaina: 6.6, d: 2.03, punta: 0, forma: 'escopeta' },                                    // cartucho del 12
+  '40mm':     { vaina: 4.6, d: 4.1, punta: 5.3, forma: 'granada' },                                    // granada de 40 × 46
+};
+const CALIBRE_ARMA = {
+  glock: '9x19', beretta92: '9x19', uzi: '9x19', mp5: '9x19', ppk: '.380', mauser: '7.63x25', colt1911: '.45', thompson: '.45', vector: '.45',
+  deagle: '.50AE', magnum: '.44', python: '.357', p90: '5.7x28', ak47: '7.62x39', m16: '5.56x45', winchester1894: '.30-30',
+  remington700: '7.62x51', minigun: '7.62x51', mosin: '7.62x54R', svd: '7.62x54R', garand: '.30-06', barrett: '.50BMG', m2: '.50BMG',
+  recortada: '12', mossberg: '12', spas12: '12', aa12: '12', saiga: '12', benelli: '12', rem870: '12', winchester1887: '12', m79: '40mm', mgl: '40mm',
+};
+const calibreDe = id => CALIBRES[CALIBRE_ARMA[id]] || CALIBRES['7.62x39'];
+const largoCartucho = cal => cal.vaina + cal.punta;
+
+// Tonos [luz, base, sombra]: latón y cobre apagados, como se ven de verdad, y sin contorno: el canto lo da la sombra
+const TONOS_MUNICION = {
+  laton: ['#dccb98', '#b39b62', '#7a683d'], cobre: ['#cfa587', '#a57553', '#6a4832'], plastico: ['#c47d72', '#99443b', '#632924'],
+  aluminio: ['#d4d2c7', '#a8a69b', '#727167'], oliva: ['#8d966d', '#5d6744', '#3a412b'], oro: ['#d8c88c', '#b39d57', '#7b6a36'], acero: ['#9a9da3', '#63666d', '#3c3e43'],
+};
+
+/* Un cartucho acostado sobre el eje x: el culote en x = 0 y la punta hacia +x, centrado en y = 0 (en cm).
+ * op.servida: solo la vaina, sin bala (la que sale por la ventana). Se pinta como un cilindro con la luz arriba: si el
+ * dibujo está dado vuelta, la luz se da vuelta con él para que siga viniendo de arriba. */
+function dibujarCartucho(ctx, cal, op = {}) {
+  const r = cal.d / 2, v = cal.vaina, p = op.servida ? 0 : cal.punta;
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fillRect(0, -r, v + p * 0.85, cal.d); return; }
+  const m = ctx.getTransform(), invertido = m.d < 0;
+  const cilindro = (tonos, rr, trazar) => {
+    const g = ctx.createLinearGradient(0, invertido ? rr : -rr, 0, invertido ? -rr : rr);
+    g.addColorStop(0, tonos[1]); g.addColorStop(0.22, tonos[0]); g.addColorStop(0.58, tonos[1]); g.addColorStop(1, tonos[2]);
+    ctx.beginPath(); trazar(); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+  };
+  const raya = (x, rr, alfa = 0.34, ancho = 0.09) => { ctx.fillStyle = `rgba(58, 42, 14, ${alfa})`; ctx.fillRect(x - ancho / 2, -rr, ancho, rr * 2); };
+  const T = TONOS_MUNICION;
+  if (cal.forma === 'escopeta') {   // vaina de plástico con el cierre en estrella y el culote de latón
+    const q = Math.min(0.42, r * 0.5);
+    cilindro(T.plastico, r * 0.97, () => { ctx.moveTo(1.3, -r * 0.97); ctx.lineTo(v - q, -r * 0.97); ctx.quadraticCurveTo(v, -r * 0.97, v, -r * 0.97 + q); ctx.lineTo(v, r * 0.97 - q); ctx.quadraticCurveTo(v, r * 0.97, v - q, r * 0.97); ctx.lineTo(1.3, r * 0.97); });
+    cilindro(T.laton, r, () => ctx.rect(0.16, -r, 1.34, cal.d));
+    cilindro(T.laton, r * 1.07, () => ctx.rect(0, -r * 1.07, 0.2, cal.d * 1.07));   // reborde
+    raya(1.5, r, 0.3);
+    return;
+  }
+  if (cal.forma === 'granada') {    // 40 mm: vaina corta de aluminio, cuerpo verde y ojiva dorada
+    const c0 = v, c1 = v + cal.punta * 0.34, fin = v + cal.punta;
+    cilindro(T.oro, r * 0.96, () => { ctx.moveTo(c1, -r * 0.96); ctx.bezierCurveTo(c1 + (fin - c1) * 0.62, -r * 0.96, fin, -r * 0.52, fin, 0); ctx.bezierCurveTo(fin, r * 0.52, c1 + (fin - c1) * 0.62, r * 0.96, c1, r * 0.96); });
+    cilindro(T.oliva, r * 0.98, () => ctx.rect(c0 - 0.05, -r * 0.98, c1 - c0 + 0.1, cal.d * 0.98));
+    cilindro(T.aluminio, r, () => ctx.rect(0.2, -r, v - 0.2, cal.d));
+    cilindro(T.aluminio, r * 1.04, () => ctx.rect(0, -r * 1.04, 0.3, cal.d * 1.04));
+    raya(v, r, 0.3, 0.14);
+    return;
+  }
+  const conCuello = cal.forma === 'cuello', rn = r * (conCuello ? cal.cuello ?? 0.68 : 0.93), hombro = v * 0.74, boca = v * 0.83;
+  if (p) cilindro(T.cobre, rn, () => {   // la bala va primero: la vaina le tapa la base
+    ctx.moveTo(v - 0.1, -rn); ctx.lineTo(v, -rn);
+    if (cal.nariz === 'punta') { ctx.quadraticCurveTo(v + p * 0.6, -rn * 0.92, v + p, 0); ctx.quadraticCurveTo(v + p * 0.6, rn * 0.92, v, rn); }
+    else if (cal.nariz === 'chata') { ctx.lineTo(v + p * 0.3, -rn); ctx.quadraticCurveTo(v + p * 0.9, -rn * 0.94, v + p, -rn * 0.5); ctx.lineTo(v + p, rn * 0.5); ctx.quadraticCurveTo(v + p * 0.9, rn * 0.94, v + p * 0.3, rn); ctx.lineTo(v, rn); }
+    else { ctx.bezierCurveTo(v + p * 0.72, -rn, v + p, -rn * 0.55, v + p, 0); ctx.bezierCurveTo(v + p, rn * 0.55, v + p * 0.72, rn, v, rn); }
+    ctx.lineTo(v - 0.1, rn);
+  });
+  cilindro(T.laton, r, () => {
+    ctx.moveTo(0, -r);
+    if (conCuello) { ctx.lineTo(hombro, -r); ctx.lineTo(boca, -rn); ctx.lineTo(v, -rn); ctx.lineTo(v, rn); ctx.lineTo(boca, rn); ctx.lineTo(hombro, r); }
+    else { ctx.lineTo(v, -r); ctx.lineTo(v, r); }
+    ctx.lineTo(0, r);
+  });
+  if (cal.pestana) cilindro(T.laton, r * 1.13, () => ctx.rect(0, -r * 1.13, Math.min(0.16, v * 0.06), cal.d * 1.13));   // reborde
+  else raya(Math.min(0.24, v * 0.09), r, 0.38);                                                                          // ranura del extractor
+  if (p) raya(v, rn, 0.3, 0.07);                                                                                         // boca de la vaina
+}
+// El mismo cartucho con el centro en (x, y) y apuntando hacia `ang` (0: hacia +x)
+function cartuchoEn(ctx, cal, x, y, ang = 0, op) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.translate(-(cal.vaina + (op && op.servida ? 0 : cal.punta)) / 2, 0);
+  dibujarCartucho(ctx, cal, op); ctx.restore();
+}
+
+/* ---------- Lo que lleva la mano al cargar (en cm; la punta de las balas hacia +x) ---------- */
+// Peine: las balas una sobre otra tomadas del culote por la lámina de acero. El en bloque del Garand lleva ocho en dos
+// hileras (de costado se ven cuatro). cuantas: las que le quedan (se van metiendo en el depósito de arriba hacia abajo)
+function dibujarPeine(ctx, armaId, cuantas = null) {
+  const cal = calibreDe(armaId), enBloque = armaId === 'garand', n = enBloque ? 4 : 5, paso = cal.d * 1.08, alto = n * paso, q = cuantas == null ? n : Math.max(0, Math.min(n, cuantas));
+  for (let k = n - q; k < n; k++) { ctx.save(); ctx.translate(0, -alto / 2 + paso * (k + 0.5)); dibujarCartucho(ctx, cal); ctx.restore(); }
+  if (Pincel.silueta) return;
+  const g = ctx.createLinearGradient(-0.5, 0, enBloque ? cal.vaina * 0.62 : 0.5, 0), A = TONOS_MUNICION.acero;
+  g.addColorStop(0, A[1]); g.addColorStop(0.3, A[0]); g.addColorStop(1, A[2]);
+  ctx.fillStyle = g;
+  if (enBloque) { ctx.beginPath(); ctx.roundRect(-0.35, -alto / 2 - 0.25, cal.vaina * 0.62, alto + 0.5, 0.35); ctx.fill(); }   // el en bloque envuelve la parte de atrás
+  else ctx.fillRect(-0.3, -alto / 2 - 0.2, 0.62, alto + 0.4);
+}
+// Cargador rápido de revólver: el cuerpo con su perilla y las balas saliendo (de costado se ven tres)
+function dibujarCargadorRapido(ctx, armaId) {
+  const cal = calibreDe(armaId), sep = cal.d * 1.32;
+  for (const k of [-1, 1, 0]) { ctx.save(); ctx.translate(0.5, k * sep); dibujarCartucho(ctx, cal); ctx.restore(); }
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fillRect(-2.9, -sep - 0.7, 3.6, sep * 2 + 1.4); return; }
+  const g = ctx.createLinearGradient(0, -sep - 0.7, 0, sep + 0.7);
+  g.addColorStop(0, '#4b4d54'); g.addColorStop(0.35, '#2f3136'); g.addColorStop(1, '#17181b');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(-1.3, -sep - 0.75, 2.0, sep * 2 + 1.5, 0.45); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-2.9, -0.75, 1.7, 1.5, 0.4); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(-1.2, -sep - 0.5, 1.8, 0.25);
+}
+// Tramo de cinta de ametralladora: las balas una al lado de la otra unidas por los eslabones
+function dibujarCinta(ctx, armaId, cuantas = 6) {
+  const cal = calibreDe(armaId), paso = cal.d * 1.2, x0 = -(cuantas - 1) * paso / 2;
+  for (let k = 0; k < cuantas; k++) { ctx.save(); ctx.translate(x0 + k * paso, cal.vaina * 0.5); ctx.rotate(-Math.PI / 2); dibujarCartucho(ctx, cal); ctx.restore(); }
+  if (Pincel.silueta) return;
+  const A = TONOS_MUNICION.acero;
+  for (const y of [cal.vaina * 0.08, -cal.vaina * 0.18]) { ctx.fillStyle = A[2]; ctx.fillRect(x0 - cal.d * 0.6, y - 0.42, (cuantas - 1) * paso + cal.d * 1.2, 0.84); ctx.fillStyle = A[1]; ctx.fillRect(x0 - cal.d * 0.6, y - 0.42, (cuantas - 1) * paso + cal.d * 1.2, 0.3); }
+}
+
+</script>
+  <script>
 /* ===== Recámara a la vista: con cada tiro el cerrojo va atrás y la vaina sale por la ventana =====
  * En las armas que se recargan solas (fusiles, metralletas, escopetas semiautomáticas) el cerrojo va atrás con cada
  * tiro. La ventana de expulsión, que en reposo muestra el costado del cerrojo, queda abierta un instante: se ve la
@@ -7460,7 +7606,7 @@ const RECAMARAS = {
   mossberg: { x: 9.5, y: -4.7, w: 7.0, h: 1.8, recorrido: 8, abre: e => Math.max(e.cerrojo || 0, e.bombeo || 0) },
   rem870:   { x: 10.1, y: -4.9, w: 6.8, h: 1.5, recorrido: 8, abre: e => Math.max(e.cerrojo || 0, e.bombeo || 0) },
   winchester1894: { x: 2.6, y: -5.7, w: 6.0, h: 1.2, recorrido: 6, abre: e => e.palanca || 0 },
-  winchester1887: { x: 5.5, y: -7.5, w: 7.0, h: 1.8, recorrido: 6, abre: e => e.palanca || 0 },
+  winchester1887: { x: 5.8, y: -6.6, w: 7.0, h: 1.7, recorrido: 6, abre: e => e.palanca || 0 },
   // Pistolas: con la corredera atrás se ve la recámara por la ventana (y queda abierta si se vació)
   glock:    { x: 1.6, y: -3.0, w: 3.0, h: 1.0, recorrido: 3.6, abre: e => e.corredera || 0 },
   colt1911: { x: 4.4, y: -3.0, w: 3.4, h: 1.0, recorrido: 3, abre: e => e.corredera || 0 },
@@ -7468,23 +7614,11 @@ const RECAMARAS = {
   deagle:   { x: -3.2, y: -4.7, w: 3.8, h: 1.2, recorrido: 4.2, abre: e => e.corredera || 0 },
 };
 
-// Medidas de la vaina en cm: largo, diámetro y largo de la punta de la bala nueva
-const VAINAS_CM = { pistola: [1.9, 0.95, 0.8], bala: [3.9, 1.1, 2.4], escopeta: [6.6, 1.9, 0], grande: [9.9, 2.0, 5.4] };
-
-function vainaEnVentana(ctx, tipo, cara, cy, h, nueva) {
-  const [largo, d0, punta] = VAINAS_CM[tipo] || VAINAS_CM.bala, d = Math.min(d0, h * 0.82), y0 = cy - d / 2;
-  if (tipo === 'escopeta') {   // vaina de plástico rojo con el culote de latón
-    pintar(ctx, Rc(cara + 1.3, y0, largo - 1.3, d), '#b4251e', { brillo: 0.35 });
-    pintar(ctx, Rc(cara, y0 - 0.06, 1.4, d + 0.12), MAT.laton, { brillo: 0.5 });
-    return;
-  }
-  const cuello = tipo === 'pistola' ? largo : largo * 0.78;   // las de fusil se angostan en el cuello
-  pintar(ctx, [[cara, y0], [cara + cuello, y0], [cara + largo, y0 + d * 0.2], [cara + largo, y0 + d * 0.8], [cara + cuello, y0 + d], [cara, y0 + d]], MAT.laton, { brillo: 0.5 });
-  ctx.fillStyle = 'rgba(60,40,0,0.55)'; ctx.fillRect(cara + 0.22, y0, 0.12, d);                    // ranura del culote
-  if (nueva && punta) {                                                                             // la bala que entra: punta de cobre
-    const yb = tipo === 'pistola' ? 0.08 : 0.2;
-    pintar(ctx, [[cara + largo, y0 + d * yb], [cara + largo + punta * 0.6, y0 + d * (yb + 0.04)], [cara + largo + punta, cy], [cara + largo + punta * 0.6, y0 + d * (1 - yb - 0.04)], [cara + largo, y0 + d * (1 - yb)]], MAT.cobre, { brillo: 0.5 });
-  }
+// La vaina tomada del extractor o la bala que entra: el cartucho de esa arma (js/municion.js), a su medida. Si la
+// ventana es más baja que la vaina, se ve lo que entra por ella
+function vainaEnVentana(ctx, armaId, cara, cy, h, nueva) {
+  const cal = calibreDe(armaId), k = Math.min(1, h * 0.82 / cal.d);
+  ctx.save(); ctx.translate(cara, cy); ctx.scale(1, k); dibujarCartucho(ctx, cal, { servida: !nueva }); ctx.restore();
 }
 
 // La ventana con el cerrojo adentro, en cm. ab: cuánto está atrás el cerrojo
@@ -7498,7 +7632,7 @@ function ventanaRecamara(ctx, v, e) {
   ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
   ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   ctx.fillStyle = 'rgba(150,155,165,0.3)'; ctx.fillRect(x + w - 0.3, y + h * 0.18, 0.3, h * 0.64);   // canto de la recámara
-  if (e.recamara && ab > 0.02) vainaEnVentana(ctx, ARMA_VAINA[v.id] || 'bala', cara, y + h * 0.52, h, e.recamara === 'entra');
+  if (e.recamara && ab > 0.02) vainaEnVentana(ctx, v.id, cara, y + h * 0.52, h, e.recamara === 'entra');
   // El cerrojo, de la cara hacia atrás: costado con luz, la cara oscura, la uña del extractor y el surco
   const largo = Math.max(w, v.recorrido) + w + 1;
   pintar(ctx, Rc(cara - largo, y + h * 0.06, largo, h * 0.88), v.color || '#5d6169', { brillo: 0.5 });
@@ -7512,12 +7646,11 @@ function ventanaRecamara(ctx, v, e) {
   trazo(ctx, 'rgba(0,0,0,0.5)', 0.1, [[x, y], [x, y + h]]);
 }
 
-// Tipo de vaina de cada arma (el mismo que la que vuela)
-const ARMA_VAINA = {};
+// Cada ventana sabe de qué arma es (la vaina que se ve es la de su calibre) y de ahí sale la vaina que vuela
 for (const [id, v] of Object.entries(RECAMARAS)) {
   const d = DIBUJO_ARMAS[id];
   if (!d) continue;
-  v.id = id; ARMA_VAINA[id] = d.casquillo || 'bala';
+  v.id = id;
   d.expulsion = { x: (v.x + v.w * 0.55) * CM, y: (v.y + v.h * 0.5) * CM };   // la vaina sale de la ventana
   if (v.enModelo) continue;
   const dibujar = d.dibujar;
@@ -7545,15 +7678,8 @@ for (const [id, v] of Object.entries(RECAMARAS)) {
 const cajaPuntos = pts => { let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (const [x, y] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } return { x0, x1, y0, y1 }; };
 const unidad = (x, y) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
 
-// La bala de arriba del cargador nuevo, acostada y con la punta hacia la boca del arma
-const BALAS_CM = { pistola: [1.9, 0.95, 0.9], bala: [3.9, 1.1, 2.4], escopeta: [6.6, 1.9, 0], grande: [9.9, 2.0, 5.4] };
-function balaArriba(ctx, x, y, tipo) {
-  if (Pincel.silueta) return;
-  const [l, d, p] = BALAS_CM[tipo] || BALAS_CM.bala, x0 = x - (l + p) / 2, y0 = y - d;
-  if (tipo === 'escopeta') { pintar(ctx, Rc(x0 + 1.3, y0, l - 1.3, d), '#b4251e', { brillo: 0.35 }); pintar(ctx, Rc(x0, y0 - 0.05, 1.4, d + 0.1), MAT.laton); return; }
-  pintar(ctx, Rc(x0, y0, l, d), MAT.laton, { brillo: 0.5 });
-  pintar(ctx, [[x0 + l, y0 + d * 0.1], [x0 + l + p * 0.6, y0 + d * 0.16], [x0 + l + p, y0 + d / 2], [x0 + l + p * 0.6, y0 + d * 0.84], [x0 + l, y0 + d * 0.9]], MAT.cobre, { brillo: 0.4 });
-}
+// La bala de arriba del cargador nuevo: el cartucho de esa arma (js/municion.js), acostado y con la punta hacia la boca
+function balaArriba(ctx, x, y, armaId) { const cal = calibreDe(armaId); cartuchoEn(ctx, cal, x, y - cal.d / 2); }
 
 // Cuerpo entero de un cargador de pistola: de la base (abajo) hacia arriba, inclinado como la empuñadura
 function cuerpoCargadorPistola(ctx, s) {
@@ -7569,22 +7695,22 @@ function cuerpoCargadorPistola(ctx, s) {
 
 const CARGADORES = {
   /* ---------- Pistolas (dentro de la empuñadura) ---------- */
-  glock: { agarre: [-2.2, 10.7], eje: unidad(-0.33, 1), bala: 'pistola', cuerpo: { abajo: [-2.0, 10.3], ang: 0.34, largo: 10.4, ancho: 3.2, cuerpo: '#26272b' },
+  glock: { agarre: [-2.2, 10.7], eje: unidad(-0.33, 1), cuerpo: { abajo: [-2.0, 10.3], ang: 0.34, largo: 10.4, ancho: 3.2, cuerpo: '#26272b' },
     dibujar(ctx, suelto) { if (suelto) cuerpoCargadorPistola(ctx, this.cuerpo); pintar(ctx, GLOCK_FORMAS.base, GLOCK_TIERRA, { mate: true, brillo: 0.15 }); } },
-  colt1911: { agarre: [-2.0, 9.6], eje: unidad(-0.32, 1), bala: 'pistola', cuerpo: { abajo: [-1.9, 9.6], ang: 0.31, largo: 9.6, ancho: 3.4, cuerpo: '#3a3d45' },
+  colt1911: { agarre: [-2.0, 9.6], eje: unidad(-0.32, 1), cuerpo: { abajo: [-1.9, 9.6], ang: 0.31, largo: 9.6, ancho: 3.4, cuerpo: '#3a3d45' },
     dibujar(ctx, suelto) {
       if (!suelto) return;   // puesto no se ve: la base queda al ras de la empuñadura
       cuerpoCargadorPistola(ctx, this.cuerpo);
       pintar(ctx, suave([[-3.9, 9.4], [0.3, 9.4], [0.3, 10.1], [-3.9, 10.1]], 0.2, 2), '#2f3238', { brillo: 0.3 });
     } },
-  beretta92: { agarre: [-0.3, 9.1], eje: unidad(-0.2, 1), bala: 'pistola', cuerpo: { abajo: [-0.25, 8.65], ang: 0.2, largo: 8.5, ancho: 3.2, cuerpo: '#2c2d31' },
+  beretta92: { agarre: [-0.3, 9.1], eje: unidad(-0.2, 1), cuerpo: { abajo: [-0.25, 8.65], ang: 0.2, largo: 8.5, ancho: 3.2, cuerpo: '#2c2d31' },
     dibujar(ctx, suelto) { if (suelto) cuerpoCargadorPistola(ctx, this.cuerpo); pintar(ctx, B92_FORMAS.base, '#232427', { brillo: 0.3 }); } },
-  ppk: { agarre: [-2.9, 8.3], eje: unidad(-0.27, 1), bala: 'pistola', cuerpo: { abajo: [-2.85, 7.8], ang: 0.27, largo: 7.6, ancho: 2.8, cuerpo: '#3a3d45' },
+  ppk: { agarre: [-2.9, 8.3], eje: unidad(-0.27, 1), cuerpo: { abajo: [-2.85, 7.8], ang: 0.27, largo: 7.6, ancho: 2.8, cuerpo: '#3a3d45' },
     dibujar(ctx, suelto) { if (suelto) cuerpoCargadorPistola(ctx, this.cuerpo); pintar(ctx, WP_FORMAS.base, '#1d1d1f', { brillo: 0.25 }); } },
-  deagle: { agarre: [-2.9, 10.3], eje: unidad(-0.27, 1), bala: 'grande', cuerpo: { abajo: [-2.6, 9.95], ang: 0.27, largo: 9.8, ancho: 4.3, cuerpo: '#3a3d45' },
+  deagle: { agarre: [-2.9, 10.3], eje: unidad(-0.27, 1), cuerpo: { abajo: [-2.6, 9.95], ang: 0.27, largo: 9.8, ancho: 4.3, cuerpo: '#3a3d45' },
     dibujar(ctx, suelto) { if (suelto) cuerpoCargadorPistola(ctx, this.cuerpo); pintar(ctx, DE_FORMAS.base, '#c9c6bf', { brillo: 0.5 }); } },
   // Mauser C96 (el de diez, extraíble): delante del guardamonte; puesto, la parte de arriba queda en el cajón
-  mauser: { agarre: [6.0, 10.8], eje: [0, 1], bala: 'pistola',
+  mauser: { agarre: [6.0, 10.8], eje: [0, 1],
     dibujar(ctx, suelto) {
       if (suelto) { const b = cajaPuntos(MZ_FORMAS.cargador); pintar(ctx, Rc(b.x0 + 0.3, b.y0 - 2.2, b.x1 - b.x0 - 0.6, 2.6), '#4c4a47', { brillo: 0.3 }); }
       pintar(ctx, MZ_FORMAS.cargador, '#4c4a47', { brillo: 0.25 });
@@ -7593,13 +7719,13 @@ const CARGADORES = {
 
   /* ---------- Metralletas ---------- */
   // Uzi: entra por la empuñadura; puesto asoma la parte de abajo, suelto se ve el largo entero
-  uzi: { agarre: [0.7, 12.6], eje: [0, 1], bala: 'pistola',
+  uzi: { agarre: [0.7, 12.6], eje: [0, 1],
     dibujar(ctx, suelto) {
       if (suelto) { const b = cajaPuntos(UZ_FORMAS.cargador); pintar(ctx, suave(Rc(b.x0 + 0.2, b.y0 - 10.6, b.x1 - b.x0 - 0.4, 11.2), 0.3, 2), MAT.pavonado, { brillo: 0.3 });
         for (let y = b.y0 - 9; y < b.y0; y += 1.6) punto(ctx, b.x0 + 0.8, y, 0.2, '#0b0b0d'); }
       pintar(ctx, UZ_FORMAS.cargador, MAT.pavonado, { brillo: 0.3 });
     } },
-  ak47: { agarre: [21.0, 12.7], eje: unidad(0.39, 0.92), bala: 'bala',
+  ak47: { agarre: [21.0, 12.7], eje: unidad(0.39, 0.92),
     dibujar(ctx, suelto) {
       const carg = suave([[10.0, -0.4], [16.1, -0.4], [18.2, 4.6], [21.5, 8.7], [25.0, 11.6], [20.8, 16.9], [16.8, 12.1], [12.8, 6.0]], 0.6, 5);
       pintar(ctx, carg, '#2c2a38');
@@ -7612,12 +7738,12 @@ const CARGADORES = {
       pintar(ctx, suave([[20.4, 16.4], [25.0, 10.9], [25.8, 11.6], [21.2, 17.4]], 0.3, 2), '#2c2b34');   // base
       if (!suelto) sombraContacto(ctx, carg, -0.4, 1.4, 0.7);
     } },
-  m16: { agarre: M16(460, 278), eje: unidad(12, 96), bala: 'bala',
+  m16: { agarre: M16(460, 278), eje: unidad(12, 96),
     dibujar(ctx) {
       pintar(ctx, M16_FORMAS.cargador, '#5d6268', { mate: true, brillo: 0.15 });
       if (!Pincel.silueta) for (const x of [428, 446, 464]) trazo(ctx, 'rgba(0,0,0,0.3)', 0.3, [M16(x, 196), M16(x + 12, 292)]);
     } },
-  mp5: { agarre: [17.9, 13.4], eje: unidad(2.4, 11.6), bala: 'pistola',
+  mp5: { agarre: [17.9, 13.4], eje: unidad(2.4, 11.6),
     dibujar(ctx, suelto) {
       const carg = suave([[12.6, 0.2], [17.0, 0.2], [19.4, 11.8], [21.6, 17.0], [17.0, 17.9], [15.0, 11.8]], 0.6, 4);
       pintar(ctx, carg, '#3a3b39');
@@ -7626,17 +7752,17 @@ const CARGADORES = {
       if (!suelto) sombraContacto(ctx, carg, 0.2, 1.6, 0.65);
     } },
   // Thompson: el tambor de 50
-  thompson: { agarre: TH(230, 128), eje: [0, 1], bala: 'pistola',
+  thompson: { agarre: TH(230, 128), eje: [0, 1],
     dibujar(ctx) { pintar(ctx, TH_FORMAS.tambor, '#1d1e21', { brillo: 0.4 }); trazo(ctx, 'rgba(255,255,255,0.12)', 0.3, [TH(230, 55), TH(230, 140)]); } },
   // Vector: usa cargadores de pistola; puesto asoma la parte de abajo del pozo
-  vector: { agarre: [15.1, 21.4], eje: unidad(-1.0, 13.2), bala: 'pistola',
+  vector: { agarre: [15.1, 21.4], eje: unidad(-1.0, 13.2),
     dibujar(ctx, suelto) {
       pintar(ctx, suave(suelto ? [[14.3, 4.4], [18.6, 4.4], [18.2, 11.2], [17.2, 24.4], [12.6, 24.4]] : [[13.8, 11.2], [18.2, 11.2], [17.2, 24.4], [12.6, 24.4]], 0.5, 3), MAT.polimero);
       trazo(ctx, 'rgba(255,255,255,0.06)', 0.3, [[15.4, suelto ? 5.0 : 12.0], [14.8, 23.6]]);
       pintar(ctx, suave(Rc(12.3, 23.6, 5.2, 1.4), 0.4, 2), '#2a2b2f');
     } },
   // P90: el cargador va acostado arriba, transparente, con las balas cruzadas a la vista
-  p90: { agarre: [-3.3, -4.4], eje: unidad(0.25, -1), ejeLargo: [1, 0], encima: true, salida: 0.45, bala: 'pistola',   // va sobre el arma: en la mano se dibuja después
+  p90: { agarre: [-3.3, -4.4], eje: unidad(0.25, -1), ejeLargo: [1, 0], encima: true, salida: 0.45,   // va sobre el arma: en la mano se dibuja después
     dibujar(ctx) {
       pintar(ctx, PN_FORMAS.cargador, '#8e877a', { brillo: 0.35 });
       if (!Pincel.silueta) {
@@ -7648,24 +7774,24 @@ const CARGADORES = {
     } },
 
   /* ---------- Fusiles y escopetas ---------- */
-  barrett: { agarre: BR(446, 795), ejeLargo: [1, 0], eje: unidad(BR(440, 800)[0] - BR(440, 752)[0], BR(440, 800)[1] - BR(440, 752)[1]), bala: 'grande',
+  barrett: { agarre: BR(446, 795), ejeLargo: [1, 0], eje: unidad(BR(440, 800)[0] - BR(440, 752)[0], BR(440, 800)[1] - BR(440, 752)[1]),
     dibujar(ctx) {
       pintar(ctx, BR_FORMAS.cargador, '#202227', { brillo: 0.3 });
       if (!Pincel.silueta) for (const y of [775, 788]) trazo(ctx, 'rgba(255,255,255,0.08)', 0.4, [BR(412, y), BR(472, y + 9)]);
     } },
-  svd: { agarre: [11.6, 7.0], eje: unidad(2.0, 10.0), bala: 'bala',
+  svd: { agarre: [11.6, 7.0], eje: unidad(2.0, 10.0),
     dibujar(ctx) {
       pintar(ctx, suave([[6.8, -2.0], [12.8, -2.0], [13.4, 2.6], [14.8, 8.0], [14.6, 9.0], [9.2, 9.8], [8.6, 9.2], [7.6, 4.0], [6.8, 0.6]], 0.5, 3), MAT.pavonado);
       pintar(ctx, suave([[8.4, 0.2], [11.8, 0.2], [12.6, 4.0], [13.4, 7.8], [9.8, 8.4], [9.0, 4.2]], 0.5, 3), '#1b1c20', { mate: true });
       if (!Pincel.silueta) for (let k = 0; k < 5; k++) trazo(ctx, 'rgba(255,255,255,0.09)', 0.3, [[8.8 + k * 0.25, 1.0 + k * 1.5], [12.0 + k * 0.3, 1.0 + k * 1.5]]);
       pintar(ctx, suave([[8.8, 9.2], [14.8, 8.4], [15.0, 9.2], [9.2, 10.2]], 0.3, 2), MAT.acero);
     } },
-  aa12: { agarre: AA(324, 197), eje: [0, 1], bala: 'escopeta',
+  aa12: { agarre: AA(324, 197), eje: [0, 1],
     dibujar(ctx) {
       pintar(ctx, AA_FORMAS.cargador, '#6b6e72', { mate: true, brillo: 0.18 });
       if (!Pincel.silueta) for (const x of [312, 324, 336]) trazo(ctx, 'rgba(0,0,0,0.22)', 0.3, [AA(x, 112), AA(x, 222)]);
     } },
-  saiga: { agarre: [12.1, 11.0], eje: unidad(1.8, 15.6), bala: 'escopeta',
+  saiga: { agarre: [12.1, 11.0], eje: unidad(1.8, 15.6),
     dibujar(ctx) {
       pintar(ctx, suave([[6.8, -2.0], [15.0, -2.0], [16.8, 13.6], [16.4, 14.6], [8.6, 15.4], [7.8, 14.4]], 0.6, 3), MAT.polimero, { mate: true });
       if (!Pincel.silueta) for (let k = 0; k < 6; k++) trazo(ctx, 'rgba(255,255,255,0.08)', 0.35, [[8.0 + k * 0.2, 1.5 + k * 2.1], [15.4 + k * 0.22, 0.8 + k * 2.1]]);
@@ -7684,7 +7810,7 @@ CARGADORES.thompson.boca = null; CARGADORES.p90.boca = null; CARGADORES.mauser.b
 // Cargador suelto (en la mano o en el piso), con la bala de arriba si está lleno
 function dibujarCargadorSuelto(ctx, M, lleno) {
   M.dibujar(ctx, true);
-  if (lleno && M.boca) balaArriba(ctx, M.boca[0], M.boca[1], M.bala);
+  if (lleno && M.boca) balaArriba(ctx, M.boca[0], M.boca[1], M.id);
 }
 const ES_CARGADOR = new Set(['cargador', 'cargador-curvo', 'cargador-plano', 'tambor-cargador']);
 
@@ -9020,7 +9146,18 @@ Object.assign(Escenario, {
 const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;   // el salto llega a unos 120 px de alto
 const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay que saltar
 const ORIGEN_ARMA = { x: 12, y: -47 };   // mano del gatillo, respecto de los pies
-const CADERA = { x: -4, y: -30 };        // de ahí saca cargadores, balas y cartuchos
+// De dónde saca la mano de apoyo lo que carga. Todo queda por delante del cuerpo y cerca del arma: antes era un solo
+// punto detrás de la cadera y el brazo cruzaba hasta la espalda en cada viaje (con las armas que cargan de a una, ocho
+// veces seguidas), más atrás de lo que da el hombro.
+const BOLSAS = {
+  cargador: { x: 8.5, y: -38 },          // portacargadores del cinturón, adelante
+  balas: { x: 10.5, y: -42 },            // canana del pecho: balas y cartuchos sueltos, peines y cargadores rápidos
+  cohete: { x: 1, y: -33 },              // bolsa al costado
+  granada: { x: 6, y: -36 },
+  cinta: { x: 2, y: -32 },               // cajón de cintas de la M2, al pie del trípode
+};
+const BOLSA_DE = { 'cargador-pistola': 'cargador', cargador: 'cargador', ignicion: 'cargador', tambor: 'balas', 'tambor-rapido': 'balas', peine: 'balas', cerrojo: 'balas',
+  palanca: 'balas', cartuchos: 'balas', quiebre: 'balas', cinta: 'cinta', cohete: 'cohete', granada: 'granada' };
 const DETRAS_M2 = 20;                    // a cuánto detrás de la M2 se para el tirador
 // El cuerpo se dibuja 16 % más grande que su esqueleto (proporciones reales sin quedar más bajo que los zombies):
 // todo punto del dibujo que se lleva al mundo (boca del arma, cargador, pasador) se multiplica por esto
@@ -9041,6 +9178,7 @@ const POSTURAS = {
 /* Golpe cuerpo a cuerpo: dónde va la mano del gatillo y cuánto se inclina el arma (0 = parada hacia arriba)
  * en guardia, con el arma alzada atrás y al terminar el golpe adelante y abajo. */
 const GOLPE = { guardia: { x: 13, y: -47, a: -0.15 }, guardiaUnaMano: { x: 14, y: -46, a: 0.35 }, alzada: { x: 2, y: -68, a: -2.1 }, golpe: { x: 25, y: -42, a: 1.85 }, lanzar: { x: 24, y: -56, a: 1.1 } };
+const masSuave = t => t * t * t * (t * (t * 6 - 15) + 10);   // arranca y llega sin tirón (velocidad y aceleración cero en las puntas)
 const mezclaPose = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, a: a.a + (b.a - a.a) * k });
 
 // Armas de acción manual: después de cada tiro se acciona el mecanismo y recién ahí sale el casquillo
@@ -9057,7 +9195,7 @@ const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
  *   llegada  fracción de la fase que tarda la mano en llegar; el resto es la acción
  *   ab, co   estado al terminar la fase del arma abierta (tambor, cerrojo, quiebre, tapa) y de la corredera trabada
- *   snap     si está, ab/co cambian de golpe en ese punto de la acción en vez de gradualmente
+ *   snap     si está, ab/co encastran de golpe en ese punto de la acción (en un quinto de la acción) en vez de gradualmente
  *   incl     inclinación del arma al terminar la fase (radianes, positivo = boca abajo)
  *   pulso    { que: corredera | bombeo | palanca, recorrido } va y vuelve durante la acción
  *   tiron, offset, presionar  desplazamientos extra de la mano
@@ -9428,16 +9566,16 @@ class Jugador {
         break;
 
       case 'palanca':   // por la ventana lateral, de a una; si estaba vacía, palanca para alimentar la recámara
-        l.fase('girar', 220, { a: 'arma', incl: -0.3 });
+        l.fase('girar', 220, { a: 'cadera', incl: -0.3 });   // mientras gira el arma, la mano ya va a la canana
         deAUna(arma.cargador - this.municionActual(), (T - 800) / arma.cargador, -0.3, unidad, unidad === 'cartucho' ? 'cartucho' : 'bala');
         if (vacio) l.fase('palanca', 400, { a: 'arma', llegada: 0.2, incl: 0, pulso: { que: 'palanca', recorrido: 0 }, eventos: [[0.25, s('palanca')]] });
         l.fase('volver', 180, { a: 'arma', incl: 0 });
         break;
 
       case 'cartuchos':   // escopeta de bombeo: se da vuelta, cartucho por cartucho por abajo, y bombea si estaba vacía
-        l.fase('girar', 200, { a: 'arma', incl: -0.3 });
+        l.fase('girar', 200, { a: 'cadera', incl: -0.3 });   // mientras gira el arma, la mano ya va a la canana
         deAUna(arma.cargador - this.municionActual(), (T - 680) / arma.cargador, -0.3, 'cartucho', 'cartucho');
-        if (vacio) l.fase('bombear', 320, { a: 'corredera', llegada: 0.25, incl: 0, pulso: { que: 'bombeo', recorrido: 0 }, eventos: [[0.3, s('bombear')]] });
+        if (vacio) l.fase('bombear', 320, { a: 'corredera', llegada: 0.4, incl: 0, pulso: { que: 'bombeo', recorrido: 0 }, eventos: [[0.45, s('bombear')]] });
         l.fase('volver', 160, { a: 'arma', incl: 0 });
         break;
 
@@ -9461,9 +9599,13 @@ class Jugador {
         break;
 
       case 'cohete':   // bazuca: cohete de la espalda, se mete por la cola del tubo hasta que traba
-        l.fase('cadera', 700, { a: 'cadera', incl: -0.05, mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0.5, 1]], alInicio: () => { this.sinCargador = true; } });
-        l.fase('cargar', 900, { a: 'cargador', mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0, 0.9]], eventos: [[0.85, llenar('cargador-poner')]] });
-        l.fase('volver', 500, { a: 'arma', incl: 0 });
+        // La bazuca se carga por la cola: el tubo se corre hacia adelante y baja la boca, así la cola sube hasta detrás de
+        // la oreja y la mano llega por arriba del hombro (antes el brazo iba recto hacia atrás, 89° de extensión: el hombro
+        // da 60). El RPG-7 se carga por la boca: no hace falta
+        const corre = arma.id === 'rpg7' ? { x: 0, y: 0 } : { x: 16, y: 6 }, baja = arma.id === 'rpg7' ? -0.05 : 0.5;
+        l.fase('cadera', 700, { a: 'cadera', incl: baja, org: corre, mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0.5, 1]], alInicio: () => { this.sinCargador = true; } });
+        l.fase('cargar', 900, { a: 'cargador', incl: baja, org: corre, mano: [[arma.id === 'rpg7' ? 'coheteRpg' : 'cohete', 0, 0.9]], eventos: [[0.85, llenar('cargador-poner')]] });
+        l.fase('volver', 500, { a: 'arma', incl: 0, org: { x: 0, y: 0 } });
         l.ajustar(T);
         break;
 
@@ -9590,7 +9732,7 @@ class Jugador {
       const previo = i > 0 ? linea.fases[i - 1] : linea.inicial;
       p = limitar((ahora - f.desde) / Math.max(1, f.hasta - f.desde), 0, 1);
       const llegada = f.llegada ?? 1;
-      pm = suavizar(Math.min(1, p / llegada));
+      pm = masSuave(Math.min(1, p / llegada));
       pAccion = llegada >= 1 ? p : (p - llegada) / (1 - llegada);
       q = suavizar(limitar(pAccion, 0, 1));
       e.incl = previo.incl + (f.incl - previo.incl) * suavizar(p);
@@ -9598,7 +9740,8 @@ class Jugador {
         const a = previo.org || { x: 0, y: 0 }, b = f.org || a, k = suavizar(p);
         e.origen.x += a.x + (b.x - a.x) * k; e.origen.y += a.y + (b.y - a.y) * k;
       }
-      const valor = clave => f.snap !== undefined ? (pAccion >= f.snap ? f[clave] : previo[clave]) : previo[clave] + (f[clave] - previo[clave]) * q;
+      // snap: la pieza encastra de golpe en ese punto de la acción; es rápido (un quinto de la acción) pero no un salto de un cuadro
+      const valor = clave => previo[clave] + (f[clave] - previo[clave]) * (f.snap !== undefined ? suavizar(limitar((pAccion - f.snap) / 0.2, 0, 1)) : q);
       e.abierto = valor('ab');
       e.corredera = valor('co');
       if (f.pulso) {                                                     // cerrojo, bomba o palanca que va y vuelve
@@ -9607,11 +9750,15 @@ class Jugador {
         // Por la ventana: al accionar después de un tiro sale la vaina (hasta la mitad) y después entra otra bala;
         // al cargar la primera, la recámara estaba vacía y solo entra
         e.recamara = this.ciclo === linea && q < 0.5 ? 'sale' : q >= 0.5 && municion > 0 ? 'entra' : null;
-        if (f.pulso.que === 'palanca') e.manoGatillo = { x: 2 * v, y: 5 * v };
+        if (f.pulso.que === 'palanca') {   // la mano del gatillo va en el lazo de la palanca: baja y se adelanta con ella
+          const lazo = d.moviles && d.moviles.gatillo, [mx, my] = lazo ? lazo(e) : [2 * v / CM, 5 * v / CM];
+          e.manoGatillo = { x: mx * CM, y: my * CM };
+        }
       }
       if (this.recarga) { const t = Math.min(ahora - linea.inicio, linea.fin - ahora); e.mirar = suavizar(limitar(t / 200, 0, 1)); }
     }
     if (this.montada) { e.incl = 0; e.tapa = e.abierto; }
+    else if (corta && linea && (linea.tipo === 'tambor' || linea.tipo === 'tambor-rapido')) { e.origen.x -= 6 * e.mirar; e.origen.y += 8 * e.mirar; }   // el revólver baja a la altura de la canana
     else { e.origen.x -= 4 * e.mirar; e.origen.y += 3 * e.mirar; }     // durante la recarga el arma se acerca al cuerpo
     if (corta) e.incl -= empuje * 0.3;                                  // la pistola levanta la boca al disparar
     else if (!this.montada) e.incl -= empuje * 0.05;                    // el fusil, apenas
@@ -9621,8 +9768,17 @@ class Jugador {
     const c = Math.cos(e.incl), s = Math.sin(e.incl);
     const enArma = pt => ({ x: e.origen.x + pt.x * c - pt.y * s, y: e.origen.y + pt.x * s + pt.y * c });
     const CLAVES = { arma: 'manoDelantera', cargador: 'cargador', corredera: 'corredera' };
+    // Si el guardamanos queda lejos para el brazo, la mano de apoyo se toma más atrás sobre el arma (hasta 12 unidades),
+    // así el codo queda doblado debajo y no con el brazo tieso. Se calcula acá y no al dibujar: ese es el lugar de donde
+    // sale y adonde vuelve la mano en la recarga (antes saltaba hasta 8 unidades de un cuadro al otro al empezarla)
+    let atrasApoyo = 0;
+    if (!this.montada && (d.agarre === 'hombro' || d.agarre === 'pecho')) {
+      const q = enArma(d.manoDelantera), vx = q.x + retroX - (d.agarre === 'hombro' ? 6 : 3), vy = q.y + retroY + 2 + 52;   // desde el hombro, sin el retroceso
+      const R = Math.sqrt(Math.pow((HUESOS.brazo + HUESOS.antebrazo) * 0.95, 2) - 25), va = vx * c + vy * s, falta = vx * vx + vy * vy - R * R;
+      if (falta > 0) atrasApoyo = limitar(va * va >= falta ? va - Math.sqrt(va * va - falta) : va, 0, 12);
+    }
     const punto = nombre => {
-      if (nombre === 'cadera') return { x: CADERA.x, y: CADERA.y };
+      if (nombre === 'cadera') return BOLSAS[this.montada ? 'cinta' : BOLSA_DE[arma.recargaTipo] || 'cargador'];
       if (nombre === 'frente') return { x: 19, y: -58 };                 // brazo de apoyo estirado adelante, para el lanzamiento
       if (nombre === 'anilla') return enArma({ x: 0.3 * CM, y: -5.6 * CM });
       if (nombre === 'agarreCargador') {   // donde la mano agarra el cargador puesto (js/cargadores.js)
@@ -9630,10 +9786,10 @@ class Jugador {
         if (M) return enArma({ x: M.agarre[0] * CM, y: M.agarre[1] * CM });
         nombre = 'cargador';
       }
-      const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave];
-      if (!movil) return enArma(ancla);
+      const clave = CLAVES[nombre], ancla = d[clave], movil = d.moviles && d.moviles[clave], atras = nombre === 'arma' ? atrasApoyo : 0;
+      if (!movil) return enArma({ x: ancla.x - atras, y: ancla.y });
       const [dx, dy] = movil(e);
-      return enArma({ x: ancla.x + dx * CM, y: ancla.y + dy * CM });
+      return enArma({ x: ancla.x + dx * CM - atras, y: ancla.y + dy * CM });
     };
     e.apoyo = punto('arma');
     e.reposoApoyo = { x: e.apoyo.x + retroX, y: e.apoyo.y + retroY };   // dónde estaría sin retroceso
@@ -9654,36 +9810,39 @@ class Jugador {
       return { x: b.x + o.x, y: b.y + o.y };
     };
     const inicio = finDe(i - 1), destino = punto(f.a);
-    const o0 = { x: f.offset ? f.offset.x : 0, y: f.offset ? f.offset.y : 0 }, oq = desplazamiento(f, q);
+    // (o0 va por el mismo eje que oq: con el crudo, la mano saltaba al empezar a poner un cargador inclinado; con el de la P90, 14 unidades)
+    const o0 = desplazamiento(f, 0), oq = desplazamiento(f, q);
     e.mano = { x: inicio.x + (destino.x + o0.x - inicio.x) * pm + (oq.x - o0.x), y: inicio.y + (destino.y + o0.y - inicio.y) * pm + (oq.y - o0.y) };
+    // La mano no va en línea recta: el brazo gira desde el hombro y el codo, así que el recorrido hace una comba hacia abajo
+    const tramoViaje = Math.hypot(destino.x + o0.x - inicio.x, destino.y + o0.y - inicio.y), comba = Math.sin(pm * Math.PI) * Math.min(3.2, tramoViaje * 0.13);
+    e.mano.y += comba; e.mano.x -= comba * 0.3;
 
     if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
     e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
-    if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q }; }
+    if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q, incl: e.incl }; }
 
-    // 4) Cómo va la mano: abierta mientras viaja vacía o suelta algo, se cierra al agarrar, cerrada mientras sostiene;
-    // y hacia dónde apunta (e.dirMano, en el marco del cuerpo; null: sigue al antebrazo). El dibujo limita cuánto
-    // dobla la muñeca, así que el que gira es el brazo entero.
-    const cerrar = (desde, k) => desde + (0.85 - desde) * suavizar(limitar(k, 0, 1));
-    const objeto = e.enMano;
-    if (objeto) {
-      const chico = objeto === 'bala' || objeto === 'cartucho' || objeto === 'granada40' || objeto === 'speedloader' || objeto === 'pasador';
-      e.cierre = chico ? 0.62 : 0.82;                                  // pinza para lo chico, puño para cargadores y cohetes
-      e.dirMano = e.incl - (chico ? 0.55 : 0.1);                       // la punta de los dedos hacia el arma
-    } else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) {
-      e.cierre = 0.1; e.dirMano = null;                                // abre la mano: suelta el cargador o la granada
-    } else if (pm < 1) {
-      e.cierre = 0.3; e.dirMano = null;                                // viajando: mano entreabierta, sigue al brazo
-    } else if (f.a === 'cadera') {
-      e.cierre = cerrar(0.25, (p - 0.35) / 0.15); e.dirMano = 1.35;     // dedos hacia abajo, al portacargador
-    } else if (f.a === 'corredera') {
+    // 4) Qué está haciendo la mano de apoyo (e.gesto) y cuánto cerró ya sobre lo que agarra (e.agarra, 0..1). La pose
+    // la arma el dibujo con la anatomía (js/anatomia.js): cada gesto sigue al antebrazo dentro de lo que da la muñeca,
+    // y la mano pasa de uno a otro girando y cerrando de a poco, no de golpe.
+    const objeto = e.enMano, cerrando = k => suavizar(limitar(k, 0, 1));
+    const CHICOS = { bala: 1, cartucho: 1, granada40: 1, speedloader: 1, peine: 1, pasador: 1 };
+    e.agarra = 1;
+    if (objeto) e.gesto = CHICOS[objeto] ? 'pinza' : ES_CARGADOR.has(objeto) ? 'cargador' : 'punio';
+    else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) e.gesto = 'suelta';       // abre la mano: suelta el cargador o la granada
+    else if (pm < 1 && tramoViaje > 1.5) { e.gesto = 'viaja'; e.agarra = pm; }                      // en camino, entreabierta
+    else if (f.a === 'cadera') { e.gesto = 'bolsa'; e.agarra = cerrando((p - 0.35) / 0.15); }       // dedos hacia abajo, a la bolsa
+    else if (f.a === 'corredera') {
       const palmea = /palmada|liberar/.test(f.nombre);
-      e.cierre = palmea ? 0.05 : cerrar(0.3, pAccion / 0.25); e.dirMano = palmea ? e.incl - 0.4 : null;
-    } else if (f.a === 'cargador') {
-      e.cierre = cerrar(0.3, pAccion / 0.3); e.dirMano = e.incl - 0.1;   // agarra el cargador o la boca del arma
-    } else {
-      e.cierre = 0.7; e.dirMano = null;
+      e.gesto = palmea ? 'palmada' : corta ? 'corredera' : 'manija'; e.agarra = cerrando(pAccion / 0.25);
+    } else if (f.a === 'cargador' || f.a === 'agarreCargador') { e.gesto = f.peine ? 'empuja' : 'cargador'; e.agarra = tramoViaje > 1.5 ? cerrando(pAccion / 0.3) : 1; }   // agarra el cargador o la boca del arma (si ya estaba ahí, lo sigue teniendo)
+    else if (f.a === 'anilla') { e.gesto = 'pinza'; e.agarra = cerrando(pAccion / 0.3); }
+    else e.gesto = f.a === 'arma' ? 'apoyo' : 'viaja';
+    // Hacia dónde apunta lo que lleva (balas, cartuchos, peines, cohetes): en la bolsa sale con la punta hacia abajo y
+    // en el camino gira hasta quedar en línea con el arma, que es como entra
+    if (objeto && objeto !== 'granada' && objeto !== 'cinta' && objeto !== 'cajaMinigun' && objeto !== 'celda' && objeto !== 'pasador') {
+      const haciaArma = e.incl + (linea.tipo === 'quiebre' ? e.abierto * 0.58 : 0), enBolsa = /cohete/.test(objeto) ? -Math.PI / 2 : 1.15;
+      e.apuntaMano = f.a === 'cadera' ? enBolsa : enBolsa + (haciaArma - enBolsa) * suavizar(Math.min(1, pm * 1.25));
     }
     return e;
   }
@@ -9692,9 +9851,300 @@ class Jugador {
 
 </script>
   <script>
+/* ===== Anatomía: hasta dónde llega cada articulación, y brazos, manos y piernas dibujados con eso =====
+ * El cuerpo se ve de costado, pero los brazos y las manos se resuelven en tres dimensiones (x hacia adelante, y hacia
+ * abajo, z hacia el que mira) y después se proyectan: así el codo cae donde cae el de una persona, un brazo que viene
+ * hacia el que mira se ve en escorzo en vez de encogerse, y la mano puede girar hacia cualquier lado y envolver lo que
+ * agarra (lo que queda del otro lado de lo agarrado se dibuja antes; lo de este lado, después).
+ *
+ * ANATOMIA: rangos de movimiento normales de un adulto, en grados (valores de referencia de la American Academy of
+ * Orthopaedic Surgeons; para los dedos, las medias de los estudios de goniometría). Son los límites de todo lo que
+ * sigue: una articulación no se dobla más que esto ni hacia donde no puede.
+ * HUESOS: largos en unidades del cuerpo. Brazo, antebrazo y mano guardan entre sí la proporción de las tablas de
+ * Drillis y Contini (0,186, 0,146 y 0,108 de la altura); se dejan un 8 % más largos porque las armas están
+ * agrandadas respecto del cuerpo y, si no, la mano de apoyo no llega al guardamanos.
+ */
+const GRADOS = Math.PI / 180;
+const ANATOMIA = {
+  hombro: { flexion: 180, extension: 60 },             // el brazo sube por delante hasta la vertical; hacia atrás, 60°
+  codo: { flexion: 150, extension: 0 },                // bisagra: dobla hacia adelante y no pasa de recto
+  antebrazo: { pronacion: 85, supinacion: 85 },        // giro de la palma desde la posición neutra (el pulgar arriba)
+  muneca: { flexion: 80, extension: 70, radial: 20, cubital: 30 },
+  dedo: { nudillo: 90, media: 100, punta: 80 },        // las tres articulaciones de cada dedo, de la palma a la punta
+  pulgar: { nudillo: 55, punta: 80 },
+  cadera: { flexion: 120, extension: 20 }, rodilla: { flexion: 140, extension: 0 }, tobillo: { arriba: 20, abajo: 50 },
+};
+const HUESOS = { brazo: 15.6, antebrazo: 13.2, muslo: 14.5, canilla: 14, tobillo: 5.5 };
+
+/* ---------- Vectores de tres componentes ---------- */
+const V3 = {
+  suma: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+  resta: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  por: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+  punto: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cruz: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  largo: a => Math.hypot(a[0], a[1], a[2]),
+  unidad: (a, respaldo = [1, 0, 0]) => { const l = Math.hypot(a[0], a[1], a[2]); return l > 1e-6 ? [a[0] / l, a[1] / l, a[2] / l] : respaldo; },
+  mezcla: (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k],
+  // gira `a` hacia `b` hasta que el ángulo entre los dos sea `ang` (los dos de largo 1)
+  hacia: (a, b, ang) => {
+    const c = limitar(V3.punto(a, b), -1, 1), total = Math.acos(c);
+    if (total < 1e-4) return a;
+    const k = ang / total, s = Math.sin(total), wa = Math.sin((1 - k) * total) / s, wb = Math.sin(k * total) / s;
+    return V3.unidad([b[0] * wa + a[0] * wb, b[1] * wa + a[1] * wb, b[2] * wa + a[2] * wb]);
+  },
+};
+
+/* ---------- Pintura mate ----------
+ * Como `pintura` (dos tonos con la luz arriba a la izquierda), pero sin el filo de brillo, que era lo que hacía que la
+ * tela y los guantes parecieran de plástico, y con el contorno por detrás del relleno: cuando varias piezas del mismo
+ * color se pasan juntas en un solo trazado (un brazo entero: hombro, codo y antebrazo), el contorno queda únicamente en
+ * la silueta del conjunto y no dibuja un círculo en cada articulación. */
+function forma(ctx, trazar, color, op = {}) {
+  ctx.beginPath(); trazar(ctx);
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fill(); return; }
+  const linea = op.linea ?? 0.42;
+  if (linea) { ctx.strokeStyle = ajustarColor(color, -(op.borde ?? 0.52)); ctx.lineWidth = linea * 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(); }
+  const corre = op.sombra ?? 1;
+  ctx.fillStyle = corre ? ajustarColor(color, -(op.oscuro ?? 0.22)) : color; ctx.fill();
+  if (!corre) return;
+  ctx.save(); ctx.clip(); ctx.translate(-corre * 0.6, -corre);
+  ctx.beginPath(); trazar(ctx); ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
+}
+// Tramo de un miembro como trazado cerrado: ancho w0 al principio y w1 al final, extremos redondos y una panza de
+// cada lado (atras, adelante: cuánto abulta; en: en qué parte del largo). «Atrás» es el lado de la normal (-uy, ux):
+// en una pierna parada, la pantorrilla; en un brazo estirado hacia adelante, el lado de abajo.
+function tramoMusculo(x0, y0, x1, y1, w0, w1, atras = 0, adelante = 0, enAtras = 0.4, enAdelante = 0.4) {
+  return c => {
+    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy);
+    if (l < 0.05) { c.moveTo(x0 + Math.max(w0, w1) / 2, y0); c.arc(x0, y0, Math.max(w0, w1) / 2, 0, Math.PI * 2); c.closePath(); return; }
+    const ux = dx / l, uy = dy / l, nx = -uy, ny = ux, tn = Math.atan2(ny, nx);
+    const p = (k, s, w) => [x0 + dx * k + nx * s * w, y0 + dy * k + ny * s * w];
+    const m = k => (w0 + (w1 - w0) * k) / 2;
+    c.moveTo(...p(0, 1, w0 / 2));
+    c.quadraticCurveTo(...p(enAtras, 1, m(enAtras) + atras * 2), ...p(1, 1, w1 / 2));
+    c.arc(x1, y1, w1 / 2, tn, tn - Math.PI, true);
+    c.quadraticCurveTo(...p(enAdelante, -1, m(enAdelante) + adelante * 2), ...p(0, -1, w0 / 2));
+    c.arc(x0, y0, w0 / 2, tn - Math.PI, tn - 2 * Math.PI, true);
+    c.closePath();
+  };
+}
+const juntos = (...tramos) => c => { for (const t of tramos) t(c); };
+// Polígono convexo que envuelve a los puntos (para la palma proyectada), y su trazado con las esquinas redondeadas
+function envolvente(pts) {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), giro = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const abajo = [], arriba = [];
+  for (const q of p) { while (abajo.length >= 2 && giro(abajo[abajo.length - 2], abajo[abajo.length - 1], q) <= 0) abajo.pop(); abajo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (arriba.length >= 2 && giro(arriba[arriba.length - 2], arriba[arriba.length - 1], q) <= 0) arriba.pop(); arriba.push(q); }
+  return abajo.slice(0, -1).concat(arriba.slice(0, -1));
+}
+function trazarRedondeado(c, pts, r) {
+  const n = pts.length;
+  if (n < 3) { if (n) { c.moveTo(pts[0][0] + r, pts[0][1]); c.arc(pts[0][0], pts[0][1], r, 0, Math.PI * 2); c.closePath(); } return; }
+  for (let i = 0; i < n; i++) {
+    const a = pts[(i + n - 1) % n], b = pts[i], d = pts[(i + 1) % n];
+    const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, l2 = Math.hypot(d[0] - b[0], d[1] - b[1]) || 1, k1 = Math.min(r, l1 / 2), k2 = Math.min(r, l2 / 2);
+    const e = [b[0] - (b[0] - a[0]) / l1 * k1, b[1] - (b[1] - a[1]) / l1 * k1], s = [b[0] + (d[0] - b[0]) / l2 * k2, b[1] + (d[1] - b[1]) / l2 * k2];
+    if (i === 0) c.moveTo(e[0], e[1]); else c.lineTo(e[0], e[1]);
+    c.quadraticCurveTo(b[0], b[1], s[0], s[1]);
+  }
+  c.closePath();
+}
+
+/* ---------- Brazo ----------
+ * Hombro en (hx, hy) y muñeca en (mx, my), los dos en el dibujo. La mano puede estar más adentro o más afuera que el
+ * hombro (op.fondo: z de la muñeca respecto del hombro), que es lo normal: los hombros están a los costados y lo que
+ * se agarra, en el medio. Con el largo verdadero de los huesos sale el ángulo del codo (nunca más de
+ * ANATOMIA.codo.flexion ni menos que recto) y el codo cae sobre un círculo alrededor de la línea hombro–muñeca; se
+ * elige el punto de ese círculo hacia donde tira el brazo de verdad: abajo, un poco hacia afuera y, si la mano agarra
+ * algo, en línea con ella (op.mano: hacia dónde van los dedos), para que la muñeca no tenga que quebrarse. Si así el
+ * brazo quedara más atrás de lo que da el hombro (ANATOMIA.hombro.extension), el codo se abre hacia el costado.
+ * lado: 1 el brazo cercano (su «afuera» es hacia el que mira), -1 el lejano.
+ * Devuelve el codo proyectado, el ángulo del antebrazo en el dibujo y su dirección en 3D (para la muñeca). */
+function resolverBrazo(hx, hy, mx, my, op = {}) {
+  const L1 = op.L1 ?? HUESOS.brazo, L2 = op.L2 ?? HUESOS.antebrazo, lado = op.lado ?? 1;
+  const dx = mx - hx, dy = my - hy, d2 = dx * dx + dy * dy;
+  let dz = op.fondo ?? 0, D = Math.sqrt(d2 + dz * dz);
+  const Dmin = Math.sqrt(L1 * L1 + L2 * L2 - 2 * L1 * L2 * Math.cos((180 - ANATOMIA.codo.flexion) * GRADOS)), Dmax = (L1 + L2) * 0.997;
+  if (D < Dmin) { dz = (dz < 0 || (!dz && lado > 0) ? -1 : 1) * Math.sqrt(Math.max(0, Dmin * Dmin - d2)); D = Math.max(Dmin, Math.sqrt(d2)); }   // demasiado cerca del hombro: el codo no dobla más, la mano queda más adentro
+  let estira = 1;
+  if (D > Dmax) {   // no llega: primero se saca profundidad (el brazo se pone de perfil) y, si aun así no alcanza, se estira apenas
+    dz = Math.sign(dz) * Math.sqrt(Math.max(0, Dmax * Dmax - d2)); D = Math.sqrt(d2 + dz * dz);
+    if (D > Dmax) estira = D / Dmax;
+  }
+  const l1 = L1 * estira, l2 = L2 * estira, a = [dx / D, dy / D, dz / D];
+  const t = (l1 * l1 - l2 * l2 + D * D) / (2 * D), rho = Math.sqrt(Math.max(0, l1 * l1 - t * t));
+  const sube = Math.max(0, -a[1]);   // con la mano por encima del hombro, el codo va hacia adelante
+  const base = [-0.3 + sube * 1.4, 1, lado * (op.afuera ?? 0.5)];
+  if (op.mano) { const k = op.alinea ?? 1.1; base[0] -= op.mano[0] * k; base[1] -= op.mano[1] * k; base[2] -= op.mano[2] * k; }
+  if (op.polo) { base[0] += op.polo[0]; base[1] += op.polo[1]; base[2] += op.polo[2]; }
+  let codo = null;
+  for (let paso = 0; paso < 7; paso++) {
+    const g = [base[0] + paso * 0.35, base[1], base[2] + lado * paso * 0.8];           // cada vuelta, más hacia el costado
+    const n = V3.unidad(V3.resta(g, V3.por(a, V3.punto(g, a))), [0, 1, 0]);
+    codo = [a[0] * t + n[0] * rho, a[1] * t + n[1] * rho, a[2] * t + n[2] * rho];
+    // Hombro: ángulo del brazo en el plano de costado, desde colgando (0) hacia adelante (+) o hacia atrás (-)
+    const atras = Math.atan2(-codo[0], codo[1]) / GRADOS;
+    if (codo[1] < 0 || atras <= ANATOMIA.hombro.extension) break;                       // (por encima del hombro vale: es flexión)
+  }
+  const ante = V3.unidad([dx - codo[0], dy - codo[1], dz - codo[2]]);
+  const flexion = 180 - Math.acos(limitar((l1 * l1 + l2 * l2 - D * D) / (2 * l1 * l2), -1, 1)) / GRADOS;
+  const extension = codo[1] < 0 ? 0 : Math.max(0, Math.atan2(-codo[0], codo[1]) / GRADOS);   // cuánto va el brazo hacia atrás
+  return { cx: hx + codo[0], cy: hy + codo[1], cz: codo[2], ante: Math.atan2(my - hy - codo[1], mx - hx - codo[0]), ante3: ante, brazo3: V3.unidad(codo), flexion, extension, fondo: dz, estira };
+}
+
+/* ---------- Mano ----------
+ * La mano es un esqueleto chico: la palma, cuatro dedos de tres falanges y el pulgar, en su propio marco:
+ *   x  hacia la punta de los dedos      a  hacia el lado del pulgar      b  hacia donde mira la palma
+ * Una base { ex, ea, eb } (tres vectores en el marco del cuerpo) dice cómo está orientada, y con eso se proyecta de
+ * costado. La mano derecha y la izquierda son la misma espejada (zurda: la del brazo cercano, que es el izquierdo). */
+const MANO = {
+  muneca: 2.2,                                                             // de la muñeca al centro de la palma
+  palma: { x0: -2.2, x1: 1.9, a0: 1.12, a1: 1.66, b0: -0.55, b1: 0.72 },   // semiancho en la muñeca y en los nudillos; dorso y palma
+  // índice, mayor, anular y meñique: dónde nace (x, a), las tres falanges, el grosor, cuánto más cierra y hacia dónde se abre
+  dedos: [
+    { x: 1.9, a: 1.2, l: [1.78, 1.08, 0.84], w: 0.84, k: 0.94, abre: 9 },
+    { x: 2.06, a: 0.4, l: [1.95, 1.22, 0.88], w: 0.86, k: 1, abre: 2 },
+    { x: 1.9, a: -0.4, l: [1.8, 1.12, 0.86], w: 0.82, k: 1.04, abre: -5 },
+    { x: 1.62, a: -1.16, l: [1.38, 0.82, 0.76], w: 0.72, k: 1.1, abre: -13 },
+  ],
+  // Pulgar: nace cerca de la muñeca, del lado de a; tres tramos (el primero va por dentro de la palma) y cuatro gestos
+  pulgar: { base: [-1.3, 1.12, 0.3], l: [1.9, 1.45, 1.2], w: [1.3, 1.06, 0.92],
+    gestos: {
+      suelto: [[0.72, 0.6, 0.34], [0.86, 0.45, 0.22], [0.92, 0.32, 0.2]],       // relajado, apenas separado del índice
+      largo: [[0.85, 0.42, 0.3], [0.96, 0.2, 0.18], [0.98, 0.1, 0.15]],         // estirado junto al índice (sobre el armazón)
+      cierra: [[0.55, 0.45, 0.7], [0.5, -0.35, 0.8], [0.25, -0.75, 0.6]],       // cruza por delante de la palma: envuelve
+      arriba: [[0.35, 0.9, 0.25], [0.25, 0.95, 0.15], [0.2, 0.97, 0.1]],        // separado hacia su lado
+      sube: [[0.2, 0.5, 0.84], [0.1, 0.35, 0.93], [0.1, 0.2, 0.97]],            // hacia donde mira la palma (sube por el costado de lo que sostiene)
+    } },
+};
+// Base de la mano a partir de hacia dónde van los dedos y hacia dónde mira la palma
+function baseMano(dedos, palma, zurda) {
+  const ex = V3.unidad(dedos), eb = V3.unidad(V3.resta(palma, V3.por(ex, V3.punto(palma, ex))), [0, 0, zurda ? -1 : 1]);
+  const ea = V3.cruz(ex, eb);
+  return { ex, eb, ea: zurda ? V3.por(ea, -1) : ea, zurda: !!zurda };
+}
+/* Base de la mano siguiendo al antebrazo, con los ángulos de una persona: giro (pronación +, supinación -; 0 = neutra,
+ * la palma hacia el cuerpo), flexion de la muñeca (hacia la palma +) y desvio (hacia el pulgar +). Todo se limita a
+ * ANATOMIA: es la manera de pedir una pose que no se puede hacer mal. ante3: dirección del antebrazo. */
+function manoDesdeAntebrazo(ante3, zurda, giro = 0, flexion = 0, desvio = 0) {
+  const A = ANATOMIA, g = limitar(giro, -A.antebrazo.supinacion, A.antebrazo.pronacion) * GRADOS;
+  const f = limitar(flexion, -A.muneca.extension, A.muneca.flexion) * GRADOS, d = limitar(desvio, -A.muneca.cubital, A.muneca.radial) * GRADOS;
+  const ex0 = V3.unidad(ante3), medial = [0, 0, zurda ? -1 : 1];
+  const m = V3.unidad(V3.resta(medial, V3.por(ex0, V3.punto(medial, ex0))), [0, 1, 0]);            // neutra: la palma mira hacia el cuerpo
+  const p = V3.por(V3.cruz(ex0, m), zurda ? 1 : -1);                                                // pronada: con el brazo hacia adelante, la palma hacia abajo
+  let eb = V3.suma(V3.por(m, Math.cos(g)), V3.por(p, Math.sin(g)));
+  let ex = V3.suma(V3.por(ex0, Math.cos(f)), V3.por(eb, Math.sin(f)));                              // flexión: los dedos van hacia la palma
+  eb = V3.resta(V3.por(eb, Math.cos(f)), V3.por(ex0, Math.sin(f)));
+  const ea = V3.por(V3.cruz(ex, eb), zurda ? -1 : 1);
+  ex = V3.suma(V3.por(ex, Math.cos(d)), V3.por(ea, Math.sin(d)));                                   // desvío hacia el pulgar
+  return baseMano(ex, eb, zurda);
+}
+/* Límite de la muñeca para una mano que tiene que quedar orientada de cierta manera (agarrando algo): si para eso la
+ * muñeca tuviera que doblarse más de lo que da, los dedos giran hacia el antebrazo hasta el límite. Cuánto da depende
+ * de hacia dónde se dobla: hacia la palma (flexión), hacia el dorso (extensión) o de costado (desvíos). */
+function limitarMuneca(B, ante3) {
+  const A = ANATOMIA.muneca, f = V3.unidad(ante3), c = limitar(V3.punto(B.ex, f), -1, 1), ang = Math.acos(c);
+  if (ang < 0.02) return B;
+  const lado = V3.unidad(V3.resta(B.ex, V3.por(f, c)));                         // hacia dónde está doblada
+  let cb = V3.punto(lado, B.eb), ca = V3.punto(lado, B.ea);
+  const n = Math.hypot(cb, ca) || 1; cb /= n; ca /= n;                          // cuánto es flexión o extensión y cuánto desvío
+  const tope = Math.hypot(cb * (cb > 0 ? A.flexion : A.extension), ca * (ca > 0 ? A.radial : A.cubital)) * GRADOS;
+  if (ang <= tope) return B;
+  const ex = V3.hacia(f, B.ex, tope);
+  return baseMano(ex, B.eb, B.zurda);
+}
+// Mezcla dos bases (para pasar de una pose a otra girando de a poco)
+function mezclarBases(A, B, k) {
+  if (!A) return B;
+  return baseMano(V3.mezcla(A.ex, B.ex, k), V3.mezcla(A.eb, B.eb, k), B.zurda);
+}
+const POSE_MANO = { cierre: [0.2, 0.2, 0.2, 0.2], nudillo: 1, abre: 0.5, pulgar: { suelto: 1, largo: 0, cierra: 0, arriba: 0, sube: 0 } };
+function normalizarPose(p = {}) {
+  const c = p.cierre ?? 0.2, pulgar = Object.assign({ suelto: 0, largo: 0, cierra: 0, arriba: 0, sube: 0 }, p.pulgar || { suelto: 1 });
+  return { cierre: Array.isArray(c) ? c.slice(0, 4) : [c, c, c, c], nudillo: p.nudillo ?? 1, abre: p.abre ?? 0.5, pulgar };
+}
+function mezclarPoses(A, B, k) {
+  if (!A) return B;
+  const pulgar = {}; for (const g in B.pulgar) pulgar[g] = A.pulgar[g] + (B.pulgar[g] - A.pulgar[g]) * k;
+  return { cierre: B.cierre.map((c, i) => A.cierre[i] + (c - A.cierre[i]) * k), nudillo: A.nudillo + (B.nudillo - A.nudillo) * k, abre: A.abre + (B.abre - A.abre) * k, pulgar };
+}
+
+/* Dibuja la mano. O: centro de la palma en el dibujo [x, y]; B: su base; pose: normalizarPose(); G: color del guante.
+ * capa: 'atras' dibuja solo lo que queda más lejos que lo agarrado (zObjeto: su profundidad respecto de la palma),
+ * 'adelante' el resto, y sin capa, todo. Cada dedo es una sola forma (las tres falanges en un trazado), pintada mate. */
+function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0) {
+  const { ex, ea, eb } = B, M = MANO, P = M.palma;
+  const pr = (x, a, b) => [O[0] + ex[0] * x + ea[0] * a + eb[0] * b, O[1] + ex[1] * x + ea[1] * a + eb[1] * b, ex[2] * x + ea[2] * a + eb[2] * b];
+  const piezas = [];   // { z, trazar, tono }
+  let orden = 0;
+  const cadena = (pts, anchos, tono) => {   // tramos consecutivos; se parte donde cruza la profundidad de lo agarrado
+    let grupo = null; orden++;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p = pts[i], q = pts[i + 1], z = (p[2] + q[2]) / 2, lejos = z < zObjeto - 0.02;
+      const t = tramoMusculo(p[0], p[1], q[0], q[1], anchos[i], anchos[i + 1]);
+      if (grupo && grupo.lejos === lejos) { grupo.tramos.push(t); grupo.z = Math.max(grupo.z, z); }
+      else { grupo = { lejos, tramos: [t], z: i === 0 && !lejos ? Math.max(z, 0.002 + orden * 1e-4) : z, tono }; piezas.push(grupo); }   // el nudillo va por encima de la palma: el dedo sale de ella
+    }
+  };
+  // Dedos: cada articulación dobla hacia la palma lo que pide el cierre, hasta su límite
+  const D = ANATOMIA.dedo;
+  M.dedos.forEach((d, k) => {
+    const c = limitar(pose.cierre[k] * d.k, 0, 1.08), sep = d.abre * pose.abre * (1 - Math.min(1, c * 1.6)) * GRADOS;
+    const f1 = Math.min(D.nudillo, 7 + 80 * c * pose.nudillo) * GRADOS, f2 = f1 + Math.min(D.media, 12 + 90 * c) * GRADOS, f3 = f2 + Math.min(D.punta, 7 + 62 * c) * GRADOS;
+    let x = d.x, a = d.a, b = 0.05;
+    const pts = [pr(x, a, b)];
+    for (const [l, f] of [[d.l[0], f1], [d.l[1], f2], [d.l[2], f3]]) { x += l * Math.cos(f) * Math.cos(sep); a += l * Math.cos(f) * Math.sin(sep); b += l * Math.sin(f); pts.push(pr(x, a, b)); }
+    cadena(pts, [d.w, d.w * 0.96, d.w * 0.9, d.w * 0.8], 0);
+  });
+  // Pulgar: mezcla de gestos
+  const Q = M.pulgar, pts = [pr(...Q.base)];
+  let pos = Q.base.slice();
+  for (let i = 0; i < 3; i++) {
+    let dir = [0, 0, 0];
+    for (const g in pose.pulgar) if (pose.pulgar[g]) { const v = V3.unidad(Q.gestos[g][i]); dir = V3.suma(dir, V3.por(v, pose.pulgar[g])); }
+    dir = V3.unidad(dir, V3.unidad(Q.gestos.suelto[i]));
+    const desde = i === 0 ? 0.55 : 0;   // el primer tramo va por dentro de la palma: asoma la mitad
+    if (i === 0) { const q = V3.suma(pos, V3.por(dir, Q.l[0] * desde)); pts[0] = pr(...q); }
+    pos = V3.suma(pos, V3.por(dir, Q.l[i]));
+    pts.push(pr(...pos));
+  }
+  cadena(pts, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03);
+  // Palma: la caja de la palma proyectada, con el bulto de la base del pulgar
+  const caja = [];
+  for (const b of [P.b0, P.b1]) {   // muñeca angosta, el canto de la mano, y el arco de los nudillos (más salido en el mayor)
+    caja.push(pr(P.x0, P.a0, b), pr(P.x0, -P.a0, b), pr(-0.4, P.a1 * 0.98, b), pr(-0.2, -P.a1, b), pr(P.x1 - 0.1, P.a1, b), pr(P.x1 + 0.22, 0.4, b), pr(P.x1 + 0.05, -0.45, b), pr(P.x1 - 0.38, -P.a1 * 0.96, b));
+  }
+  caja.push(pr(P.x0 + 1.0, P.a0 + 0.2, P.b1 + 0.32));                                    // el bulto de la base del pulgar
+  const casco = envolvente(caja.map(q => [q[0], q[1]]));
+  piezas.push({ lejos: zObjeto > 0.02, tramos: [c => trazarRedondeado(c, casco, 0.55)], z: 0.001, tono: 0 });   // la palma queda detrás de lo agarrado si eso está más cerca del que mira
+  piezas.sort((p, q) => p.z - q.z);
+  const zMax = piezas[piezas.length - 1].z;
+  for (const p of piezas) {
+    if (capa && (capa === 'atras') !== !!p.lejos) continue;
+    const hondo = limitar((zMax - p.z) / 3.2, 0, 1);
+    forma(ctx, juntos(...p.tramos), ajustarColor(G, p.tono - 0.15 * hondo), { linea: 0.3, sombra: 0.45, oscuro: 0.16, borde: 0.48 });
+  }
+  // Con el dorso hacia el que mira, la marca de cada nudillo (una rayita, del tono del guante)
+  if (capa !== 'atras' && eb[2] < -0.3 && !Pincel.silueta) {
+    const alfa = ctx.globalAlpha;
+    ctx.strokeStyle = ajustarColor(G, -0.3); ctx.lineWidth = 0.22; ctx.lineCap = 'round'; ctx.globalAlpha = alfa * Math.min(1, (-eb[2] - 0.3) * 2.5);
+    ctx.beginPath();
+    for (const d of M.dedos) { const p = pr(d.x - 0.25, d.a - d.w * 0.3, P.b0), q = pr(d.x - 0.05, d.a, P.b0), t = pr(d.x - 0.25, d.a + d.w * 0.3, P.b0); ctx.moveTo(p[0], p[1]); ctx.quadraticCurveTo(q[0], q[1], t[0], t[1]); }
+    ctx.stroke(); ctx.globalAlpha = alfa;
+  }
+}
+// La muñeca de una mano cuya palma está en O
+const munecaDe = (O, B) => [O[0] - B.ex[0] * MANO.muneca, O[1] - B.ex[1] * MANO.muneca];
+
+</script>
+  <script>
 /* ===== Dibujo del jugador =====
- * Un sobreviviente con chaleco táctico, mochila, gorra y mangas arremangadas. Cada pieza se pinta
- * con volumen (luz a la izquierda) y un contorno fino, y las piernas se articulan en la rodilla.
+ * Un sobreviviente con chaleco táctico, mochila, gorra y mangas arremangadas. El torso, la cabeza y el equipo se pintan
+ * con volumen (luz a la izquierda) y un contorno fino; los brazos, las manos y las piernas salen de js/anatomia.js: cada
+ * miembro es una sola forma, las articulaciones no pasan de lo que da una persona y las manos son un esqueleto chico
+ * que se orienta hacia cualquier lado.
  * Todo se dibuja alrededor de los pies (0, 0) mirando a la derecha; el cuerpo se reutiliza para la sombra.
  */
 const COLORES_JUGADOR = {
@@ -9765,215 +10215,250 @@ function camuflaje(ctx, trazar, colores, ox, oy, ang, ancho, largo, sal, oscuro 
 const repasar = (ctx, trazar, color) => { if (Pincel.silueta) return; ctx.beginPath(); trazar(ctx); ctx.closePath(); ctx.strokeStyle = ajustarColor(color, -0.62); ctx.lineWidth = 0.5; ctx.lineJoin = 'round'; ctx.lineCap = 'butt'; ctx.stroke(); };
 
 /* --- Partes del cuerpo --- */
-// Pierna articulada: muslo desde la cadera, rodilla, canilla y bota. a = ángulo del muslo (adelante > 0), doblez = flexión de la rodilla.
-// Proporciones de una persona real: muslo y canilla finos, rodillera dura, botamanga abolsada sobre la bota de caña alta.
+/* Pierna articulada: muslo desde la cadera, rodilla, canilla, tobillo y bota. a = ángulo del muslo (adelante > 0),
+ * doblez = flexión de la rodilla (solo hacia atrás, hasta ANATOMIA.rodilla). El muslo y la canilla son una sola forma
+ * (cuádriceps adelante, pantorrilla atrás) y la rodilla es el quiebre entre los dos, no una bola; la rodillera es una
+ * coquilla chica sobre el frente de la rodilla. El pie apoya de plano mientras el tobillo da (ANATOMIA.tobillo): si la
+ * canilla se inclina más, se levanta el talón (pierna de atrás) o la punta (pierna de adelante). */
 function piernaArticulada(ctx, hx, hy, a, doblez, color, C) {
-  const L1 = 13, L2 = 12;
+  const L1 = HUESOS.muslo, L2 = HUESOS.canilla, A = ANATOMIA;
+  a = limitar(a, -A.cadera.extension * GRADOS, A.cadera.flexion * GRADOS);
+  doblez = limitar(doblez, A.rodilla.extension * GRADOS, A.rodilla.flexion * GRADOS);
   const kx = hx + Math.sin(a) * L1, ky = hy + Math.cos(a) * L1;
   const b = a - doblez;
-  const px = kx + Math.sin(b) * L2, py = ky + Math.cos(b) * L2;
+  const tx = kx + Math.sin(b) * L2, ty = ky + Math.cos(b) * L2;   // tobillo
   const lejos = color !== C.pantalon ? 0.2 : 0;
-  // Canilla con la pantorrilla atrás (va primero: el muslo tapa la unión)
-  const canilla = tramo(kx, ky, px, py - 3, 7, 5.2, 1);
-  pintura(ctx, canilla, color); camuflaje(ctx, canilla, C.camo, kx, ky, -b, 7, L2, 31, lejos); if (C.camo) repasar(ctx, canilla, color);
-  // Muslo, más ancho arriba y con el cuádriceps adelante
-  const muslo = tramo(hx, hy, kx, ky, 9, 7, -0.7);
-  pintura(ctx, muslo, color); camuflaje(ctx, muslo, C.camo, hx, hy, -a, 9, L1, 11, lejos); if (C.camo) repasar(ctx, muslo, color);
+  // Pie: de plano; si el tobillo no da, gira lo que falta (y al despegar, la pierna de atrás levanta el talón)
+  let pie = b > A.tobillo.arriba * GRADOS ? -(b - A.tobillo.arriba * GRADOS) : b < -A.tobillo.abajo * GRADOS ? -b - A.tobillo.abajo * GRADOS : 0;
+  if (b < 0) pie = Math.max(pie, Math.min(0.5, doblez * 0.45));
+  const cp = Math.cos(pie), sp = Math.sin(pie), P = (x, y) => [tx + x * cp - y * sp, ty + x * sp + y * cp];
+  const enCanilla = k => [kx + (tx - kx) * k, ky + (ty - ky) * k];
+
+  // Bota (va primero: el pantalón cae sobre la caña): la caña sube por la canilla y el pie gira en el tobillo; una sola
+  // forma, con la suela aparte
+  const Bt = lejos ? ajustarColor(C.bota, -0.12) : C.bota, Su = C.suela || ajustarColor(C.bota, -0.5), H = HUESOS.tobillo;
+  const cana = tramoMusculo(...enCanilla(1 - 5.6 / L2), tx, ty, 5.0, 4.8);
+  const empeine = c => {
+    c.moveTo(...P(-2.5, -1.2)); c.quadraticCurveTo(...P(-3.7, 0.8), ...P(-3.6, 2.6)); c.lineTo(...P(-3.6, H - 1.2));          // talón
+    c.lineTo(...P(8.2, H - 1.2)); c.quadraticCurveTo(...P(9.2, H - 1.4), ...P(8.9, H - 2.5));                                   // puntera
+    c.quadraticCurveTo(...P(8.3, H - 3.9), ...P(6.2, H - 4.1)); c.quadraticCurveTo(...P(3.6, -0.6), ...P(2.4, -1.8));            // empeine
+    c.closePath();
+  };
+  forma(ctx, juntos(cana, empeine), Bt, { sombra: 0.8 });
+  forma(ctx, c => { c.moveTo(...P(-3.8, H - 1.35)); c.lineTo(...P(8.6, H - 1.35)); c.quadraticCurveTo(...P(9.4, H - 1.2), ...P(9.2, H - 0.5)); c.lineTo(...P(8.4, H)); c.lineTo(...P(-3.8, H)); c.closePath(); }, Su, { sombra: 0.3, linea: 0.32 });
+  if (!Pincel.silueta) {
+    raya(ctx, ajustarColor(Bt, -0.3), 0.36, [P(5.6, H - 3.8), P(6.6, H - 1.5)]);                                    // costura de la puntera
+    for (let k = 0; k < 3; k++) raya(ctx, ajustarColor(Bt, -0.4), 0.4, [P(2.3 + k * 1.0, -1.2 + k * 0.9), P(3.6 + k * 1.0, -0.5 + k * 0.9)]);   // cordones
+    raya(ctx, ajustarColor(Su, 0.25), 0.3, [P(-3.4, H - 0.7), P(8.2, H - 0.7)]);                                   // canto de la suela
+  }
+
+  // Muslo y canilla: una sola forma del color del pantalón, que termina abolsada sobre la caña de la bota
+  const muslo = tramoMusculo(hx, hy, kx, ky, 8.2, 5.9, 0.22, 0.42, 0.3, 0.42);
+  const canilla = tramoMusculo(kx, ky, ...enCanilla(1 - 4.6 / L2), 5.9, 5.4, 0.45, 0.06, 0.38, 0.5);
+  forma(ctx, juntos(muslo, canilla), color);
+  camuflaje(ctx, c => { muslo(c); }, C.camo, hx, hy, -a, 9, L1, 11, lejos);
+  camuflaje(ctx, c => { canilla(c); }, C.camo, kx, ky, -b, 7, L2, 31, lejos);
   if (!Pincel.silueta) {
     ctx.save(); ctx.translate(hx, hy); ctx.rotate(-a);
-    if (C.rayaPierna) raya(ctx, C.rayaPierna, 0.7, [[0.6, 0.5], [0.8, 12.5]]);   // raya o costura a lo largo del pantalón
+    if (C.rayaPierna) raya(ctx, C.rayaPierna, 0.7, [[0.6, 0.5], [0.8, L1 - 0.5]]);   // raya o costura a lo largo del pantalón
     if (!C.sinBolsillo) {   // bolsillo cargo con tapa y botón
-    pintura(ctx, c => c.roundRect(-2.6, 4.6, 5.2, 5.4, 1), ajustarColor(color, -0.05), { sombra: 0.5, brillo: 0.18, linea: 0.35 });
-    pintura(ctx, c => c.roundRect(-2.8, 4.2, 5.6, 1.9, 0.7), ajustarColor(color, -0.12), { sombra: 0.4, brillo: 0.16, linea: 0.35 });
-    detalle(ctx, ajustarColor(color, -0.45), circulo(-0.1, 5.1, 0.4));
-    raya(ctx, ajustarColor(color, -0.3), 0.35, [[2.4, 0.5], [2.6, 11]]);                                    // costura de adelante
+      forma(ctx, c => c.roundRect(-2.4, 5.2, 4.8, 5.2, 1), ajustarColor(color, -0.05), { sombra: 0.4, linea: 0.3 });
+      forma(ctx, c => c.roundRect(-2.6, 4.8, 5.2, 1.8, 0.7), ajustarColor(color, -0.12), { sombra: 0.3, linea: 0.3 });
+      detalle(ctx, ajustarColor(color, -0.45), circulo(-0.1, 5.7, 0.36));
     }
     ctx.restore();
-    if (C.rayaPierna) { ctx.save(); ctx.translate(kx, ky); ctx.rotate(-b); raya(ctx, C.rayaPierna, 0.7, [[0.4, 0.5], [0.2, 9]]); ctx.restore(); }
     ctx.save(); ctx.translate(kx, ky); ctx.rotate(-b);
-    raya(ctx, ajustarColor(color, -0.3), 0.35, [[-1.8, 4], [-1.4, 8]]); raya(ctx, ajustarColor(color, -0.24), 0.3, [[1.8, 5.6], [1.4, 8.6]]);   // pliegues
+    if (C.rayaPierna) raya(ctx, C.rayaPierna, 0.7, [[0.4, 0.5], [0.2, L2 - 5.4]]);
+    raya(ctx, ajustarColor(color, -0.28), 0.34, [[-1.9, 2.2], [-0.6, 3.4]]); raya(ctx, ajustarColor(color, -0.24), 0.3, [[-2, 4.2], [-0.9, 5.2]]);   // pliegues de la corva
+    raya(ctx, ajustarColor(color, -0.3), 0.32, [[-2.2, L2 - 5.6], [2.2, L2 - 5.9]]);                             // el fruncido de la botamanga
     ctx.restore();
   }
-  // Rodillera de casco duro con sus dos correas (no la llevan los que van de traje, de cuero o de tela)
+
+  // Rodillera: coquilla sobre el frente de la rodilla, con sus dos correas (no la llevan los que van de traje, de cuero o de tela)
   if (!C.sinRodillera) {
-  ctx.save(); ctx.translate(kx, ky); ctx.rotate(-b);
-  const R = C.rodillera;
-  for (const yy of [-2.6, 2.4]) pintura(ctx, c => c.roundRect(-3.2, yy - 0.5, 4.6, 1, 0.3), ajustarColor(R, -0.35), { sombra: 0.2, brillo: false, linea: 0.25 });
-  pintura(ctx, c => c.ellipse(2.6, 0.2, 2.9, 3.9, 0, 0, Math.PI * 2), R, { sombra: 0.8, brillo: 0.4, linea: 0.4 });
-  raya(ctx, ajustarColor(R, -0.25), 0.35, [[3.4, -2.6], [4.4, 0.2], [3.4, 2.9]]);   // canto del casco
-  ctx.restore();
+    ctx.save(); ctx.translate(kx, ky); ctx.rotate(-(a + b) / 2);
+    const R = C.rodillera;
+    if (!Pincel.silueta) for (const yy of [-2.3, 2.5]) raya(ctx, ajustarColor(R, -0.4), 0.7, [[-2.9, yy + 0.4], [1.2, yy]]);
+    forma(ctx, c => { c.moveTo(0.6, -3.1); c.quadraticCurveTo(3.4, -3.3, 3.9, -0.6); c.quadraticCurveTo(4.1, 2.2, 2.6, 3.4); c.quadraticCurveTo(1.2, 3.8, 0.5, 3.0); c.quadraticCurveTo(1.5, 0, 0.6, -3.1); c.closePath(); }, R, { sombra: 0.6, linea: 0.36 });
+    if (!Pincel.silueta) raya(ctx, ajustarColor(R, -0.25), 0.3, [[2.6, -2.2], [3.3, 0.2], [2.5, 2.7]]);   // canto de la coquilla
+    ctx.restore();
   }
-  // Bota de caña alta tipo desierto: caña, empeine, puntera, suela de goma con dibujo y taco
-  const B = C.bota, S = C.suela || ajustarColor(B, -0.5);
-  pintura(ctx, c => c.roundRect(px - 3.4, py - 6.6, 6.8, 9.8, 1.4), B, { sombra: 0.7 });
-  pintura(ctx, c => { c.moveTo(px - 3.8, py + 1.2); c.lineTo(px + 2.4, py + 0.6); c.quadraticCurveTo(px + 7.4, py + 2, px + 8, py + 5.6); c.lineTo(px + 8, py + 7.4); c.lineTo(px - 3.8, py + 7.4); }, B, { sombra: 0.7, brillo: 0.35 });
-  pintura(ctx, c => c.roundRect(px - 4.2, py + 7, 12.8, 2, 0.6), S, { sombra: 0.3, brillo: false, linea: 0.35 });   // suela
-  if (!Pincel.silueta) {
-    for (let k = 0; k < 6; k++) detalle(ctx, ajustarColor(S, -0.4), c2 => c2.rect(px - 3.6 + k * 2.1, py + 8.3, 1, 0.7));               // dibujo de la suela
-    detalle(ctx, ajustarColor(S, 0.12), c2 => c2.rect(px - 4.2, py + 6.2, 4.2, 1));                                                    // taco
-    raya(ctx, ajustarColor(B, -0.3), 0.4, [[px + 1.4, py + 2.2], [px + 3.6, py + 7.2]]);                                               // costura de la puntera
-    for (let k = 0; k < 4; k++) raya(ctx, ajustarColor(B, -0.42), 0.45, [[px + 1.2, py - 5.4 + k * 1.9], [px + 3.4, py - 4.6 + k * 1.9]]);   // cordones
-    raya(ctx, 'rgba(255,240,220,0.25)', 0.6, [[px + 4.6, py + 2.6], [px + 7.2, py + 4]]);                                               // brillo de la puntera
-  }
-  // Botamanga: el pantalón abolsado sobre la caña
-  const bm = c => { c.moveTo(px - 3.4, py - 8); c.lineTo(px + 3.4, py - 8.2); c.quadraticCurveTo(px + 4.2, py - 6.6, px + 3.6, py - 5.4); c.quadraticCurveTo(px, py - 4.8, px - 3.6, py - 5.4); c.quadraticCurveTo(px - 4.2, py - 6.6, px - 3.4, py - 8); };
-  pintura(ctx, bm, color, { sombra: 0.5, brillo: 0.18 }); camuflaje(ctx, bm, C.camo, px, py - 8, 0, 7, 4, 51, lejos); if (C.camo) repasar(ctx, bm, color);
 }
 
-// Brazo en dos tramos de largo fijo (cinemática inversa): el codo cae donde corresponde según dónde esté la mano.
-// Con C.antebrazo, manga larga hasta el guante (camisa de combate) y parche en el hombro si hay C.parche; si no, arremangada.
-// Dónde cae el codo para que la mano (muñeca) llegue a (mx, my), con el codo hacia abajo
-function codoBrazo(hx, hy, mx, my, L1, L2) {
-  const dx = mx - hx, dy = my - hy, d = Math.hypot(dx, dy) || 0.001;
-  let l1 = L1, l2 = L2;
-  if (d > (L1 + L2) * 0.995) { const k = d / ((L1 + L2) * 0.995); l1 *= k; l2 *= k; }   // si no llega, se estira apenas
-  // Mano cerca del hombro (P90, Uzi, tubos al hombro): el brazo viene hacia el que mira y se ve más corto (escorzo).
-  // Sin esto, el único modo de que entre es doblar el codo hasta el cinturón
-  else if (d < (L1 + L2) * 0.8) { const k = Math.max(0.5, d / ((L1 + L2) * 0.8)); l1 *= k; l2 *= k; }
-  const a = Math.acos(limitar((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1)), base = Math.atan2(dy, dx);
-  const cx = hx + Math.cos(base + a) * l1, cy = hy + Math.sin(base + a) * l1;
-  return { cx, cy, ante: Math.atan2(my - cy, mx - cx) };
-}
-function brazoDetallado(ctx, hx, hy, mx, my, C, L1 = 13.5, L2 = 13) {
-  const { cx, cy, ante: angAnte } = codoBrazo(hx, hy, mx, my, L1, L2);
-  const larga = !!C.antebrazo;
-  // Antebrazo: más grueso cerca del codo
-  const ante = tramo(cx, cy, mx, my, 5.2, 4.2, 0.5);
-  pintura(ctx, ante, larga ? C.antebrazo : C.piel, { sombra: 0.8 });
-  if (!Pincel.silueta) {
-    const at = (k, s) => [cx + (mx - cx) * k, cy + (my - cy) * k + s];
-    if (larga) { raya(ctx, ajustarColor(C.antebrazo, -0.3), 0.4, [at(0.3, -1.4), at(0.42, 0.4)]); raya(ctx, ajustarColor(C.antebrazo, -0.3), 0.4, [at(0.6, 1.6), at(0.7, -0.2)]); }   // pliegues
-    else raya(ctx, ajustarColor(C.piel, -0.22), 0.45, [at(0.25, 1.1), at(0.65, 0.7)]);
+/* ---------- Brazos ----------
+ * El brazo es una sola forma: la manga arranca ancha en el hombro (el deltoides), afina hacia el codo y sigue por el
+ * antebrazo hasta la muñeca. Antes eran dos cápsulas con su contorno cada una y un círculo en el hombro, y se leía
+ * como pelotas unidas. Dónde cae el codo lo resuelve js/anatomia.js (resolverBrazo) con los límites de una persona. */
+const coloresLejos = C => Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.08),
+  antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28), brazal: C.brazal && ajustarColor(C.brazal, -0.28) });
+function dibujarBrazo(ctx, hx, hy, mx, my, R, C) {
+  const { cx, cy } = R, larga = !!C.antebrazo, T = C.chaqueta;
+  const manga = tramoMusculo(hx, hy, cx, cy, 6.0, 4.6, 0.2, 0.28, 0.5, 0.3);                                  // tríceps atrás, deltoides y bíceps adelante
+  const ante = tramoMusculo(cx, cy, mx, my, larga ? 4.6 : 4.2, larga ? 3.3 : 2.9, 0.26, 0.18, 0.28, 0.3);    // la panza del antebrazo, cerca del codo
+  const en = (x0, y0, x1, y1, k) => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k];
+  if (larga) forma(ctx, juntos(manga, ante), T);
+  else {   // manga corta: antebrazo de piel y, sobre el codo, el rollo de la manga arremangada (una banda, no una bola)
+    forma(ctx, ante, C.piel);
+    forma(ctx, manga, T);
+    forma(ctx, tramoMusculo(...en(hx, hy, cx, cy, 0.8), ...en(hx, hy, cx, cy, 0.97), 5.4, 5.2), ajustarColor(T, 0.08), { sombra: 0.6, linea: 0.36 });
+  }
+  if (!Pincel.silueta) {   // dos pliegues en la sangría del codo, del lado hacia donde dobla
+    const u1 = [cx - hx, cy - hy], u2 = [mx - cx, my - cy], l1 = Math.hypot(...u1) || 1, l2 = Math.hypot(...u2) || 1;
+    const bx = -u1[0] / l1 + u2[0] / l2, by = -u1[1] / l1 + u2[1] / l2, lb = Math.hypot(bx, by);
+    if (lb > 0.35 && l1 > 5 && l2 > 5) {
+      const ix = bx / lb, iy = by / lb, tono = ajustarColor(larga ? T : C.piel, -0.3);
+      raya(ctx, tono, 0.36, [[cx + ix * 0.5, cy + iy * 0.5], [cx + ix * 2.3, cy + iy * 2.3]]);
+      if (larga) raya(ctx, tono, 0.32, [[cx + ix * 0.9 - u1[0] / l1 * 1.7, cy + iy * 0.9 - u1[1] / l1 * 1.7], [cx + ix * 2.3 - u1[0] / l1 * 1.2, cy + iy * 2.3 - u1[1] / l1 * 1.2]]);
+    }
   }
   if (C.brazal) {   // brazal: muñequera de metal o cuero con remaches
-    ctx.save(); ctx.translate(mx, my); ctx.rotate(angAnte);
-    pintura(ctx, c => c.roundRect(-6.4, -2.9, 4.8, 5.8, 1.4), C.brazal, { sombra: 0.5, brillo: 0.45, linea: 0.4 });
-    if (!Pincel.silueta) { raya(ctx, ajustarColor(C.brazal, -0.35), 0.4, [[-4, -2.6], [-4, 2.6]]); for (const yy of [-1.6, 1.6]) detalle(ctx, ajustarColor(C.brazal, 0.35), circulo(-5.4, yy, 0.4)); }
-    ctx.restore();
+    forma(ctx, tramoMusculo(...en(cx, cy, mx, my, 0.52), ...en(cx, cy, mx, my, 0.9), 4.6, 4.2), C.brazal, { sombra: 0.5, linea: 0.36 });
+    if (!Pincel.silueta) for (const k of [0.6, 0.82]) detalle(ctx, ajustarColor(C.brazal, 0.35), circulo(...en(cx, cy, mx, my, k), 0.38));
   }
-  if (larga) {   // puño de la manga sobre el guante
-    ctx.save(); ctx.translate(mx, my); ctx.rotate(angAnte);
-    pintura(ctx, c => c.roundRect(-3.4, -2.5, 2.2, 5, 0.8), ajustarColor(C.antebrazo, -0.06), { sombra: 0.4, brillo: 0.2, linea: 0.35 });
-    ctx.restore();
-  }
-  // Manga: ancha en el hombro, con dos pliegues
-  const manga = tramo(hx, hy, cx, cy, 6.6, 5.4, -0.5);
-  pintura(ctx, manga, C.chaqueta);
-  if (!Pincel.silueta) {
-    const pl = (k, w) => { const x = hx + (cx - hx) * k, y = hy + (cy - hy) * k, ang = Math.atan2(cy - hy, cx - hx) + Math.PI / 2; raya(ctx, ajustarColor(C.chaqueta, -0.32), 0.4, [[x - Math.cos(ang) * w, y - Math.sin(ang) * w], [x + Math.cos(ang) * w * 0.4, y + Math.sin(ang) * w * 0.4 + 0.5]]); };
-    pl(0.5, 2); pl(0.74, 1.7);
-  }
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(angAnte);
-  if (!larga) {   // rollo de la manga arremangada
-    pintura(ctx, c => c.ellipse(0.3, 0, 1.9, 3.2, 0, 0, Math.PI * 2), ajustarColor(C.chaqueta, 0.08), { sombra: 0.6, brillo: 0.35 });
-    raya(ctx, ajustarColor(C.chaqueta, -0.3), 0.4, [[0.5, -2.5], [0.3, 2.5]]);
-  } else raya(ctx, ajustarColor(C.chaqueta, -0.34), 0.45, [[-0.6, -2.2], [1, -0.4], [-0.4, 1.8]]);   // pliegue del codo
-  ctx.restore();
   if (C.parche) {   // parche de abrojo en el hombro
-    ctx.save(); ctx.translate(hx + (cx - hx) * 0.3, hy + (cy - hy) * 0.3); ctx.rotate(Math.atan2(cy - hy, cx - hx) - Math.PI / 2);
-    pintura(ctx, c => c.roundRect(-1.9, -1.7, 3.8, 3.4, 0.5), C.parche, { sombra: 0.4, brillo: 0.2, linea: 0.35 });
+    ctx.save(); ctx.translate(...en(hx, hy, cx, cy, 0.34)); ctx.rotate(Math.atan2(cy - hy, cx - hx) - Math.PI / 2);
+    forma(ctx, c => c.roundRect(-1.9, -1.7, 3.8, 3.4, 0.5), C.parche, { sombra: 0.35, linea: 0.3 });
     if (!Pincel.silueta) for (let k = 0; k < 3; k++) detalle(ctx, ajustarColor(C.parche, -0.3), c => c.rect(-1.3, -1.1 + k * 1.1, 2.6, 0.4));
     ctx.restore();
   }
-  pintura(ctx, c => c.arc(hx, hy, 3.6, 0, Math.PI * 2), C.chaqueta, { contorno: false, sombra: 0.7 });   // hombro redondo
-  return { cx, cy, ante: angAnte };
+  // Puño elastizado del guante, sobre la muñeca
+  const ux = Math.cos(R.ante), uy = Math.sin(R.ante);
+  forma(ctx, tramoMusculo(mx - ux * 1.1, my - uy * 1.1, mx + ux * 0.4, my + uy * 0.4, 3.5, 3.1), ajustarColor(C.guante, 0.1), { linea: 0.3, sombra: 0.45 });
 }
 
 /* ---------- Manos ----------
- * Todas las manos son la misma mano con guante, empuñe lo que empuñe: mismo color (C.guante), mismo trazo que el resto
- * del cuerpo (pintura), mismas medidas, el puño elastizado y la nudillera dura. Antes cada agarre tenía su dibujo, con
- * degradados y contornos distintos, y la mano cambiaba de color y de forma al pasar del arma a la recarga.
- * Mano libre: la palma en el origen, los dedos hacia +x y el lado de la palma hacia +y; la muñeca en (-MANO.muneca, 0).
- * Sigue al antebrazo (la muñeca dobla como mucho MANO.dobla: lo demás lo gira el brazo) y se abre o se cierra: abierta
- * (cierre 0) cuando llega a algo, suelta o palmea; a medias cuando sostiene algo; cerrada (1) cuando empuña un mango.
- */
-const MANO = { muneca: 2.3, dobla: 0.85 };
-const TRAZO_MANO = { sombra: 0.5, brillo: 0.25, linea: 0.4 };
-const tonosGuante = G => ({ base: G, punio: ajustarColor(G, 0.12), nudillo: ajustarColor(G, 0.2), dedo: ajustarColor(G, 0.05), palma: ajustarColor(G, -0.1), pliegue: ajustarColor(G, -0.35) });
-const normalizarAng = a => Math.atan2(Math.sin(a), Math.cos(a));
+ * Todas las manos son la misma mano con guante (js/anatomia.js: dibujarMano), empuñe lo que empuñe: mismo color, mismas
+ * medidas y mismo trazo, en reposo y en cada fase de la recarga. Lo que cambia es el gesto: cuánto cierra cada dedo y
+ * qué hace el pulgar. La orientación sale del antebrazo y de lo que agarra, siempre dentro de lo que da la muñeca, y la
+ * mano pasa de un gesto a otro girando y cerrando de a poco (TAU_MANO), no de golpe.
+ * Lo que agarra va por detrás: la palma y los nudillos lo tapan, y los dedos que lo envuelven por el otro lado se
+ * dibujan antes que él. */
+const GESTOS_MANO = {
+  viaja:       { cierre: 0.24, pulgar: { suelto: 1 }, abre: 0.6 },                                           // en camino, entreabierta
+  suelta:      { cierre: 0.14, pulgar: { suelto: 0.8, arriba: 0.2 }, abre: 1 },                              // recién abrió los dedos
+  cargador:    { cierre: 0.62, nudillo: 0.2, pulgar: { cierra: 0.6, arriba: 0.4 }, abre: 0 },                // envuelve un cargador: los dedos cruzan su costado y doblan en el canto
+  punio:       { cierre: 0.86, nudillo: 0.9, pulgar: { cierra: 1 }, abre: 0 },                               // puño alrededor de un mango o un tubo
+  pinza:       { cierre: [0.34, 0.38, 0.7, 0.78], nudillo: 0.8, pulgar: { cierra: 0.45, largo: 0.55 }, abre: 0 },   // algo chico entre el pulgar y dos dedos
+  bolsa:       { cierre: 0.5, nudillo: 0.7, pulgar: { cierra: 0.5, suelto: 0.5 }, abre: 0.2 },               // metida en la bolsa
+  manija:      { cierre: 0.8, nudillo: 0.4, pulgar: { suelto: 1 }, abre: 0 },                                // los dedos en gancho
+  corredera:   { cierre: 0.7, nudillo: 0.8, pulgar: { cierra: 0.8, suelto: 0.2 }, abre: 0 },                 // por arriba de la corredera
+  palmada:     { cierre: 0.04, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.7 },
+  empuja:      { cierre: 0.8, nudillo: 0.9, pulgar: { sube: 1 }, abre: 0 },                                  // el pulgar empuja las balas del peine
+  bandeja:     { cierre: 0.3, nudillo: 0.5, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.4 },               // la palma hacia arriba, sosteniendo
+  empunadura:  { cierre: [0.4, 0.86, 0.9, 0.92], nudillo: 0.92, pulgar: { cierra: 0.6, largo: 0.4 }, abre: 0 },   // el índice, en el disparador
+  guardamanos: { cierre: 0.62, nudillo: 0.75, pulgar: { arriba: 0.4, sube: 0.6 }, abre: 0 },                 // la palma por debajo del arma; el pulgar sube en diagonal por este costado
+  envuelve:    { cierre: 0.7, nudillo: 0.3, pulgar: { largo: 1 }, abre: 0 },                                 // sobre los dedos de la otra mano
+  cabeza:      { cierre: 0.4, pulgar: { suelto: 1 }, abre: 0.4 },
+};
+const TAU_MANO = 65;   // ms que tarda la mano en acomodarse a un gesto nuevo
+// Lo que hace que la mano no salte de una pose a otra: guarda la base y la pose de cada mano y las acerca al objetivo.
+// Un agarre firme sobre el arma (rigido) ya acomodado sigue al arma sin retraso.
+function poseSuave(j, cual, gesto, B, pose, rigido) {
+  const M = j.manos || (j.manos = {}), prev = M[cual], ahora = j.ahora, arma = j.montada ? 'm2' : j.inventario[j.indiceArma];
+  let k = 1;
+  if (prev && prev.arma === arma && ahora >= prev.t && ahora - prev.t < 250) {
+    if (ahora === prev.t && prev.gesto === gesto) return prev;                      // segunda pasada del mismo cuadro (la sombra)
+    k = rigido && prev.gesto === gesto && prev.asentada ? 1 : 1 - Math.exp(-(ahora - prev.t) / TAU_MANO);
+  }
+  const nB = k >= 1 ? B : mezclarBases(prev.B, B, k), nP = k >= 1 ? pose : mezclarPoses(prev.pose, pose, k);
+  const asentada = k >= 1 || (V3.punto(nB.ex, B.ex) > 0.9992 && V3.punto(nB.eb, B.eb) > 0.9992);
+  return (M[cual] = { B: nB, pose: nP, t: ahora, arma, gesto, asentada });
+}
+/* Resuelve un brazo con su mano. `armar(ante3)` devuelve, para esa dirección del antebrazo, lo que pide el gesto:
+ *   { gesto, B: base de la mano, O: [x, y] dónde va la palma, pose, zObj: profundidad de lo que agarra, rigido }
+ * Como la muñeca depende de la mano y la mano del antebrazo, se da un par de vueltas hasta que cierran. */
+function armarBrazo(j, cual, hx, hy, armar, opBrazo) {
+  let ante3 = [0.8, -0.55, 0], g = null, R = null;
+  const resolver = B => { const W = munecaDe(g.O, B); return [W, resolverBrazo(hx, hy, W[0], W[1], Object.assign({ mano: g.rigido ? B.ex : null, alinea: g.alinea }, opBrazo, g.polo ? { polo: g.polo } : null))]; };
+  for (let k = 0; k < 3; k++) { g = armar(ante3); R = resolver(g.B)[1]; ante3 = R.ante3; }
+  const S = poseSuave(j, cual, g.gesto, g.B, normalizarPose(g.pose), g.rigido), [W, R2] = resolver(S.B);
+  (j.brazos || (j.brazos = {}))[cual] = { cx: R2.cx, cy: R2.cy, flexion: R2.flexion, extension: R2.extension };   // para las pruebas: dónde quedó el codo y cuánto dobla
+  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null };
+}
+const pintarBrazo = (ctx, A, C) => dibujarBrazo(ctx, A.hx, A.hy, A.W[0], A.W[1], A.R, C);
+const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj);
+const mezclaGesto = (a, b, k) => mezclarPoses(normalizarPose(GESTOS_MANO[a]), normalizarPose(GESTOS_MANO[b]), limitar(k, 0, 1));
 
-function manoLibre(ctx, x, y, ang, cierre, C, op = {}) {
-  const T = tonosGuante(C.guante), k = limitar(cierre, 0, 1), m = MANO.muneca;
-  ctx.save(); ctx.translate(x, y); ctx.rotate(ang); if (op.espejo) ctx.scale(1, -1);
-  // Dedos en dos tramos que se doblan hacia la palma: estirados, en C (sostienen algo) o en puño, con la punta abajo
-  const a1 = k * 1.45, a2 = a1 + k * 1.8, bx = 1.3, by = -0.45;
-  const x1 = bx + Math.cos(a1) * 2.1, y1 = by + Math.sin(a1) * 2.1, x2 = x1 + Math.cos(a2) * 2.2, y2 = y1 + Math.sin(a2) * 2.2;
-  pintura(ctx, c => c.roundRect(-m - 2.2, -2.45, 2.5, 4.9, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });   // puño elastizado
-  pintura(ctx, c => c.roundRect(-m - 0.2, -2.55, m + 3.2, 4.9, 1.9), T.base, TRAZO_MANO);                                  // dorso y palma
-  pintura(ctx, tramo(x1, y1, x2, y2, 2.2, 1.8), T.dedo, TRAZO_MANO);
-  pintura(ctx, tramo(bx, by, x1, y1, 2.6, 2.2), T.dedo, TRAZO_MANO);
-  if (!Pincel.silueta) for (const s of [-0.45, 0.45]) {   // los dedos de al lado, asomando
-    const nx = -Math.sin(a1), ny = Math.cos(a1), mx = -Math.sin(a2), my = Math.cos(a2);
-    raya(ctx, T.pliegue, 0.3, [[bx + 0.5 + nx * s, by + ny * s], [x1 + nx * s, y1 + ny * s], [x1 + (x2 - x1) * 0.8 + mx * s * 0.8, y1 + (y2 - y1) * 0.8 + my * s * 0.8]]);
+/* Gestos de la mano de apoyo (la del brazo cercano, que es el izquierdo). p: el punto donde actúa (e.mano). */
+function gestoApoyo(gesto, p, e, op = {}) {
+  const c = Math.cos(e.incl), s = Math.sin(e.incl), arribaArma = [s, -c, 0];   // hacia arriba del arma
+  const libre = (nombre, giro, flexion, desvio, atras = 0, palma = 0, pose = null) => ante3 => {
+    const B = manoDesdeAntebrazo(ante3, true, giro, flexion, desvio);
+    return { gesto: nombre, B, O: [p[0] - B.ex[0] * atras - B.eb[0] * palma, p[1] - B.ex[1] * atras - B.eb[1] * palma], pose: pose || GESTOS_MANO[nombre] };
+  };
+  const agarra = e.agarra ?? 1;
+  switch (gesto) {
+    case 'guardamanos': {   // la palma sostiene el arma desde abajo; los dedos suben por el otro costado y el pulgar por este
+      const B = baseMano([0.2 * c + 0.24 * s, 0.2 * s - 0.24 * c, -0.95], [arribaArma[0], arribaArma[1], 0.14], true);
+      return () => ({ gesto, B, O: [p[0] - B.eb[0] * 0.85, p[1] - B.eb[1] * 0.85], pose: GESTOS_MANO.guardamanos, zObj: B.ex[2] * 0.5 + B.eb[2] * 1.6, rigido: true, alinea: 0, capas: 'arma' });
+    }
+    case 'envuelve': {      // pistola a dos manos: tapa los dedos de la otra, con el pulgar estirado sobre el armazón
+      const a = e.incl + 0.2, B = baseMano([Math.cos(a), Math.sin(a), -0.32], [0.12, 0, -1], true);
+      return () => ({ gesto, B, O: [p[0] - B.ex[0] * 0.9, p[1] + 0.5 - B.ex[1] * 0.9], pose: GESTOS_MANO.envuelve, zObj: B.eb[2] * 1.3, rigido: true, alinea: 0.5, capas: 'arma' });
+    }
+    case 'mango': {         // segunda mano en el mango de un arma de dos manos
+      const B = baseMano([c, s, -0.1], [0.1, 0, -1], true);
+      return () => ({ gesto, B, O: p, pose: GESTOS_MANO.punio, zObj: B.eb[2] * 0.9, rigido: true, alinea: 0.5, capas: 'arma' });
+    }
+    case 'cargador': case 'punio': {   // envuelve algo largo (cargador, cohete, granada): el lado del pulgar, a lo largo de eso
+      const eje = op.eje || arribaArma, eb = [-0.15, 0, -1];
+      return ante3 => {
+        let ex = V3.cruz(eje, eb);
+        if (gesto === 'punio' && V3.punto(ex, ante3) < 0) ex = V3.por(ex, -1);   // un tubo se agarra de cualquiera de los dos lados
+        const B = limitarMuneca(baseMano(ex, eb, true), ante3);
+        const atras = gesto === 'cargador' ? 1.5 : 0.4;   // la palma queda sobre la mitad de atrás y los dedos cruzan hasta el canto de adelante
+        return { gesto, B, O: [p[0] - B.ex[0] * atras, p[1] - B.ex[1] * atras], pose: mezclaGesto('viaja', gesto, agarra), zObj: B.eb[2] * 1.4, capas: op.capas || 'objeto' };
+      };
+    }
+    case 'bandeja': {       // la caja apoyada en la palma
+      return ante3 => { const B = manoDesdeAntebrazo(ante3, true, -80, -25, 0); return { gesto, B, O: [p[0] - B.eb[0] * 0.9, p[1] - B.eb[1] * 0.9], pose: GESTOS_MANO.bandeja, zObj: -9 }; };
+    }
+    case 'corredera': {     // por arriba de la corredera de la pistola: la palma encima, los dedos del otro lado
+      const eb = [-arribaArma[0], -arribaArma[1], 0.1];
+      return ante3 => { const B = limitarMuneca(baseMano([0.1 * c - 0.25 * s, 0.1 * s + 0.25 * c, -0.95], eb, true), ante3);
+        return { gesto, B, O: [p[0] - B.eb[0] * 0.85, p[1] - B.eb[1] * 0.85], pose: mezclaGesto('viaja', 'corredera', agarra), zObj: B.ex[2] * 1.5 + B.eb[2] * 1.2, capas: 'objeto' }; };
+    }
+    case 'peldano': {       // barrote de la escalera: los dedos por arriba, hacia adelante
+      const B = baseMano([0.15, -1, 0], [1, 0.2, 0], true);
+      return () => ({ gesto, B, O: p, pose: GESTOS_MANO.punio, rigido: true, alinea: 0.2, polo: [-0.8, 0.4, 1.7] });   // el codo se abre hacia el costado
+    }
+    case 'soga': { const B = baseMano([1, -0.1, -0.1], [0.1, 0, -1], true); return () => ({ gesto, B, O: p, pose: GESTOS_MANO.punio, rigido: true, alinea: 0.2, polo: [-0.8, 0.4, 1.7] }); }
+    case 'pinza':   return libre('pinza', 25, 14, 0, 3.4, 1.8);                                          // lo que lleva queda en la punta de los dedos
+    case 'bolsa':   return libre('bolsa', 55, 28, 0, 2.0, 0, mezclaGesto('viaja', 'bolsa', agarra));
+    case 'manija':  return libre('manija', 70, 15, -5, 3.3, 1.2, mezclaGesto('viaja', 'manija', agarra));   // la manija, en el gancho de los dedos
+    case 'palmada': return libre('palmada', 35, -25, 0, 1.0);
+    case 'empuja':  return libre('empuja', 80, 35, 0, 0.4, 1.9);
+    case 'suelta':  return libre('suelta', 0, -5, 0);
+    case 'cabeza':  return libre('cabeza', -70, 72, 0);                                                 // la palma sobre la cabeza: la muñeca doblada, los dedos hacia atrás
+    default:        return libre('viaja', 10, 10, 0);
   }
-  pintura(ctx, c => c.roundRect(-0.9, -2.75, 2.9, 1.6, 0.7), T.nudillo, { sombra: 0.4, brillo: 0.3, linea: 0.35 });        // nudillera
-  if (op.pulgar !== false) {   // pulgar de este lado: abierto se separa, cerrado cruza por delante de los dedos
-    const p1 = 0.7 - k * 1.05, p2 = p1 - k * 0.45, px = -1.2, py = 1.35;
-    const qx = px + Math.cos(p1) * 2.0, qy = py + Math.sin(p1) * 2.0;
-    pintura(ctx, tramo(px, py, qx, qy, 1.9, 1.5), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });
-    pintura(ctx, tramo(qx, qy, qx + Math.cos(p2) * 1.5, qy + Math.sin(p2) * 1.5, 1.5, 1.2), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });
+}
+/* Gestos de la mano del gatillo (la del brazo lejano, la derecha). g: el punto de la empuñadura; ang: su inclinación. */
+function gestoGatillo(gesto, g, ang) {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  switch (gesto) {
+    case 'empunadura': {    // la palma del otro lado de la empuñadura; de este lado, los dedos que la envuelven y el pulgar
+      const B = baseMano([c, s, -0.12], [0.1, 0, 1], false);
+      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose: GESTOS_MANO.empunadura, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma' });
+    }
+    case 'mango': {         // el mango pasa por el puño
+      const B = baseMano([c, s, 0], [0, 0, 1], false);
+      return () => ({ gesto, B, O: g, pose: GESTOS_MANO.punio, zObj: 0.9, rigido: true, alinea: 0.4, polo: [0, -0.2, -0.6], capas: 'arma' });
+    }
+    case 'granada': {       // la granada en la mano, a la altura del pecho
+      const B = baseMano([0.25, -0.95, 0.1], [0.2, 0, 1], false);
+      return () => ({ gesto, B, O: [g[0], g[1] + 1], pose: GESTOS_MANO.cargador, zObj: 1.4, rigido: true, alinea: 0.3, polo: [0, -0.2, -0.6], capas: 'arma' });
+    }
+    case 'peldano': { const B = baseMano([0.15, -1, 0], [1, 0.2, 0], false); return () => ({ gesto, B, O: g, pose: GESTOS_MANO.punio, rigido: true, alinea: 0.2, polo: [-0.8, 0.4, -1.7] }); }
+    case 'soga': { const B = baseMano([1, -0.1, 0.1], [0.1, 0, 1], false); return () => ({ gesto, B, O: g, pose: GESTOS_MANO.punio, rigido: true, alinea: 0.2, polo: [-0.8, 0.4, -1.7] }); }
+    default: return ante3 => ({ gesto: 'cabeza', B: manoDesdeAntebrazo(ante3, false, -70, 72, 0), O: g, pose: GESTOS_MANO.cabeza });   // la palma sobre la cabeza
   }
-  ctx.restore();
 }
-// Brazo y mano libre: la palma en (px, py) apuntando a pose.dir (o siguiendo al antebrazo); el brazo llega a la muñeca.
-// pose.antes(dir) dibuja lo que lleva en la mano, entre el brazo y los dedos
-function brazoConMano(ctx, hx, hy, px, py, C, L = [13.5, 13], pose = {}) {
-  const k0 = codoBrazo(hx, hy, px, py, L[0], L[1]);
-  const quiere = pose.dir ?? k0.ante + 0.12;   // suelta, la mano cae un poco
-  const dir = k0.ante + limitar(normalizarAng(quiere - k0.ante), -MANO.dobla, MANO.dobla);
-  brazoDetallado(ctx, hx, hy, px - Math.cos(dir) * MANO.muneca, py - Math.sin(dir) * MANO.muneca, C, L[0], L[1]);
-  if (pose.antes) pose.antes(dir);
-  manoLibre(ctx, px, py, dir, pose.cierre ?? 0.9, C, pose);
-  return dir;
-}
-// La mano de siempre, cerrada y con los dedos para arriba (escaleras, sogas, la M2): ahora es la misma mano libre
-function manoConGuante(ctx, x, y, C, ang = -Math.PI / 2, cierre = 1) { manoLibre(ctx, x, y, ang, cierre, C); }
-
-/* ---------- Manos que agarran el arma ----------
- * Mano del gatillo: la palma queda del otro lado de la empuñadura (se dibuja antes que el arma); de este lado
- * se ven el pulgar cruzando por arriba, los tres dedos envolviendo el frente y el índice en el disparador.
- * El eje de la empuñadura baja inclinado hacia atrás según `ang`. Mismo guante y mismo trazo que la mano libre. */
-function manoGatilloPalma(ctx, x, y, ang, C) {
-  const T = tonosGuante(C.guante);
-  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-  pintura(ctx, c => c.roundRect(-2.4, 2.6, 4.6, 2.3, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });   // puño elastizado
-  pintura(ctx, redondo(-2.0, -0.2, 3.9, 4.6, 1.6), T.palma, TRAZO_MANO);
-  ctx.restore();
-}
-function manoGatilloDedos(ctx, x, y, ang, C) {
-  const T = tonosGuante(C.guante);
-  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-  for (let k = 2; k >= 0; k--) pintura(ctx, redondo(0.5, 1.8 + k * 1.25, 2.2, 1.2, 0.55), T.dedo, { sombra: 0.35, brillo: 0.2, linea: 0.32 });   // dedos sobre el frente
-  pintura(ctx, redondo(-2.1, -0.35, 3.5, 1.45, 0.65), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });               // pulgar por arriba
-  ctx.restore();
-  ctx.save(); ctx.translate(x, y); ctx.rotate(ang * 0.25);
-  pintura(ctx, redondo(0.4, 0.5, 2.8, 1.0, 0.45), T.dedo, { sombra: 0.35, brillo: 0.2, linea: 0.32 });                // índice en el disparador
-  ctx.restore();
-}
-// Mano de apoyo en un arma larga: la palma sostiene el guardamanos desde abajo y los dedos suben por este costado;
-// el puño elastizado sigue al antebrazo (angAnte)
-function manoGuardamanos(ctx, x, y, C, angAnte = -0.8) {
-  const T = tonosGuante(C.guante);
-  ctx.save(); ctx.translate(x - 2.4, y + 2.6); ctx.rotate(angAnte);
-  pintura(ctx, c => c.roundRect(-2.6, -2.3, 2.6, 4.6, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });
-  ctx.restore();
-  pintura(ctx, redondo(x - 2.9, y + 0.3, 5.8, 2.8, 1.2), T.palma, TRAZO_MANO);
-  for (let k = 0; k < 4; k++) {
-    const fx = x - 2.1 + k * 1.35;
-    pintura(ctx, poli(segmento(fx - 0.3, y + 1.9, fx + 0.2, y - 1.3, 1.25, 1.05)), T.dedo, { sombra: 0.3, brillo: 0.2, linea: 0.32 });
-  }
-  pintura(ctx, c => c.roundRect(x - 2.4, y + 1.4, 5.1, 1.3, 0.6), T.nudillo, { sombra: 0.3, brillo: 0.25, linea: 0.32 });   // nudillera
-}
-// Mano de apoyo en una pistola: envuelve los dedos de la otra mano, con el pulgar estirado sobre el armazón
-function manoEnvolvente(ctx, x, y, ang, C) {
-  const T = tonosGuante(C.guante);
-  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-  pintura(ctx, c => c.roundRect(-2.4, 2.4, 4.4, 2.3, 0.9), T.punio, { sombra: 0.4, brillo: false, linea: 0.35 });
-  pintura(ctx, redondo(-1.6, -1.8, 4.2, 4.9, 1.6), T.base, TRAZO_MANO);
-  for (let k = 0; k < 3; k++) raya(ctx, T.pliegue, 0.3, [[0.4, -0.5 + k * 1.3], [2.3, -0.5 + k * 1.3]]);   // dedos
-  pintura(ctx, c => c.roundRect(-1.2, -1.9, 2.6, 1.3, 0.6), T.nudillo, { sombra: 0.3, brillo: 0.25, linea: 0.32 });
-  ctx.restore();
-  pintura(ctx, redondo(x - 0.6, y - 2.9, 3.7, 1.25, 0.55), T.dedo, { sombra: 0.4, brillo: 0.25, linea: 0.35 });   // pulgar sobre el armazón
+// Brazo suelto con su mano entera (trepar, colgarse, taparse la cabeza)
+function brazoSuelto(ctx, j, cual, hx, hy, armar, C) {
+  const A = armarBrazo(j, cual, hx, hy, armar, cual === 'cerca' ? { lado: 1, fondo: -4 } : { lado: -1, fondo: 4 });
+  pintarBrazo(ctx, A, C); pintarMano(ctx, A, C);
+  return A;
 }
 
 Jugador.prototype.dibujar = function (ctx, camaraX, ahora) {
@@ -10046,25 +10531,62 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   } else {
     // Rodilla en tierra: la de atrás apoya la rodilla con la pierna hacia atrás; la de adelante, muslo horizontal y canilla vertical
     const mezcla = (parado, rodilla) => parado + (rodilla - parado) * ag;
-    piernaArticulada(ctx, -4, -34, mezcla(-s * 0.55, -0.25), mezcla(0.75 * Math.max(0, -s), 1.32), ajustarColor(C.pantalon, -0.18), C);
-    piernaArticulada(ctx, 4, -34, mezcla(s * 0.55, 1.5), mezcla(0.75 * Math.max(0, s), 1.5), C.pantalon, C);
+    piernaArticulada(ctx, -4, -34, mezcla(-s * 0.55, -0.2), mezcla(0.75 * Math.max(0, -s), 1.7), ajustarColor(C.pantalon, -0.18), C);
+    piernaArticulada(ctx, 4, -34, mezcla(s * 0.55, 1.48), mezcla(0.75 * Math.max(0, s), 1.48), C.pantalon, C);
   }
 
   // Brazo lejano (el derecho, el del gatillo): va detrás del torso, así no se ve su hombro; solo asoma la mano en la empuñadura
   const e = this.estadoArma();
   const dArma = DIBUJO_ARMAS[this.arma().id] || DIBUJO_ARMAS.glock;
-  const angMano = this.montada ? 0 : (dArma.anguloEmpunadura ?? 0.3) + e.incl;   // cuerpo a cuerpo: el mango sigue al arma
+  // cuerpo a cuerpo: el mango sigue al arma; con la palanca abierta la mano gira con el lazo
+  const angMano = this.montada ? 0 : (dArma.anguloEmpunadura ?? 0.3) + e.incl - (e.palanca || 0) * GIRO_PALANCA * 0.7;
   // Con la M2: la mano del gatillo en la empuñadura de pala de abajo (16,5 detrás del cajón)
   const tapa = this.cubierto > 0.45;   // agachado, con las manos sobre la cabeza
-  const gatillo = tapa ? { x: -2, y: -80 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
-  const muneca = this.montada ? gatillo : { x: gatillo.x - Math.sin(angMano) * 2.8, y: gatillo.y + Math.cos(angMano) * 2.8 };
-  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28), brazal: C.brazal && ajustarColor(C.brazal, -0.28) });
+  const gatillo = tapa ? { x: -2.5, y: -80 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
+  const Clejos = coloresLejos(C);
   if (dArma.tanques && dArma.manguera && !this.montada) {
     const m = dArma.manguera, c = Math.cos(e.incl), sn = Math.sin(e.incl);
     dibujarManguera(ctx, ty, e.origen.x + m.x * c - m.y * sn, e.origen.y + m.x * sn + m.y * c);
   }
   const golpe = (this.montada || dArma.agarre === 'hombro') ? e.empuje * 1.2 : e.empuje * 0.4;   // el hombro absorbe el retroceso
-  brazoDetallado(ctx, -4 - golpe, -53 + ty, muneca.x, muneca.y, Clejos);
+  const arma = this.arma(), d = dArma, cuerpoACuerpo = d.agarre === 'cuerpo' && !this.montada;
+  // Los dos brazos se resuelven antes de dibujar nada: cada mano va en dos capas, una detrás de lo que agarra y otra delante
+  const corta = d.agarre === 'pistola' && !this.montada;
+  const gestoLejos = tapa ? 'cabeza' : this.montada ? 'empunadura' : cuerpoACuerpo ? 'mango' : d.agarre === 'mano' ? 'granada' : 'empunadura';
+  const lejos = armarBrazo(this, 'lejos', -4 - golpe, -53 + ty, gestoGatillo(gestoLejos, [gatillo.x, gatillo.y], cuerpoACuerpo ? e.incl : angMano), { lado: -1, fondo: corta ? 7 : 3 });
+  // Hombro izquierdo: con el arma al hombro el cuerpo se perfila y ese hombro va adelante (el codo cae bajo el arma);
+  // con la pistola los hombros quedan de frente al blanco (posición isósceles)
+  const hombroX = (tapa || this.montada ? 4 : d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe, hombroY = -52 + ty;
+  const opCerca = { lado: 1, fondo: corta ? -7 : -5, afuera: 0.12 };   // el codo del brazo de apoyo cae hacia abajo, casi en el plano
+  // El cargador que lleva la mano de apoyo es el de esta arma (js/cargadores.js), girado como el arma y con el agarre en la mano
+  const cargadorEnMano = !this.montada && e.enMano && ES_CARGADOR.has(e.enMano) && CARGADORES[arma.id];
+  let cerca, gestoCerca = e.gesto || 'apoyo', manoEn = e.mano;
+  if (tapa) cerca = armarBrazo(this, 'cerca', hombroX, hombroY, gestoApoyo('cabeza', [5, -80.5 + ty], e), opCerca);
+  else if (this.montada) {
+    // La M2 está en el mundo, sin agrandar: la mano de apoyo en la otra empuñadura, o siguiendo la recarga de la cinta
+    manoEn = { x: e.mano.x / ESCALA_JUGADOR, y: e.mano.y / ESCALA_JUGADOR };
+    const recargaM2 = !!this.recarga, B = baseMano([1, 0, -0.12], [0.1, 0, -1], true);
+    cerca = armarBrazo(this, 'cerca', hombroX, hombroY, recargaM2 ? gestoApoyo(gestoCerca === 'apoyo' ? 'viaja' : gestoCerca, [manoEn.x, manoEn.y], e)
+      : () => ({ gesto: 'empunadura', B, O: [manoEn.x, manoEn.y], pose: GESTOS_MANO.punio, rigido: true, alinea: 0.4 }), opCerca);
+  } else if (cuerpoACuerpo) {
+    // Cuerpo a cuerpo: el izquierdo también en el mango (dos manos) o en guardia delante del pecho (una mano)
+    if (!arma.unaMano && !e.sinCargador) cerca = armarBrazo(this, 'cerca', hombroX, hombroY, gestoApoyo('mango', [e.mano.x, e.mano.y], e), opCerca);
+    else {
+      const g = this.golpeActual, p = g ? limitar((this.ahora - g.inicio) / g.dur, 0, 1) : 0;
+      const guardia = [9 - Math.sin(p * Math.PI) * 6, -42 + ty - Math.sin(p * Math.PI) * 4];   // contrapeso del golpe
+      cerca = armarBrazo(this, 'cerca', hombroX, hombroY, ante3 => { const B = manoDesdeAntebrazo(ante3, true, 10, 15, 0); return { gesto: 'guardia', B, O: guardia, pose: GESTOS_MANO.punio }; }, opCerca);
+    }
+  } else {
+    if (gestoCerca === 'apoyo') gestoCerca = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'viaja' : 'guardamanos';
+    // Lo que lleva: el cargador se agarra a lo largo de su eje; lo demás, según hacia dónde apunta. Los dedos que envuelven
+    // el cargador por el otro lado van antes que el arma (también cuando el cargador está puesto y la mano lo agarra ahí)
+    let eje = null;
+    if (gestoCerca === 'cargador') { const M = CARGADORES[arma.id], [ex, ey] = M ? M.eje : [0, 1], a = e.incl + e.rotMano, c = Math.cos(a), sn = Math.sin(a); eje = [-(ex * c - ey * sn), -(ex * sn + ey * c), 0]; }
+    else if (gestoCerca === 'punio' && e.apuntaMano != null) eje = [Math.cos(e.apuntaMano), Math.sin(e.apuntaMano), 0];
+    if (gestoCerca === 'punio' && e.enMano === 'cajaMinigun') gestoCerca = 'bandeja';
+    cerca = armarBrazo(this, 'cerca', hombroX, hombroY, gestoApoyo(gestoCerca, [manoEn.x, manoEn.y], e, { eje, capas: gestoCerca === 'cargador' && !(cargadorEnMano && cargadorEnMano.encima) ? 'arma' : 'objeto' }), opCerca);
+  }
+  pintarBrazo(ctx, lejos, Clejos);
 
   // Cinturón con hebilla, cartucheras atrás y funda con pistola en el muslo (angosto como el torso de perfil)
   ctx.save(); ctx.scale(0.64, 1);
@@ -10091,81 +10613,36 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   dibujarCabeza(ctx, S, C, ty, e);
   ctx.restore();
 
-  // Cuerpo a tierra: suelta el arma y se tapa la cabeza con las dos manos
-  if (tapa && !this.montada) {
-    manoLibre(ctx, gatillo.x, gatillo.y, -2.3, 0.55, Clejos);
-    brazoConMano(ctx, 4, -52 + ty, 6, -81 + ty, C, undefined, { cierre: 0.55, dir: -2.3 });
+  // Cuerpo a tierra (suelta el arma y se tapa la cabeza con las dos manos) y la M2 (que se dibuja en el mundo): solo las manos
+  if (tapa || this.montada) {
+    pintarMano(ctx, lejos, Clejos);
+    pintarBrazo(ctx, cerca, C);
+    if (this.montada && !tapa && e.enMano) dibujarUnidad(ctx, e.enMano, manoEn.x, manoEn.y, e.apuntaMano, false, 'm2');   // la cinta, por detrás de la mano
+    pintarMano(ctx, cerca, C);
     return;
   }
 
-  if (this.montada) {
-    // Mano del gatillo fija en las empuñaduras (su brazo va detrás del torso); el brazo izquierdo sigue la recarga de la cinta
-    manoLibre(ctx, gatillo.x, gatillo.y, -Math.PI / 2, 0.95, Clejos);
-    const apoyo = tapa ? { x: 4, y: -82 + ty } : { x: e.mano.x / ESCALA_JUGADOR, y: e.mano.y / ESCALA_JUGADOR };   // la M2 está en el mundo, sin agrandar
-    const recargaM2 = !!this.recarga;
-    brazoConMano(ctx, 4 - golpe, -52 + ty, apoyo.x, apoyo.y, C, undefined, { cierre: recargaM2 ? e.cierre ?? 0.8 : 0.95, dir: recargaM2 ? e.dirMano : -Math.PI / 2,
-      antes: () => { if (e.enMano) dibujarUnidad(ctx, e.enMano, apoyo.x, apoyo.y, e.rotMano); } });
-    return;
-  }
-
-  const arma = this.arma(), d = dArma;
-  if (d.agarre === 'cuerpo') {
-    // Cuerpo a cuerpo: el arma, encima el puño derecho cerrado en el mango; el izquierdo también en el mango
-    // (dos manos) o en guardia delante del pecho (una mano)
-    ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); ctx.restore();
-    manoLibre(ctx, gatillo.x, gatillo.y, e.incl - Math.PI / 2, 1, Clejos);   // el mango pasa por el puño
-    const hombro = 3 - golpe;
-    if (!arma.unaMano && !e.sinCargador) {
-      brazoConMano(ctx, hombro, -52 + ty, e.mano.x, e.mano.y, C, undefined, { cierre: 1, dir: e.incl - Math.PI / 2 });
-    } else {
-      const g = this.golpeActual, p = g ? limitar((this.ahora - g.inicio) / g.dur, 0, 1) : 0;
-      const guardia = { x: 9 - Math.sin(p * Math.PI) * 6, y: -42 + ty - Math.sin(p * Math.PI) * 4 };   // contrapeso del golpe
-      brazoConMano(ctx, hombro, -52 + ty, guardia.x, guardia.y, C, undefined, { cierre: 0.85 });
-    }
-    return;
-  }
-  // Hombro izquierdo: con el arma al hombro el cuerpo se perfila y ese hombro va adelante (el codo cae bajo el arma);
-  // con la pistola los hombros quedan de frente al blanco (posición isósceles)
-  const hombroX = (d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe;
-  const L = d.agarre === 'hombro' ? [16, 15.5] : [13.5, 13];
-  // ¿La mano de apoyo está en su lugar? (no durante la recarga ni cuando va al cerrojo; sí al bombear o con la palanca)
-  const agarrando = !this.recarga && (!this.ciclo || this.ciclo.accion === 'bombeo' || this.ciclo.accion === 'palanca');
-  const estilo = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'libre' : 'guardamanos';
-  // Mano del gatillo: la palma va del otro lado de la empuñadura, detrás del arma
-  if (d.agarre !== 'mano') manoGatilloPalma(ctx, gatillo.x, gatillo.y, angMano, Clejos);
-  // El cargador que lleva la mano de apoyo es el de esta arma (js/cargadores.js), girado como el arma y con el agarre
-  // en la mano: va antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
-  const cargadorEnMano = e.enMano && ES_CARGADOR.has(e.enMano) && CARGADORES[arma.id];
+  // Lo que queda del otro lado del arma va antes que ella: la palma de la mano del gatillo y los dedos de la de apoyo
+  pintarMano(ctx, lejos, Clejos, 'atras');
+  if (cerca.capas === 'arma') pintarMano(ctx, cerca, C, 'atras');
   const dibujarCargadorEnMano = () => {
     ctx.save(); ctx.translate(e.mano.x, e.mano.y); ctx.rotate(e.incl + e.rotMano); ctx.scale(CM, CM); ctx.translate(-cargadorEnMano.agarre[0], -cargadorEnMano.agarre[1]);
     dibujarCargadorSuelto(ctx, cargadorEnMano, e.cargadorNuevo);
     ctx.restore();
   };
+  // El cargador que entra o sale va antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
   if (cargadorEnMano && !cargadorEnMano.encima) dibujarCargadorEnMano();
-  else manoLibre(ctx, gatillo.x, gatillo.y + 1, angMano - Math.PI / 2, 0.95, Clejos);
   ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); ctx.restore();
-  if (e.peine) dibujarPeineEnArma(ctx, e.peine);
-  if (d.agarre !== 'mano') manoGatilloDedos(ctx, gatillo.x, gatillo.y, angMano, Clejos);
-  // Brazo izquierdo (de apoyo): va por delante de todo y es el único hombro que se ve
-  if (agarrando && estilo === 'guardamanos') {
-    // Si el guardamanos queda lejos para el brazo, la mano se apoya más atrás sobre el arma (hasta 8 unidades),
-    // así el codo queda doblado debajo y no con el brazo tieso
-    const ax = Math.cos(e.incl), ay = Math.sin(e.incl), alcance = (L[0] + L[1]) * 0.9;
-    const reposo = { x: e.mano.x + e.retroX, y: e.mano.y + e.retroY };
-    let atras = 0;
-    while (atras < 12 && Math.hypot(reposo.x - ax * atras - 2.4 - (hombroX + golpe), reposo.y - ay * atras + 2.6 - (-52 + ty)) > alcance) atras += 0.5;
-    const mano = { x: e.mano.x - ax * atras, y: e.mano.y - ay * atras };   // mismo lugar del arma: se mueve con ella
-    const b = brazoDetallado(ctx, hombroX, -52 + ty, mano.x - 2.4, mano.y + 2.6, C, ...L);
-    manoGuardamanos(ctx, mano.x, mano.y, C, b.ante);
-  } else if (agarrando && estilo === 'envuelve') {
-    brazoDetallado(ctx, hombroX, -52 + ty, e.mano.x - Math.sin(angMano) * 1.4, e.mano.y + Math.cos(angMano) * 1.9, C, ...L);
-    manoEnvolvente(ctx, e.mano.x, e.mano.y, angMano, C);
-  } else {
-    // Mano libre (recarga, cerrojo, granada): sigue al antebrazo, abierta o cerrada según lo que hace (estadoArma).
-    // Lo que lleva va entre los dedos: se dibuja antes que la mano para que esta lo tape un poco
-    brazoConMano(ctx, hombroX, -52 + ty, e.mano.x, e.mano.y, C, L, { cierre: e.cierre ?? 0.8, dir: e.dirMano,
-      antes: () => { if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.rotMano, e.cajaNueva); } });
-  }
+  if (e.peine) dibujarPeineEnArma(ctx, e.peine, arma.id);
+  pintarMano(ctx, lejos, Clejos, 'adelante');
+
+  // Brazo izquierdo (de apoyo): va por delante de todo y es el único hombro que se ve. Lo que lleva la mano se dibuja
+  // antes que ella: queda detrás de la palma y de los nudillos, y solo los dedos que lo envuelven por el otro lado van antes
+  pintarBrazo(ctx, cerca, C);
+  if (cerca.capas === 'objeto') pintarMano(ctx, cerca, C, 'atras');
+  if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); }
+  else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.apuntaMano, e.cajaNueva, arma.id);
+  pintarMano(ctx, cerca, C, cerca.capas ? 'adelante' : null);
 };
 
 /* Mochila del lanzallamas M2 en la espalda: dos tanques de combustible (de perfil se ve el cercano, con domos arriba y
@@ -10192,10 +10669,28 @@ function dibujarManguera(ctx, ty, x, y) {
   ctx.restore();
 }
 
-/* Lo que puede llevar la mano durante una recarga, con su forma propia (nueva: la que trae, no la que saca) */
-function dibujarUnidad(ctx, tipo, x, y, rot = 0, nueva = false) {
-  const laton = '#c9a227', cobre = '#b87333';
-  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+/* Lo que puede llevar la mano durante una recarga, con su forma propia (nueva: la que trae, no la que saca).
+ * apunta: hacia dónde va la punta (radianes en el marco del cuerpo; 0 = hacia adelante): la bala, el cartucho, el peine,
+ * el cohete y la granada de 40 giran con la mano y con el arma, no van siempre parados. Las balas y los cartuchos son
+ * los del calibre del arma (armaId; js/municion.js), a escala. */
+function dibujarUnidad(ctx, tipo, x, y, apunta = -Math.PI / 2, nueva = false, armaId = null) {
+  const laton = TONOS_MUNICION.laton[1];
+  ctx.save(); ctx.translate(x, y);
+  switch (tipo) {
+    case 'bala': case 'cartucho': case 'granada40':   // de a una: el cartucho de esa arma, con el centro en la mano
+      ctx.rotate(apunta); ctx.scale(CM, CM); cartuchoEn(ctx, calibreDe(armaId), 0, 0); ctx.restore(); return;
+    case 'peine':
+      ctx.rotate(apunta); ctx.scale(CM, CM); dibujarPeine(ctx, armaId); ctx.restore(); return;
+    case 'speedloader':
+      ctx.rotate(apunta); ctx.scale(CM, CM); dibujarCargadorRapido(ctx, armaId); ctx.restore(); return;
+    case 'cinta':     // el tramo de cinta cuelga de la mano: las balas, paradas
+      ctx.rotate(apunta + Math.PI / 2); ctx.scale(CM, CM); dibujarCinta(ctx, armaId || 'm2'); ctx.restore(); return;
+    case 'pasador':     // anilla con el pasador recién sacado, colgando de un dedo
+      if (!Pincel.silueta) { ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.strokeStyle = tinta('#b8b8b8'); ctx.lineWidth = 0.8; ctx.stroke();
+        ctx.strokeStyle = tinta('#9a9a9a'); ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(1.6, 1.4); ctx.lineTo(3.4, 5.4); ctx.lineTo(4.2, 5.0); ctx.stroke(); }
+      ctx.restore(); return;
+  }
+  ctx.rotate(apunta + Math.PI / 2);   // lo que sigue está dibujado parado (la punta hacia arriba)
   switch (tipo) {
     case 'cajaMinigun':   // la caja de munición de la minigun, apoyada en la palma (js/armas-especiales.js)
       ctx.scale(CM, CM); cajaMinigun(ctx, 0, 1.6, nueva); break;
@@ -10209,20 +10704,6 @@ function dibujarUnidad(ctx, tipo, x, y, rot = 0, nueva = false) {
       parte(ctx, -12, -2, 24, 3.5, '#4a4f4a'); ctx.fillStyle = tinta(laton); for (let k = 0; k < 6; k++) ctx.fillRect(-10 + k * 4, -1.5, 2, 1); break;
     case 'tambor-cargador':
       esfera(ctx, 1, 4, 6.5, '#1e2226'); parte(ctx, -1.5, -2, 5, 4, '#2b2f33'); ctx.fillStyle = tinta('#3a3f44'); ctx.fillRect(-2, 3, 6, 1.5); break;
-    case 'bala':
-      parte(ctx, -1, -4, 3, 7, laton); ctx.fillStyle = tinta(cobre); ctx.beginPath(); ctx.moveTo(-1, -4); ctx.lineTo(0.5, -7); ctx.lineTo(2, -4); ctx.fill(); break;
-    case 'cartucho':
-      parte(ctx, -1.5, -6, 4, 8, '#b4251e'); ctx.fillStyle = tinta(laton); ctx.fillRect(-1.5, 0, 4, 2.5); break;
-    case 'peine':
-      parte(ctx, -1, -7, 2, 14, '#7a7a7a');
-      for (let k = 0; k < 5; k++) { parte(ctx, 0, -6 + k * 2.6, 6, 2, laton); ctx.fillStyle = tinta(cobre); ctx.fillRect(6, -5.6 + k * 2.6, 1.5, 1.2); }
-      break;
-    case 'speedloader':
-      for (let k = 0; k < 3; k++) { parte(ctx, -3.5 + k * 2.5, 2, 2, 4, laton); ctx.fillStyle = tinta(cobre); ctx.fillRect(-3.5 + k * 2.5, 5.5, 2, 1.2); }
-      esfera(ctx, 0, 0, 4.5, '#2a2a2e'); parte(ctx, -1.5, -6, 3, 3, '#4a4a52'); break;
-    case 'cinta':
-      for (let k = 0; k < 6; k++) { parte(ctx, -12 + k * 4, -1, 2.5, 7, laton); ctx.fillStyle = tinta(cobre); ctx.fillRect(-12 + k * 4, -2.5, 2.5, 1.6); ctx.fillStyle = tinta('#555'); ctx.fillRect(-12 + k * 4 - 0.5, 2, 4, 1.2); }
-      break;
     case 'cohete':
       parte(ctx, -1.6, -4, 3.2, 9, '#4b5634'); ctx.fillStyle = tinta('#3a3a3a');
       ctx.beginPath(); ctx.moveTo(-1.6, -4); ctx.lineTo(0, -7.5); ctx.lineTo(1.6, -4); ctx.fill(); ctx.fillRect(-2.6, 4, 5.2, 1.6); break;
@@ -10230,17 +10711,11 @@ function dibujarUnidad(ctx, tipo, x, y, rot = 0, nueva = false) {
       parte(ctx, -1.2, 2, 2.4, 9, '#2e302c'); ctx.fillStyle = tinta('#4a5532');
       ctx.beginPath(); ctx.moveTo(-1.2, 2); ctx.lineTo(-2.8, -0.4); ctx.lineTo(-2.8, -5.6); ctx.lineTo(-0.8, -10.4); ctx.lineTo(0.8, -10.4); ctx.lineTo(2.8, -5.6); ctx.lineTo(2.8, -0.4); ctx.lineTo(1.2, 2); ctx.fill();
       ctx.fillStyle = tinta('#d6c36a'); ctx.fillRect(-2.8, -3.4, 5.6, 0.7); ctx.fillStyle = tinta('#1d1e1c'); ctx.fillRect(-0.6, -12, 1.2, 1.8); break;
-    case 'granada40':
-      parte(ctx, -3, -2, 6, 6, laton); esfera(ctx, 0, -3, 3, '#4a5d23'); break;
-    case 'pasador':     // anilla con el pasador recién sacado, colgando de un dedo
-      if (!Pincel.silueta) { ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.strokeStyle = tinta('#b8b8b8'); ctx.lineWidth = 0.8; ctx.stroke();
-        ctx.strokeStyle = tinta('#9a9a9a'); ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(1.6, 1.4); ctx.lineTo(3.4, 5.4); ctx.lineTo(4.2, 5.0); ctx.stroke(); }
-      break;
     case 'granada':
       esfera(ctx, 0, 0, 5, '#3d5a2a'); parte(ctx, -1.5, -7, 3, 3, '#999'); parte(ctx, 1, -6.5, 4, 1.5, '#777'); break;
     case 'ignicion':    // cilindro de ignición del lanzallamas, con los culotes de los cartuchos
       parte(ctx, -3, -2.6, 6, 5.2, '#4b5434');
-      if (!Pincel.silueta) { ctx.fillStyle = '#c9a227'; for (const x of [-1.5, 0, 1.5]) { ctx.beginPath(); ctx.arc(x, -2.4, 0.5, 0, Math.PI * 2); ctx.fill(); } }
+      if (!Pincel.silueta) { ctx.fillStyle = laton; for (const x of [-1.5, 0, 1.5]) { ctx.beginPath(); ctx.arc(x, -2.4, 0.5, 0, Math.PI * 2); ctx.fill(); } }
       break;
     case 'celda':
       if (!Pincel.silueta) { ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 8; }
@@ -10249,21 +10724,19 @@ function dibujarUnidad(ctx, tipo, x, y, rot = 0, nueva = false) {
   ctx.restore();
 }
 
-/* Peine apoyado en la guía del cajón: las balas van bajando a medida que el pulgar empuja */
-function dibujarPeineEnArma(ctx, peine) {
-  const n = Math.ceil(5 * peine.restante);
-  parte(ctx, peine.x - 1, peine.y - 13, 2, 13, '#7a7a7a');
-  for (let k = 0; k < n; k++) {
-    const by = peine.y - 12 + (5 - n + k) * 2.4;
-    parte(ctx, peine.x, by, 6, 2, '#c9a227'); ctx.fillStyle = tinta('#b87333'); ctx.fillRect(peine.x + 6, by + 0.4, 1.5, 1.2);
-  }
+/* Peine apoyado en la guía del cajón, con las balas hacia adelante: van bajando al depósito a medida que el pulgar empuja */
+function dibujarPeineEnArma(ctx, peine, armaId) {
+  const cal = calibreDe(armaId), n = armaId === 'garand' ? 4 : 5, alto = n * cal.d * 1.08;
+  ctx.save(); ctx.translate(peine.x, peine.y); ctx.rotate(peine.incl || 0); ctx.scale(CM, CM); ctx.translate(0, -alto / 2 - 0.2);
+  dibujarPeine(ctx, armaId, Math.ceil(n * peine.restante));
+  ctx.restore();
 }
 
 /* Trepando una escalera de mano: de perfil contra la escalera, las manos se turnan en los barrotes de arriba y las
  * piernas suben de a un escalón (una rodilla arriba mientras la otra estira). Colgado de una soga: las dos manos
  * arriba, una sobre la otra, y las piernas juntas, balanceándose un poco. El arma va colgada a la espalda. */
 function dibujarColgado(ctx, j, S, C) {
-  const Clejos = Object.assign({}, C, { chaqueta: ajustarColor(C.chaqueta, -0.28), piel: ajustarColor(C.piel, -0.25), guante: ajustarColor(C.guante, -0.05), antebrazo: C.antebrazo && ajustarColor(C.antebrazo, -0.28), parche: C.parche && ajustarColor(C.parche, -0.28), brazal: C.brazal && ajustarColor(C.brazal, -0.28) });
+  const Clejos = coloresLejos(C);
   const pantalonLejos = ajustarColor(C.pantalon, -0.18);
   // Arma a la espalda, en diagonal
   ctx.save(); ctx.translate(-14, -50); ctx.rotate(-1.05);
@@ -10273,22 +10746,22 @@ function dibujarColgado(ctx, j, S, C) {
     const T = j.trepa, peldanos = Math.abs(T.y1 - T.y0) / 12, c = Math.sin(T.f * peldanos * Math.PI);   // un ciclo cada dos barrotes
     const sube = Math.max(0, c), baja = Math.max(0, -c);
     piernaArticulada(ctx, -2, -34, 0.35 + 0.75 * baja, 0.45 + 1.1 * baja, pantalonLejos, C);
-    brazoConMano(ctx, -3, -53, 7, -74 - 9 * baja, Clejos, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
+    brazoSuelto(ctx, j, 'lejos', -3, -53, gestoGatillo('peldano', [7, -74 - 9 * baja], 0), Clejos);
     dibujarTorso(ctx, S, C, 0);
     ctx.save(); ctx.translate(2, -62); ctx.rotate(-0.18); ctx.translate(0, 62);   // mira hacia arriba
     dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
     piernaArticulada(ctx, 3, -34, 0.35 + 0.75 * sube, 0.45 + 1.1 * sube, C.pantalon, C);
-    brazoConMano(ctx, 4, -52, 8, -74 - 9 * sube, C, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
+    brazoSuelto(ctx, j, 'cerca', 4, -52, gestoApoyo('peldano', [8, -74 - 9 * sube], { incl: 0 }), C);
     return;
   }
   // Colgado de la soga
   const vaiven = Math.sin(j.ahora / 260) * 0.12;
   piernaArticulada(ctx, -2, -34, 0.1 + vaiven, 0.35, pantalonLejos, C);
-  brazoConMano(ctx, -3, -53, 0, -78, Clejos, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
+  brazoSuelto(ctx, j, 'lejos', -3, -53, gestoGatillo('soga', [0, -78], 0), Clejos);
   dibujarTorso(ctx, S, C, 0);
   ctx.save(); ctx.translate(1, -62); ctx.rotate(-0.12); ctx.translate(0, 62); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
   piernaArticulada(ctx, 3, -34, 0.25 + vaiven, 0.5, C.pantalon, C);
-  brazoConMano(ctx, 4, -52, 1, -70, C, undefined, { cierre: 0.95, dir: -Math.PI / 2 });
+  brazoSuelto(ctx, j, 'cerca', 4, -52, gestoApoyo('soga', [1, -70], { incl: 0 }), C);
 }
 
 </script>
@@ -12291,7 +12764,7 @@ class Casquillo {
     ctx.globalAlpha = Math.min(1, this.vida / 0.3);   // se desvanece en los últimos 0,3 s
     ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot);
     if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
-      ctx.fillStyle = 'rgba(255, 236, 160, 0.55)'; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255, 240, 190, 0.3)'; ctx.beginPath(); ctx.arc(0, 0, 1.8, 0, Math.PI * 2); ctx.fill();
     }
     if (this.cargador) {   // el cargador de su arma, en cm, girado alrededor de donde lo tenía la mano
       const M = this.cargador, K = ESCALA_JUGADOR * CM;
@@ -12300,19 +12773,21 @@ class Casquillo {
       ctx.restore();
       return;
     }
+    // Proporciones reales (vaina de 9 mm, de fusil, de .50 y cartucho de escopeta), agrandadas para que se vean al volar.
+    // El latón y el plástico, de los mismos tonos apagados que la munición (js/municion.js)
+    const [, laton, latonSombra] = TONOS_MUNICION.laton, rojo = TONOS_MUNICION.plastico[1];
     switch (this.tipo) {
-      // Proporciones reales (vaina de 9 mm, de fusil, de .50 y cartucho de escopeta), agrandadas para que se vean al volar
-      case 'pistola':  bloque(ctx, -1.0, -0.45, 2.0, 0.9, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-1.0, -0.45, 0.35, 0.9); break;
-      case 'escopeta': bloque(ctx, -2.2, -0.8, 4.4, 1.6, '#b4251e'); ctx.fillStyle = '#d4ac2c'; ctx.fillRect(-2.2, -0.8, 1.1, 1.6); break;
-      case 'grande':   bloque(ctx, -3.0, -0.8, 6.0, 1.6, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-3.0, -0.8, 0.6, 1.6); ctx.fillRect(1.6, -0.5, 1.4, 1.0); break;
+      case 'pistola':  bloque(ctx, -1.0, -0.45, 2.0, 0.9, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-1.0, -0.45, 0.3, 0.9); break;
+      case 'escopeta': bloque(ctx, -2.2, -0.8, 4.4, 1.6, rojo); ctx.fillStyle = laton; ctx.fillRect(-2.2, -0.8, 1.1, 1.6); break;
+      case 'grande':   bloque(ctx, -3.0, -0.8, 6.0, 1.6, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-3.0, -0.8, 0.5, 1.6); ctx.fillRect(1.6, -0.5, 1.4, 1.0); break;
       case 'cargador': bloque(ctx, -1.0, -5.2, 2.0, 10.4, '#222'); ctx.fillStyle = '#555'; ctx.fillRect(-1.0, 4.4, 2.0, 0.8); break;
       case 'cargadorPistola': bloque(ctx, -0.8, -3.4, 1.6, 6.8, '#222'); ctx.fillStyle = '#444'; ctx.fillRect(-1.0, 2.8, 2.0, 0.7); break;
-      case 'granada40': bloque(ctx, -4, -2.5, 8, 5, '#c9a227'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-4, -2.5, 2, 5); break;
-      case 'peine':    bloque(ctx, -5, -1, 10, 2, '#777'); break;
+      case 'granada40': bloque(ctx, -1.7, -1.4, 3.4, 2.8, TONOS_MUNICION.aluminio[1]); ctx.fillStyle = TONOS_MUNICION.aluminio[2]; ctx.fillRect(-1.7, -1.4, 0.5, 2.8); break;   // la vaina corta de aluminio
+      case 'peine':    bloque(ctx, -0.3, -2.2, 0.6, 4.4, TONOS_MUNICION.acero[1]); break;                                                                                       // la lámina del peine
       case 'pasador':  ctx.beginPath(); ctx.arc(-1.4, 0, 2.0, 0, Math.PI * 2); ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 0.7; ctx.stroke(); bloque(ctx, 0.4, -0.3, 3.8, 0.6, '#9a9a9a'); break;   // anilla y pasador
       case 'tambor':   esfera(ctx, 0, 0, 6.5, '#1e2226'); bloque(ctx, -2, -8, 4, 3, '#2b2f33'); break;
-      case 'speedloader': esfera(ctx, 0, 0, 4.5, '#2a2a2e'); bloque(ctx, -1.5, -6, 3, 3, '#4a4a52'); break;
-      default:         bloque(ctx, -1.8, -0.5, 3.6, 1.0, '#d4ac2c'); ctx.fillStyle = '#8a6a10'; ctx.fillRect(-1.8, -0.5, 0.4, 1.0); ctx.fillRect(1.0, -0.32, 0.8, 0.64);   // vaina de fusil con cuello
+      case 'speedloader': bloque(ctx, -1.3, -1.5, 2.0, 3.0, '#2f3136'); bloque(ctx, -2.3, -0.5, 1.1, 1.0, '#2f3136'); break;                                                   // el cuerpo vacío, a su medida
+      default:         bloque(ctx, -1.8, -0.5, 3.6, 1.0, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-1.8, -0.5, 0.35, 1.0); ctx.fillRect(1.0, -0.32, 0.8, 0.64);   // vaina de fusil con cuello
     }
     ctx.restore();
   }

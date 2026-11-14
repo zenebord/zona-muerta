@@ -27,7 +27,7 @@ const RECAMARAS = {
   mossberg: { x: 9.5, y: -4.7, w: 7.0, h: 1.8, recorrido: 8, abre: e => Math.max(e.cerrojo || 0, e.bombeo || 0) },
   rem870:   { x: 10.1, y: -4.9, w: 6.8, h: 1.5, recorrido: 8, abre: e => Math.max(e.cerrojo || 0, e.bombeo || 0) },
   winchester1894: { x: 2.6, y: -5.7, w: 6.0, h: 1.2, recorrido: 6, abre: e => e.palanca || 0 },
-  winchester1887: { x: 5.5, y: -7.5, w: 7.0, h: 1.8, recorrido: 6, abre: e => e.palanca || 0 },
+  winchester1887: { x: 5.8, y: -6.6, w: 7.0, h: 1.7, recorrido: 6, abre: e => e.palanca || 0 },
   // Pistolas: con la corredera atrás se ve la recámara por la ventana (y queda abierta si se vació)
   glock:    { x: 1.6, y: -3.0, w: 3.0, h: 1.0, recorrido: 3.6, abre: e => e.corredera || 0 },
   colt1911: { x: 4.4, y: -3.0, w: 3.4, h: 1.0, recorrido: 3, abre: e => e.corredera || 0 },
@@ -35,23 +35,11 @@ const RECAMARAS = {
   deagle:   { x: -3.2, y: -4.7, w: 3.8, h: 1.2, recorrido: 4.2, abre: e => e.corredera || 0 },
 };
 
-// Medidas de la vaina en cm: largo, diámetro y largo de la punta de la bala nueva
-const VAINAS_CM = { pistola: [1.9, 0.95, 0.8], bala: [3.9, 1.1, 2.4], escopeta: [6.6, 1.9, 0], grande: [9.9, 2.0, 5.4] };
-
-function vainaEnVentana(ctx, tipo, cara, cy, h, nueva) {
-  const [largo, d0, punta] = VAINAS_CM[tipo] || VAINAS_CM.bala, d = Math.min(d0, h * 0.82), y0 = cy - d / 2;
-  if (tipo === 'escopeta') {   // vaina de plástico rojo con el culote de latón
-    pintar(ctx, Rc(cara + 1.3, y0, largo - 1.3, d), '#b4251e', { brillo: 0.35 });
-    pintar(ctx, Rc(cara, y0 - 0.06, 1.4, d + 0.12), MAT.laton, { brillo: 0.5 });
-    return;
-  }
-  const cuello = tipo === 'pistola' ? largo : largo * 0.78;   // las de fusil se angostan en el cuello
-  pintar(ctx, [[cara, y0], [cara + cuello, y0], [cara + largo, y0 + d * 0.2], [cara + largo, y0 + d * 0.8], [cara + cuello, y0 + d], [cara, y0 + d]], MAT.laton, { brillo: 0.5 });
-  ctx.fillStyle = 'rgba(60,40,0,0.55)'; ctx.fillRect(cara + 0.22, y0, 0.12, d);                    // ranura del culote
-  if (nueva && punta) {                                                                             // la bala que entra: punta de cobre
-    const yb = tipo === 'pistola' ? 0.08 : 0.2;
-    pintar(ctx, [[cara + largo, y0 + d * yb], [cara + largo + punta * 0.6, y0 + d * (yb + 0.04)], [cara + largo + punta, cy], [cara + largo + punta * 0.6, y0 + d * (1 - yb - 0.04)], [cara + largo, y0 + d * (1 - yb)]], MAT.cobre, { brillo: 0.5 });
-  }
+// La vaina tomada del extractor o la bala que entra: el cartucho de esa arma (js/municion.js), a su medida. Si la
+// ventana es más baja que la vaina, se ve lo que entra por ella
+function vainaEnVentana(ctx, armaId, cara, cy, h, nueva) {
+  const cal = calibreDe(armaId), k = Math.min(1, h * 0.82 / cal.d);
+  ctx.save(); ctx.translate(cara, cy); ctx.scale(1, k); dibujarCartucho(ctx, cal, { servida: !nueva }); ctx.restore();
 }
 
 // La ventana con el cerrojo adentro, en cm. ab: cuánto está atrás el cerrojo
@@ -65,7 +53,7 @@ function ventanaRecamara(ctx, v, e) {
   ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
   ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   ctx.fillStyle = 'rgba(150,155,165,0.3)'; ctx.fillRect(x + w - 0.3, y + h * 0.18, 0.3, h * 0.64);   // canto de la recámara
-  if (e.recamara && ab > 0.02) vainaEnVentana(ctx, ARMA_VAINA[v.id] || 'bala', cara, y + h * 0.52, h, e.recamara === 'entra');
+  if (e.recamara && ab > 0.02) vainaEnVentana(ctx, v.id, cara, y + h * 0.52, h, e.recamara === 'entra');
   // El cerrojo, de la cara hacia atrás: costado con luz, la cara oscura, la uña del extractor y el surco
   const largo = Math.max(w, v.recorrido) + w + 1;
   pintar(ctx, Rc(cara - largo, y + h * 0.06, largo, h * 0.88), v.color || '#5d6169', { brillo: 0.5 });
@@ -79,12 +67,11 @@ function ventanaRecamara(ctx, v, e) {
   trazo(ctx, 'rgba(0,0,0,0.5)', 0.1, [[x, y], [x, y + h]]);
 }
 
-// Tipo de vaina de cada arma (el mismo que la que vuela)
-const ARMA_VAINA = {};
+// Cada ventana sabe de qué arma es (la vaina que se ve es la de su calibre) y de ahí sale la vaina que vuela
 for (const [id, v] of Object.entries(RECAMARAS)) {
   const d = DIBUJO_ARMAS[id];
   if (!d) continue;
-  v.id = id; ARMA_VAINA[id] = d.casquillo || 'bala';
+  v.id = id;
   d.expulsion = { x: (v.x + v.w * 0.55) * CM, y: (v.y + v.h * 0.5) * CM };   // la vaina sale de la ventana
   if (v.enModelo) continue;
   const dibujar = d.dibujar;

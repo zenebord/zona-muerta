@@ -1474,9 +1474,11 @@ reemplazar('laser', { casquillo: null,
 
 /* ======================= ARMAS DE PALANCA (medidas sobre foto de un Winchester de palanca) ======================= */
 // Palanca integrada: placa gruesa pegada bajo el cajón desde el pivote, lazo chico que rodea el disparador
-// y lazo para los dedos justo debajo de la garganta de la culata. Gira sobre el pivote al accionarla.
+// y lazo para los dedos justo debajo de la garganta de la culata. Al accionarla gira sobre el pivote, que está adelante:
+// el lazo baja y se va hacia adelante (GIRO_PALANCA), y la mano del gatillo va con él (moviles.gatillo).
+const GIRO_PALANCA = 1.0;   // radianes de recorrido: unos 57°
 function palancaLazo(ctx, e, px, py, base) {
-  ctx.save(); ctx.translate(px, py); ctx.rotate(e.palanca * 0.95); ctx.translate(-px, -py);
+  ctx.save(); ctx.translate(px, py); ctx.rotate(-e.palanca * GIRO_PALANCA); ctx.translate(-px, -py);
   pintar(ctx, suave([[px + 0.6, base - 0.2], [px + 0.6, base + 1.1], [4.4, base + 1.3], [3.4, base + 0.1]], 0.4, 2), MAT.pavonado, { brillo: 0.35 });   // placa
   pintar(ctx, Cc(px, py, 0.45, 10), MAT.acero);                                                              // pivote
   if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fillRect(-7.6, base + 1.8, 12, 5.4); ctx.restore(); return; }
@@ -1491,19 +1493,25 @@ function palancaLazo(ctx, e, px, py, base) {
   ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 0.22; ctx.stroke();
   ctx.restore();
 }
+// Lo que se mueve con la palanca: el lazo de los dedos (la mano del gatillo va adentro) gira con ella sobre el pivote
+const movilesPalanca = (px, py, base) => ({
+  corredera: e => girarCm(-4, base + 4.5, px, py, -e.palanca * GIRO_PALANCA),
+  gatillo: e => girarCm(-4, base + 4.5, px, py, -e.palanca * GIRO_PALANCA),
+});
 
-// Winchester 1894 (96 cm): culata de nogal de garganta recta con caída, cajón bajo con la ventana de carga y
-// el cerrojo a la vista, martillo, palanca integrada, fuste sobre el tubo de balas, abrazaderas, alza y guion
+// Winchester 1894 (96 cm): culata de nogal de garganta recta con caída, cajón bajo (apenas más alto que la garganta
+// de la culata) con la ventana de carga y el cerrojo a la vista, martillo, palanca integrada, fuste sobre el tubo de
+// balas, abrazaderas, alza y guion
 reemplazar('winchester1894', { casquillo: 'bala',
-  anclas: { manoDelantera: [23, -1.4], cargador: [10.6, -2.4], corredera: [-4, 4.6], expulsion: [6, -5.4], boca: [64, -4.7] },
+  anclas: { manoDelantera: [23, -1.4], cargador: [10.6, -2.6], corredera: [-4, 3.9], expulsion: [6, -5.4], boca: [64, -4.7] },
   dibujarCm(ctx, e) {
-    pintar(ctx, suave([[0, -4.6], [-2.2, -3.8], [-8, -1.6], [-31.8, 0.6], [-32.2, 1.4], [-32.2, 12.2], [-31.4, 12.6], [-10, 3.2], [-6, 1.8], [-2.6, 1.2], [0, -0.2]], 0.9, 4), MAT.maderaClara);   // culata
+    pintar(ctx, suave([[0, -4.6], [-2.2, -3.8], [-8, -1.6], [-31.8, 0.6], [-32.2, 1.4], [-32.2, 12.2], [-31.4, 12.6], [-10, 2.9], [-6, 1.5], [-2.6, 0.8], [0, -0.6]], 0.9, 4), MAT.maderaClara);   // culata
     pintar(ctx, suave([[-33, 0.6], [-32, 0.6], [-32, 12.6], [-33, 12.4]], 0.3, 2), MAT.pavonado);             // cantonera
-    pintar(ctx, Rc(1.0, -0.3, 0.9, 2.3), MAT.acero);                                                          // disparador
-    palancaLazo(ctx, e, 13, 0.4, -0.2);
-    pintar(ctx, suave([[0, -0.3], [0, -4.8], [1.2, -5.4], [14, -5.4], [14, 0], [12.4, 0.2], [0, -0.3]], 0.6, 3), MAT.pavonado, { brillo: 0.4 });   // cajón
-    if (!Pincel.silueta) { ctx.fillStyle = '#9aa0a8'; ctx.fillRect(3.2, -4.8, 4.2, 0.7); ctx.fillStyle = '#0a0a0c'; ctx.fillRect(9.2, -2.6, 3.6, 0.9); }   // cerrojo y ventana de carga
-    tornillo(ctx, 2.0, -2.2, 0.26); tornillo(ctx, 11.8, -4.2, 0.24);
+    pintar(ctx, Rc(1.0, -0.7, 0.9, 2.3), MAT.acero);                                                          // disparador
+    palancaLazo(ctx, e, 13, 0, -0.6);
+    pintar(ctx, suave([[0, -0.7], [0, -4.4], [1.4, -5.4], [14, -5.4], [14, -0.4], [12.4, -0.2], [0, -0.7]], 0.6, 3), MAT.pavonado, { brillo: 0.4 });   // cajón
+    if (!Pincel.silueta) { ctx.fillStyle = '#9aa0a8'; ctx.fillRect(3.2, -4.8, 4.2, 0.7); ctx.fillStyle = '#0a0a0c'; ctx.fillRect(9.2, -2.8, 3.6, 0.9); }   // cerrojo y ventana de carga
+    tornillo(ctx, 2.0, -2.4, 0.26); tornillo(ctx, 11.8, -4.2, 0.24);
     pintar(ctx, suave([[0.2, -4.8], [-0.4, -6.6], [0.6, -7.0], [1.6, -5.2]], 0.3, 2), MAT.pavonado);       // martillo
     pintar(ctx, Rc(14, -5.4, 50, 1.4), MAT.pavonado, { brillo: 0.45 });                                       // cañón
     pintar(ctx, Rc(14, -3.8, 48.6, 1.6), MAT.pavonado, { brillo: 0.35 });                                    // tubo de balas
@@ -1514,31 +1522,32 @@ reemplazar('winchester1894', { casquillo: 'bala',
     pintar(ctx, suave([[62.2, -5.4], [62.4, -6.8], [63.4, -6.8], [63.6, -5.4]], 0.3, 2), MAT.pavonado);      // guion encapuchado
   } });
 DIBUJO_ARMAS.winchester1894.culataCm = 32;
-DIBUJO_ARMAS.winchester1894.moviles = { corredera: e => girarCm(-4, 4.6, 13, 0.4, e.palanca * 0.95) };   // la mano viaja con la palanca
+DIBUJO_ARMAS.winchester1894.moviles = movilesPalanca(13, 0, -0.6);   // la mano viaja con la palanca
 
-// Winchester 1887 (101 cm), según la imagen de referencia: culata recta de madera con cantonera, cajón negro grande
-// de bloque redondeado, palanca con lazo, delantera de madera larga que cubre el tubo hasta dos tercios del cañón
+// Winchester 1887 (101 cm), según la imagen de referencia: culata recta de madera con cantonera, cajón negro de bloque
+// redondeado (más alto adelante, donde lleva el cañón y el tubo, y a la altura de la garganta de la culata atrás),
+// palanca con lazo, delantera de madera larga que cubre el tubo hasta dos tercios del cañón
 reemplazar('winchester1887', { casquillo: 'escopeta',
-  anclas: { manoDelantera: [30, -1.8], cargador: [14, -1], corredera: [-4, 6.8], expulsion: [10, -7], boca: [68, -5.5] },
+  anclas: { manoDelantera: [30, -1.8], cargador: [14, -0.6], corredera: [-4, 4.5], expulsion: [10, -6], boca: [67, -5.5] },
   dibujarCm(ctx, e) {
-    pintar(ctx, suave([[0, -5.0], [-2.4, -4.0], [-8, -1.6], [-33.4, 1.2], [-33.8, 2.0], [-33.8, 13.2], [-33.0, 13.6], [-10, 5.6], [-6, 4.2], [-2.6, 3.6], [0, 2.2]], 0.9, 4), MAT.madera);   // culata
-    pintar(ctx, suave([[-34.6, 1.2], [-33.6, 1.2], [-33.6, 13.6], [-34.6, 13.4]], 0.3, 2), MAT.pavonado);
-    pintar(ctx, Rc(1.0, 2.2, 0.9, 2.3), MAT.acero);
-    palancaLazo(ctx, e, 15.6, 2.8, 2.2);
-    pintar(ctx, suave([[0, 2.4], [0, -5.6], [2.4, -7.6], [6.6, -8.0], [21, -8.0], [21, 2.6], [15, 2.8], [0, 2.4]], 1.0, 4), MAT.pavonado, { brillo: 0.4 });   // cajón grande
-    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[2, -6.4], [20.6, -6.6]]);
-    tornillo(ctx, 5, -2); tornillo(ctx, 17, -4);
-    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(11, -1.8, 5, 1.6); }
-    pintar(ctx, suave([[-1, -6.6], [-2.6, -8.8], [-1.2, -9.0], [1, -6.8]], 0.3, 2), MAT.pavonado);
-    pintar(ctx, Rc(21, -6.4, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
-    pintar(ctx, Rc(21, -4.4, 34, 2.0), MAT.pavonado);                                                       // tubo del depósito
+    pintar(ctx, suave([[0, -3.8], [-2.4, -3.2], [-8, -1.4], [-33.4, 1.2], [-33.8, 2.0], [-33.8, 13.0], [-33.0, 13.4], [-10, 3.2], [-6, 1.9], [-2.6, 1.0], [0, 0.4]], 0.9, 4), MAT.madera);   // culata
+    pintar(ctx, suave([[-34.6, 1.2], [-33.6, 1.2], [-33.6, 13.4], [-34.6, 13.2]], 0.3, 2), MAT.pavonado);
+    pintar(ctx, Rc(1.0, 0.2, 0.9, 2.2), MAT.acero);
+    palancaLazo(ctx, e, 15, 0.6, 0);
+    pintar(ctx, suave([[0, 0.4], [0, -4.0], [2.2, -6.1], [6.0, -6.9], [20, -6.9], [20, -0.3], [14.6, 0.2], [0, 0.4]], 1.0, 4), MAT.pavonado, { brillo: 0.4 });   // cajón
+    trazo(ctx, 'rgba(255,255,255,0.1)', 0.25, [[2.6, -5.5], [19.6, -5.7]]);
+    tornillo(ctx, 5, -1.8); tornillo(ctx, 16.6, -3.4);
+    if (!Pincel.silueta) { ctx.fillStyle = '#0a0a0c'; ctx.fillRect(10.6, -2.6, 4.6, 1.3); }
+    pintar(ctx, suave([[-0.8, -4.6], [-2.4, -6.8], [-1.0, -7.0], [1.2, -5.0]], 0.3, 2), MAT.pavonado);       // martillo
+    pintar(ctx, Rc(20, -6.4, 47, 1.8), MAT.pavonado, { brillo: 0.4 });
+    pintar(ctx, Rc(20, -4.4, 35, 2.0), MAT.pavonado);                                                       // tubo del depósito
     pintar(ctx, suave([[54.6, -4.6], [56, -4.6], [56, -2.0], [54.6, -2.0]], 0.3, 2), MAT.pavonado);         // tapa del tubo
-    pintar(ctx, suave([[21, -5.6], [53, -5.4], [54.2, -3.6], [53, -1.6], [21, -1.2]], 0.9, 3), MAT.madera, { lustre: true });   // delantera larga
+    pintar(ctx, suave([[20, -5.6], [53, -5.4], [54.2, -3.6], [53, -1.6], [20, -1.2]], 0.9, 3), MAT.madera, { lustre: true });   // delantera larga
     punto(ctx, 41, -3.4, 0.28, '#2a2016');
-    punto(ctx, 67.4, -6.9, 0.4, '#e0d8c0');
+    punto(ctx, 66.4, -6.9, 0.4, '#e0d8c0');
   } });
 DIBUJO_ARMAS.winchester1887.culataCm = 33.6;
-DIBUJO_ARMAS.winchester1887.moviles = { corredera: e => girarCm(-4, 6.8, 15.6, 2.8, e.palanca * 0.95) };
+DIBUJO_ARMAS.winchester1887.moviles = movilesPalanca(15, 0.6, 0);
 
 /* ======================= M16 (calcada de una foto de perfil de un M16A1) ======================= */
 // 99 cm: culata fija A1 con argolla, pistolete sin saliente, cajón inferior gris con guardamonte y selector,
