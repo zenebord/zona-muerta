@@ -519,162 +519,128 @@ const Audio_ = (() => {
     }
     return t0 + 0.5;
   }
-  /* ---------- Agarrar un arma: un sonido leve y propio de cada una ----------
-   * Foley sintetizado, sin grabaciones (las de mecanismos son de recarga: confundirían). Se arma con piezas: el roce de
-   * la ropa al moverla, el golpe sordo del arma al llegar a las manos (más grave y fuerte cuanto más pesada), la madera
-   * de la culata o del mango cuando la tiene, y lo que suena suelto en cada una: el seguro de la pistola, el trinquete
-   * del tambor de un revólver, las anillas de la correa de un fusil, el guardamanos de una escopeta de bombeo, la hoja
-   * de una espada que vibra apenas, el tubo hueco de una bazuca, el combustible del lanzallamas, los eslabones de la
-   * cinta de la minigun, el láser que se enciende. Todo bajito: dice qué arma tenés en la mano sin tapar nada.
-   * Cada pieza: [tipo, momento (s), { f: Hz, v: volumen, d: duración (s) }]. El machete del cazador no tiene: al
-   * sacarlo suena su susurro.
+  /* ---------- Agarrar un arma: el cuerpo que la recibe y el agarre según de qué es ----------
+   * Suenan dos cosas, como en la realidad:
+   *   - el cuerpo del personaje: la ropa y el equipo que se mueven (un roce granulado) y el golpe sordo del peso que
+   *     llega a las manos y al cuerpo;
+   *   - el agarre, según el material del arma: metal (el golpe de un cerrojo real de js/sonidos-datos.js, sólo ese
+   *     golpe, sin el resto del mecanismo), madera (un «toc») o plástico (un golpe apagado). Las de dos manos
+   *     suenan dos veces: la mano de atrás y, enseguida, la de adelante, más suave.
+   * Cuanto más pesada, más suena todo: más fuerte, más grave y más largo (ARMAS_AGARRE tiene el peso de verdad, en kg).
+   * Nada de tonos que vibran: la mano apaga el metal. Algunos detalles de cada una: el tambor del revólver, el
+   * guardamanos de la escopeta de bombeo, el tubo hueco de la bazuca, el combustible del lanzallamas, los eslabones
+   * de la cinta de la minigun, la hoja de un arma blanca, el zumbido grave del láser. El machete del cazador no tiene:
+   * al sacarlo suena su susurro.
    */
-  // Metal que suena (parciales inarmónicos, como metal()), para cualquier contexto; sin parciales por encima de Nyquist
-  function metalEn(ac, s, t, f, v, d) {
-    PARCIALES_METAL.forEach((r, k) => {
-      if (f * r > ac.sampleRate * 0.45) return;
-      const o = ac.createOscillator(), g = ganancia(ac, 0); o.frequency.value = f * r * (0.98 + Math.random() * 0.04);
-      curva(g.gain, [[t, 0.0001], [t + 0.0008, v / (1 + k * 0.7)], [t + d / (1 + k * 0.5), 0.0001]]);
-      o.connect(g); g.connect(s); o.start(t); o.stop(t + d + 0.05);
-    });
-    const a = aire(ac, t, 0.01), b = filtro(ac, 'bandpass', Math.min(f * 2.5, ac.sampleRate * 0.45), 1.5), g = ganancia(ac, 0);   // el impacto
-    curva(g.gain, [[t, 0.0001], [t + 0.0005, v * 0.9], [t + 0.006, 0.0001]]);
-    a.connect(b); b.connect(g); g.connect(s);
-  }
-  const PIEZAS_AGARRE = {
-    // el roce de la ropa y de las manos al moverla
-    tela(ac, s, t, { v = 0.05, d = 0.12 }) {
-      const a = aire(ac, t, d), b = filtro(ac, 'bandpass', 1400, 1.2), g = ganancia(ac, 0);
-      curva(b.frequency, [[t, 1400], [t + d, 3000]]); curva(g.gain, [[t, 0.0001], [t + d * 0.35, v], [t + d, 0.0001]]);
-      a.connect(b); b.connect(g); g.connect(s);
-    },
-    // el golpe sordo del arma al llegar a las manos o al hombro
-    golpe(ac, s, t, { f = 200, v = 0.1, d = 0.06 }) {
-      const o = ac.createOscillator(), go = ganancia(ac, 0);
-      curva(o.frequency, [[t, f], [t + d, f * 0.55]]); curva(go.gain, [[t, 0.0001], [t + 0.002, v], [t + d, 0.0001]]);
-      o.connect(go); go.connect(s); o.start(t); o.stop(t + d + 0.05);
-      const a = aire(ac, t, d), lp = filtro(ac, 'lowpass', 900, 0.7), ga = ganancia(ac, 0);
-      curva(lp.frequency, [[t, 900], [t + d * 0.6, 300]]); curva(ga.gain, [[t, 0.0001], [t + 0.002, v * 0.6], [t + d * 0.6, 0.0001]]);
-      a.connect(lp); lp.connect(ga); ga.connect(s);
-    },
-    // un clic chico de metal: el seguro, una anilla, una pieza suelta
-    clic(ac, s, t, { f = 3000, v = 0.04, d = 0.03 }) { metalEn(ac, s, t, f, v, d); },
-    // la madera de la culata o del mango: un «toc»
-    madera(ac, s, t, { f = 400, v = 0.06, d = 0.05 }) {
-      const a = aire(ac, t, d), g = ganancia(ac, 0);
-      for (const [fr, q, gg] of [[f, 8, 1], [f * 2.3, 6, 0.5], [f * 4.1, 5, 0.25]]) { const b = filtro(ac, 'bandpass', fr, q), bg = ganancia(ac, gg); a.connect(b); b.connect(bg); bg.connect(g); }
-      curva(g.gain, [[t, 0.0001], [t + 0.0015, v * 5], [t + d, 0.0001]]);   // ×5: los pasabanda angostos dejan pasar poco
-      g.connect(s);
-    },
-    // una hoja o una pieza grande de metal que queda vibrando, apenas
-    vibra(ac, s, t, { f = 3200, v = 0.03, d = 0.3 }) { metalEn(ac, s, t, f, v, d); },
-    // la hoja que sale de la vaina: un roce corto
-    roce(ac, s, t, { v = 0.04, d = 0.1 }) {
-      const a = aire(ac, t, d), b = filtro(ac, 'bandpass', 2500, 3), g = ganancia(ac, 0);
-      curva(b.frequency, [[t, 2500], [t + d, 6000]]); curva(g.gain, [[t, 0.0001], [t + d * 0.5, v], [t + d, 0.0001]]);
-      a.connect(b); b.connect(g); g.connect(s);
-    },
-    // un tubo hueco (bazuca): el golpe lo hace resonar
-    tubo(ac, s, t, { f = 220, v = 0.06, d = 0.2 }) {
-      const a = aire(ac, t, 0.02), ge = ganancia(ac, 0);
-      curva(ge.gain, [[t, 0.0001], [t + 0.001, 1], [t + 0.012, 0.0001]]); a.connect(ge);
-      for (const [fr, q, gg] of [[f, 30, 1], [f * 2.9, 24, 0.55], [f * 5.2, 18, 0.3]]) {
-        const b = filtro(ac, 'bandpass', fr, q), bg = ganancia(ac, gg * v * 14); ge.connect(b); b.connect(bg); bg.connect(s);
-      }
-    },
-    // el combustible que se mueve en el tanque
-    liquido(ac, s, t, { v = 0.03, d = 0.25 }) {
-      const a = aire(ac, t, d), lp = filtro(ac, 'lowpass', 650, 1), g = ganancia(ac, 0), am = ac.createOscillator(), gam = ganancia(ac, 0.45 * v);
-      am.frequency.value = 9; am.connect(gam); gam.connect(g.gain); am.start(t); am.stop(t + d + 0.05);
-      curva(g.gain, [[t, 0.0001], [t + d * 0.3, v], [t + d, 0.0001]]);
-      a.connect(lp); lp.connect(g); g.connect(s);
-    },
-    // chispas sueltas (eléctrico)
-    chispa(ac, s, t, { v = 0.025 }) {
-      for (let k = 0; k < 4; k++) {
-        const tk = t + Math.random() * 0.07, a = aire(ac, tk, 0.01), hp = filtro(ac, 'highpass', 3500, 0.7), g = ganancia(ac, 0);
-        curva(g.gain, [[tk, 0.0001], [tk + 0.0005, v * (0.6 + Math.random() * 0.4)], [tk + 0.004, 0.0001]]);
-        a.connect(hp); hp.connect(g); g.connect(s);
-      }
-    },
-    // el láser que se enciende: un tono que sube
-    zumbido(ac, s, t, { v = 0.035, d = 0.16 }) {
-      const o = ac.createOscillator(), lp = filtro(ac, 'lowpass', 2400, 0.7), g = ganancia(ac, 0); o.type = 'triangle';
-      curva(o.frequency, [[t, 300], [t + d, 1100]]); curva(g.gain, [[t, 0.0001], [t + d * 0.6, v], [t + d, 0.0001]]);
-      o.connect(lp); lp.connect(g); g.connect(s); o.start(t); o.stop(t + d + 0.05);
-    },
+  // id: [kg, metal, madera, plástico, detalle]
+  const ARMAS_AGARRE = {
+    glock: [0.7, 0.3, 0, 1], beretta92: [0.95, 1, 0, 0], colt1911: [1.1, 1, 0, 0], ppk: [0.6, 1, 0, 0], deagle: [2, 1, 0, 0],
+    mauser: [1.1, 1, 0.5, 0], magnum: [1.4, 1, 0, 0, 'tambor'], python: [1.2, 1, 0.4, 0, 'tambor'],
+    uzi: [3.5, 1, 0, 0], ak47: [3.9, 0.8, 0.8, 0], m16: [3.3, 0.7, 0, 0.7], mp5: [2.5, 0.8, 0, 0.5], thompson: [4.9, 0.9, 0.8, 0],
+    vector: [2.7, 0.3, 0, 1], p90: [2.6, 0, 0, 1],
+    remington700: [3.6, 0.5, 1, 0], barrett: [14, 1, 0, 0], mosin: [4, 0.6, 1, 0], garand: [4.3, 0.7, 1, 0], svd: [4.3, 0.8, 0.8, 0],
+    winchester1894: [3, 0.6, 1, 0],
+    recortada: [2.5, 0.7, 1, 0], mossberg: [3.2, 0.6, 0, 0.8, 'bombeo'], rem870: [3.6, 0.6, 0.9, 0, 'bombeo'], benelli: [3.8, 0.6, 0, 0.8],
+    spas12: [4.4, 1, 0, 0.5, 'bombeo'], aa12: [5.2, 0.9, 0, 0.6], saiga: [3.6, 0.9, 0, 0.4], winchester1887: [3.6, 0.8, 1, 0],
+    m79: [2.9, 0.6, 1, 0], mgl: [5.3, 1, 0, 0.3], bazuca: [6.8, 1, 0, 0, 'tubo'], rpg7: [7, 0.9, 0.5, 0, 'tubo'], granadas: [0.4, 1, 0, 0],
+    lanzallamas: [30, 1, 0, 0, 'liquido'], minigun: [39, 1, 0, 0, 'eslabones'], laser: [3, 0.5, 0, 0.7, 'laser'],
+    cuchillo: [0.3, 0.6, 0, 0.4, 'hoja'], machete: [0.6, 0.8, 0, 0.4, 'hoja'], katana: [1.2, 0.6, 0.4, 0, 'hoja'], hacha: [2.7, 0.8, 0.9, 0],
+    bate: [1, 0.2, 1, 0], mazo: [4.5, 1, 0.8, 0],
+    mjolnir: [20, 1, 0, 0], excalibur: [1.5, 1, 0, 0, 'hoja'], tridente: [3, 1, 0, 0], egida: [6, 1, 0, 0], gungnir: [2.5, 0.5, 0.9, 0],
   };
-  // Lo que suena al agarrar cada arma
-  const AGARRES = (() => {
-    const tela = (v = 0.05, d = 0.12) => ['tela', 0, { v, d }], golpe = (f, v, t = 0.05) => ['golpe', t, { f, v }];
-    const clic = (f, v, t = 0.07) => ['clic', t, { f, v }], madera = (f, v, t = 0.05) => ['madera', t, { f, v }];
-    const vibra = (f, v, d, t = 0.055) => ['vibra', t, { f, v, d }];
-    const anillas = (f1, f2, v) => [clic(f1, v, 0.07), clic(f2, v * 0.75, 0.095)];   // dos piezas sueltas que tintinean
-    return {
-      // Pistolas: de la funda a la mano, y el seguro (en los revólveres, el trinquete del tambor)
-      glock: [tela(), golpe(300, 0.09), clic(3300, 0.035, 0.08)],
-      beretta92: [tela(), golpe(285, 0.09), clic(3000, 0.04, 0.08)],
-      colt1911: [tela(), golpe(275, 0.1), clic(2900, 0.045, 0.08), clic(3500, 0.03, 0.105)],
-      ppk: [tela(0.04), golpe(330, 0.08), clic(3700, 0.035, 0.075)],
-      deagle: [tela(), golpe(235, 0.12), clic(2500, 0.045, 0.08), clic(3100, 0.03, 0.105)],
-      mauser: [tela(), golpe(250, 0.1), madera(520, 0.04), clic(2700, 0.04, 0.085)],
-      magnum: [tela(), golpe(240, 0.11), clic(3200, 0.035, 0.08), clic(2800, 0.03, 0.11)],
-      python: [tela(), golpe(245, 0.11), clic(3350, 0.035, 0.08), clic(2900, 0.03, 0.11)],
-      // Metralletas: el golpe al hombro y lo que traquetea
-      uzi: [tela(), golpe(225, 0.11), ...anillas(2600, 3200, 0.035)],
-      ak47: [tela(), golpe(195, 0.12), madera(420, 0.05), ...anillas(2300, 2800, 0.04)],
-      m16: [tela(), golpe(200, 0.12), ...anillas(3000, 3500, 0.03)],
-      mp5: [tela(), golpe(210, 0.11), clic(3100, 0.035)],
-      thompson: [tela(0.06, 0.14), golpe(170, 0.13), madera(380, 0.06), ...anillas(2200, 2700, 0.04)],
-      vector: [tela(), golpe(230, 0.1), clic(3300, 0.03)],
-      p90: [tela(), golpe(240, 0.1), clic(3500, 0.025)],
-      // Rifles: culata de madera, la correa
-      remington700: [tela(0.06, 0.14), golpe(165, 0.13), madera(360, 0.06), clic(2500, 0.03, 0.08)],
-      barrett: [tela(0.07, 0.16), golpe(110, 0.13), vibra(1100, 0.025, 0.12), ...anillas(1800, 2300, 0.05)],
-      mosin: [tela(0.06, 0.14), golpe(150, 0.13), madera(340, 0.06), ...anillas(2100, 2500, 0.035)],
-      garand: [tela(0.06, 0.14), golpe(155, 0.13), madera(350, 0.06), ...anillas(2400, 2900, 0.035)],
-      svd: [tela(0.06, 0.14), golpe(165, 0.12), madera(400, 0.05), ...anillas(2300, 2800, 0.035)],
-      winchester1894: [tela(0.06, 0.14), golpe(170, 0.12), madera(380, 0.06), clic(2600, 0.04, 0.08)],
-      // Escopetas: madera, y el guardamanos de las de bombeo que se mueve un poco
-      recortada: [tela(), golpe(160, 0.13), madera(330, 0.06), clic(1700, 0.04, 0.08)],
-      mossberg: [tela(), golpe(165, 0.13), ...anillas(1900, 2300, 0.04)],
-      rem870: [tela(), golpe(160, 0.13), madera(360, 0.05), ...anillas(1900, 2300, 0.04)],
-      benelli: [tela(), golpe(160, 0.13), clic(2600, 0.035, 0.08)],
-      spas12: [tela(0.06, 0.14), golpe(145, 0.14), vibra(1200, 0.02, 0.1), ...anillas(1800, 2200, 0.045)],
-      aa12: [tela(0.06, 0.14), golpe(140, 0.14), ...anillas(2000, 2500, 0.04)],
-      saiga: [tela(), golpe(160, 0.13), ...anillas(2200, 2700, 0.04)],
-      winchester1887: [tela(), golpe(160, 0.13), madera(350, 0.06), clic(2300, 0.04, 0.08), clic(1900, 0.03, 0.105)],
-      // Especiales
-      m79: [tela(0.06, 0.14), golpe(150, 0.13), madera(340, 0.06), clic(1800, 0.04, 0.09)],
-      mgl: [tela(0.06, 0.15), golpe(125, 0.15), vibra(950, 0.025, 0.12), clic(2000, 0.035, 0.1), clic(2300, 0.03, 0.125)],
-      bazuca: [tela(0.06, 0.15), golpe(120, 0.12, 0.06), ['tubo', 0.06, { f: 210, v: 0.05, d: 0.25 }]],
-      rpg7: [tela(0.06, 0.15), golpe(130, 0.13, 0.06), ['tubo', 0.06, { f: 240, v: 0.055, d: 0.22 }], madera(450, 0.04, 0.065)],
-      granadas: [golpe(500, 0.04, 0.02), clic(4200, 0.03, 0.02), vibra(2300, 0.025, 0.12, 0.025)],
-      lanzallamas: [tela(0.07, 0.16), golpe(115, 0.11, 0.06), vibra(850, 0.025, 0.15, 0.06), ['liquido', 0.07, { v: 0.03, d: 0.28 }]],
-      minigun: [tela(0.07, 0.16), golpe(95, 0.12, 0.06), vibra(780, 0.03, 0.15, 0.06),
-        ...[0, 1, 2, 3, 4, 5].map(k => clic(2400 + ((k * 457) % 1200), 0.03 - k * 0.003, 0.08 + k * 0.022))],   // los eslabones de la cinta
-      laser: [['zumbido', 0.02, { v: 0.07, d: 0.16 }], ['chispa', 0.12, { v: 0.035 }]],
-      // Cuerpo a cuerpo
-      machete: [tela(0.04, 0.1), golpe(320, 0.06, 0.03), vibra(3300, 0.015, 0.25, 0.035)],
-      cuchillo: [tela(0.035, 0.09), golpe(360, 0.05, 0.03), vibra(4800, 0.012, 0.18, 0.035)],
-      katana: [['roce', 0, { v: 0.035, d: 0.09 }], golpe(300, 0.05, 0.08), vibra(4200, 0.015, 0.35, 0.08)],
-      hacha: [tela(0.05, 0.12), madera(330, 0.1), golpe(170, 0.1), vibra(900, 0.02, 0.12)],
-      bate: [tela(0.05, 0.12), madera(480, 0.2), ...[0, 1, 2].map(k => clic(4000 + k * 600, 0.015, 0.06 + k * 0.02))],   // el alambre de púas
-      mazo: [tela(0.06, 0.14), golpe(110, 0.11, 0.06), madera(300, 0.06, 0.06), vibra(650, 0.025, 0.15, 0.065)],
-      // Legendarias
-      mjolnir: [tela(0.06, 0.14), golpe(95, 0.15), vibra(520, 0.025, 0.2), ['chispa', 0.06, { v: 0.025 }]],
-      excalibur: [tela(0.04, 0.1), vibra(2900, 0.03, 0.5, 0.05), vibra(4350, 0.018, 0.4, 0.05)],
-      tridente: [tela(0.05, 0.12), golpe(150, 0.1), vibra(2600, 0.012, 0.25, 0.06), vibra(3100, 0.01, 0.25, 0.065), vibra(3700, 0.008, 0.25, 0.07)],
-      egida: [tela(0.05, 0.12), golpe(130, 0.12), vibra(600, 0.025, 0.25)],
-      gungnir: [tela(0.05, 0.12), madera(380, 0.15), vibra(3500, 0.02, 0.25, 0.06)],
-    };
-  })();
-  // receta: el id de un arma (o una lista de piezas, para probar). NIVEL_AGARRE: unos 12 dB por debajo de una recarga
-  const NIVEL_AGARRE = 2;
-  function genAgarre(ac, salida, t0, nodos, receta) {
-    const piezas = typeof receta === 'string' ? AGARRES[receta] : receta, sal = ganancia(ac, NIVEL_AGARRE); sal.connect(salida);
-    let fin = t0;
-    for (const [tipo, t, op] of piezas || []) { PIEZAS_AGARRE[tipo](ac, sal, t0 + t, op); fin = Math.max(fin, t0 + t + (op.d || 0.12)); }
+  const NIVEL_AGARRE = 2;   // un fusil, unos 12 dB por debajo de una recarga; la minigun, 5; el cuchillo, 20
+  // Ruido con grano (la tela y el equipo no suenan liso): la ganancia salta al azar unas 40 veces por segundo
+  function conGrano(ac, t, dur, fuente) {
+    const g = ganancia(ac, 0.55), r = aire(ac, t, dur), rl = filtro(ac, 'lowpass', 40, 0.7), rg = ganancia(ac, 9);
+    r.connect(rl); rl.connect(rg); rg.connect(g.gain); fuente.connect(g);
+    return g;
+  }
+  // El metal: el golpe de un cerrojo real (sin el resto del mecanismo), más lento y apagado cuanto más pesada el arma.
+  // Si la grabación todavía no está, un golpe sintetizado parecido (ruido por resonancias apagadas)
+  function agarreMetal(ac, s, t, v, kg) {
+    const lw = Math.log2(1 + kg), vel = Math.max(0.6, Math.min(1, 1 - 0.08 * lw)), corte = 3200 - 300 * lw;
+    const lp = filtro(ac, 'lowpass', corte, 0.6), g = ganancia(ac, 0); lp.connect(g); g.connect(s);
+    const b = grabaciones.cerrojo_cerrar;
+    if (b) {
+      const f = ac.createBufferSource(); f.buffer = b; f.playbackRate.value = vel * (0.97 + Math.random() * 0.06);
+      const largo = 0.075 / vel;
+      curva(g.gain, [[t, v], [t + largo * 0.7, v * 0.5], [t + largo, 0.0001]]);
+      f.connect(lp); f.start(t, 0.318, 0.075); f.stop(t + largo + 0.02);
+    } else {
+      const a = aire(ac, t, 0.01), ge = ganancia(ac, 0); curva(ge.gain, [[t, 0.0001], [t + 0.0005, 1], [t + 0.003, 0.0001]]); a.connect(ge);
+      const f0 = 1100 * vel;
+      for (const [r, q, gg] of [[1, 12, 1], [1.62, 10, 0.7], [2.31, 9, 0.5], [3.05, 8, 0.35], [4.1, 7, 0.25]]) {
+        const bp = filtro(ac, 'bandpass', f0 * r, q), bg = ganancia(ac, gg * 6); ge.connect(bp); bp.connect(bg); bg.connect(lp);
+      }
+      curva(g.gain, [[t, v], [t + 0.06 / vel, 0.0001]]);
+    }
+  }
+  // La madera: un «toc» (resonancias apagadas; más grave cuanto más grande)
+  function agarreMadera(ac, s, t, v, kg) {
+    const f = 560 - 45 * Math.log2(1 + kg), a = aire(ac, t, 0.06), g = ganancia(ac, 0);
+    for (const [r, q, gg] of [[1, 6, 1], [2.1, 5, 0.45], [3.4, 4, 0.2]]) { const b = filtro(ac, 'bandpass', f * r, q), bg = ganancia(ac, gg); a.connect(b); b.connect(bg); bg.connect(g); }
+    curva(g.gain, [[t, 0.0001], [t + 0.0015, v * 5], [t + 0.045, 0.0001]]);
+    g.connect(s);
+  }
+  // El plástico: un golpe apagado, sin brillo
+  function agarrePlastico(ac, s, t, v, kg) {
+    const a = aire(ac, t, 0.03), lp = filtro(ac, 'lowpass', 1400, 0.7), b = filtro(ac, 'bandpass', 760 - 50 * Math.log2(1 + kg), 3), g = ganancia(ac, 0);
+    a.connect(lp); lp.connect(b); b.connect(g); g.connect(s);
+    curva(g.gain, [[t, 0.0001], [t + 0.001, v * 3], [t + 0.02, 0.0001]]);
+  }
+  function genAgarre(ac, salida, t0, nodos, id) {
+    const datos = ARMAS_AGARRE[id];
+    if (!datos) return t0;
+    const [kg, metal, madera, plastico, detalle] = datos, lw = Math.log2(1 + kg), G = Math.pow(kg / 3, 0.35);
+    const s = ganancia(ac, NIVEL_AGARRE); s.connect(salida);
+    // El cuerpo: la ropa y el equipo que se mueven
+    const dur = 0.08 + 0.035 * lw, ropa = aire(ac, t0, dur), hp = filtro(ac, 'highpass', 200, 0.7), lp = filtro(ac, 'lowpass', 2400 - 150 * lw, 0.7);
+    ropa.connect(hp); hp.connect(lp);
+    const grano = conGrano(ac, t0, dur, lp), gr = ganancia(ac, 0); grano.connect(gr); gr.connect(s);
+    curva(gr.gain, [[t0, 0.0001], [t0 + dur * 0.35, 0.035 * Math.pow(G, 0.7)], [t0 + dur, 0.0001]]);
+    // El peso que llega a las manos y al cuerpo: un golpe sordo, más grave y largo cuanto más pesa
+    const tg = t0 + 0.045, fg = 170 - 18 * lw, dg = 0.05 + 0.012 * lw;
+    const o = ac.createOscillator(), go = ganancia(ac, 0); curva(o.frequency, [[tg, fg], [tg + dg, fg * 0.6]]);
+    curva(go.gain, [[tg, 0.0001], [tg + 0.003, 0.1 * G], [tg + dg, 0.0001]]); o.connect(go); go.connect(s); o.start(tg); o.stop(tg + dg + 0.05);
+    const golpeAire = aire(ac, tg, dg), gl = filtro(ac, 'lowpass', 420 - 35 * lw, 0.7), ga = ganancia(ac, 0);
+    curva(ga.gain, [[tg, 0.0001], [tg + 0.002, 0.08 * G], [tg + dg * 0.7, 0.0001]]); golpeAire.connect(gl); gl.connect(ga); ga.connect(s);
+    // El agarre: la mano de atrás y, en las de dos manos, la de adelante (más suave)
+    const manos = kg >= 2 ? [[0.05, 1], [0.095 + 0.01 * lw, 0.45]] : [[0.05, 1]];
+    for (const [t, f] of manos) {
+      if (metal) agarreMetal(ac, s, t0 + t, 0.22 * metal * G * f, kg);
+      if (madera) agarreMadera(ac, s, t0 + t + 0.002, 0.11 * madera * G * f, kg);
+      if (plastico) agarrePlastico(ac, s, t0 + t + 0.001, 0.1 * plastico * G * f, kg);
+    }
+    let fin = t0 + Math.max(dur, 0.2 + 0.02 * lw);
+    // Detalles de cada arma, bajitos
+    if (detalle === 'tambor') agarreMetal(ac, s, t0 + 0.11, 0.07 * G, 0.3);                              // el tambor que se acomoda
+    if (detalle === 'bombeo') { agarreMetal(ac, s, t0 + 0.13, 0.08 * G, 1.5); agarreMetal(ac, s, t0 + 0.155, 0.05 * G, 1.5); }   // el guardamanos
+    if (detalle === 'tubo') {                                                                               // el tubo hueco
+      const a = aire(ac, t0 + 0.05, 0.02), ge = ganancia(ac, 0); curva(ge.gain, [[t0 + 0.05, 0.0001], [t0 + 0.051, 1], [t0 + 0.062, 0.0001]]); a.connect(ge);
+      for (const [f, q, gg] of [[190, 12, 1], [190 * 2.9, 10, 0.4]]) { const b = filtro(ac, 'bandpass', f, q), bg = ganancia(ac, gg * 0.5 * G); ge.connect(b); b.connect(bg); bg.connect(s); }
+    }
+    if (detalle === 'liquido') {                                                                            // el combustible que se mueve
+      const tl = t0 + 0.07, d = 0.3, a = aire(ac, tl, d), l = filtro(ac, 'lowpass', 600, 1), g = ganancia(ac, 0), am = ac.createOscillator(), gam = ganancia(ac, 0.012 * G);
+      am.frequency.value = 7; am.connect(gam); gam.connect(g.gain); am.start(tl); am.stop(tl + d + 0.05);
+      curva(g.gain, [[tl, 0.0001], [tl + d * 0.3, 0.025 * G], [tl + d, 0.0001]]); a.connect(l); l.connect(g); g.connect(s);
+      fin = Math.max(fin, tl + d);
+    }
+    if (detalle === 'eslabones' && grabaciones.balas_sueltas) {                                              // la cinta: eslabones de verdad, apagados
+      const f = ac.createBufferSource(), l = filtro(ac, 'lowpass', 2600, 0.6), g = ganancia(ac, 0); f.buffer = grabaciones.balas_sueltas; f.playbackRate.value = 0.8;
+      const tl = t0 + 0.09; curva(g.gain, [[tl, 0.0001], [tl + 0.01, 0.12], [tl + 0.2, 0.05], [tl + 0.3, 0.0001]]);
+      f.connect(l); l.connect(g); g.connect(s); f.start(tl, 0, 0.3); f.stop(tl + 0.35);
+      fin = Math.max(fin, tl + 0.35);
+    }
+    if (detalle === 'hoja') {                                                                               // la hoja: un roce corto
+      const th = t0 + 0.03, a = aire(ac, th, 0.07), b = filtro(ac, 'bandpass', 1800, 1.5), g = ganancia(ac, 0);
+      curva(g.gain, [[th, 0.0001], [th + 0.02, 0.03], [th + 0.07, 0.0001]]); a.connect(b); b.connect(g); g.connect(s);
+    }
+    if (detalle === 'laser') {                                                                              // se enciende: un zumbido grave
+      const tl = t0 + 0.06, d = 0.18, o2 = ac.createOscillator(), l = filtro(ac, 'lowpass', 700, 0.7), g = ganancia(ac, 0); o2.type = 'sawtooth';
+      curva(o2.frequency, [[tl, 90], [tl + d, 140]]); curva(g.gain, [[tl, 0.0001], [tl + d * 0.5, 0.03], [tl + d, 0.0001]]);
+      o2.connect(l); l.connect(g); g.connect(s); o2.start(tl); o2.stop(tl + d + 0.05);
+      fin = Math.max(fin, tl + d);
+    }
     return fin + 0.1;
   }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
@@ -930,7 +896,7 @@ const Audio_ = (() => {
     susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
     duracionSusurro,
     // Al agarrar un arma (js/jugador.js, cuando cambia la que está en la mano): un sonido leve, propio de cada una
-    agarrarArma(id) { if (AGARRES[id]) sonar(genAgarre, 0.05, 1, id); },
+    agarrarArma(id) { if (ARMAS_AGARRE[id]) sonar(genAgarre, 0.05, 1, id); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
     generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, agarre: genAgarre },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
