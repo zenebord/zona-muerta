@@ -680,10 +680,18 @@ Armas especiales de `js/armas-especiales.js`, que se engancha envolviendo métod
   inventario, al lado del machete común; con otro personaje no aparece en ninguna lista (ni en el campo de pruebas),
   no se puede recoger ni equipar, y si se cambia de personaje con el machete en la mano pasa a la siguiente arma. Hoja
   de 58 cm (76 de punta a punta), vieja: óxido, cuatro mellas, sangre seca, mango rajado con cinta aisladora y un
-  cordón. Una mano, alcance 60 y daño 15: tumba a un zombie de un golpe. Suena el susurro «ch ch ch… ja ja ja» de las
-  películas de terror, sintetizado (`Audio_.susurroCazador`, sin grabaciones): al sacarlo (2,5 s como mínimo entre
-  uno y otro) y, si pasaron 8 s del último, al matar con él o en 4 de cada 10 golpes. El nombre sigue la regla de los
-  personajes: sin nombres de marcas ni de películas.
+  cordón. Una mano, alcance 60 y daño 15: tumba a un zombie de un golpe. El nombre sigue la regla de los personajes:
+  sin nombres de marcas ni de películas.
+- **Sonidos del cazador** (`js/audio.js`, síntesis propia: ni grabaciones ni copias de películas o juegos; se
+  escuchan fuera del juego con `Audio_.generadores` en un `OfflineAudioContext`):
+  - *Susurro* «ki ki ki ki… ma ma ma ma» como voz susurrada: la «k» es un estallido de aire en 2,7 kHz y la «i», aire
+    por sus formantes (320, ~2250, 3050 y 4300 Hz); la «m», un murmullo nasal grave, y la «a», aire con un hilo de voz
+    que cae de 108 a 93 Hz por sus formantes (780, 1180, 2500 y 3400 Hz). Eco que rebota de izquierda a derecha y se
+    oscurece, y una sala larga. Suena al sacar el machete (2,5 s como mínimo entre uno y otro) y, si pasaron 8 s del
+    último, al matar con él o en 4 de cada 10 golpes.
+  - *Machete*: al desenfundarlo, un roce metálico que sube y termina en un «shing»; el tajo, aire que barre de grave a
+    agudo y vuelve, con el silbido del filo y el peso de la hoja, de izquierda a derecha; el golpe, el filo que muerde,
+    el golpe sordo, la carne, el hueso si es fuerte y la hoja que queda vibrando (más la grabación de carne de siempre).
 - **Minigun M134**: seis cañones que gira un motor eléctrico, 300 tiros en la caja y dos de repuesto. Al apretar, los
   cañones tardan 350 ms en llegar a la velocidad de tiro (giran sin tirar); después tira cada 30 ms (2000 por minuto) y
   la vaina salta por la ventana del costado. Al soltar siguen girando 1,4 s hasta parar. Tirando mucho, las bocas se

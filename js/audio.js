@@ -350,57 +350,167 @@ const Audio_ = (() => {
     param.setTargetAtTime(0, t + 0.2, 0.06);
   }
 
-  /* ---------- Susurro del cazador ----------
-   * El «ch ch ch ch… ja ja ja ja» de las películas de terror, sintetizado: cuatro «ch» (un golpecito de «t» y el
-   * soplido agudo de la «sh», ruido en banda alrededor de 3 kHz) y cuatro «ja» aspiradas (aire por los formantes de una
-   * «a» susurrada, con un hilo de voz grave que cae). Todo bajito y con un eco que rebota varias veces, cada vez más
-   * oscuro, más algo de reverberación. Pasa por la mezcla de efectos: respeta el volumen y el silencio. */
-  let ecoSusurro = null;
-  function lineaSusurro() {
-    if (ecoSusurro) return ecoSusurro;
-    const entrada = ctx.createGain();
-    const retardo = ctx.createDelay(1); retardo.delayTime.value = 0.21;
-    const oscuro = ctx.createBiquadFilter(); oscuro.type = 'lowpass'; oscuro.frequency.value = 2400;
-    const vuelta = ctx.createGain(); vuelta.gain.value = 0.52;
-    const humedo = ctx.createGain(); humedo.gain.value = 0.8;
-    entrada.connect(retardo); retardo.connect(oscuro); oscuro.connect(vuelta); vuelta.connect(retardo); oscuro.connect(humedo);
-    conectar(humedo, 0.35, 0);
-    ecoSusurro = entrada;
+  /* ---------- El cazador: el susurro y el machete, con síntesis propia ----------
+   * Nada de grabaciones de películas ni de juegos: cada sonido se arma de cero con aire (ruido), filtros y osciladores,
+   * con tiempos y timbres propios. Los generadores reciben el contexto, la salida y el momento, así se pueden escuchar
+   * fuera del juego (Audio_.generadores con un OfflineAudioContext); en el juego pasan por la mezcla de efectos.
+   *
+   * Susurro «ki ki ki ki… ma ma ma ma», como una voz susurrada de verdad:
+   *   «ki»  la «k» es un estallido corto de aire alrededor de 2,7 kHz; la «i», aire por sus formantes (320, ~2250,
+   *         3050 y 4300 Hz), con el segundo bajando de 2650 al soltar la «k».
+   *   «ma»  la «m», un murmullo nasal grave (voz por debajo de 300 Hz); la «a», aire con un hilo de voz grave que cae
+   *         (de 108 a 93 Hz, con un temblor) por sus formantes (780, 1180, 2500 y 3400 Hz), el primero subiendo de
+   *         320 a 780 al abrir la boca.
+   *   El espacio: un eco que rebota de un lado al otro y se oscurece en cada vuelta, y una sala larga.
+   * Machete: el tajo en el aire (aire que barre de grave a agudo y vuelve, el silbido del filo y el peso de la hoja,
+   * de izquierda a derecha); el golpe (el filo que muerde, el golpe sordo, la carne y, si es fuerte, el hueso, y la
+   * hoja que queda vibrando); y el roce metálico al desenfundar, que termina en un «shing» limpio.
+   */
+  const ruidosPorContexto = new WeakMap(), salasPorContexto = new WeakMap();
+  function ruidoDe(ac) {
+    let b = ruidosPorContexto.get(ac);
+    if (!b) {
+      b = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      ruidosPorContexto.set(ac, b);
+    }
+    return b;
+  }
+  function aire(ac, t, dur) { const s = ac.createBufferSource(); s.buffer = ruidoDe(ac); s.loop = true; s.start(t, Math.random() * 1.6); s.stop(t + dur + 0.05); return s; }
+  function filtro(ac, tipo, f, q = 1) { const b = ac.createBiquadFilter(); b.type = tipo; b.frequency.value = f; b.Q.value = q; return b; }
+  function ganancia(ac, v = 1) { const g = ac.createGain(); g.gain.value = v; return g; }
+  // Envolvente por puntos [[t, valor], …], con rampas exponenciales (nunca a cero exacto)
+  function curva(param, puntos) {
+    const [[t0, v0], ...resto] = puntos;
+    param.setValueAtTime(Math.max(v0, 0.0001), t0);
+    for (const [t, v] of resto) param.exponentialRampToValueAtTime(Math.max(v, 0.0001), t);
+  }
+  // Sala larga: respuesta al impulso estéreo que decae y se oscurece (una por contexto)
+  function salaLarga(ac, dur = 2.4) {
+    let b = salasPorContexto.get(ac);
+    if (!b) {
+      const n = Math.floor(ac.sampleRate * dur); b = ac.createBuffer(2, n, ac.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = b.getChannelData(c); let previo = 0;
+        for (let i = 0; i < n; i++) { const t = i / n, k = 0.3 + 0.65 * t; previo = previo * k + (Math.random() * 2 - 1) * (1 - k); d[i] = previo * Math.pow(1 - t, 2.4) * 2.4; }
+      }
+      salasPorContexto.set(ac, b);
+    }
+    const conv = ac.createConvolver(); conv.buffer = b; return conv;
+  }
+  // Eco que va y vuelve entre la izquierda y la derecha, más oscuro en cada vuelta
+  function ecoIdaVuelta(ac, salida, tiempo, vuelta, brillo, nodos) {
+    const entrada = ganancia(ac), dI = ac.createDelay(2), dD = ac.createDelay(2), une = ac.createChannelMerger(2);
+    dI.delayTime.value = tiempo; dD.delayTime.value = tiempo * 1.07;
+    const fI = filtro(ac, 'lowpass', brillo, 0.5), fD = filtro(ac, 'lowpass', brillo * 0.85, 0.5), gI = ganancia(ac, vuelta), gD = ganancia(ac, vuelta);
+    entrada.connect(dI); dI.connect(fI); fI.connect(gI); gI.connect(dD); dD.connect(fD); fD.connect(gD); gD.connect(dI);
+    fI.connect(une, 0, 0); fD.connect(une, 0, 1); une.connect(salida);
+    nodos.push(entrada, dI, dD, fI, fD, gI, gD, une);   // el lazo se desarma al terminar (si no, quedaría vivo)
     return entrada;
   }
-  function silaba(g, t0, fin, fuentes) {
-    conectar(g, 0.3, 0); g.connect(lineaSusurro());
-    for (const f of fuentes) { f.start(t0, f.buffer ? Math.random() * 1.5 : 0); f.stop(fin + 0.05); }
-  }
-  function silabaCh(t0, vol) {
-    const aire = ctx.createBufferSource(); aire.buffer = bufferRuido;
-    const agudo = ctx.createBiquadFilter(); agudo.type = 'highpass'; agudo.frequency.value = 1700;
-    const sh = ctx.createBiquadFilter(); sh.type = 'bandpass'; sh.frequency.value = 2900 + Math.random() * 600; sh.Q.value = 1.5;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.005);             // la «t»
-    g.gain.exponentialRampToValueAtTime(vol * 0.45, t0 + 0.022);
-    g.gain.exponentialRampToValueAtTime(vol * 0.7, t0 + 0.05);        // la «sh»
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.13);
-    aire.connect(agudo); agudo.connect(sh); sh.connect(g);
-    silaba(g, t0, t0 + 0.13, [aire]);
-  }
-  function silabaJa(t0, vol, altura) {
-    const dur = 0.2, mezcla = ctx.createGain();
-    const aire = ctx.createBufferSource(); aire.buffer = bufferRuido; aire.connect(mezcla);
-    const voz = ctx.createOscillator(); voz.type = 'sawtooth';
-    voz.frequency.setValueAtTime(altura, t0); voz.frequency.exponentialRampToValueAtTime(altura * 0.84, t0 + dur);
-    const vozG = ctx.createGain(); vozG.gain.value = 0.12; voz.connect(vozG); vozG.connect(mezcla);
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.035);             // la «j» aspirada se abre en la «a»
-    g.gain.setValueAtTime(vol, t0 + 0.07);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    for (const [fr, q, k] of [[760, 4, 2.6], [1220, 5, 2.0], [2550, 7, 1.3]]) {   // formantes de la «a»
-      const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = fr * (0.96 + Math.random() * 0.08); b.Q.value = q;
-      const bg = ctx.createGain(); bg.gain.value = k; mezcla.connect(b); b.connect(bg); bg.connect(g);
+  function silabaKi(ac, destino, t, v, f2) {
+    const a = aire(ac, t, 0.2);
+    const k = filtro(ac, 'bandpass', 2700, 2.2), gk = ganancia(ac, 0);                      // la «k»
+    curva(gk.gain, [[t, 0.0001], [t + 0.0015, 1.1 * v], [t + 0.02, 0.12 * v], [t + 0.045, 0.0001]]);
+    a.connect(k); k.connect(gk); gk.connect(destino);
+    const gi = ganancia(ac, 0);                                                              // la «i» susurrada
+    curva(gi.gain, [[t + 0.01, 0.0001], [t + 0.03, 0.85 * v], [t + 0.075, 0.5 * v], [t + 0.17, 0.0001]]);
+    for (const [fr, q, g] of [[320, 3.5, 0.45], [f2, 9, 1.0], [3050, 11, 0.6], [4300, 5, 0.25]]) {
+      const b = filtro(ac, 'bandpass', fr, q);
+      if (fr === f2) { b.frequency.setValueAtTime(2650, t + 0.01); b.frequency.exponentialRampToValueAtTime(f2, t + 0.045); }
+      const bg = ganancia(ac, g); a.connect(b); b.connect(bg); bg.connect(gi);
     }
-    silaba(g, t0, t0 + dur, [aire, voz]);
+    gi.connect(destino);
+  }
+  function silabaMa(ac, destino, t, v, altura) {
+    const dur = 0.32, a = aire(ac, t, dur);
+    const voz = ac.createOscillator(); voz.type = 'sawtooth';
+    curva(voz.frequency, [[t, altura], [t + dur, altura * 0.86]]);
+    const temblor = ac.createOscillator(), gt = ganancia(ac, altura * 0.018); temblor.frequency.value = 5.5 + Math.random() * 1.5; temblor.connect(gt); gt.connect(voz.frequency);
+    voz.start(t); voz.stop(t + dur + 0.05); temblor.start(t); temblor.stop(t + dur + 0.05);
+    const gm = ganancia(ac, 0), nasal = filtro(ac, 'lowpass', 300, 1.2), vozM = ganancia(ac, 0.55), aireM = ganancia(ac, 0.25), aireMf = filtro(ac, 'lowpass', 450, 0.7);   // la «m»
+    voz.connect(vozM); vozM.connect(nasal); a.connect(aireMf); aireMf.connect(aireM); aireM.connect(nasal); nasal.connect(gm); gm.connect(destino);
+    curva(gm.gain, [[t, 0.0001], [t + 0.016, 0.35 * v], [t + 0.055, 0.28 * v], [t + 0.08, 0.0001]]);
+    const mezcla = ganancia(ac), ga = ganancia(ac, 0), aireA = ganancia(ac, 0.9), vozA = ganancia(ac, 0.2);              // la «a»
+    a.connect(aireA); aireA.connect(mezcla); voz.connect(vozA); vozA.connect(mezcla);
+    for (const [fr, q, g] of [[780, 4.5, 1.0], [1180, 7, 0.7], [2500, 10, 0.32], [3400, 10, 0.16]]) {
+      const b = filtro(ac, 'bandpass', fr, q);
+      if (fr === 780) { b.frequency.setValueAtTime(320, t + 0.04); b.frequency.exponentialRampToValueAtTime(780, t + 0.085); }
+      const bg = ganancia(ac, g); mezcla.connect(b); b.connect(bg); bg.connect(ga);
+    }
+    curva(ga.gain, [[t + 0.045, 0.0001], [t + 0.08, v], [t + 0.15, 0.7 * v], [t + dur, 0.0001]]);
+    ga.connect(destino);
+  }
+  function genSusurro(ac, salida, t0, nodos) {
+    const seco = ganancia(ac, 1); seco.connect(salida);
+    seco.connect(ecoIdaVuelta(ac, salida, 0.24, 0.48, 2600, nodos));
+    const sala = salaLarga(ac), envio = ganancia(ac, 0.3); seco.connect(envio); envio.connect(sala); sala.connect(salida); nodos.push(seco, envio, sala);
+    const v = 0.9 + Math.random() * 0.15;
+    [0, 0.15, 0.3, 0.45].forEach((d, k) => silabaKi(ac, seco, t0 + d + (Math.random() - 0.5) * 0.015, v * (1 - k * 0.06), 2200 + Math.random() * 120));
+    [0.8, 1.02, 1.24, 1.46].forEach((d, k) => silabaMa(ac, seco, t0 + d + (Math.random() - 0.5) * 0.015, v * 0.9 * (1 - k * 0.07), 108 - k * 3.5));
+    return t0 + 1.8 + 3.2;   // hasta que se apaga el eco
+  }
+  function genTajo(ac, salida, t0, nodos, fuerza = 1) {
+    const d = 0.3, a = aire(ac, t0, d), lado = ac.createStereoPanner();
+    lado.pan.setValueAtTime(-0.55, t0); lado.pan.linearRampToValueAtTime(0.55, t0 + d); lado.connect(salida); nodos.push(lado);
+    const bp = filtro(ac, 'bandpass', 350, 1.4), g = ganancia(ac, 0);                       // el aire que barre la hoja
+    curva(bp.frequency, [[t0, 350], [t0 + 0.13, 1900], [t0 + d, 600]]);
+    curva(g.gain, [[t0, 0.0001], [t0 + 0.12, 0.8 * fuerza], [t0 + 0.17, 0.45 * fuerza], [t0 + d, 0.0001]]);
+    a.connect(bp); bp.connect(g); g.connect(lado);
+    const hp = filtro(ac, 'highpass', 4200, 0.7), bp2 = filtro(ac, 'bandpass', 6500, 0.9), g2 = ganancia(ac, 0);   // el silbido del filo
+    curva(g2.gain, [[t0 + 0.08, 0.0001], [t0 + 0.135, 0.35 * fuerza], [t0 + 0.2, 0.0001]]);
+    a.connect(hp); hp.connect(bp2); bp2.connect(g2); g2.connect(lado);
+    const o = ac.createOscillator(), go = ganancia(ac, 0); o.type = 'sine';                // el peso de la hoja
+    curva(o.frequency, [[t0, 120], [t0 + 0.13, 190], [t0 + d, 110]]);
+    curva(go.gain, [[t0 + 0.04, 0.0001], [t0 + 0.13, 0.14 * fuerza], [t0 + d, 0.0001]]);
+    o.connect(go); go.connect(lado); o.start(t0); o.stop(t0 + d + 0.05);
+    return t0 + d + 0.1;
+  }
+  function genGolpe(ac, salida, t0, nodos, fuerte = false) {
+    const a = aire(ac, t0, 0.4);
+    const hp = filtro(ac, 'highpass', 2800, 0.7), g1 = ganancia(ac, 0);                      // el filo que muerde
+    curva(g1.gain, [[t0, 0.0001], [t0 + 0.0015, 0.42], [t0 + 0.05, 0.0001]]); a.connect(hp); hp.connect(g1); g1.connect(salida);
+    const o = ac.createOscillator(), go = ganancia(ac, 0); o.type = 'sine';                // el golpe sordo en el cuerpo
+    curva(o.frequency, [[t0, 150], [t0 + 0.1, 55]]); curva(go.gain, [[t0, 0.0001], [t0 + 0.002, fuerte ? 0.5 : 0.36], [t0 + 0.15, 0.0001]]);
+    o.connect(go); go.connect(salida); o.start(t0); o.stop(t0 + 0.2);
+    let t = t0 + 0.004;                                                                      // la carne: chasquidos húmedos
+    for (let k = 0; k < 4; k++) {
+      const b = filtro(ac, 'bandpass', 800 + Math.random() * 700, 2), gb = ganancia(ac, 0), dur = 0.012 + Math.random() * 0.012;
+      curva(gb.gain, [[t, 0.0001], [t + 0.002, 0.34 * (1 - k * 0.2)], [t + dur, 0.0001]]); a.connect(b); b.connect(gb); gb.connect(salida);
+      t += 0.014 + Math.random() * 0.018;
+    }
+    if (fuerte) for (const dt of [0.01, 0.024, 0.043]) {                                    // el hueso: crujidos secos
+      const c = filtro(ac, 'highpass', 2000, 0.8), gc = ganancia(ac, 0);
+      curva(gc.gain, [[t0 + dt, 0.0001], [t0 + dt + 0.0008, 0.36], [t0 + dt + 0.005, 0.0001]]); a.connect(c); c.connect(gc); gc.connect(salida);
+    }
+    for (const [f, v, d] of [[2310, 0.05, 0.38], [3655, 0.035, 0.27], [5120, 0.02, 0.16]]) {   // la hoja queda vibrando
+      const p = ac.createOscillator(), gp = ganancia(ac, 0); p.frequency.value = f * (0.99 + Math.random() * 0.02);
+      curva(gp.gain, [[t0 + 0.003, 0.0001], [t0 + 0.006, v], [t0 + d, 0.0001]]); p.connect(gp); gp.connect(salida); p.start(t0); p.stop(t0 + d + 0.05);
+    }
+    return t0 + 0.5;
+  }
+  function genDesenfundar(ac, salida, t0, nodos) {
+    const d = 0.34, a = aire(ac, t0, d);
+    const barrido = filtro(ac, 'bandpass', 1800, 6), aspero = ganancia(ac, 0.5), g = ganancia(ac, 0);   // el roce que sube
+    curva(barrido.frequency, [[t0, 1800], [t0 + d, 4200]]);
+    curva(g.gain, [[t0, 0.0001], [t0 + 0.04, 1.0], [t0 + d - 0.04, 0.85], [t0 + d, 0.0001]]);
+    const rugo = aire(ac, t0, d), rl = filtro(ac, 'lowpass', 40, 0.7), rg = ganancia(ac, 8);   // la aspereza: el volumen tiembla
+    rugo.connect(rl); rl.connect(rg); rg.connect(aspero.gain);
+    a.connect(barrido); barrido.connect(aspero); aspero.connect(g); g.connect(salida);
+    for (const f of [2200, 3500, 5000]) { const r = filtro(ac, 'bandpass', f, 30), gr = ganancia(ac, 0.5); a.connect(r); r.connect(gr); gr.connect(aspero); }
+    for (const [f, v, dd] of [[2900, 0.11, 0.55], [4350, 0.07, 0.4], [6100, 0.03, 0.25]]) {   // el «shing»
+      const p = ac.createOscillator(), gp = ganancia(ac, 0); p.frequency.value = f;
+      curva(gp.gain, [[t0 + d - 0.02, 0.0001], [t0 + d, v], [t0 + d + dd, 0.0001]]); p.connect(gp); gp.connect(salida); p.start(t0 + d - 0.03); p.stop(t0 + d + dd + 0.05);
+    }
+    return t0 + d + 0.7;
+  }
+  // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
+  function sonar(generador, rev, vol, ...args) {
+    if (!asegurar()) return;
+    const salida = ganancia(ctx, vol), nodos = [];
+    conectar(salida, rev, 0);
+    const fin = generador(ctx, salida, ctx.currentTime + 0.01, nodos, ...args);
+    setTimeout(() => { salida.disconnect(); for (const n of nodos) n.disconnect(); }, (fin - ctx.currentTime + 0.3) * 1000);
   }
 
   return {
@@ -611,12 +721,14 @@ const Audio_ = (() => {
     jugadorMuere() { asegurar(); grabacion('grito_muerte', { vol: 0.9, rev: 0.35 }); golpe({ f: 90, dur: 0.15, vol: 0.3, retraso: 0.5 }); },
     /* ---------- Cuerpo a cuerpo y legendarias ---------- */
     // Silbido del arma cortando el aire: más grave y lento cuanto más pesada
-    blandir(peso = 1) {
+    blandir(peso = 1, armaId) {
+      if (armaId === 'macheteCazador') return sonar(genTajo, 0.05, 0.8, 1);
       asegurar();
       ruido({ dur: 0.22 * peso, vol: 0.22, filtro: 'bandpass', freq: 500 / peso, freqFin: 2200 / peso, q: 2.2, ataque: 0.08 * peso, rev: 0.05 });
     },
     // Impacto: el filo corta (carne y un chasquido agudo), lo contundente hunde (golpe grave y crujido)
-    golpeCuerpo(tipo, fuerte = false) {
+    golpeCuerpo(tipo, fuerte = false, armaId) {
+      if (armaId === 'macheteCazador') return sonar(genGolpe, 0.06, 0.9, fuerte);
       asegurar();
       if (tipo === 'filo') ruido({ dur: 0.08, vol: 0.18, filtro: 'highpass', freq: 3500, ataque: 0.001 });
       else { tono({ desde: 120, hasta: 55, dur: 0.12, vol: fuerte ? 0.5 : 0.35, sat: 2, ataque: 0.001 }); ruido({ dur: 0.1, vol: 0.2, filtro: 'bandpass', freq: 1400, q: 1.5, ataque: 0.001, retraso: 0.01 }); }
@@ -642,13 +754,11 @@ const Audio_ = (() => {
     },
     // Machete del cazador: el susurro «ch ch ch ch… ja ja ja ja» (bajito, con eco). Cuándo suena lo decide
     // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
-    susurroCazador() {
-      if (!asegurar()) return;
-      const t = ctx.currentTime + 0.03, v = 0.9 + Math.random() * 0.2;
-      for (let k = 0; k < 4; k++) silabaCh(t + k * 0.165 + (Math.random() - 0.5) * 0.02, 0.2 * v * (1 - k * 0.06));
-      const t2 = t + 0.9;
-      for (let k = 0; k < 4; k++) silabaJa(t2 + k * 0.2 + (Math.random() - 0.5) * 0.02, 0.16 * v * (1 - k * 0.07), 112 - k * 4);
-    },
+    susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
+    // Machete del cazador: el tajo, el golpe y el desenfundar (síntesis propia, ver arriba)
+    desenfundarMachete() { sonar(genDesenfundar, 0.08, 0.7); },
+    // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
+    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, desenfundar: genDesenfundar },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {

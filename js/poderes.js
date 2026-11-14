@@ -40,7 +40,7 @@ Object.assign(Juego.prototype, {
       const d = (b.x - j.x) * dir;
       if (b.golpeable() && d > -8 && d < arma.alcance + b.r && b.cy > j.y - 95 && b.cy < j.y + 5) b.impacto(b.cy, this, this.disparoId = (this.disparoId || 0) + 1);
     }
-    if (tocados.length) { Audio_.golpeCuerpo(arma.filo ? 'filo' : 'contundente', arma.dano >= 15); this.sacudida = Math.max(this.sacudida, arma.dano >= 15 ? 5 : 2.5); }
+    if (tocados.length) { Audio_.golpeCuerpo(arma.filo ? 'filo' : 'contundente', arma.dano >= 15, arma.id); this.sacudida = Math.max(this.sacudida, arma.dano >= 15 ? 5 : 2.5); }
     switch (arma.poder) {
       case 'rayo': {
         const objetivos = this.zombiesAlAlcance(j, 380, 4, true);
