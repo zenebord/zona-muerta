@@ -422,7 +422,7 @@ const Audio_ = (() => {
     }
     gi.connect(destino);
   }
-  function silabaMa(ac, destino, t, v, altura) {
+  function silabaMa(ac, destino, t, v, altura, voz0 = 0.2) {
     const dur = 0.32, a = aire(ac, t, dur);
     const voz = ac.createOscillator(); voz.type = 'sawtooth';
     curva(voz.frequency, [[t, altura], [t + dur, altura * 0.86]]);
@@ -431,7 +431,7 @@ const Audio_ = (() => {
     const gm = ganancia(ac, 0), nasal = filtro(ac, 'lowpass', 300, 1.2), vozM = ganancia(ac, 0.55), aireM = ganancia(ac, 0.25), aireMf = filtro(ac, 'lowpass', 450, 0.7);   // la «m»
     voz.connect(vozM); vozM.connect(nasal); a.connect(aireMf); aireMf.connect(aireM); aireM.connect(nasal); nasal.connect(gm); gm.connect(destino);
     curva(gm.gain, [[t, 0.0001], [t + 0.016, 0.35 * v], [t + 0.055, 0.28 * v], [t + 0.08, 0.0001]]);
-    const mezcla = ganancia(ac), ga = ganancia(ac, 0), aireA = ganancia(ac, 0.9), vozA = ganancia(ac, 0.2);              // la «a»
+    const mezcla = ganancia(ac), ga = ganancia(ac, 0), aireA = ganancia(ac, 0.9), vozA = ganancia(ac, voz0);             // la «a»
     a.connect(aireA); aireA.connect(mezcla); voz.connect(vozA); vozA.connect(mezcla);
     for (const [fr, q, g] of [[780, 4.5, 1.0], [1180, 7, 0.7], [2500, 10, 0.32], [3400, 10, 0.16]]) {
       const b = filtro(ac, 'bandpass', fr, q);
@@ -441,14 +441,19 @@ const Audio_ = (() => {
     curva(ga.gain, [[t + 0.045, 0.0001], [t + 0.08, v], [t + 0.15, 0.7 * v], [t + dur, 0.0001]]);
     ga.connect(destino);
   }
-  function genSusurro(ac, salida, t0, nodos) {
+  // op: ki y ma (cuántas), paso (s entre sílabas), pausa (s entre los «ki» y los «ma»), altura (Hz de la voz de la «a»),
+  // voz (cuánta voz lleva la «a»: 0 susurro puro), eco (s), vuelta (cuánto vuelve el eco), sala (envío a la sala)
+  const SUSURRO = { ki: 4, ma: 4, pasoKi: 0.15, pasoMa: 0.22, pausa: 0.35, altura: 108, voz: 0.2, eco: 0.24, vuelta: 0.48, sala: 0.3 };
+  function genSusurro(ac, salida, t0, nodos, op = {}) {
+    const o = { ...SUSURRO, ...op };
     const seco = ganancia(ac, 1); seco.connect(salida);
-    seco.connect(ecoIdaVuelta(ac, salida, 0.24, 0.48, 2600, nodos));
-    const sala = salaLarga(ac), envio = ganancia(ac, 0.3); seco.connect(envio); envio.connect(sala); sala.connect(salida); nodos.push(seco, envio, sala);
-    const v = 0.9 + Math.random() * 0.15;
-    [0, 0.15, 0.3, 0.45].forEach((d, k) => silabaKi(ac, seco, t0 + d + (Math.random() - 0.5) * 0.015, v * (1 - k * 0.06), 2200 + Math.random() * 120));
-    [0.8, 1.02, 1.24, 1.46].forEach((d, k) => silabaMa(ac, seco, t0 + d + (Math.random() - 0.5) * 0.015, v * 0.9 * (1 - k * 0.07), 108 - k * 3.5));
-    return t0 + 1.8 + 3.2;   // hasta que se apaga el eco
+    seco.connect(ecoIdaVuelta(ac, salida, o.eco, o.vuelta, 2600, nodos));
+    const sala = salaLarga(ac), envio = ganancia(ac, o.sala); seco.connect(envio); envio.connect(sala); sala.connect(salida); nodos.push(seco, envio, sala);
+    const v = 0.9 + Math.random() * 0.15, jit = () => (Math.random() - 0.5) * 0.015;
+    for (let k = 0; k < o.ki; k++) silabaKi(ac, seco, t0 + k * o.pasoKi + jit(), v * (1 - k * 0.06), 2200 + Math.random() * 120);
+    const tMa = t0 + (o.ki - 1) * o.pasoKi + o.pausa;
+    for (let k = 0; k < o.ma; k++) silabaMa(ac, seco, tMa + k * o.pasoMa + jit(), v * 0.9 * (1 - k * 0.07), o.altura * (1 - k * 0.032), o.voz);
+    return tMa + (o.ma - 1) * o.pasoMa + 0.35 + o.eco * 14;   // hasta que se apaga el eco
   }
   function genTajo(ac, salida, t0, nodos, fuerza = 1) {
     const d = 0.3, a = aire(ac, t0, d), lado = ac.createStereoPanner();
