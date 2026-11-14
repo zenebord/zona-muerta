@@ -519,70 +519,6 @@ const Audio_ = (() => {
     }
     return t0 + 0.5;
   }
-  /* ---------- Agarrar un arma: un sonido leve, grabado ----------
-   * Grabaciones reales (sonidos/agarre_*.wav, CC0; fuentes en sonidos/CREDITOS.md). Leandro: «las pistolas están bien,
-   * salvo la Desert Eagle; las metralletas, muy exageradas: sólo el sonido metálico, y el agarre, muchísimo más bajo».
-   *   - Pistolas (y la granada): el cuero de la funda y un clic de metal (la de plástico, un golpe apagado; las de cachas
-   *     de madera, además un toque de madera); los revólveres, el tambor. La Desert Eagle, como una pistola más.
-   *   - Las demás (metralletas, rifles, escopetas, especiales, de golpe): sólo un sonido metálico sutil, como el de la
-   *     granada («perfecto, algo bien sutil»), que crece un poco con el tamaño (desde 8 kg, uno más pesado). Las de
-   *     plástico, más bajo todavía.
-   *   - Armas blancas: la hoja que sale, más bajo (cuchillo y machete; las espadas, una más ancha). El bate, de madera,
-   *     no suena: no tiene metal que lo amerite.
-   * El machete del cazador no tiene: al sacarlo suena su susurro.
-   */
-  // id: [kg, metal, madera, plástico, detalle]
-  const ARMAS_AGARRE = {
-    glock: [0.7, 0.3, 0, 1], beretta92: [0.95, 1, 0, 0], colt1911: [1.1, 1, 0, 0], ppk: [0.6, 1, 0, 0], deagle: [2, 1, 0, 0],
-    mauser: [1.1, 1, 0.5, 0], magnum: [1.4, 1, 0, 0, 'tambor'], python: [1.2, 1, 0.4, 0, 'tambor'],
-    uzi: [3.5, 1, 0, 0], ak47: [3.9, 0.8, 0.8, 0], m16: [3.3, 0.7, 0, 0.7], mp5: [2.5, 0.8, 0, 0.5], thompson: [4.9, 0.9, 0.8, 0],
-    vector: [2.7, 0.3, 0, 1], p90: [2.6, 0.3, 0, 1],
-    remington700: [3.6, 0.5, 1, 0], barrett: [14, 1, 0, 0], mosin: [4, 0.6, 1, 0], garand: [4.3, 0.7, 1, 0], svd: [4.3, 0.8, 0.8, 0],
-    winchester1894: [3, 0.6, 1, 0],
-    recortada: [2.5, 0.7, 1, 0], mossberg: [3.2, 0.6, 0, 0.8, 'bombeo'], rem870: [3.6, 0.6, 0.9, 0, 'bombeo'], benelli: [3.8, 0.6, 0, 0.8],
-    spas12: [4.4, 1, 0, 0.5, 'bombeo'], aa12: [5.2, 0.9, 0, 0.6], saiga: [3.6, 0.9, 0, 0.4], winchester1887: [3.6, 0.8, 1, 0],
-    m79: [2.9, 0.6, 1, 0], mgl: [5.3, 1, 0, 0.3], bazuca: [6.8, 1, 0, 0, 'tubo'], rpg7: [7, 0.9, 0.5, 0, 'tubo'], granadas: [0.4, 1, 0, 0],
-    lanzallamas: [30, 1, 0, 0], minigun: [39, 1, 0, 0, 'eslabones'], laser: [3, 0.5, 0, 0.7],
-    cuchillo: [0.3, 0.6, 0, 0.4, 'hoja'], machete: [0.6, 0.8, 0, 0.4, 'hoja'], katana: [1.2, 0.6, 0.4, 0, 'hoja'], hacha: [2.7, 0.8, 0.9, 0],
-    bate: [1, 0, 1, 0], mazo: [4.5, 1, 0.8, 0],   // el bate, de madera: sin metal, no suena
-    mjolnir: [20, 1, 0, 0], excalibur: [1.5, 1, 0, 0, 'hoja'], tridente: [3, 1, 0, 0], egida: [6, 1, 0, 0], gungnir: [2.5, 0.5, 0.9, 0],
-  };
-  // NIVEL_AGARRE: una pistola suena unos 16 dB por debajo de una recarga; el resto, más bajo (ver genAgarre)
-  const NIVEL_AGARRE = 0.48;
-  // Una capa: una grabación, con su volumen, su velocidad (más lenta = más grave y pesada) y, si hace falta, apagada.
-  // Varía un poco cada vez. Devuelve cuándo termina (si la grabación todavía no está cargada, no suena)
-  function capaGrabada(ac, s, t, nombre, { v = 1, vel = 1, corte = 0 } = {}) {
-    const b = grabaciones[nombre];
-    if (!b) return t;
-    const f = ac.createBufferSource(); f.buffer = b; f.playbackRate.value = vel * (0.97 + Math.random() * 0.06);
-    const g = ganancia(ac, v * (0.92 + Math.random() * 0.12));
-    if (corte) { const lp = filtro(ac, 'lowpass', corte, 0.6); f.connect(lp); lp.connect(g); } else f.connect(g);
-    g.connect(s); f.start(t);
-    return t + b.duration / f.playbackRate.value;
-  }
-  function genAgarre(ac, salida, t0, nodos, id) {
-    const d = ARMAS_AGARRE[id];
-    if (!d) return t0;
-    const [kg, metal, madera, plastico, detalle] = d, lw = Math.log2(1 + kg), s = ganancia(ac, NIVEL_AGARRE), fines = [t0];
-    const vel = Math.max(0.82, Math.min(1.08, 1.08 - 0.05 * lw));   // más pesada, más lenta: más grave
-    s.connect(salida);
-    if ((typeof ARMAS !== 'undefined' && ARMAS[id] && ARMAS[id].categoria === 'pistola') || id === 'granadas') {
-      // Pistolas, como estaban: la funda y el clic (la Desert Eagle, de 2 kg, suena como una pistola grande)
-      const W = Math.pow(Math.min(kg, 1.4) / 3, 0.38);
-      fines.push(capaGrabada(ac, s, t0, 'agarre_cuero', { v: 0.5 * W }));
-      if (metal) fines.push(capaGrabada(ac, s, t0 + 0.04, 'agarre_clic', { v: 0.35 * metal * W, vel }));
-      if (madera) fines.push(capaGrabada(ac, s, t0 + 0.043, 'agarre_madera', { v: 0.45 * madera * W, vel }));
-      if (plastico) fines.push(capaGrabada(ac, s, t0 + 0.042, 'agarre_madera', { v: 0.35 * plastico * W, vel: 1.12, corte: 1800 }));
-      if (detalle === 'tambor') fines.push(capaGrabada(ac, s, t0 + 0.13, 'agarre_clic', { v: 0.2 * W, vel: 1.05 }));
-    } else {
-      // Lo demás: sólo un sonido metálico sutil, como el de la granada (unos 20 dB por debajo de una recarga), un poco
-      // más cuanto más grande (la minigun, unos 15); las armas blancas, la hoja, más bajo; sin metal (el bate), nada
-      const W = Math.pow(kg / 3, kg <= 3 ? 0.35 : 0.25);
-      if (detalle === 'hoja') fines.push(capaGrabada(ac, s, t0, kg < 1 ? 'agarre_cuchillo' : 'agarre_hoja', { v: 0.25 * W }));
-      else if (metal) fines.push(capaGrabada(ac, s, t0, kg >= 8 ? 'agarre_metal_pesado' : 'agarre_metal', { v: 0.2 * Math.max(metal, 0.5) * W, vel }));
-    }
-    return Math.max(...fines) + 0.1;
-  }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
   function sonar(generador, rev, vol, ...args) {
     if (!asegurar()) return;
@@ -835,10 +771,8 @@ const Audio_ = (() => {
     // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
     susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
     duracionSusurro,
-    // Al agarrar un arma (js/jugador.js, cuando cambia la que está en la mano): un sonido leve, propio de cada una
-    agarrarArma(id) { if (ARMAS_AGARRE[id]) sonar(genAgarre, 0.05, 1, id); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
-    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, agarre: genAgarre },
+    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {

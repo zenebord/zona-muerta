@@ -938,13 +938,6 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
 - Cada zombie sale distinto: pelo, heridas, desgarros, manchas y a veces un brazo colgando. Al morir cae sobre un charco de sangre.
 - Los mecanismos de recarga (cargadores, correderas, cerrojos, bombeo, cartuchos, balas) son grabaciones reales
   de armas, recortadas en eventos sueltos y elegidas según el arma. Fuentes y licencias en `sonidos/CREDITOS.md`.
-- Al agarrar un arma (teclas, ruedita, una caja, al bajarse de la ametralladora) suena algo sutil, grabado
-  (`ARMAS_AGARRE` y `genAgarre` en `js/audio.js`; grabaciones CC0 `sonidos/agarre_*.wav`): las pistolas y la granada,
-  el cuero de la funda y un clic de metal (las de plástico, un golpe apagado; los revólveres, el tambor); el resto,
-  sólo un sonido metálico sutil, como el de la granada (unos 19 dB por debajo de una recarga), que crece un poco con
-  el tamaño (la minigun, unos 15); las armas blancas, la hoja que sale, más bajo; el bate, de madera, no suena. Al
-  empezar la partida no suena; con la ruedita, a lo sumo uno cada 90 ms y siempre el de la última. El machete del
-  cazador no tiene: al sacarlo suena su susurro.
 - Voces de zombies, pasos, impactos de bala en la carne y quejidos del protagonista también son grabaciones reales.
   El viento de fondo, la sirena de cada ronda y el latido con poca vida son sintetizados.
 - Los disparos y explosiones son sintetizados y suenan a aire libre (sin eco y casi sin reverberación), salvo en el

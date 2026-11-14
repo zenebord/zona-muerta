@@ -119,7 +119,6 @@ class Jugador {
     const paso = dt * 60;
     this.ahora = juego.ahora;
     this.caminando = false;
-    this.revisarAgarre();
     // La vaina del último tiro sale por la ventana cuando la corredera o el cerrojo llegaron atrás
     const vaina = this.vainaPendiente;
     if (vaina && this.ahora >= vaina.en) {
@@ -474,19 +473,6 @@ class Jugador {
   }
 
   cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; this.granadaFuera = this.pasadorFuera = false; }
-
-  // Cuando cambia el arma de la mano (teclas, ruedita, una caja, al bajarse de la ametralladora), un sonido leve de esa
-  // arma (Audio_.agarrarArma). Al empezar la partida no suena. Si cambia muy seguido (la ruedita), no suenan todas: a lo
-  // sumo una cada 90 ms, y siempre la última
-  revisarAgarre() {
-    const id = this.montada || this.muerto ? null : this.inventario[this.indiceArma];
-    if (this.agarrada === undefined) { this.agarrada = id; return; }
-    if (id !== this.agarrada) { this.agarrada = id; this.agarrePendiente = id; }
-    if (this.agarrePendiente && this.ahora - (this.ultimoAgarre ?? -1e9) >= 90) {
-      if (Audio_.agarrarArma) Audio_.agarrarArma(this.agarrePendiente);
-      this.ultimoAgarre = this.ahora; this.agarrePendiente = null;
-    }
-  }
 
   // Agarra un arma: si es nueva se suma al inventario; si ya la tenía, le repone munición
   recoger(armaId) {

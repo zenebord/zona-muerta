@@ -1,8 +1,7 @@
 # Créditos de sonido
 
-Los mecanismos de las armas (cargadores, correderas, cerrojos, bombeo, cartuchos, balas), el foley de
-agarrar un arma (cuero, metal, madera, hojas), las voces de los zombies, los pasos, los impactos y
-los quejidos del protagonista son **grabaciones reales**
+Los mecanismos de las armas (cargadores, correderas, cerrojos, bombeo, cartuchos, balas), las voces
+de los zombies, los pasos, los impactos y los quejidos del protagonista son **grabaciones reales**
 recortadas en eventos sueltos. Los disparos, explosiones, el viento, la sirena y el latido son
 sintetizados en `js/audio.js`.
 
@@ -15,12 +14,6 @@ abriendo `index.html` directo, sin servidor.
 | `pistola_*`, `gatillo_en_seco`, `cerrojo_abrir`, `cerrojo_cerrar`, `rifle_*`, `escopeta_*`, `cerrojo_22`, `revolver_balas`, `balas_sueltas`, `casquillo_*`, `cartucho_cae` | [Handling Guns](https://opengameart.org/node/11033): Colt M1911A1, escopeta Browning semiautomática calibre 12, Marlin .22 de cerrojo y Remington 700 calibre .30-06, grabados en seco | Gary (para el proyecto PARPG) | [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | `bombeo_cartucho`, `bombeo_rack` | [Shotgun Reload Sound Effects](https://opengameart.org/content/shotgun-reload-sound-effects) | zer0_sol | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | `cargador_al_piso` | [Handgun Reload Sound Effect](https://opengameart.org/content/handgun-reload-sound-effect) | zer0_sol | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| `agarre_cuero` (handleSmallLeather), `agarre_clic` (metalClick, el primer clic), `agarre_cuchillo` (drawKnife3) | [50 RPG sound effects](https://opengameart.org/content/50-rpg-sound-effects) | Kenney (kenney.nl) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| `agarre_metal` (tools_08), `agarre_metal_pesado` (tools_04, de 0,29 a 0,70 s), `agarre_madera` (wood_hit_04) | [100 CC0 metal and wood SFX](https://opengameart.org/content/100-cc0-metal-and-wood-sfx) | rubberduck | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| `agarre_hoja` (seax-unsheathe-01) | [Fantasy weapons and apparel SFX library](https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library) | Vehicle (Jan Schupke) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
-
-Los `agarre_*` son el foley de agarrar un arma (js/audio.js, `genAgarre`): el cuero de la funda y el clic de las
-pistolas, el metal sutil del resto y la hoja de las armas blancas. `herramientas/embeber-sonidos.py` regenera `js/sonidos-datos.js` desde esta carpeta.
 
 Sonidos de ambiente, en `sonidos/ambiente/` (embebidos en `js/sonidos-ambiente.js`, a 22 kHz):
 
