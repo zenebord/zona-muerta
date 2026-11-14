@@ -87,8 +87,7 @@ function piernaArticulada(ctx, hx, hy, a, doblez, color, C) {
   const tx = kx + Math.sin(b) * L2, ty = ky + Math.cos(b) * L2;   // tobillo
   const lejos = color !== C.pantalon ? 0.2 : 0;
   // Pie: de plano; si el tobillo no da, gira lo que falta (y al despegar, la pierna de atrás levanta el talón)
-  let pie = b > A.tobillo.arriba * GRADOS ? -(b - A.tobillo.arriba * GRADOS) : b < -A.tobillo.abajo * GRADOS ? -b - A.tobillo.abajo * GRADOS : 0;
-  if (b < 0) pie = Math.max(pie, Math.min(0.5, doblez * 0.45));
+  const pie = giroDelPie(b, doblez);
   const cp = Math.cos(pie), sp = Math.sin(pie), P = (x, y) => [tx + x * cp - y * sp, ty + x * sp + y * cp];
   const enCanilla = k => [kx + (tx - kx) * k, ky + (ty - ky) * k];
 
@@ -400,7 +399,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const angMano = this.montada ? 0 : (dArma.anguloEmpunadura ?? 0.3) + e.incl - (e.palanca || 0) * GIRO_PALANCA * 0.7;
   // Con la M2: la mano del gatillo en la empuñadura de pala de abajo (16,5 detrás del cajón)
   const tapa = this.cubierto > 0.45;   // agachado, con las manos sobre la cabeza
-  const gatillo = tapa ? { x: -2.5, y: -80 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
+  const gatillo = tapa ? { x: -2.5, y: -78 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
   const Clejos = coloresLejos(C);
   if (dArma.tanques && dArma.manguera && !this.montada) {
     const m = dArma.manguera, c = Math.cos(e.incl), sn = Math.sin(e.incl);
@@ -419,7 +418,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   // El cargador que lleva la mano de apoyo es el de esta arma (js/cargadores.js), girado como el arma y con el agarre en la mano
   const cargadorEnMano = !this.montada && e.enMano && ES_CARGADOR.has(e.enMano) && CARGADORES[arma.id];
   let cerca, gestoCerca = e.gesto || 'apoyo', manoEn = e.mano;
-  if (tapa) cerca = armarBrazo(this, 'cerca', hombroX, hombroY, gestoApoyo('cabeza', [5, -80.5 + ty], e), opCerca);
+  if (tapa) cerca = armarBrazo(this, 'cerca', hombroX, hombroY, gestoApoyo('cabeza', [5, -78.5 + ty], e), opCerca);
   else if (this.montada) {
     // La M2 está en el mundo, sin agrandar: la mano de apoyo en la otra empuñadura, o siguiendo la recarga de la cinta
     manoEn = { x: e.mano.x / ESCALA_JUGADOR, y: e.mano.y / ESCALA_JUGADOR };
@@ -467,7 +466,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
 
   // Cuello y cabeza; durante la recarga baja la mirada hacia el arma
   ctx.save();
-  ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta); ctx.translate(0, 62 - ty);
+  ctx.translate(1.4 * e.apunta - golpe * 0.8, -62 + ty + 0.9 * e.apunta); ctx.rotate(0.2 * e.mirar + 0.12 * e.apunta); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62 - ty);
   dibujarCabeza(ctx, S, C, ty, e);
   ctx.restore();
 
@@ -606,7 +605,7 @@ function dibujarColgado(ctx, j, S, C) {
     piernaArticulada(ctx, -2, -34, 0.35 + 0.75 * baja, 0.45 + 1.1 * baja, pantalonLejos, C);
     brazoSuelto(ctx, j, 'lejos', -3, -53, gestoGatillo('peldano', [7, -74 - 9 * baja], 0), Clejos);
     dibujarTorso(ctx, S, C, 0);
-    ctx.save(); ctx.translate(2, -62); ctx.rotate(-0.18); ctx.translate(0, 62);   // mira hacia arriba
+    ctx.save(); ctx.translate(2, -62); ctx.rotate(-0.18); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62);   // mira hacia arriba
     dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
     piernaArticulada(ctx, 3, -34, 0.35 + 0.75 * sube, 0.45 + 1.1 * sube, C.pantalon, C);
     brazoSuelto(ctx, j, 'cerca', 4, -52, gestoApoyo('peldano', [8, -74 - 9 * sube], { incl: 0 }), C);
@@ -617,7 +616,7 @@ function dibujarColgado(ctx, j, S, C) {
   piernaArticulada(ctx, -2, -34, 0.1 + vaiven, 0.35, pantalonLejos, C);
   brazoSuelto(ctx, j, 'lejos', -3, -53, gestoGatillo('soga', [0, -78], 0), Clejos);
   dibujarTorso(ctx, S, C, 0);
-  ctx.save(); ctx.translate(1, -62); ctx.rotate(-0.12); ctx.translate(0, 62); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
+  ctx.save(); ctx.translate(1, -62); ctx.rotate(-0.12); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(0, 62); dibujarCabeza(ctx, S, C, 0, j.estadoArma()); ctx.restore();
   piernaArticulada(ctx, 3, -34, 0.25 + vaiven, 0.5, C.pantalon, C);
   brazoSuelto(ctx, j, 'cerca', 4, -52, gestoApoyo('soga', [1, -70], { incl: 0 }), C);
 }
