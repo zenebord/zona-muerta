@@ -829,13 +829,39 @@ pasa:
   una forma de piel con su pie descalzo y encima el pantalón roto, que termina en flecos (`tramoCortado`); el brazo
   resuelve el codo con `resolverBrazo` y ya no se estira al manotear; el hombro es el arranque de la manga y la
   rodilla el quiebre de la pierna, no círculos. La mano es la misma del jugador en garra, con uñas (`dibujarGarra`:
-  los mismos nudos, trazados más livianos). Los animales (perros, toro, guanaco, ñandú, aves) quedan como estaban:
-  son cuadrúpedos y aves, con su propio dibujo.
+  los mismos nudos, trazados más livianos).
+- **Infantería del bastión** (`infanteCuerpo` en `js/bastion-dibujo.js`): el soldado, el francotirador, el
+  lanzallamas y el médico son un solo cuerpo en miniatura, con los huesos del jugador a escala (`HUESOS_MINI`: 7,2 y
+  6,2 de brazo y 6,9 y 6,5 de pierna para 38 de altura) y los mismos rangos. Las piernas tienen rodilla
+  (`piernaMini`): al caminar la que avanza despega y dobla hasta 47°, y la cadera queda a la altura que le da la
+  pierna apoyada; de pie hacen guardia con la pierna del lado del arma atrás; el francotirador apoya una rodilla y la
+  puntera del pie de atrás, con el otro pie de plano. El brazo es una sola forma (`brazoB`, con `resolverBrazo`): el
+  de apoyo llega al guardamanos con el codo abajo, el del gatillo baja junto al cuerpo y sube al pistolete, y el
+  guante tiene palma y pulgar y se dibuja después del arma. La cabeza va al 88 %. Antes las piernas eran un tubo sin
+  rodilla, los brazos dos tubos de 5,6 que no llegaban al guardamanos (se estiraban un 10 %), el guante una bola y la
+  cadera estaba a 0,38 de la altura (ahora a 0,42, como en el jugador). El tirador de la torreta y los servidores del
+  mortero y la antiaérea usan el mismo brazo.
+- **Animales** (`js/zombies-autoctonos.js`; las aves, en `js/bastion-v2-dibujo.js`): las patas doblan como las del
+  animal. La de adelante baja derecha desde el codo, que va contra el pecho, y solo dobla en el carpo, con la caña
+  hacia atrás; la de atrás hace la zeta: muslo hacia adelante hasta la babilla, pierna hacia atrás hasta el corvejón
+  y caña hasta el pie. Perros y gatos caminan sobre los dedos, con uñas; guanaco, ciervo, vaca y toro, sobre la
+  pezuña hendida. El pie se pone donde le toca en el paso (apoyado va hacia atrás; en el vuelo se levanta y vuelve) y
+  de ahí salen las articulaciones (`dosHuesos`), así no patina ni se hunde; los lentos van al paso, de a una pata, y
+  los rápidos al trote, de a dos en diagonal. El cuerpo deja de ser un óvalo: pecho hondo, cruz, lomo, grupa y la
+  panza recogida de cada especie (`cintura`), en una sola silueta con el cuello y las patas del lado cercano, sin una
+  bola en la cadera ni en el codo. Al ñandú la pata le doblaba hacia adelante, como una rodilla: ahora el muslo va
+  entre las plumas y la articulación que se ve a media pata es el talón, que mira hacia atrás, con la caña y los tres
+  dedos. El cuervo es una sola forma de la cola al pico y lleva las patas recogidas; el buitre, el cuerpo con la cola
+  por un lado y el cuello pelado con la cabeza por el otro. Antes cada pata eran dos rectángulos, con su contorno,
+  que doblaban todos para el mismo lado.
 - **Costo**: una horda no puede pagar la pintura del jugador. En este lienzo un relleno con degradado o un recorte
   cuestan varias veces lo que un relleno plano, así que los miembros de los zombies van en dos tonos planos
   (`miembroZombie`: la forma en sombra y, encima, la misma más fina y corrida hacia la luz) y en la pasada de la
   sombra la mano es una mancha. Dibujar 60 zombies con su sombra pasó de 25,6 a 16,7 ms (medido ida y vuelta en la
-  misma ventana; con la máquina más libre, de 15,9 a 12,9). El jugador, de 0,95 a 0,9 ms.
+  misma ventana; con la máquina más libre, de 15,9 a 12,9). El jugador, de 0,95 a 0,9 ms. Los animales usan la
+  misma idea (`pielAnimal`) y, con menos piezas, salen más baratos que antes: un perro pasó de 0,69 a 0,40 ms, una
+  vaca de 0,70 a 0,44, el toro de 0,96 a 0,49, un gato de 0,52 a 0,30 y el buitre de 0,25 a 0,15. El ñandú, que antes
+  eran unas pocas líneas, subió de 0,21 a 0,30. La infantería se dibuja una vez por pose y se guarda como imagen.
 
 **Manos** (`dibujarMano` en `js/anatomia.js`, los gestos en `js/jugador-dibujo.js`): todas son la misma mano con
 guante, empuñe lo que empuñe, en reposo y en cada fase de la recarga: una palma, cuatro dedos de tres falanges y el
