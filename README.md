@@ -734,6 +734,18 @@ alrededor de un minuto).
 En celulares y tablets aparecen botones en pantalla: flechas a la izquierda, fuego (se puede mantener), salto y
 recarga a la derecha, y abajo cambio de arma, M2, cajas (en el campo de pruebas) y pausa. Se detectan solos.
 
+**Las teclas se cambian** en Configuración → Teclas (también desde CONTROLES → CAMBIAR TECLAS): cada acción tiene un
+botón con su tecla; se toca y se presiona la nueva, que puede ser cualquier letra, número, flecha, Control, Alt o
+Alt Gr. Si la tecla ya era de otra acción, se intercambian (y lo avisa). Escape cancela; no se asigna, porque siempre
+pausa y cierra. «Teclas originales» vuelve a las de la tabla, y RESTABLECER también. Las teclas cambiadas se ven
+resaltadas, y la pantalla de controles y las ayudas del juego («F DISPARA», la del campo de pruebas, la de Defensa
+zombie…) muestran siempre las que están puestas. Cómo funciona (`js/teclas.js`): se guardan por código físico de la
+tecla, con el nombre que tiene en el teclado de quien la eligió (en uno español, la Ñ), y el teclado del juego
+traduce cada tecla apretada a la original de su acción, así el resto del código no cambia. Los botones táctiles
+mandan la original y no se traducen. Alt Gr en Windows llega como un Control falso seguido de Alt: si Control tiene
+una acción, espera 30 ms para saber cuál de las dos fue. Las teclas del Último bastión (números, `Q W E R`,
+`A S D F G`, `V`, espacio) son de ese modo y no cambian; la de pausa sí.
+
 | Tecla | Acción |
 |---|---|
 | `→` / `←` | Avanzar / retroceder |
@@ -741,7 +753,7 @@ recarga a la derecha, y abajo cambio de arma, M2, cajas (en el campo de pruebas)
 | `↓` (mantener) | Agacharse con rodilla en tierra: el arma baja 13 unidades (blancos bajos) y se esquiva el chorro de ácido. Junto a una M2, la monta o la suelta |
 | `F` o clic izquierdo | Disparar (mantener presionado con las metralletas) |
 | `S` o clic derecho | Recargar (las escopetas cargan cartucho por cartucho; disparar interrumpe la carga). El clic derecho no abre el menú del navegador |
-| `1` … `5` | Grupo de armas: 1 pistolas, 2 metralletas, 3 rifles, 4 escopetas, 5 especiales (otra vez: la siguiente del grupo) |
+| `1` … `7` | Grupo de armas: 1 pistolas, 2 metralletas, 3 rifles, 4 escopetas, 5 especiales, 6 cuerpo a cuerpo, 7 legendarias (otra vez: la siguiente del grupo) |
 | `Q` / `E`, `G` / `H` o rueda del mouse | Arma anterior / siguiente |
 | `D` | Mira: telescópica (Remington 700, Barrett M82, Mosin-Nagant y Dragunov SVD) o de punto rojo (Kriss Vector, P90, Saiga-12, Milkor MGL y bazuca M9): apunta sola al zombie más cercano; otra vez, la quita |
 | `A` | Defensa zombie: pedir un ataque aéreo (cada 20 s) |

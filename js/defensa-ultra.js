@@ -386,7 +386,7 @@ Object.assign(Juego.prototype, {
   hudUltra() {
     const h = this.hud, tactil = document.body.classList.contains('tactil');
     h.mision.classList.add('activa');
-    h.mision.innerHTML = `<span class="dinero">$${this.dinero}</span> · ${t('ultra.hudTienda', { tecla: tactil ? '' : ' (B)' })}` +
+    h.mision.innerHTML = `<span class="dinero">$${this.dinero}</span> · ${t('ultra.hudTienda', { tecla: tactil ? '' : ' (' + Teclas.nombre('tienda') + ')' })}` +
       ` · <span class="${this.pasados >= ULTRA.maxPasados - 1 ? 'cuenta' : ''}">${t('ultra.hudPasaron', { n: this.pasados, max: ULTRA.maxPasados })}</span>`;
   },
 

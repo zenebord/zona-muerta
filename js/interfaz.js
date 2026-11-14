@@ -459,6 +459,7 @@
       case 'reintentar': iniciar(misionActual, opcionesActuales.estrategia && opcionesActuales.estrategia.v2 ? { estrategia: { nivel: opcionesActuales.estrategia.nivel, v2: true } } : opcionesActuales); break;   // en la v2, «otra vez» es desde la oleada 1
       case 'al-menu':   salirAlMenu(); break;
       case 'config-abrir': abrirConfig(); break;
+      case 'teclas-cambiar': abrirConfig(); document.getElementById('config-teclas').scrollIntoView({ block: 'start' }); break;   // desde la pantalla de controles
       case 'personaje-abrir': abrirPersonajes(); break;
       case 'personaje-cerrar': cerrarPersonajes(); break;
       case 'config-cerrar': cerrarConfig(); break;
@@ -473,21 +474,37 @@
     }
   });
 
-  /* ---- Teclado ---- */
+  /* ---- Teclado ----
+   * Las teclas de verdad pasan por Teclas.traducir (js/teclas.js): «tecla» es la original de la acción que tienen
+   * asignada en la configuración (KeyF para disparar aunque se haya cambiado a la L), o null si no tienen ninguna.
+   * Escape, Enter, Backspace y las flechas de los menús van siempre como son (e.code); el Último bastión también:
+   * sus teclas son aparte. Los botones táctiles mandan la original y pasan igual. */
   const TECLAS_BLOQUEADAS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space']);
+  // Alt Gr en Windows llega como un Control izquierdo falso y enseguida el Alt derecho: si el Control izquierdo tiene
+  // una acción, se espera un instante; si llega el Alt derecho, era Alt Gr y el Control no cuenta
+  let controlEnEspera = null;
+  const soltarControl = () => { if (!controlEnEspera) return; clearTimeout(controlEnEspera.t); const ev = controlEnEspera.e; controlEnEspera = null; alApretar(ev, Teclas.traducir(ev)); };
   document.addEventListener('keydown', e => {
+    if (e.isTrusted && e.code === 'ControlLeft' && !e.repeat && !configAbierta && Teclas.accion('ControlLeft')) {
+      soltarControl(); controlEnEspera = { e, t: setTimeout(soltarControl, 30) }; return;
+    }
+    if (e.code === 'AltRight' && controlEnEspera) { clearTimeout(controlEnEspera.t); controlEnEspera = null; }
+    else soltarControl();
+    alApretar(e, Teclas.traducir(e));
+  });
+  function alApretar(e, tecla) {
     if (configAbierta) { if (e.code === 'Escape') { if (Asistente.abierto()) Asistente.cerrar(); else cerrarConfig(); } return; }
     if (personajesAbierto) { if (e.code === 'Escape') cerrarPersonajes(); return; }
     if (guiaB2Abierta) { if (e.code === 'Escape' || (e.code === 'KeyH' && !e.repeat)) cerrarGuiaB2(); return; }
     if (TECLAS_BLOQUEADAS.has(e.code)) e.preventDefault();
     if (!juego) return;
-    if (juego.enTienda) { if ((e.code === 'Escape' || e.code === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
-    if ((juego.pruebas || juego.entrenamiento) && e.code === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
+    if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
+    if (juego.enTienda) { if ((e.code === 'Escape' || tecla === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
+    if ((juego.pruebas || juego.entrenamiento) && tecla === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
     if (menuPruebasAbierto) {
       if (armaEnDetalle) {   // en la ficha: Esc vuelve a la lista, Enter la usa
         if (e.code === 'Escape' || e.code === 'Backspace') ocultarDetalleArma();
         else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) { e.preventDefault(); usarArmaDetalle(); }
-        else if (e.code === 'KeyC' && !e.repeat) alternarMenuPruebas();
         else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { e.preventDefault(); mostrarDetalleArma(armaVecina(armaEnDetalle, e.code === 'ArrowRight' ? 1 : -1)); }
         return;
       }
@@ -499,26 +516,26 @@
         mostrarDetalleArma(base ? armaVecina(base, e.code === 'ArrowRight' ? 1 : -1) : armaVecina(null, 0));
         return;
       }
-      if (e.code === 'KeyX' && !e.repeat) juego.borrarGenerado();
+      if (tecla === 'KeyX' && !e.repeat) juego.borrarGenerado();
       else if (e.code === 'Escape') alternarMenuPruebas();
       return;
     }
     if (juego.estrategia && juego.v2 && e.code === 'KeyH' && !e.repeat && !juego.terminado) { abrirGuiaB2(); return; }   // la guía de los dos bandos
     if (juego.estrategia && e.code === 'Escape' && !pausado && juego.cancelarColocacion()) return;   // Esc primero suelta lo que se iba a construir
-    if (e.code === 'KeyP' || e.code === 'Escape') { alternarPausa(); return; }
+    if (tecla === 'KeyP' || e.code === 'Escape') { alternarPausa(); return; }
     if (pausado || juego.terminado) return;
     if (juego.estrategia) { if (juego.teclaBastion(e.code)) e.preventDefault(); return; }
     const en = juego.entrada, j = juego.jugador;
-    if (juego.pruebas && e.code === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
-    if (juego.pruebas && e.code === 'KeyZ' && !e.repeat) { juego.ponerZombiePrueba(); return; }   // zombie de prueba
-    switch (e.code) {
+    if (juego.pruebas && tecla === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
+    if (juego.pruebas && tecla === 'KeyZ' && !e.repeat) { juego.ponerZombiePrueba(); return; }   // zombie de prueba
+    switch (tecla) {
       case 'ArrowRight': en.derecha = true; break;
       case 'ArrowLeft':  en.izquierda = true; break;
       case 'ArrowUp':    if (!e.repeat) en.saltarPulsado = true; break;
       case 'ArrowDown':  en.abajo = true; if (!e.repeat) { en.abajoPulsado = true; juego.alternarMontar(); } break;   // mantenida: agacharse; junto a una M2: montarla
       case 'KeyF':       en.disparar = true; if (!e.repeat) en.dispararPulsado = true; break;
       case 'KeyS':       if (!e.repeat) j.recargar(juego); break;
-      case 'KeyD':       if (!e.repeat) j.alternarMira(juego); break;   // mira telescópica: apunta sola al zombie más cercano
+      case 'KeyD':       if (!e.repeat) j.alternarMira(juego); break;   // mira telescópica o de punto rojo: apunta sola al zombie más cercano
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
       case 'KeyT':       if (!e.repeat && juego.ultra) juego.comprarTorreta(); break;
       case 'KeyB':       if (!e.repeat && juego.ultra) juego.alternarTienda(); break;
@@ -526,20 +543,22 @@
       case 'KeyE': case 'KeyH': if (!e.repeat) { j.cambiarArma(1); if (juego.pruebas) j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;
       default:
         // 1 a 7 (fila de números o teclado numérico): grupo de armas; otra vez, la siguiente del grupo
-        if (/^(Digit|Numpad)[1-7]$/.test(e.code) && !e.repeat) {
-          const g = parseInt(e.code.slice(-1), 10) - 1;
+        if (tecla && /^(Digit|Numpad)[1-7]$/.test(tecla) && !e.repeat) {
+          const g = parseInt(tecla.slice(-1), 10) - 1;
           if (j.elegirGrupo(g)) mostrarSelectorArmas();
           else if (!j.montada) juego.aviso(t('aviso.sinGrupo', { grupo: GRUPOS_ARMAS[g].nombre.toUpperCase() }), 1200);
         }
     }
-  });
+  }
   document.addEventListener('keyup', e => {
+    if (e.code === 'ControlLeft') soltarControl();   // si se soltó antes de que pasara la espera
     if (!juego) return;
-    const en = juego.entrada;
-    if (e.code === 'ArrowRight') en.derecha = false;
-    if (e.code === 'ArrowLeft') en.izquierda = false;
-    if (e.code === 'KeyF') en.disparar = false;
-    if (e.code === 'ArrowDown') en.abajo = false;
+    const en = juego.entrada, tecla = Teclas.traducir(e);
+    if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // el Alt suelto, en Windows, lleva al menú del navegador
+    if (tecla === 'ArrowRight') en.derecha = false;
+    if (tecla === 'ArrowLeft') en.izquierda = false;
+    if (tecla === 'KeyF') en.disparar = false;
+    if (tecla === 'ArrowDown') en.abajo = false;
   });
   // Rueda del mouse: arma anterior / siguiente (con un respiro para que un giro no salte varias)
   let ultimaRueda = 0;
@@ -618,7 +637,7 @@
   }
   function cerrarConfig() {
     if (!configAbierta) return;
-    configAbierta = false;
+    configAbierta = false; Teclas.cancelar();
     capaConfig.classList.add('oculta');
     if (pausaPorConfig) { pausaPorConfig = false; pausado = false; Musica.pausar(false); ultimo = performance.now(); }
     if (focoAntes && focoAntes.focus) focoAntes.focus();
@@ -633,6 +652,7 @@
     });
     const completa = document.getElementById('boton-completa');
     completa.hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+    Teclas.dibujarLista(document.getElementById('lista-teclas'));   // las teclas de cada acción (js/teclas.js)
   }
   capaConfig.addEventListener('input', e => {
     const r = e.target;
