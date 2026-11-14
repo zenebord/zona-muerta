@@ -255,7 +255,7 @@ class Jugador {
     const sonido = { cerrojo: 'cerrojo', bombeo: 'bombear', palanca: 'palanca' }[accion];
     const pulso = { cerrojo: { que: 'corredera', recorrido: 0 }, bombeo: { que: 'bombeo', recorrido: 0 }, palanca: { que: 'palanca', recorrido: 0 } }[accion];
     this.ciclo = new LineaTiempo(t0, { ab: 0, co: 0, incl: 0 }, 'ciclo')
-      .fase('accionar', dur * 0.75, { a: accion === 'palanca' ? 'arma' : 'corredera', llegada, pulso, incl: accion === 'cerrojo' ? 0.06 : 0, eventos: accion === 'cerrojo'
+      .fase('accionar', dur * 0.75, { a: accion === 'cerrojo' ? 'corredera' : 'arma', llegada, pulso, incl: accion === 'cerrojo' ? 0.06 : 0, eventos: accion === 'cerrojo'
         ? [[llegada, () => Audio_.recarga('cerrojo-abrir', arma.id)], [llegada + (1 - llegada) * 0.5, expulsar], [llegada + (1 - llegada) * 0.8, () => Audio_.recarga('cerrojo', arma.id)]]
         : [[llegada, () => Audio_.recarga(sonido, arma.id)], [llegada + (1 - llegada) * 0.5, expulsar]] })
       .fase('volver', dur * 0.25, { a: 'arma', incl: 0 })
@@ -431,7 +431,7 @@ class Jugador {
       case 'cartuchos':   // escopeta de bombeo: se da vuelta, cartucho por cartucho por abajo, y bombea si estaba vacía
         l.fase('girar', 200, { a: 'cadera', incl: -0.3 });   // mientras gira el arma, la mano ya va a la canana
         deAUna(arma.cargador - this.municionActual(), (T - 680) / arma.cargador, -0.3, 'cartucho', 'cartucho');
-        if (vacio) l.fase('bombear', 320, { a: 'corredera', llegada: 0.4, incl: 0, pulso: { que: 'bombeo', recorrido: 0 }, eventos: [[0.45, s('bombear')]] });
+        if (vacio) l.fase('bombear', 320, { a: 'arma', llegada: 0.4, incl: 0, pulso: { que: 'bombeo', recorrido: 0 }, eventos: [[0.45, s('bombear')]] });
         l.fase('volver', 160, { a: 'arma', incl: 0 });
         break;
 
@@ -627,12 +627,18 @@ class Jugador {
     // Si el guardamanos queda lejos para el brazo, la mano de apoyo se toma más atrás sobre el arma (hasta 12 unidades),
     // así el codo queda doblado debajo y no con el brazo tieso. Se calcula acá y no al dibujar: ese es el lugar de donde
     // sale y adonde vuelve la mano en la recarga (antes saltaba hasta 8 unidades de un cuadro al otro al empezarla)
-    let atrasApoyo = 0;
+    let atrasApoyo = 0, adelantoHombro = 0;
+    // (salvo que la mano tenga que estar justo ahí: una empuñadura vertical o la pieza que lleva, como el guardamanos de
+    // bombeo; ahí el brazo se estira)
+    const fijo = d.apoyoVertical || (d.moviles && d.moviles.manoDelantera);
     if (!this.montada && (d.agarre === 'hombro' || d.agarre === 'pecho')) {
       const q = enArma(d.manoDelantera), vx = q.x + retroX - (d.agarre === 'hombro' ? 6 : 3), vy = q.y + retroY + 2 + 52;   // desde el hombro, sin el retroceso
       const R = Math.sqrt(Math.pow((HUESOS.brazo + HUESOS.antebrazo) * 0.95, 2) - 25), va = vx * c + vy * s, falta = vx * vx + vy * vy - R * R;
       if (falta > 0) atrasApoyo = limitar(va * va >= falta ? va - Math.sqrt(va * va - falta) : va, 0, 12);
     }
+    // Con la mano fija (empuñadura vertical, bomba) no se corre: el hombro de adelante se adelanta hasta 3 unidades (el
+    // cuerpo se perfila hacia el arma) y el brazo se estira lo que falte
+    if (fijo && atrasApoyo > 0) { adelantoHombro = Math.min(atrasApoyo, 3); atrasApoyo = 0; }
     const punto = nombre => {
       if (nombre === 'cadera') return BOLSAS[this.montada ? 'cinta' : BOLSA_DE[arma.recargaTipo] || 'cargador'];
       if (nombre === 'frente') return { x: 19, y: -58 };                 // brazo de apoyo estirado adelante, para el lanzamiento
@@ -648,6 +654,7 @@ class Jugador {
       return enArma({ x: ancla.x + dx * CM - atras, y: ancla.y + dy * CM });
     };
     e.apoyo = punto('arma');
+    e.adelantoHombro = adelantoHombro;
     e.reposoApoyo = { x: e.apoyo.x + retroX, y: e.apoyo.y + retroY };   // dónde estaría sin retroceso
     if (!linea) { e.mano = e.apoyo; return e; }
 

@@ -413,7 +413,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const lejos = armarBrazo(this, 'lejos', -4 - golpe, -53 + ty, gestoGatillo(gestoLejos, [gatillo.x, gatillo.y], cuerpoACuerpo ? e.incl : angMano), { lado: -1, fondo: corta ? 7 : 3 });
   // Hombro izquierdo: con el arma al hombro el cuerpo se perfila y ese hombro va adelante (el codo cae bajo el arma);
   // con la pistola los hombros quedan de frente al blanco (posición isósceles)
-  const hombroX = (tapa || this.montada ? 4 : d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe, hombroY = -52 + ty;
+  const hombroX = (tapa || this.montada ? 4 : d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe + (tapa || this.montada ? 0 : e.adelantoHombro || 0), hombroY = -52 + ty;
   const opCerca = { lado: 1, fondo: corta ? -7 : -5, afuera: 0.12 };   // el codo del brazo de apoyo cae hacia abajo, casi en el plano
   // El cargador que lleva la mano de apoyo es el de esta arma (js/cargadores.js), girado como el arma y con el agarre en la mano
   const cargadorEnMano = !this.montada && e.enMano && ES_CARGADOR.has(e.enMano) && CARGADORES[arma.id];
@@ -434,7 +434,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
       cerca = armarBrazo(this, 'cerca', hombroX, hombroY, ante3 => { const B = manoDesdeAntebrazo(ante3, true, 10, 15, 0); return { gesto: 'guardia', B, O: guardia, pose: GESTOS_MANO.punio }; }, opCerca);
     }
   } else {
-    if (gestoCerca === 'apoyo') gestoCerca = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'viaja' : 'guardamanos';
+    if (gestoCerca === 'apoyo') gestoCerca = d.agarre === 'pistola' ? 'envuelve' : d.agarre === 'mano' ? 'viaja' : d.apoyoVertical ? 'mango' : 'guardamanos';
     // Lo que lleva: el cargador se agarra a lo largo de su eje; lo demás, según hacia dónde apunta. Los dedos que envuelven
     // el cargador por el otro lado van antes que el arma (también cuando el cargador está puesto y la mano lo agarra ahí)
     let eje = null;
