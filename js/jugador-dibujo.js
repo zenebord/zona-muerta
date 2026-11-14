@@ -230,10 +230,28 @@ function armarBrazo(j, cual, hx, hy, armar, opBrazo) {
   for (let k = 0; k < 3; k++) { g = armar(ante3); R = resolver(g.B)[1]; ante3 = R.ante3; }
   const S = poseSuave(j, cual, g.gesto, g.B, normalizarPose(g.pose), g.rigido), [W, R2] = resolver(S.B);
   (j.brazos || (j.brazos = {}))[cual] = { cx: R2.cx, cy: R2.cy, flexion: R2.flexion, extension: R2.extension };   // para las pruebas: dónde quedó el codo y cuánto dobla
-  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null };
+  return { hx, hy, W, R: R2, O: g.O, B: S.B, pose: S.pose, zObj: g.zObj || 0, gesto: g.gesto, capas: g.capas || null, indiceDetras: !!g.indiceDetras };
 }
 const pintarBrazo = (ctx, A, C) => dibujarBrazo(ctx, A.hx, A.hy, A.W[0], A.W[1], A.R, C);
-const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj);
+const pintarMano = (ctx, A, C, capa = null) => dibujarMano(ctx, A.O, A.B, A.pose, C.guante, capa, A.zObj, { indiceDetras: A.indiceDetras });
+/* El índice en el gatillo (pedido de Enzo): con la mano en la empuñadura, la curvatura del índice que deja la yema (el
+ * 65 % de la última falange) en el punto del disparador de ese arma (dedoGatillo, js/armas-modelos-3.js) moviendo menos
+ * la mano; el índice también puede separarse hacia arriba en el plano de la palma (giro), como hace uno para buscar la
+ * cola en una culata recta. Lo que falte, la mano se corre (dx, dy: unidades, en el marco del arma). Subirla cuesta el
+ * doble que correrla: arriba está el cajón y el pulgar terminaba encima. Se calcula una vez por arma. */
+function ajusteGatillo(d) {
+  if (d.ajusteGatillo !== undefined) return d.ajusteGatillo;
+  if (!d.dedoGatillo) return (d.ajusteGatillo = null);
+  const ang = d.anguloEmpunadura ?? 0.3, c = Math.cos(ang), s = Math.sin(ang), B = baseMano([c, s, -0.12], [0.1, 0, 1], false), O = [-s * 1.9 - c * 0.3, c * 1.9 - s * 0.3];
+  let mejor = null;
+  for (let k = 0; k <= 45; k++) for (let gi = -3; gi <= 11; gi++) {   // curvatura de 0 a 0,9 y giro de -9° a 32°
+    const cierre = k / 50, giro = gi * 0.05, ind = nudosMano(O, B, normalizarPose(Object.assign({}, GESTOS_MANO.empunadura, { cierre: [cierre, 0.86, 0.9, 0.92], giroIndice: giro }))).dedos[0];
+    const yema = [ind[2][0] + (ind[3][0] - ind[2][0]) * 0.65, ind[2][1] + (ind[3][1] - ind[2][1]) * 0.65];
+    const dx = d.dedoGatillo[0] * CM - yema[0], dy = d.dedoGatillo[1] * CM - yema[1], costo = dx * dx + dy * dy * (dy < 0 ? 4 : 1) + 0.8 * giro * giro;
+    if (!mejor || costo < mejor.costo) mejor = { cierre, giro, dx, dy, costo };
+  }
+  return (d.ajusteGatillo = mejor);
+}
 const mezclaGesto = (a, b, k) => mezclarPoses(normalizarPose(GESTOS_MANO[a]), normalizarPose(GESTOS_MANO[b]), limitar(k, 0, 1));
 
 /* Gestos de la mano de apoyo (la del brazo cercano, que es el izquierdo). p: el punto donde actúa (e.mano). */
@@ -250,8 +268,9 @@ function gestoApoyo(gesto, p, e, op = {}) {
       return () => ({ gesto, B, O: [p[0] - B.eb[0] * 0.85, p[1] - B.eb[1] * 0.85], pose: GESTOS_MANO.guardamanos, zObj: B.ex[2] * 0.5 + B.eb[2] * 1.6, rigido: true, alinea: 0, capas: 'arma' });
     }
     case 'envuelve': {      // pistola a dos manos: tapa los dedos de la otra, con el pulgar estirado sobre el armazón
+      // (0,8 más abajo que antes: los dedos van por debajo del guardamonte, que queda a la vista con el índice en la cola)
       const a = e.incl + 0.2, B = baseMano([Math.cos(a), Math.sin(a), -0.32], [0.12, 0, -1], true);
-      return () => ({ gesto, B, O: [p[0] - B.ex[0] * 0.9, p[1] + 0.5 - B.ex[1] * 0.9], pose: GESTOS_MANO.envuelve, zObj: B.eb[2] * 1.3, rigido: true, alinea: 0.5, capas: 'arma' });
+      return () => ({ gesto, B, O: [p[0] - B.ex[0] * 0.9, p[1] + 1.3 - B.ex[1] * 0.9], pose: GESTOS_MANO.envuelve, zObj: B.eb[2] * 1.3, rigido: true, alinea: 0.5, capas: 'arma' });
     }
     case 'mango': {         // segunda mano en el mango de un arma de dos manos
       const B = baseMano([c, s, -0.1], [0.1, 0, -1], true);
@@ -291,12 +310,14 @@ function gestoApoyo(gesto, p, e, op = {}) {
   }
 }
 /* Gestos de la mano del gatillo (la del brazo lejano, la derecha). g: el punto de la empuñadura; ang: su inclinación. */
-function gestoGatillo(gesto, g, ang) {
+function gestoGatillo(gesto, g, ang, ajuste = null) {
   const c = Math.cos(ang), s = Math.sin(ang);
   switch (gesto) {
     case 'empunadura': {    // la palma del otro lado de la empuñadura; de este lado, los dedos que la envuelven y el pulgar
-      const B = baseMano([c, s, -0.12], [0.1, 0, 1], false);
-      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose: GESTOS_MANO.empunadura, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma' });
+      // Con el ajuste del arma (ajusteGatillo), el índice va del otro lado del armazón, como el de una mano derecha de
+      // verdad: se ve por el hueco del guardamonte, con la yema en la cola del disparador
+      const B = baseMano([c, s, -0.12], [0.1, 0, 1], false), pose = ajuste ? Object.assign({}, GESTOS_MANO.empunadura, { cierre: [ajuste.cierre, 0.86, 0.9, 0.92], giroIndice: ajuste.giro }) : GESTOS_MANO.empunadura;
+      return () => ({ gesto, B, O: [g[0] - s * 1.9 - c * 0.3, g[1] + c * 1.9 - s * 0.3], pose, zObj: 1.25, rigido: true, alinea: 0.25, polo: [0, -0.35, -0.9], capas: 'arma', indiceDetras: !!ajuste });
     }
     case 'mango': {         // el mango pasa por el puño
       const B = baseMano([c, s, 0], [0, 0, 1], false);
@@ -399,7 +420,9 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   const angMano = this.montada ? 0 : (dArma.anguloEmpunadura ?? 0.3) + e.incl - (e.palanca || 0) * GIRO_PALANCA * 0.7;
   // Con la M2: la mano del gatillo en la empuñadura de pala de abajo (16,5 detrás del cajón)
   const tapa = this.cubierto > 0.45;   // agachado, con las manos sobre la cabeza
-  const gatillo = tapa ? { x: -2.5, y: -78 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x, y: e.origen.y + e.manoGatillo.y };
+  const ajuste = !tapa && !this.montada && (dArma.agarre !== 'cuerpo' && dArma.agarre !== 'mano') ? ajusteGatillo(dArma) : null;   // el índice en la cola del disparador
+  const corrida = ajuste ? { x: ajuste.dx * Math.cos(e.incl) - ajuste.dy * Math.sin(e.incl), y: ajuste.dx * Math.sin(e.incl) + ajuste.dy * Math.cos(e.incl) } : { x: 0, y: 0 };
+  const gatillo = tapa ? { x: -2.5, y: -78 + ty } : this.montada ? { x: (e.origen.x - 12 - 16.5) / ESCALA_JUGADOR, y: -44 / ESCALA_JUGADOR } : { x: e.origen.x + e.manoGatillo.x + corrida.x, y: e.origen.y + e.manoGatillo.y + corrida.y };
   const Clejos = coloresLejos(C);
   if (dArma.tanques && dArma.manguera && !this.montada) {
     const m = dArma.manguera, c = Math.cos(e.incl), sn = Math.sin(e.incl);
@@ -410,7 +433,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   // Los dos brazos se resuelven antes de dibujar nada: cada mano va en dos capas, una detrás de lo que agarra y otra delante
   const corta = d.agarre === 'pistola' && !this.montada;
   const gestoLejos = tapa ? 'cabeza' : this.montada ? 'empunadura' : cuerpoACuerpo ? 'mango' : d.agarre === 'mano' ? 'granada' : 'empunadura';
-  const lejos = armarBrazo(this, 'lejos', -4 - golpe, -53 + ty, gestoGatillo(gestoLejos, [gatillo.x, gatillo.y], cuerpoACuerpo ? e.incl : angMano), { lado: -1, fondo: corta ? 7 : 3 });
+  const lejos = armarBrazo(this, 'lejos', -4 - golpe, -53 + ty, gestoGatillo(gestoLejos, [gatillo.x, gatillo.y], cuerpoACuerpo ? e.incl : angMano, gestoLejos === 'empunadura' ? ajuste : null), { lado: -1, fondo: corta ? 7 : 3 });
   // Hombro izquierdo: con el arma al hombro el cuerpo se perfila y ese hombro va adelante (el codo cae bajo el arma);
   // con la pistola los hombros quedan de frente al blanco (posición isósceles)
   const hombroX = (tapa || this.montada ? 4 : d.agarre === 'hombro' ? 6 : d.agarre === 'pistola' ? -1 : 3) - golpe + (tapa || this.montada ? 0 : e.adelantoHombro || 0), hombroY = -52 + ty;

@@ -938,6 +938,8 @@ function bombaNervada(ctx, x, y, w, h, color, desplazamiento) {   // guardamanos
 const E3 = (x, y) => [(x - 280) * 0.166, (y - 225) * 0.166];
 const E3F = pts => pts.map(p => E3(...p));
 const E3_BISAGRA = E3(338, 207);
+const E3_EJE_MARTILLO = [[297, 203], [286, 204.5]];   // donde gira cada martillo (el de este lado y el de enfrente), en píxeles de la foto
+const MARTILLO_MONTADO = -0.32, MARTILLO_CAIDO = 0.3;   // radianes respecto del dibujo
 const E3_FORMAS = {
   culata: suave(E3F([[300, 200], [300, 231], [282, 237], [262, 245], [240, 256], [228, 266], [215, 271], [200, 268], [180, 268], [120, 284], [64, 300], [58, 302], [55, 290], [57, 240], [62, 226], [100, 224], [160, 221], [205, 219], [222, 217], [245, 214], [265, 211], [282, 204]]), 0.9, 4),
   platina: suave(E3F([[279, 196], [342, 191], [342, 211], [330, 216], [312, 224], [296, 230], [279, 232]]), 0.6, 3),
@@ -960,12 +962,20 @@ reemplazar('recortada', { casquillo: null, casquilloVaciado: 'escopeta', agarre:
       trazo(ctx, MAT.acero, 0.4, [P(292, 230), P(294, 236), P(291, 242)]); trazo(ctx, MAT.acero, 0.4, [P(302, 228), P(304, 234), P(301, 240)]);   // disparadores
     }
     const abierta = e.abierto > 0.03;
+    // Martillos exteriores (e.martillos: 1 montado, 0 caído; js/jugador.js): cada uno gira sobre su eje en la báscula,
+    // montado inclinado hacia el tirador y caído hacia adelante, sobre el percutor
+    const martillo = (forma, k, pivote, brillo) => {
+      const m = e.martillos ? e.martillos[k] : 1, [px, py] = P(...pivote);
+      ctx.save(); ctx.translate(px, py); ctx.rotate(MARTILLO_CAIDO + (MARTILLO_MONTADO - MARTILLO_CAIDO) * m); ctx.translate(-px, -py);
+      pintar(ctx, forma, '#3a3f47', { brillo });
+      if (k === 0 && !sil) for (let i = 0; i < 3; i++) trazo(ctx, 'rgba(255,255,255,0.25)', 0.08, [P(303 + i * 1.2, 178 + i * 1.5), P(306.5 + i * 1.2, 179 + i * 1.5)]);   // estrías de la cresta
+      ctx.restore();
+    };
     const accion = () => {
       pintar(ctx, F.platina, ACERO, { brillo: 0.45 });
       if (!sil) { trazo(ctx, 'rgba(0,0,0,0.35)', 0.15, [P(300, 196), P(300, 228)]); for (const [x, y] of [[312, 212], [328, 204], [290, 222]]) tornillo(ctx, ...P(x, y), 0.25); }
-      pintar(ctx, F.martillo2, '#3a3f47', { brillo: 0.4 });
-      pintar(ctx, F.martillo, '#3a3f47', { brillo: 0.5 });
-      if (!sil) for (let k = 0; k < 3; k++) trazo(ctx, 'rgba(255,255,255,0.25)', 0.08, [P(303 + k * 1.2, 178 + k * 1.5), P(306.5 + k * 1.2, 179 + k * 1.5)]);
+      martillo(F.martillo2, 1, E3_EJE_MARTILLO[1], 0.4);
+      martillo(F.martillo, 0, E3_EJE_MARTILLO[0], 0.5);
       pintar(ctx, Cc(bx, by, 0.45, 12), '#5c636b'); punto(ctx, bx, by, 0.18, '#2a2d31');                              // perno de la bisagra
     };
     if (abierta) accion();
@@ -985,6 +995,8 @@ reemplazar('recortada', { casquillo: null, casquilloVaciado: 'escopeta', agarre:
 DIBUJO_ARMAS.recortada.moviles = {
   manoDelantera: e => girarCm(...E3(400, 208), ...E3_BISAGRA, e.abierto * 0.6),
   cargador: e => girarCm(...E3(303, 192), ...E3_BISAGRA, e.abierto * 0.6),
+  // la cresta del martillo de este lado, que el pulgar monta (ancla corredera); se mueve con él
+  corredera: e => { const m = e.martillos ? e.martillos[0] : 1; return girarCm(...E3(304, 180), ...E3(...E3_EJE_MARTILLO[0]), MARTILLO_CAIDO + (MARTILLO_MONTADO - MARTILLO_CAIDO) * m); },
 };
 
 // Mossberg 500 (100 cm), calcada de una foto: culata y pistolete sintéticos gris azulado, cajón con la ventana de
@@ -2303,3 +2315,17 @@ DIBUJO_ARMAS.lanzallamas = modelo({ casquillo: null, agarre: 'pecho', anguloEmpu
 // cerrado, los nudillos hacia la boca, como se agarra un mango vertical (gesto «mango» de js/jugador-dibujo.js), y no
 // desde abajo como un guardamanos. Tampoco se corre hacia atrás cuando el brazo queda lejos (js/jugador.js): se estira.
 for (const id of ['vector', 'saiga', 'mgl', 'thompson', 'bazuca', 'lanzallamas']) if (DIBUJO_ARMAS[id]) DIBUJO_ARMAS[id].apoyoVertical = true;
+
+// Dónde apoya la yema del índice en la cola del disparador (cm, en el marco del arma: x hacia la boca, y hacia abajo),
+// medido sobre cada modelo con una grilla de 1 cm, en la parte baja de la cola, que es donde se aprieta (pedido de Enzo: «el dedo en el gatillo, sin atravesar el arma»). La
+// mano del gatillo se ajusta a este punto (js/jugador-dibujo.js, ajusteGatillo): cuánto dobla el índice y, si el
+// origen del dibujo no está en la empuñadura (Barrett, Mauser C96), cuánto se corre la mano.
+const DEDO_GATILLO = {
+  glock: [5.2, 2.6], magnum: [3.2, 2.6], colt1911: [5.4, 1.8], deagle: [2.8, 2.0], python: [2.7, 2.9], beretta92: [6.6, 2.0], ppk: [3.4, 1.9],
+  mauser: [2.75, 3.6], uzi: [3.4, 1.6], ak47: [5.7, 1.9], m16: [5.0, 2.0], mp5: [5.1, 1.9], thompson: [6.1, 1.5], vector: [5.4, -0.3], p90: [4.5, 2.6],
+  remington700: [6.4, 2.2], barrett: [-1.3, 1.5], mosin: [3.1, 2.1], garand: [4.0, 3.8], svd: [3.6, 0.4], winchester1894: [2.4, 1.3],
+  recortada: [4.2, 2.2], mossberg: [4.5, 1.5], spas12: [3.5, 2.3], aa12: [5.1, 2.6], saiga: [5.4, -0.2], benelli: [6.3, 1.5], rem870: [3.95, 1.6],
+  winchester1887: [2.4, 1.6], m79: [1.0, 2.4], bazuca: [5.6, 0.7], rpg7: [5.8, 1.9], mgl: [7.0, 4.3], lanzallamas: [6.0, 1.0], minigun: [5.3, 1.3],
+  laser: [2.6, 2.2],
+};
+for (const [id, p] of Object.entries(DEDO_GATILLO)) if (DIBUJO_ARMAS[id]) DIBUJO_ARMAS[id].dedoGatillo = p;

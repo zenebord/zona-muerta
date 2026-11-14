@@ -219,7 +219,8 @@ const Audio_ = (() => {
       case 'cerrojo':        return CERROJO_MANUAL.has(id) ? ['cerrojo_cerrar', {}] : ['escopeta_rack', { vel: peso }];
       case 'cerrojo-abrir':  return id === 'mp5' ? ['pistola_trabar', { vel: 0.85 }] : ['cerrojo_abrir', {}];
       case 'palmada':        return ['pistola_liberar', { vel: 0.85, vol: 1.1 }];
-      case 'cierra-solo':    return ['escopeta_cerrar', { vel: 0.95 }];   // el cerrojo del Garand salta adelante solo (el de la escopeta semiautomática al soltarlo)
+      case 'cierra-solo':    return ['escopeta_cerrar', { vel: 0.95 }];
+      case 'martillo':       return ['pistola_trabar', { vel: 0.82, vol: 0.9 }];   // el pulgar monta un martillo de la escopeta de dos caños   // el cerrojo del Garand salta adelante solo (el de la escopeta semiautomática al soltarlo)
       case 'palmada-hk':     return ['escopeta_cerrar', { vel: 1.05 }];
       case 'bombear':        return ['bombeo_rack', {}];
       case 'palanca':        return ['cerrojo_22', { vel: id === 'winchester1887' ? 0.82 : 0.95 }];
@@ -738,6 +739,7 @@ const Audio_ = (() => {
         case 'cerrojo':        metal({ f: 1500, dur: 0.08, vol: 0.24 }); friccion({ desde: 1000, hasta: 1900, dur: 0.1, vol: 0.12, retraso: 0.02 }); metal({ f: 1250, dur: 0.15, vol: 0.32, retraso: 0.13 }); golpe({ f: 180, dur: 0.06, vol: 0.25, retraso: 0.13 }); break;
         case 'cerrojo-abrir':  metal({ f: 1400, dur: 0.07, vol: 0.24 }); friccion({ desde: 1700, hasta: 900, dur: 0.12, vol: 0.13, retraso: 0.03 }); break;
         case 'palmada':        golpe({ f: 140, dur: 0.05, vol: 0.32 }); metal({ f: 1500, dur: 0.13, vol: 0.3, retraso: 0.04 }); break;
+        case 'martillo':       metal({ f: 1800, dur: 0.04, vol: 0.16 }); metal({ f: 1400, dur: 0.06, vol: 0.2, retraso: 0.05 }); break;
         case 'cierra-solo':    friccion({ desde: 2000, hasta: 1000, dur: 0.05, vol: 0.1 }); metal({ f: 1350, dur: 0.16, vol: 0.34, retraso: 0.04 }); golpe({ f: 150, dur: 0.05, vol: 0.28, retraso: 0.04 }); break;
         case 'palmada-hk':     golpe({ f: 150, dur: 0.04, vol: 0.28 }); friccion({ desde: 2100, hasta: 1000, dur: 0.06, vol: 0.12, retraso: 0.03 }); metal({ f: 1350, dur: 0.16, vol: 0.36, retraso: 0.05 }); break;
         case 'bombear':        friccion({ desde: 800, hasta: 1500, dur: 0.08, vol: 0.2 }); metal({ f: 1100, dur: 0.08, vol: 0.22, retraso: 0.06 }); friccion({ desde: 1500, hasta: 800, dur: 0.08, vol: 0.2, retraso: 0.13 }); metal({ f: 950, dur: 0.13, vol: 0.32, retraso: 0.2 }); golpe({ f: 170, dur: 0.05, vol: 0.25, retraso: 0.2 }); break;

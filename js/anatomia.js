@@ -236,12 +236,13 @@ function mezclarBases(A, B, k) {
 const POSE_MANO = { cierre: [0.2, 0.2, 0.2, 0.2], nudillo: 1, abre: 0.5, pulgar: { suelto: 1, largo: 0, cierra: 0, arriba: 0, sube: 0 } };
 function normalizarPose(p = {}) {
   const c = p.cierre ?? 0.2, pulgar = Object.assign({ suelto: 0, largo: 0, cierra: 0, arriba: 0, sube: 0 }, p.pulgar || { suelto: 1 });
-  return { cierre: Array.isArray(c) ? c.slice(0, 4) : [c, c, c, c], nudillo: p.nudillo ?? 1, abre: p.abre ?? 0.5, pulgar };
+  return { cierre: Array.isArray(c) ? c.slice(0, 4) : [c, c, c, c], nudillo: p.nudillo ?? 1, abre: p.abre ?? 0.5, pulgar, giroIndice: p.giroIndice ?? 0 };
 }
 function mezclarPoses(A, B, k) {
   if (!A) return B;
   const pulgar = {}; for (const g in B.pulgar) pulgar[g] = A.pulgar[g] + (B.pulgar[g] - A.pulgar[g]) * k;
-  return { cierre: B.cierre.map((c, i) => A.cierre[i] + (c - A.cierre[i]) * k), nudillo: A.nudillo + (B.nudillo - A.nudillo) * k, abre: A.abre + (B.abre - A.abre) * k, pulgar };
+  const gA = A.giroIndice || 0, gB = B.giroIndice || 0;
+  return { cierre: B.cierre.map((c, i) => A.cierre[i] + (c - A.cierre[i]) * k), nudillo: A.nudillo + (B.nudillo - A.nudillo) * k, abre: A.abre + (B.abre - A.abre) * k, pulgar, giroIndice: gA + (gB - gA) * k };
 }
 
 /* Los nudos de la mano ya proyectados: para cada dedo (índice, mayor, anular, meñique) y para el pulgar, sus cuatro
@@ -251,7 +252,9 @@ function nudosMano(O, B, pose) {
   const { ex, ea, eb } = B, M = MANO, D = ANATOMIA.dedo;
   const pr = (x, a, b) => [O[0] + ex[0] * x + ea[0] * a + eb[0] * b, O[1] + ex[1] * x + ea[1] * a + eb[1] * b, ex[2] * x + ea[2] * a + eb[2] * b];
   const dedos = M.dedos.map((d, k) => {
-    const c = limitar(pose.cierre[k] * d.k, 0, 1.08), sep = d.abre * pose.abre * (1 - Math.min(1, c * 1.6)) * GRADOS, cs = Math.cos(sep), ss = Math.sin(sep);
+    // giroIndice (radianes): el índice se separa hacia el lado del pulgar en el plano de la palma, para buscar la cola
+    // del disparador que queda por encima de los otros dedos (empuñaduras inclinadas, culatas rectas)
+    const c = limitar(pose.cierre[k] * d.k, 0, 1.08), sep = d.abre * pose.abre * (1 - Math.min(1, c * 1.6)) * GRADOS + (k === 0 ? pose.giroIndice || 0 : 0), cs = Math.cos(sep), ss = Math.sin(sep);
     const f1 = Math.min(D.nudillo, 7 + 80 * c * pose.nudillo) * GRADOS, f2 = f1 + Math.min(D.media, 12 + 90 * c) * GRADOS, f3 = f2 + Math.min(D.punta, 7 + 62 * c) * GRADOS;
     let x = d.x, a = d.a, b = 0.05;
     const pts = [pr(x, a, b)];
@@ -278,20 +281,21 @@ MANO.pulgar.unidades = Object.fromEntries(Object.entries(MANO.pulgar.gestos).map
  * capa: 'atras' dibuja solo lo que queda más lejos que lo agarrado (zObjeto: su profundidad respecto de la palma),
  * 'adelante' el resto, y sin capa, todo. Cada dedo es una sola forma (las tres falanges en un trazado), pintada mate,
  * y las piezas van de la más lejana a la más cercana. En la pasada de la sombra, todo en un solo relleno. */
-function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0) {
+// op.indiceDetras: el índice entero va del otro lado de lo agarrado (el de la mano del gatillo, en la cola del disparador)
+function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0, op = {}) {
   const M = MANO, P = M.palma, { dedos, pulgar, pr } = nudosMano(O, B, pose), eb = B.eb;
   const piezas = [];   // { lejos, tramos, z, tono }
   let orden = 0;
-  const cadena = (pts, anchos, tono) => {   // tramos consecutivos; se parte donde cruza la profundidad de lo agarrado
+  const cadena = (pts, anchos, tono, detras = false) => {   // tramos consecutivos; se parte donde cruza la profundidad de lo agarrado
     let grupo = null; orden++;
     for (let i = 0; i < pts.length - 1; i++) {
-      const p = pts[i], q = pts[i + 1], z = (p[2] + q[2]) / 2, lejos = z < zObjeto - 0.02;
+      const p = pts[i], q = pts[i + 1], z = (p[2] + q[2]) / 2, lejos = detras || z < zObjeto - 0.02;
       const t = tramoMusculo(p[0], p[1], q[0], q[1], anchos[i], anchos[i + 1]);
       if (grupo && grupo.lejos === lejos) { grupo.tramos.push(t); grupo.z = Math.max(grupo.z, z); }
       else { grupo = { lejos, tramos: [t], z: i === 0 && !lejos ? Math.max(z, 0.002 + orden * 1e-4) : z, tono }; piezas.push(grupo); }   // el nudillo va por encima de la palma: el dedo sale de ella
     }
   };
-  dedos.forEach((pts, k) => { const w = M.dedos[k].w; cadena(pts, [w, w * 0.96, w * 0.9, w * 0.8], 0); });
+  dedos.forEach((pts, k) => { const w = M.dedos[k].w; cadena(pts, [w, w * 0.96, w * 0.9, w * 0.8], 0, k === 0 && op.indiceDetras); });
   const Q = M.pulgar;
   cadena(pulgar, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03);
   // Palma: la caja de la palma proyectada, con el bulto de la base del pulgar

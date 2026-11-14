@@ -807,7 +807,7 @@ mientras el arma gira para cargarla ya va camino a la canana.
 | Cerrojo | Remington 700 | Abre la recámara, pone bala por bala por arriba, metiéndola en la ranura de la recámara abierta (antes la bala se borraba unos centímetros antes), y cierra. |
 | Palanca | Winchester 1894 y 1887 | Gira el arma y carga por la ventana lateral de a una. Si estaba vacía, acciona la palanca: el lazo baja y se adelanta girando sobre su pivote (`GIRO_PALANCA`, unos 57°), con la mano del gatillo adentro. |
 | Bombeo | Mossberg 500, SPAS-12 | Da vuelta el arma y mete los cartuchos por abajo de a uno; bombea si estaba vacía. Disparar interrumpe la carga. |
-| Quiebre | Recortada, M79 | Se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe. |
+| Quiebre | Recortada, M79 | Se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe. La recortada tiene martillos exteriores: con cada tiro cae uno (primero el de este lado) y, ya cerrada, el pulgar monta los caídos uno por uno, con su clic (pedido de Enzo). |
 | Cargador extraíble | Uzi, AK-47, M16, MP5, P90, Barrett, AA-12, Saiga-12, láser | El vacío cae al piso. La AK y la Saiga lo enganchan con balanceo; la M16 palmea el retén; la MP5 traba la manija al empezar y la baja de un palmazo al final; las demás tiran del cerrojo si estaban vacías. |
 | Cinta | M2 Browning | Levanta la tapa, tiende la cinta nueva, cierra y tira de la manija. |
 
@@ -932,6 +932,15 @@ de dorso, de palma, de canto o en escorzo.
 - **Fluidez** (`poseSuave`): la mano pasa de un gesto a otro girando y cerrando de a poco (65 ms), no de golpe. A 60
   cuadros por segundo, en las 76 recargas (38 armas, vacías y a medias), lo máximo de un cuadro al otro son 16° de
   giro y 0,14 de cierre; antes cambiaba de pose en un cuadro. Un agarre firme sobre el arma la sigue sin retraso.
+- **El índice en el gatillo** (pedido de Enzo: en la Desert Eagle quedaba afuera y en la Mauser C96 atravesaba el
+  cargador): cada arma dice dónde apoya la yema en la cola del disparador (`DEDO_GATILLO` en `js/armas-modelos-3.js`,
+  medido con una grilla de 1 cm, en la parte baja de la cola), y `ajusteGatillo` (`js/jugador-dibujo.js`) busca
+  cuánto dobla el índice y cuánto se separa hacia arriba en el plano de la palma (`giroIndice`, hasta 32°, como uno
+  lo hace en una culata recta) para llegar ahí moviendo lo menos posible la mano; en 25 de 36 armas la mano no se
+  corre más de 0,4 cm. Donde el dibujo no tiene el origen en la empuñadura, la mano se corre: la Mauser baja 1,7 cm
+  y el Barrett va 2,6 cm atrás. El índice va del otro lado del armazón, como el de una mano derecha de verdad: se ve
+  por el hueco del guardamonte, con la punta delante de la cola. En las pistolas la mano izquierda envuelve 0,8 más
+  abajo, por debajo del guardamonte, que queda a la vista.
 - **Lo que agarra va por detrás**: la palma y los nudillos lo tapan, y los dedos que lo envuelven por el otro lado
   se dibujan antes que él (cada mano va en dos capas). El cargador se agarra por el medio, con los dedos cruzando su
   costado y doblando en el canto, en vez de quedar parado encima del puño.
