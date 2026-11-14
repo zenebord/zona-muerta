@@ -79,7 +79,7 @@ const ARMAS = {
   machete:  { id: 'machete',  nombre: 'Machete',          categoria: 'cuerpo', cuerpo: true, unaMano: true, dano: 8,  cadencia: 420, golpe: 360, alcance: 52, objetivos: 2, empuje: 2, filo: true,  cargador: 1, automatica: true, color: '#9aa0a8' },
   katana:   { id: 'katana',   nombre: 'Katana',           categoria: 'cuerpo', cuerpo: true, dano: 10, cadencia: 380, golpe: 330, alcance: 64, objetivos: 2, empuje: 1.5, filo: true, cargador: 1, automatica: true, color: '#c8ccd2' },
   hacha:    { id: 'hacha',    nombre: 'Hacha de bombero', categoria: 'cuerpo', cuerpo: true, dano: 15, cadencia: 720, golpe: 600, alcance: 58, objetivos: 2, empuje: 3, filo: true,  cargador: 1, automatica: true, color: '#b3261e' },
-  bate:     { id: 'bate',     nombre: 'Bate con clavos',  categoria: 'cuerpo', cuerpo: true, dano: 8,  cadencia: 520, golpe: 440, alcance: 58, objetivos: 3, empuje: 5, filo: false, cargador: 1, automatica: true, color: '#9b6a3a' },
+  bate:     { id: 'bate',     nombre: 'Bate con alambre de púas', categoria: 'cuerpo', cuerpo: true, dano: 8,  cadencia: 520, golpe: 440, alcance: 58, objetivos: 3, empuje: 5, filo: false, cargador: 1, automatica: true, color: '#9b6a3a' },
   mazo:     { id: 'mazo',     nombre: 'Mazo',             categoria: 'cuerpo', cuerpo: true, dano: 15, cadencia: 900, golpe: 760, alcance: 60, objetivos: 3, empuje: 7, filo: false, cargador: 1, automatica: true, color: '#55585e' },
   // Machete del cazador: solo con el personaje «cazador» (skin), que lo lleva siempre. Hoja más larga que la del
   // machete común (alcance 60 contra 52) y un golpe que voltea a un zombie (15 contra 8), un poco más lento

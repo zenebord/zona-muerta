@@ -19,9 +19,12 @@ const ANATOMIA = {
   muneca: { flexion: 80, extension: 70, radial: 20, cubital: 30 },
   dedo: { nudillo: 90, media: 100, punta: 80 },        // las tres articulaciones de cada dedo, de la palma a la punta
   pulgar: { nudillo: 55, punta: 80 },
-  cadera: { flexion: 120, extension: 20 }, rodilla: { flexion: 140, extension: 0 }, tobillo: { arriba: 20, abajo: 50 },
+  cadera: { flexion: 120, extension: 30 }, rodilla: { flexion: 140, extension: 0 }, tobillo: { arriba: 20, abajo: 50 },
 };
 const HUESOS = { brazo: 15.6, antebrazo: 13.2, muslo: 14.5, canilla: 14, tobillo: 5.5 };
+// La cabeza se dibuja a esta escala alrededor del cuello: tal como estaba dibujada quedaba grande para un cuerpo de
+// proporciones reales (un cuarto de la altura). Vale para los nueve personajes y para los zombies.
+const ESCALA_CABEZA = 0.88;
 
 /* ---------- Vectores de tres componentes ---------- */
 const V3 = {
@@ -78,6 +81,29 @@ function tramoMusculo(x0, y0, x1, y1, w0, w1, atras = 0, adelante = 0, enAtras =
   };
 }
 const juntos = (...tramos) => c => { for (const t of tramos) t(c); };
+// Lo mismo, pero el final es un corte recto y deshilachado (una manga o un pantalón rotos): arranca redondo, para unirse
+// con el tramo anterior, y termina en flecos de `fleco` de largo
+function tramoCortado(x0, y0, x1, y1, w0, w1, fleco = 2) {
+  return c => {
+    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l, nx = -uy, ny = ux, tn = Math.atan2(ny, nx);
+    c.moveTo(x0 + nx * w0 / 2, y0 + ny * w0 / 2);
+    c.lineTo(x1 + nx * w1 / 2, y1 + ny * w1 / 2);
+    for (let k = 1; k < 6; k++) { const s = 0.5 - k / 6, f = k % 2 ? fleco : -fleco * 0.2; c.lineTo(x1 + nx * w1 * s + ux * f, y1 + ny * w1 * s + uy * f); }
+    c.lineTo(x1 - nx * w1 / 2, y1 - ny * w1 / 2);
+    c.lineTo(x0 - nx * w0 / 2, y0 - ny * w0 / 2);
+    c.arc(x0, y0, w0 / 2, tn - Math.PI, tn - 2 * Math.PI, true);
+    c.closePath();
+  };
+}
+/* Cuánto gira el pie en el tobillo. Apoya de plano (0) mientras el tobillo da: si la canilla se inclina hacia adelante
+ * más de ANATOMIA.tobillo.arriba se levanta la punta, y si se va hacia atrás más de .abajo se levanta el talón (también
+ * al despegar: la pierna de atrás, con la rodilla doblando). b: ángulo de la canilla; doblez: flexión de la rodilla. */
+function giroDelPie(b, doblez) {
+  const arriba = ANATOMIA.tobillo.arriba * GRADOS, abajo = ANATOMIA.tobillo.abajo * GRADOS;
+  let pie = b > arriba ? -(b - arriba) : b < -abajo ? -b - abajo : 0;
+  if (b < 0) pie = Math.max(pie, Math.min(0.5, doblez * 0.45));
+  return pie;
+}
 // Polígono convexo que envuelve a los puntos (para la palma proyectada), y su trazado con las esquinas redondeadas
 function envolvente(pts) {
   const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), giro = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
@@ -218,13 +244,43 @@ function mezclarPoses(A, B, k) {
   return { cierre: B.cierre.map((c, i) => A.cierre[i] + (c - A.cierre[i]) * k), nudillo: A.nudillo + (B.nudillo - A.nudillo) * k, abre: A.abre + (B.abre - A.abre) * k, pulgar };
 }
 
-/* Dibuja la mano. O: centro de la palma en el dibujo [x, y]; B: su base; pose: normalizarPose(); G: color del guante.
- * capa: 'atras' dibuja solo lo que queda más lejos que lo agarrado (zObjeto: su profundidad respecto de la palma),
- * 'adelante' el resto, y sin capa, todo. Cada dedo es una sola forma (las tres falanges en un trazado), pintada mate. */
-function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0) {
-  const { ex, ea, eb } = B, M = MANO, P = M.palma;
+/* Los nudos de la mano ya proyectados: para cada dedo (índice, mayor, anular, meñique) y para el pulgar, sus cuatro
+ * puntos [x, y, profundidad], del nudillo a la punta. Cada articulación dobla hacia la palma lo que pide el cierre,
+ * hasta su límite (ANATOMIA.dedo). O: centro de la palma en el dibujo; B: la base; pose: normalizarPose(). */
+function nudosMano(O, B, pose) {
+  const { ex, ea, eb } = B, M = MANO, D = ANATOMIA.dedo;
   const pr = (x, a, b) => [O[0] + ex[0] * x + ea[0] * a + eb[0] * b, O[1] + ex[1] * x + ea[1] * a + eb[1] * b, ex[2] * x + ea[2] * a + eb[2] * b];
-  const piezas = [];   // { z, trazar, tono }
+  const dedos = M.dedos.map((d, k) => {
+    const c = limitar(pose.cierre[k] * d.k, 0, 1.08), sep = d.abre * pose.abre * (1 - Math.min(1, c * 1.6)) * GRADOS, cs = Math.cos(sep), ss = Math.sin(sep);
+    const f1 = Math.min(D.nudillo, 7 + 80 * c * pose.nudillo) * GRADOS, f2 = f1 + Math.min(D.media, 12 + 90 * c) * GRADOS, f3 = f2 + Math.min(D.punta, 7 + 62 * c) * GRADOS;
+    let x = d.x, a = d.a, b = 0.05;
+    const pts = [pr(x, a, b)];
+    for (let i = 0; i < 3; i++) { const f = i === 0 ? f1 : i === 1 ? f2 : f3, l = d.l[i], cf = Math.cos(f); x += l * cf * cs; a += l * cf * ss; b += l * Math.sin(f); pts.push(pr(x, a, b)); }
+    return pts;
+  });
+  // Pulgar: mezcla de gestos; el primer tramo va por dentro de la palma y asoma la mitad
+  const Q = M.pulgar, pulgar = [];
+  let px = Q.base[0], py = Q.base[1], pz = Q.base[2];
+  for (let i = 0; i < 3; i++) {
+    let dx = 0, dy = 0, dz = 0;
+    for (const g in pose.pulgar) { const w = pose.pulgar[g]; if (w) { const v = Q.unidades[g][i]; dx += v[0] * w; dy += v[1] * w; dz += v[2] * w; } }
+    const l = Math.hypot(dx, dy, dz);
+    if (l > 1e-6) { dx /= l; dy /= l; dz /= l; } else [dx, dy, dz] = Q.unidades.suelto[i];
+    if (i === 0) pulgar.push(pr(px + dx * Q.l[0] * 0.55, py + dy * Q.l[0] * 0.55, pz + dz * Q.l[0] * 0.55));
+    px += dx * Q.l[i]; py += dy * Q.l[i]; pz += dz * Q.l[i];
+    pulgar.push(pr(px, py, pz));
+  }
+  return { dedos, pulgar, pr };
+}
+MANO.pulgar.unidades = Object.fromEntries(Object.entries(MANO.pulgar.gestos).map(([g, tramos]) => [g, tramos.map(v => V3.unidad(v))]));
+
+/* Dibuja la mano del jugador. G: color del guante.
+ * capa: 'atras' dibuja solo lo que queda más lejos que lo agarrado (zObjeto: su profundidad respecto de la palma),
+ * 'adelante' el resto, y sin capa, todo. Cada dedo es una sola forma (las tres falanges en un trazado), pintada mate,
+ * y las piezas van de la más lejana a la más cercana. En la pasada de la sombra, todo en un solo relleno. */
+function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0) {
+  const M = MANO, P = M.palma, { dedos, pulgar, pr } = nudosMano(O, B, pose), eb = B.eb;
+  const piezas = [];   // { lejos, tramos, z, tono }
   let orden = 0;
   const cadena = (pts, anchos, tono) => {   // tramos consecutivos; se parte donde cruza la profundidad de lo agarrado
     let grupo = null; orden++;
@@ -235,37 +291,25 @@ function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0) {
       else { grupo = { lejos, tramos: [t], z: i === 0 && !lejos ? Math.max(z, 0.002 + orden * 1e-4) : z, tono }; piezas.push(grupo); }   // el nudillo va por encima de la palma: el dedo sale de ella
     }
   };
-  // Dedos: cada articulación dobla hacia la palma lo que pide el cierre, hasta su límite
-  const D = ANATOMIA.dedo;
-  M.dedos.forEach((d, k) => {
-    const c = limitar(pose.cierre[k] * d.k, 0, 1.08), sep = d.abre * pose.abre * (1 - Math.min(1, c * 1.6)) * GRADOS;
-    const f1 = Math.min(D.nudillo, 7 + 80 * c * pose.nudillo) * GRADOS, f2 = f1 + Math.min(D.media, 12 + 90 * c) * GRADOS, f3 = f2 + Math.min(D.punta, 7 + 62 * c) * GRADOS;
-    let x = d.x, a = d.a, b = 0.05;
-    const pts = [pr(x, a, b)];
-    for (const [l, f] of [[d.l[0], f1], [d.l[1], f2], [d.l[2], f3]]) { x += l * Math.cos(f) * Math.cos(sep); a += l * Math.cos(f) * Math.sin(sep); b += l * Math.sin(f); pts.push(pr(x, a, b)); }
-    cadena(pts, [d.w, d.w * 0.96, d.w * 0.9, d.w * 0.8], 0);
-  });
-  // Pulgar: mezcla de gestos
-  const Q = M.pulgar, pts = [pr(...Q.base)];
-  let pos = Q.base.slice();
-  for (let i = 0; i < 3; i++) {
-    let dir = [0, 0, 0];
-    for (const g in pose.pulgar) if (pose.pulgar[g]) { const v = V3.unidad(Q.gestos[g][i]); dir = V3.suma(dir, V3.por(v, pose.pulgar[g])); }
-    dir = V3.unidad(dir, V3.unidad(Q.gestos.suelto[i]));
-    const desde = i === 0 ? 0.55 : 0;   // el primer tramo va por dentro de la palma: asoma la mitad
-    if (i === 0) { const q = V3.suma(pos, V3.por(dir, Q.l[0] * desde)); pts[0] = pr(...q); }
-    pos = V3.suma(pos, V3.por(dir, Q.l[i]));
-    pts.push(pr(...pos));
-  }
-  cadena(pts, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03);
+  dedos.forEach((pts, k) => { const w = M.dedos[k].w; cadena(pts, [w, w * 0.96, w * 0.9, w * 0.8], 0); });
+  const Q = M.pulgar;
+  cadena(pulgar, [Q.w[0], Q.w[1], Q.w[2], Q.w[2] * 0.84], 0.03);
   // Palma: la caja de la palma proyectada, con el bulto de la base del pulgar
   const caja = [];
   for (const b of [P.b0, P.b1]) {   // muñeca angosta, el canto de la mano, y el arco de los nudillos (más salido en el mayor)
     caja.push(pr(P.x0, P.a0, b), pr(P.x0, -P.a0, b), pr(-0.4, P.a1 * 0.98, b), pr(-0.2, -P.a1, b), pr(P.x1 - 0.1, P.a1, b), pr(P.x1 + 0.22, 0.4, b), pr(P.x1 + 0.05, -0.45, b), pr(P.x1 - 0.38, -P.a1 * 0.96, b));
   }
   caja.push(pr(P.x0 + 1.0, P.a0 + 0.2, P.b1 + 0.32));                                    // el bulto de la base del pulgar
-  const casco = envolvente(caja.map(q => [q[0], q[1]]));
+  const casco = envolvente(caja);
   piezas.push({ lejos: zObjeto > 0.02, tramos: [c => trazarRedondeado(c, casco, 0.55)], z: 0.001, tono: 0 });   // la palma queda detrás de lo agarrado si eso está más cerca del que mira
+  if (Pincel.silueta) {   // la sombra: todas las piezas en un solo trazado y un solo relleno
+    let area = 0; for (let i = 0; i < casco.length; i++) { const a = casco[i], b = casco[(i + 1) % casco.length]; area += a[0] * b[1] - b[0] * a[1]; }
+    if (area > 0) casco.reverse();                                             // mismo sentido de giro que los dedos: si no, donde se pisan queda un hueco
+    ctx.beginPath();
+    for (const p of piezas) if (!capa || (capa === 'atras') === !!p.lejos) for (const t of p.tramos) t(ctx);
+    ctx.fillStyle = Pincel.silueta; ctx.fill();
+    return;
+  }
   piezas.sort((p, q) => p.z - q.z);
   const zMax = piezas[piezas.length - 1].z;
   for (const p of piezas) {
@@ -274,13 +318,36 @@ function dibujarMano(ctx, O, B, pose, G, capa = null, zObjeto = 0) {
     forma(ctx, juntos(...p.tramos), ajustarColor(G, p.tono - 0.15 * hondo), { linea: 0.3, sombra: 0.45, oscuro: 0.16, borde: 0.48 });
   }
   // Con el dorso hacia el que mira, la marca de cada nudillo (una rayita, del tono del guante)
-  if (capa !== 'atras' && eb[2] < -0.3 && !Pincel.silueta) {
+  if (capa !== 'atras' && eb[2] < -0.3) {
     const alfa = ctx.globalAlpha;
     ctx.strokeStyle = ajustarColor(G, -0.3); ctx.lineWidth = 0.22; ctx.lineCap = 'round'; ctx.globalAlpha = alfa * Math.min(1, (-eb[2] - 0.3) * 2.5);
     ctx.beginPath();
     for (const d of M.dedos) { const p = pr(d.x - 0.25, d.a - d.w * 0.3, P.b0), q = pr(d.x - 0.05, d.a, P.b0), t = pr(d.x - 0.25, d.a + d.w * 0.3, P.b0); ctx.moveTo(p[0], p[1]); ctx.quadraticCurveTo(q[0], q[1], t[0], t[1]); }
     ctx.stroke(); ctx.globalAlpha = alfa;
   }
+}
+/* La misma mano para una horda (los zombies): los mismos nudos, pero cada dedo es un trazo grueso y la palma un
+ * polígono, con un contorno por detrás; color plano y las uñas en la punta. Pieza por pieza, como la del jugador,
+ * costaba más que todo el resto del zombie. No se llama en la pasada de la sombra. */
+function dibujarGarra(ctx, O, B, pose, color, unas) {
+  const P = MANO.palma, { dedos, pulgar, pr } = nudosMano(O, B, pose), grosor = 0.9, borde = 'rgba(18, 12, 9, 0.62)';
+  const dedosTrazo = new Path2D();
+  for (const pts of [...dedos, pulgar]) { dedosTrazo.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < 4; i++) dedosTrazo.lineTo(pts[i][0], pts[i][1]); }
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = borde; ctx.lineWidth = grosor + 0.7; ctx.stroke(dedosTrazo);
+  ctx.beginPath();
+  for (const [x, a] of [[P.x0, P.a0], [P.x1, P.a1], [P.x1, -P.a1], [P.x0, -P.a0]]) { const q = pr(x, a, 0.1); ctx.lineTo(q[0], q[1]); }
+  ctx.closePath(); ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 0.8; ctx.stroke();   // (el trazo del color redondea las esquinas de la palma)
+  ctx.lineWidth = grosor; ctx.stroke(dedosTrazo);
+  if (!unas) return;
+  ctx.strokeStyle = unas; ctx.lineWidth = grosor * 0.55; ctx.beginPath();
+  for (const pts of dedos) {
+    const a = pts[2], b = pts[3], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy);
+    if (l < 0.25) continue;                                                  // el dedo viene de punta: no se ve la uña
+    ctx.moveTo(b[0] - dx * 0.2, b[1] - dy * 0.2); ctx.lineTo(b[0] + dx / l * 0.55, b[1] + dy / l * 0.55);
+  }
+  ctx.stroke();
 }
 // La muñeca de una mano cuya palma está en O
 const munecaDe = (O, B) => [O[0] - B.ex[0] * MANO.muneca, O[1] - B.ex[1] * MANO.muneca];

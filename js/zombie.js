@@ -40,6 +40,20 @@ function elegirVariante(corredor) {
 }
 const variarColor = c => ajustarColor(c, (Math.random() - 0.5) * 0.18);
 
+/* Brazo o pierna de un zombie: varias piezas en un solo trazado (js/anatomia.js) con el contorno por detrás (queda solo
+ * en la silueta del conjunto, sin círculos en las articulaciones) y dos tonos planos: la forma en sombra y, encima,
+ * la misma más fina y corrida hacia la luz. Hace lo que `forma`, la pintura del jugador, pero sin recortar: en una
+ * horda de 60 (480 miembros por cuadro) el recorte costaba 7 de los 17 ms, y un degradado, casi lo mismo.
+ * hacer(menos): el trazado del miembro con `menos` de ancho de menos. */
+function miembroZombie(ctx, hacer, color) {
+  ctx.beginPath(); hacer(0)(ctx);
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fill(); return; }
+  ctx.strokeStyle = 'rgba(18, 12, 9, 0.7)'; ctx.lineWidth = 1.2; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.fillStyle = ajustarColor(color, -0.22); ctx.fill();
+  ctx.save(); ctx.translate(-0.3, -0.45); ctx.beginPath(); hacer(1.25)(ctx); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+}
+// La pose de la garra (se reusa: una horda no arma un objeto por mano y por cuadro)
+const GARRA = { cierre: [0, 0, 0, 0], nudillo: 0.6, abre: 1, pulgar: { suelto: 1, largo: 0, cierra: 0, arriba: 0, sube: 0 } };
 // Muerte: segundos hasta quedar de rodillas, hasta desplomarse, lo que tarda en caer y cuándo termina de desvanecerse
 const MUERTE = { rodillas: 0.35, desploma: 1.0, caida: 0.45, fin: 4.45 };
 
@@ -358,7 +372,7 @@ class Zombie {
 
     // Cabeza adelantada y caída hacia un costado, con un leve cabeceo
     ctx.save();
-    ctx.translate(5, -63); ctx.rotate(0.12 + vaiven * 0.06 + (ataca ? -0.15 : 0) - this.cabezaAtras * 0.55); ctx.translate(-5, 63);
+    ctx.translate(5, -63); ctx.rotate(0.12 + vaiven * 0.06 + (ataca ? -0.15 : 0) - this.cabezaAtras * 0.55); ctx.scale(ESCALA_CABEZA, ESCALA_CABEZA); ctx.translate(-5, 63);   // (la cabeza, 12 % más chica: js/anatomia.js)
     this.cabeza(ctx, piel, pielOscura, golpeado, ataca);
     if (est.accesorio) this.accesorio(ctx, est, golpeado);
     ctx.restore();
@@ -587,78 +601,82 @@ class Zombie {
     for (const m of this.variante.manchas) if (m.sangre && m.x < 0) { ctx.fillStyle = 'rgba(90, 8, 8, 0.75)'; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.8, m.r * 0.6, 0, 0, Math.PI * 2); ctx.fill(); }
   }
 
-  // Pierna: muslo y canilla con pantalón roto a distinta altura, piel a la vista y pie descalzo
+  /* Pierna: el muslo, la canilla y el pie descalzo son una sola forma de piel (los huesos y los rangos de
+   * js/anatomia.js, los mismos que el jugador), y encima va el pantalón roto a distinta altura, que termina en flecos.
+   * Antes eran cuadriláteros sueltos con un círculo en la rodilla. El pie apoya de plano mientras el tobillo da. */
   pierna(ctx, hx, hy, a, doblez, tela, piel, corte, agujero, golpeado, muslo = 1, zapatilla = false) {
-    const L1 = 13, L2 = 12.5;
-    const kx = hx + Math.sin(a) * L1, ky = hy + Math.cos(a) * L1;
-    const b = a - doblez, px = kx + Math.sin(b) * L2, py = ky + Math.cos(b) * L2;
-    const g = this.grosorPiernas || 1;
-    pieza(ctx, poli(segmento(kx, ky, px, py, 6.5 * g, 5.5 * g)), piel, Math.min(kx, px) - 3 * g, Math.max(kx, px) + 3 * g);     // canilla flaca
-    let cx, cy;                                                                                                // donde termina la tela
-    if (muslo < 1) {   // short corto: muslo de piel, la tela tapa solo la parte de arriba
-      pieza(ctx, poli(segmento(hx, hy, kx, ky, 8, 6.8)), piel, Math.min(hx, kx) - 5, Math.max(hx, kx) + 5);
-      pieza(ctx, circulo(kx, ky, 3.6), piel, kx - 4, kx + 4, { contorno: false });
-      cx = hx + (kx - hx) * muslo; cy = hy + (ky - hy) * muslo;
-      pieza(ctx, poli(segmento(hx, hy, cx, cy, 10, 10)), tela, Math.min(hx, cx) - 5, Math.max(hx, cx) + 5);
-      if (!Pincel.silueta && !golpeado) linea(ctx, 'rgba(255,255,255,0.4)', 0.7, [[hx + 3.5, hy], [cx + 3.5, cy]]);           // franja del short
-    } else {
-      cx = kx + (px - kx) * corte; cy = ky + (py - ky) * corte;
-      pieza(ctx, poli(segmento(hx, hy, kx, ky, 9.5 * g, 8.5 * g)), tela, Math.min(hx, kx) - 5 * g, Math.max(hx, kx) + 5 * g);   // muslo
-      if (corte > 0.02) pieza(ctx, poli(segmento(kx, ky, cx, cy, 8.5 * g, 8 * g)), tela, Math.min(kx, cx) - 4, Math.max(kx, cx) + 4, { bisel: false });
-      pieza(ctx, circulo(kx, ky, 4.5 * g), tela, kx - 4 * g, kx + 4 * g, { contorno: false });
+    const L1 = HUESOS.muslo, L2 = HUESOS.canilla, H = HUESOS.tobillo, A = ANATOMIA, g = this.grosorPiernas || 1;
+    a = limitar(a, -A.cadera.extension * GRADOS, A.cadera.flexion * GRADOS);
+    doblez = limitar(doblez, A.rodilla.extension * GRADOS, A.rodilla.flexion * GRADOS);
+    const kx = hx + Math.sin(a) * L1, ky = hy + Math.cos(a) * L1, b = a - doblez, tx = kx + Math.sin(b) * L2, ty = ky + Math.cos(b) * L2;
+    const en = (x0, y0, x1, y1, k) => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k];
+    const pie = giroDelPie(b, doblez), cp = Math.cos(pie), sp = Math.sin(pie), fg = 1 + (g - 1) * 0.5;   // el pie crece menos que la pierna
+    // Un punto del pie (m: achicado hacia su centro, para el tono de luz)
+    const P = (x, y, m = 0) => { const k = m ? 0.88 : 1; x = 3 + (x - 3) * k; y = H - 2.2 + (y - H + 2.2) * (m ? 0.8 : 1); return [tx + x * fg * cp - y * sp, ty + x * fg * sp + y * cp]; };
+    const piernaPiel = m => juntos(tramoMusculo(hx, hy, kx, ky, 7.4 * g - m, 5.5 * g - m, 0.12, 0.26, 0.3, 0.4), tramoMusculo(kx, ky, tx, ty, 5.5 * g - m, 3.9 * g - m, 0.36, 0.04, 0.3, 0.5));
+    if (zapatilla) {   // zapatilla de correr blanca y embarrada, con la suela roja
+      miembroZombie(ctx, m => c => { c.moveTo(...P(-3.8, H - 1.3, m)); c.lineTo(...P(8.4, H - 1.3, m)); c.quadraticCurveTo(...P(9.5, H - 1.5, m), ...P(9.0, H - 2.7, m)); c.quadraticCurveTo(...P(8.2, H - 4.1, m), ...P(6, H - 4.3, m));
+        c.quadraticCurveTo(...P(3.4, -0.9, m), ...P(2.3, -2.0, m)); c.lineTo(...P(-2.6, -1.6, m)); c.quadraticCurveTo(...P(-3.9, 0.6, m), ...P(-3.8, H - 1.3, m)); c.closePath(); }, golpeado ? '#fff' : '#d9d6cc');
+      if (!Pincel.silueta) {
+        ctx.fillStyle = golpeado ? '#fff' : '#c23b2b'; ctx.beginPath(); for (const q of [P(-4, H - 1.4), P(8.8, H - 1.4), P(9.3, H - 0.5), P(8.6, H), P(-4, H)]) ctx.lineTo(q[0], q[1]); ctx.closePath(); ctx.fill();   // suela
+        detalle(ctx, 'rgba(90,70,40,0.5)', c => c.ellipse(...P(4.4, H - 2.4), 2.8, 1.2, pie, 0, Math.PI * 2));
+      }
+      miembroZombie(ctx, piernaPiel, piel);
+    } else {           // pie descalzo: talón, empeine y dedos; va en la misma forma que la pierna
+      const piePiel = m => c => { c.moveTo(...P(-3.4, H, m)); c.lineTo(...P(7.6, H, m)); c.quadraticCurveTo(...P(9.5, H, m), ...P(9.2, H - 1.3, m)); c.quadraticCurveTo(...P(8.9, H - 2.3, m), ...P(7.3, H - 2.5, m));
+        c.quadraticCurveTo(...P(4.6, H - 3.0, m), ...P(1.9, -1.3, m)); c.lineTo(...P(-2.1, -1.5, m)); c.quadraticCurveTo(...P(-3.9, 0.9, m), ...P(-3.4, H, m)); c.closePath(); };
+      miembroZombie(ctx, m => juntos(piernaPiel(m), piePiel(m)), piel);
+      if (!Pincel.silueta) for (let k = 0; k < 3; k++) linea(ctx, 'rgba(20, 35, 10, 0.5)', 0.45, [P(5.8 + k * 1.1, H - 2.2 + k * 0.2), P(6.1 + k * 1.1, H - 0.4)]);   // dedos
     }
-    // Borde deshilachado de la tela
-    detalle(ctx, tela, poli([[cx - 4, cy - 1], [cx - 3, cy + 2.5], [cx - 1.5, cy + 0.5], [cx, cy + 3.5], [cx + 1.5, cy + 0.5], [cx + 3, cy + 2], [cx + 4, cy - 1]]));
-    if (zapatilla) {   // zapatilla de correr blanca y embarrada
-      pieza(ctx, poli([[px - 4, py - 2.5], [px + 3.5, py - 2.5], [px + 9, py + 3.5], [px + 9.6, py + 6.8], [px - 4.4, py + 6.8]]), golpeado ? '#fff' : '#d9d6cc', px - 4.4, px + 9.6);
-      detalle(ctx, golpeado ? '#fff' : '#c23b2b', c => c.rect(px - 4.4, py + 5.4, 14, 1.4));
-      detalle(ctx, 'rgba(90,70,40,0.5)', elipse(px + 4, py + 3, 3, 1.4));
-      return;
-    }
+    // Pantalón: hasta la mitad del muslo (short deportivo), hasta la rodilla o hasta donde se rompió en la canilla
+    if (muslo < 1) {
+      const fin = en(hx, hy, kx, ky, muslo);
+      miembroZombie(ctx, m => tramoCortado(hx, hy, fin[0], fin[1], 9.6 - m, 9.2 - m, 1.3), tela);
+      if (!Pincel.silueta && !golpeado) { const nx = -Math.cos(a), ny = Math.sin(a); linea(ctx, 'rgba(255,255,255,0.4)', 0.7, [[hx - nx * 3.3, hy - ny * 3.3], [fin[0] - nx * 3.3, fin[1] - ny * 3.3]]); }   // franja del short
+    } else if (corte > 0.02) {
+      const fin = en(kx, ky, tx, ty, corte);
+      miembroZombie(ctx, m => juntos(tramoMusculo(hx, hy, kx, ky, 9.2 * g - m, 7.2 * g - m, 0.15, 0.3, 0.3, 0.4), tramoCortado(kx, ky, fin[0], fin[1], 7.2 * g - m, 6.6 * g - m)), tela);
+    } else miembroZombie(ctx, m => tramoCortado(hx, hy, kx, ky, 9.2 * g - m, 7.4 * g - m), tela);
     if (agujero && !Pincel.silueta) {   // rodilla a la vista por un roto
-      detalle(ctx, 'rgba(30, 18, 8, 0.7)', elipse(kx + 0.5, ky, 3.2, 2.4));
-      detalle(ctx, golpeado ? '#fff' : ajustarColor(this.piel, -0.1), elipse(kx + 0.5, ky + 0.3, 2.3, 1.6));
+      detalle(ctx, 'rgba(30, 18, 8, 0.7)', elipse(kx + 0.5, ky, 3.0, 2.3));
+      detalle(ctx, golpeado ? '#fff' : ajustarColor(this.piel, -0.1), elipse(kx + 0.5, ky + 0.3, 2.1, 1.5));
     }
-    // Pie descalzo con dedos
-    pieza(ctx, poli([[px - 3.5, py - 1.5], [px + 3, py - 1.5], [px + 8, py + 4], [px + 9, py + 6.5], [px - 4, py + 6.5]]), piel, px - 4, px + 9);
-    if (!Pincel.silueta) for (let k = 0; k < 3; k++) linea(ctx, 'rgba(20, 35, 10, 0.5)', 0.5, [[px + 5 + k * 1.3, py + 4], [px + 5.5 + k * 1.3, py + 6.3]]);
   }
 
-  // Brazo: manga corta rota, antebrazo verde con venas y mano con garras
+  /* Brazo: una sola forma de piel del hombro a la muñeca, con el codo donde lo pone la anatomía (resolverBrazo: hacia
+   * abajo, y nunca más de lo que dobla), la manga corta rota encima y una mano de verdad en garra (dibujarGarra: los
+   * mismos nudos que la del jugador), con uñas. Antes eran dos cuadriláteros con un círculo en el hombro, y el
+   * antebrazo se estiraba al manotear. */
   brazo(ctx, hx, hy, pose, angulo, ataca, manga, piel, golpeado) {
-    const t = this.ahora / 1000;
-    let ex, ey, mx, my;
-    if (pose === 'cuelga') { ex = hx + 2; ey = hy + 12; mx = hx + 4 + Math.sin(this.fase * 0.5) * 2; my = hy + 24; }
-    else {
-      const estocada = ataca ? Math.max(0, Math.sin(t * 7)) * 6 : 0;   // al morder tira manotazos
-      const ang = angulo + (ataca ? Math.sin(t * 7) * 0.35 : 0);
-      ex = hx + 10 + estocada * 0.4; ey = hy + 4 + ang * 6;
-      mx = ex + 12 + estocada; my = ey + ang * 10 - 2;
+    const t = this.ahora / 1000, g = this.grosorBrazos || 1, cerca = hx > 0, largo = HUESOS.brazo + HUESOS.antebrazo;
+    let mx, my, giro, flexion, desvio, cierre, abre, suelto;
+    if (pose === 'cuelga') {   // inerte: casi estirado, con un leve vaivén
+      mx = hx + 2.5 + Math.sin(this.fase * 0.5) * 2; my = hy + largo * 0.965; giro = 15; flexion = 10; desvio = 0; cierre = 0.3; abre = 0.6; suelto = 1;
+    } else {
+      // Estirado hacia la presa: la mano de canto no (se vería una raya), sino con el dorso o la palma hacia el que mira,
+      // así se ve la garra abierta; la muñeca cae hacia el meñique lo que da (30°) y se levanta en el manotazo
+      const manotazo = ataca ? Math.max(0, Math.sin(t * 7)) : 0, ang = angulo + (ataca ? Math.sin(t * 7) * 0.35 : 0);
+      mx = hx + 26 + manotazo * 2.4; my = hy + 1.5 + ang * 15; giro = 10; flexion = 8; desvio = -26 + manotazo * 40;
+      cierre = 0.13 + (ataca ? (1 + Math.sin(this.ahora / 90)) * 0.1 : 0); abre = 2.4; suelto = 0.75;   // dedos largos y abiertos, en gancho; al morder la garra se abre y se cierra
     }
-    const g = this.grosorBrazos || 1;                                                                          // los jefes, más gruesos
-    pieza(ctx, poli(segmento(ex, ey, mx, my, 5.6 * g, 4.6 * g)), piel, Math.min(ex, mx) - 3 * g, Math.max(ex, mx) + 3 * g);     // antebrazo
-    pieza(ctx, poli(segmento(hx, hy, ex, ey, 7 * g, 6 * g)), piel, Math.min(hx, ex) - 4 * g, Math.max(hx, ex) + 4 * g);         // brazo
-    if (!Pincel.silueta && !golpeado) {
-      linea(ctx, 'rgba(35, 55, 20, 0.55)', 0.5, [[ex + 2, ey - 0.5], [ex + 5, ey + 0.8], [ex + 8, ey]]);     // venas
-      detalle(ctx, 'rgba(70, 50, 20, 0.45)', elipse(ex + 6, ey + 0.5, 2.2, 1.2));                              // parche podrido
+    const R = resolverBrazo(hx, hy, mx, my, { lado: cerca ? 1 : -1, fondo: cerca ? -2 : 2, afuera: 0.1 }), cx = R.cx, cy = R.cy;
+    const en = (x0, y0, x1, y1, k) => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k];
+    miembroZombie(ctx, m => juntos(tramoMusculo(hx, hy, cx, cy, 6.0 * g - m, 4.7 * g - m, 0.18, 0.22, 0.5, 0.3), tramoMusculo(cx, cy, mx, my, 4.7 * g - m, 3.4 * g - m, 0.2, 0.1, 0.28, 0.3)), piel);
+    if (!Pincel.silueta && !golpeado) {   // venas y un parche podrido a lo largo del antebrazo
+      const ux = Math.cos(R.ante), uy = Math.sin(R.ante), q = (k, d) => { const [x, y] = en(cx, cy, mx, my, k); return [x - uy * d, y + ux * d]; };
+      linea(ctx, 'rgba(35, 55, 20, 0.55)', 0.5, [q(0.16, -0.5 * g), q(0.4, 0.7 * g), q(0.64, 0)]);
+      detalle(ctx, 'rgba(70, 50, 20, 0.45)', c => c.ellipse(...q(0.48, 0.4 * g), 2.1 * g, 1.1 * g, R.ante, 0, Math.PI * 2));
     }
-    // Manga corta deshilachada sobre el hombro
-    const mgx = hx + (ex - hx) * 0.55, mgy = hy + (ey - hy) * 0.55;
-    if (manga) {
-      pieza(ctx, poli([...segmento(hx, hy, mgx, mgy, 9.5 * g, 8.5 * g).slice(0, 2), [mgx + 1, mgy + 2], [mgx - 1, mgy + 1], [mgx - 2, mgy + 4], ...segmento(hx, hy, mgx, mgy, 9.5 * g, 8.5 * g).slice(2)]), manga, hx - 5 * g, mgx + 5 * g);
-      const gh = 1 + (g - 1) * 0.45;                                                                         // hombro: crece menos que el brazo
-      pieza(ctx, circulo(hx, hy, 5 * gh), manga, hx - 5 * gh, hx + 5 * gh, { contorno: false });
-    } else { const gh = 1 + (g - 1) * 0.45; pieza(ctx, circulo(hx, hy, 4.4 * gh), piel, hx - 4 * gh, hx + 4 * gh, { contorno: false }); }   // musculosa: hombro desnudo
-    // Mano con cuatro dedos huesudos y uñas oscuras
-    const dir = Math.atan2(my - ey, mx - ex);
-    ctx.save(); ctx.translate(mx, my); ctx.rotate(dir);
-    pieza(ctx, elipse(1.5, 0, 3.2 * g, 2.6 * g), piel, -2 * g, 5 * g);
-    for (let k = 0; k < 4; k++) {
-      const abre = (k - 1.5) * 0.32 + (ataca ? Math.sin(this.ahora / 90) * 0.15 : 0);
-      const fx = 4 + Math.cos(abre) * 4.5, fy = Math.sin(abre) * 4.5;
-      linea(ctx, tinta(piel), 1.4, [[3.5, (k - 1.5) * 1.2], [fx, fy + (k - 1.5) * 0.8], [fx + 1.6, fy + (k - 1.5) * 0.8 + 1]]);
-      if (!Pincel.silueta) linea(ctx, '#2a2418', 0.8, [[fx + 1, fy + (k - 1.5) * 0.8 + 0.6], [fx + 1.9, fy + (k - 1.5) * 0.8 + 1.4]]);
+    if (manga) { const gm = 1 + (g - 1) * 0.8, fin = en(hx, hy, cx, cy, 0.55); miembroZombie(ctx, m => tramoCortado(hx, hy, fin[0], fin[1], 8.0 * gm - m, 7.0 * gm - m, 1.8), manga); }   // manga corta deshilachada: el hombro es su arranque, no una bola
+    // Mano: sigue al antebrazo dentro de lo que da la muñeca
+    const B = manoDesdeAntebrazo(R.ante3, cerca, giro, flexion, desvio), kh = 1.22 + (g - 1) * 0.7;   // manos grandes y huesudas
+    if (Pincel.silueta) {   // en la sombra, la mano es una mancha: armar los dedos de toda una horda dos veces por cuadro no se paga
+      ctx.fillStyle = Pincel.silueta; ctx.beginPath(); ctx.ellipse(mx + B.ex[0] * 3.6 * kh, my + B.ex[1] * 3.6 * kh, 3.9 * kh, 2.3 * kh, Math.atan2(B.ex[1], B.ex[0]), 0, Math.PI * 2); ctx.fill();
+      return;
     }
+    GARRA.cierre[0] = GARRA.cierre[1] = GARRA.cierre[2] = GARRA.cierre[3] = cierre; GARRA.abre = abre; GARRA.pulgar.suelto = suelto; GARRA.pulgar.arriba = 1 - suelto;
+    ctx.save(); ctx.translate(mx, my); ctx.scale(kh, kh);
+    dibujarGarra(ctx, [B.ex[0] * MANO.muneca, B.ex[1] * MANO.muneca], B, GARRA, piel, golpeado ? '#fff' : '#2a2418');
     ctx.restore();
   }
 

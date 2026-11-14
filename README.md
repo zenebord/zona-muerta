@@ -664,7 +664,7 @@ Tiros en dificultad media:
 | Escopetas | Recortada doble caño, Mossberg 500, SPAS-12, AA-12, Saiga-12, Benelli M4, Remington 870, Winchester 1887 | 1 |
 | Ametralladora fija | M2 Browning .50, clavada en las montañas, no se puede llevar | 1 |
 | Especiales (solo en montañas) | Lanzagranadas M79, Milkor MGL (6 granadas), Bazuca M9, RPG-7, Granadas M67, Lanzallamas M2, Minigun M134 (300 tiros), Láser alienígena | 1 (el lanzallamas: 0,9 s de fuego) |
-| Cuerpo a cuerpo (tecla 6) | Machete y Bate con clavos (2 golpes), Katana (2, rápida), Hacha de bombero y Mazo (1, lentos; el mazo empuja lejos), Machete del cazador (1; solo con el cazador enmascarado) | 1–2 |
+| Cuerpo a cuerpo (tecla 6) | Machete y Bate con alambre de púas (2 golpes), Katana (2, rápida), Hacha de bombero y Mazo (1, lentos; el mazo empuja lejos), Machete del cazador (1; solo con el cazador enmascarado) | 1–2 |
 | Legendarias (tecla 7, solo en montañas) | Mjölnir (llama rayos sobre 4 zombies), Excalibur (onda de luz que atraviesa), Tridente de Poseidón (ola que barre), Égida (escudo que se lanza y vuelve), Gungnir (lanza que se lanza y vuelve) | 1 |
 
 Las armas cuerpo a cuerpo y las legendarias no usan munición ni se recargan: `F` da el golpe (alza el arma,
@@ -796,7 +796,7 @@ pasa:
 | Antebrazo | 85° de pronación y 85° de supinación desde la posición neutra |
 | Muñeca | 80° de flexión, 70° de extensión, 20° hacia el pulgar y 30° hacia el meñique |
 | Dedos | 90° en el nudillo, 100° y 80° en las otras dos articulaciones |
-| Cadera, rodilla y tobillo | 120° y 20°; de recta a 140°; 20° hacia arriba y 50° hacia abajo |
+| Cadera, rodilla y tobillo | 120° y 30°; de recta a 140°; 20° hacia arriba y 50° hacia abajo |
 
 - **Brazo** (`resolverBrazo`): con el largo verdadero de los huesos (`HUESOS`, uno solo para los dos brazos y para
   todas las armas; antes el de apoyo medía 31,5 con un fusil y 26,5 con una pistola) sale el ángulo del codo, y el
@@ -812,6 +812,21 @@ pasa:
   coquilla chica sobre el frente de la rodilla y la bota tiene tobillo. El pie apoya de plano mientras el tobillo da:
   si la canilla se inclina más, se levanta el talón (la pierna de atrás al caminar, la que apoya la rodilla) o la
   punta (la de adelante).
+- **Cabeza**: se dibuja al 88 % alrededor del cuello (`ESCALA_CABEZA`), con lo que lleve puesto. Tal como estaba
+  dibujada era un cuarto de la altura; con el cuerpo de proporciones reales quedaba grande. Vale para los nueve
+  personajes y para los zombies.
+- **Zombies** (`js/zombie.js`): los humanoides (las 15 variantes, el tóxico, los jefes y los 17 tipos del bastión,
+  que comparten un solo dibujo de pierna, brazo y cabeza) usan los mismos huesos y los mismos rangos. La pierna es
+  una forma de piel con su pie descalzo y encima el pantalón roto, que termina en flecos (`tramoCortado`); el brazo
+  resuelve el codo con `resolverBrazo` y ya no se estira al manotear; el hombro es el arranque de la manga y la
+  rodilla el quiebre de la pierna, no círculos. La mano es la misma del jugador en garra, con uñas (`dibujarGarra`:
+  los mismos nudos, trazados más livianos). Los animales (perros, toro, guanaco, ñandú, aves) quedan como estaban:
+  son cuadrúpedos y aves, con su propio dibujo.
+- **Costo**: una horda no puede pagar la pintura del jugador. En este lienzo un relleno con degradado o un recorte
+  cuestan varias veces lo que un relleno plano, así que los miembros de los zombies van en dos tonos planos
+  (`miembroZombie`: la forma en sombra y, encima, la misma más fina y corrida hacia la luz) y en la pasada de la
+  sombra la mano es una mancha. Dibujar 60 zombies con su sombra pasó de 25,6 a 16,7 ms (medido ida y vuelta en la
+  misma ventana; con la máquina más libre, de 15,9 a 12,9). El jugador, de 0,95 a 0,9 ms.
 
 **Manos** (`dibujarMano` en `js/anatomia.js`, los gestos en `js/jugador-dibujo.js`): todas son la misma mano con
 guante, empuñe lo que empuñe, en reposo y en cada fase de la recarga: una palma, cuatro dedos de tres falanges y el

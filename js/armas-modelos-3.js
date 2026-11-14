@@ -2145,26 +2145,52 @@ reemplazar('hacha', { casquillo: null,
     pintar(ctx, Rc(-1.2, -66.9, 2.4, 0.9), '#2a2b2f');                                                           // cuña del mango
   } });
 
-// Bate de béisbol con clavos (84 cm): madera clara con veta a lo largo, perilla, cinta antideslizante en espiral,
-// barril ancho con la punta redondeada, clavos atravesados con su cabeza, manchas de sangre secas
+// Bate de béisbol envuelto en alambre de púas (82 cm), según la referencia de Leandro: madera curada, rojiza, con la
+// veta a lo largo y el roce del uso, mango desnudo con su perilla, y la mitad de arriba envuelta en veintiuna vueltas
+// de alambre de púas (dos hilos retorcidos; más apretadas y cruzadas hacia la punta), con una púa cada tanto y las de
+// los costados asomando de la silueta. Antes llevaba clavos atravesados y cinta negra en el mango.
+const BATE_VUELTAS = [[-29.6, 0.9], [-33.8, -0.8], [-37.4, 0.8], [-40.6, 0.5], [-43.4, -0.6], [-46.0, 0.7], [-48.4, 0.4], [-50.8, -0.5], [-53.0, 0.6], [-55.2, 0.5], [-57.4, -0.6],
+  [-59.6, 0.5], [-61.8, 0.7], [-64.0, -0.4], [-66.2, 0.5],   // [altura, cuánto se inclina] de cada vuelta
+  [-42.0, -1.5], [-47.2, 1.6], [-51.8, -1.4], [-56.2, 1.5], [-60.6, -1.5], [-64.8, 1.3]];   // y las que cruzan a las otras, en la parte más apretada
 reemplazar('bate', { casquillo: null,
   anclas: { manoDelantera: [0, 8], cargador: [0, 4], corredera: [0, 4], expulsion: [0, 0], boca: [0, -62] },
   dibujarCm(ctx) {
-    const sil = Pincel.silueta;
-    const perfil = suave([[-1.25, 11.6], [1.25, 11.6], [1.3, -4], [1.6, -18], [2.6, -32], [3.3, -44], [3.4, -64], [2.6, -67.6], [0, -68.6], [-2.6, -67.6], [-3.4, -64], [-3.3, -44], [-2.6, -32], [-1.6, -18], [-1.3, -4]], 1.0, 4);
-    pintar(ctx, perfil, MADERA_BATE, { brillo: 0.45 });
-    vetaLarga(ctx, -2.4, 2.4, -66, -30, 4);
-    pintar(ctx, suave([[-2.6, 11.0], [2.6, 11.0], [2.8, 13.0], [-2.8, 13.0]], 0.8, 3), MADERA_BATE);              // perilla
-    pintar(ctx, suave(Rc(-1.45, -6, 2.9, 17.2), 0.6, 2), '#1d1e22', { mate: true });                              // cinta
-    if (!sil) for (let y = -5.6; y < 11; y += 1.3) trazo(ctx, 'rgba(255,255,255,0.12)', 0.18, [[-1.4, y + 0.6], [1.4, y]]);
-    // Clavos: la punta asoma de un lado y del otro, la cabeza queda clavada en la madera
-    for (const [y, lado, inc] of [[-40, 1, -0.6], [-45, -1, 0.5], [-50, 1, 0.3], [-54, -1, -0.4], [-58, 1, -0.2], [-62, -1, 0.6], [-47, 1, 0.8]]) {
-      const ancho = 3.3;
-      trazo(ctx, '#9aa0a8', 0.45, [[lado * (ancho - 0.6), y], [lado * (ancho + 2.8), y + inc]]);
-      trazo(ctx, 'rgba(255,255,255,0.5)', 0.15, [[lado * (ancho - 0.2), y - 0.12], [lado * (ancho + 2.4), y + inc - 0.12]]);
-      punto(ctx, -lado * 1.0, y + 0.4, 0.55, '#7a7f87');
-    }
-    if (!sil) { for (const [x, y, rx, ry] of [[1.2, -52, 1.1, 2.6], [-1.4, -45, 0.8, 1.8], [1.6, -59, 0.7, 1.4]]) { ctx.fillStyle = 'rgba(105,14,10,0.42)'; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0.3, 0, Math.PI * 2); ctx.fill(); } }
+    const sil = Pincel.silueta, MADERA = '#b06f3d';
+    const perfil = suave([[-1.2, 11.2], [1.2, 11.2], [1.25, -4], [1.55, -18], [2.5, -32], [3.2, -44], [3.3, -64.6], [2.7, -67.8], [0, -68.6], [-2.7, -67.8], [-3.3, -64.6], [-3.2, -44], [-2.5, -32], [-1.55, -18], [-1.25, -4]], 1.0, 4);
+    pintar(ctx, perfil, MADERA, { brillo: 0.4 });
+    vetaLarga(ctx, -2.4, 2.4, -66, -24, 4); vetaLarga(ctx, -0.9, 0.9, -22, 9, 2);
+    pintar(ctx, suave([[-2.5, 10.6], [2.5, 10.6], [2.9, 12.2], [2.2, 13.4], [-2.2, 13.4], [-2.9, 12.2]], 0.8, 3), MADERA, { brillo: 0.35 });   // perilla
+    if (sil) return;
+    // El roce del uso: una veta clara por donde corre la mano y la mugre oscura en el barril
+    trazo(ctx, 'rgba(255, 226, 184, 0.24)', 0.5, [[-0.45, 8], [-0.5, -14], [-1.1, -30]]);
+    for (const [x, y, rx, ry] of [[1.2, -26, 0.7, 2.2], [-1.6, -38, 0.8, 1.8], [0.4, -12, 0.4, 1.6], [1.9, -51, 0.9, 2.4]]) { ctx.fillStyle = 'rgba(58, 30, 12, 0.24)'; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0.15, 0, Math.PI * 2); ctx.fill(); }
+    for (const [x, y, rx, ry] of [[-0.8, -47, 1.0, 2.2], [1.5, -58, 0.7, 1.5]]) { ctx.fillStyle = 'rgba(105, 14, 10, 0.34)'; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0.3, 0, Math.PI * 2); ctx.fill(); }   // sangre seca
+    // Alambre de púas: cada vuelta cruza el barril en diagonal, con la panza hacia el que mira; debajo su sombra sobre
+    // la madera, encima el brillo cortado de los dos hilos retorcidos, y las púas
+    const ancho = y => y > -18 ? 1.55 : y > -32 ? 1.55 + (-18 - y) / 14 * 0.95 : y > -44 ? 2.5 + (-32 - y) / 12 * 0.75 : 3.3;
+    const vuelta = (y, inc, dx = 0, dy = 0) => { const w = ancho(y) + 0.25; ctx.beginPath(); ctx.moveTo(-w + dx, y - inc + dy); ctx.quadraticCurveTo(dx, y + 1.1 + dy, w + dx, y + inc + dy); };
+    ctx.lineCap = 'round';
+    BATE_VUELTAS.forEach(([y, inc], k) => {
+      const w = ancho(y) + 0.25;
+      vuelta(y, inc, 0.12, 0.32); ctx.strokeStyle = 'rgba(34, 18, 8, 0.38)'; ctx.lineWidth = 0.8; ctx.stroke();
+      vuelta(y, inc); ctx.strokeStyle = '#55534a'; ctx.lineWidth = 0.6; ctx.stroke();
+      ctx.setLineDash([0.42, 0.4]); ctx.lineDashOffset = k * 0.27; ctx.strokeStyle = 'rgba(190, 186, 170, 0.85)'; ctx.lineWidth = 0.24; ctx.stroke(); ctx.setLineDash([]);
+      // Púas: dos puntas cruzadas atadas al alambre; en cada vuelta, en otro lugar
+      const pua = (x, yy, giro, largo = 0.95) => {
+        for (const a of [giro + 0.95, giro - 0.95]) trazo(ctx, '#8d8a7c', 0.2, [[x - Math.cos(a) * largo, yy - Math.sin(a) * largo], [x + Math.cos(a) * largo, yy + Math.sin(a) * largo]]);
+        trazo(ctx, '#3f3d36', 0.42, [[x - Math.cos(giro) * 0.36, yy - Math.sin(giro) * 0.36], [x + Math.cos(giro) * 0.36, yy + Math.sin(giro) * 0.36]]);   // el nudo
+      };
+      for (const t of [0.24 + (k % 3) * 0.09, 0.62 + ((k * 2) % 3) * 0.1]) {
+        const u = 1 - t, x = -w * u * u + w * t * t, yy = (y - inc) * u * u + 2 * u * t * (y + 1.1) + (y + inc) * t * t;   // punto de la curva
+        pua(x, yy, Math.atan2(inc * 2 + (1 - 2 * t) * 2.2, w * 2) * 0.5);
+      }
+      const lado = k % 2 ? 1 : -1;   // la púa del costado: asoma de la silueta, una vuelta de cada lado
+      trazo(ctx, '#8d8a7c', 0.28, [[lado * (w - 0.3), y + lado * inc], [lado * (w + 1.5), y + lado * inc - 0.9]]);
+      trazo(ctx, '#8d8a7c', 0.24, [[lado * (w - 0.3), y + lado * inc], [lado * (w + 1.3), y + lado * inc + 0.8]]);
+    });
+    // El alambre que cruza por arriba de la punta, con su púa
+    ctx.beginPath(); ctx.moveTo(-2.2, -66.6); ctx.quadraticCurveTo(-0.4, -70.6, 2.4, -66.2); ctx.strokeStyle = '#55534a'; ctx.lineWidth = 0.5; ctx.stroke();
+    trazo(ctx, '#8d8a7c', 0.24, [[-0.6, -69.0], [-1.3, -70.6]]); trazo(ctx, '#8d8a7c', 0.24, [[0.2, -69.1], [0.9, -70.7]]);
   } });
 
 // Mazo de 4 kg (90 cm): cabeza de acero con las caras achaflanadas y la cuña del ojo, mango de nogal con veta y
