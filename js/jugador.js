@@ -211,7 +211,7 @@ class Jugador {
     if (this.golpeActual || this.lanzado || ahora - this.ultimoDisparo < arma.cadencia) return false;
     this.ultimoDisparo = ahora;
     this.golpeActual = { inicio: ahora, dur: arma.golpe, impacto: 0.5, hecho: false, arma };
-    Audio_.blandir(arma.dano >= 15 && !arma.filo ? 1.4 : arma.filo ? 0.8 : 1);
+    Audio_.blandir(arma.dano >= 15 && !arma.filo ? 1.4 : arma.filo ? 0.8 : 1, arma.id);
     if (juego.entrenamiento) { juego.ent.disparos++; if (juego.ent.serieActual) juego.ent.serieActual.disparos++; }
     return true;
   }

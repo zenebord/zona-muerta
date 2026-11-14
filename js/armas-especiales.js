@@ -391,7 +391,7 @@ Jugador.prototype.actualizar = function (dt, entrada, juego) {
   actualizarBase.call(this, dt, entrada, juego);
   revisarArmasDePersonaje(this);
   const id = this.montada ? null : this.inventario[this.indiceArma];
-  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) susurrar(this, juego, 'sacar');
+  if (id === 'macheteCazador' && this.armaAntes !== undefined && this.armaAntes !== id && !this.muerto) { Audio_.desenfundarMachete(); susurrar(this, juego, 'sacar'); }
   this.armaAntes = id;
   actualizarMinigun(this, dt, juego, casquillosAntes);
 };
