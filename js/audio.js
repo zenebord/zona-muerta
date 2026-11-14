@@ -48,8 +48,9 @@ const Audio_ = (() => {
   // Silencio cuando el juego no se ve: pestaña o app en segundo plano, celular bloqueado, página cerrada o el
   // marco del artefacto escondido. Lo último no avisa con «visibilitychange», así que además se vigila que
   // la página siga pintando cuadros: si requestAnimationFrame se frena más de 0,7 s, el juego no está a la vista.
-  let oculto = document.hidden, porLatido = false, ultimoCuadro = performance.now();
+  let oculto = document.hidden, porLatido = false, ultimoCuadro = performance.now(), vigila = true;
   function silenciar(si, latido = false) {
+    if (si && !vigila) return;   // la versión VR lo apaga (sinSilencioAutomatico)
     oculto = si; porLatido = si && latido;
     if (!ctx) return;
     if (si && ctx.state === 'running') ctx.suspend().catch(() => {});
@@ -404,6 +405,9 @@ const Audio_ = (() => {
 
   return {
     activar: asegurar,
+    // Versión VR (vr/campo.js): con el visor puesto la página no pinta cuadros con requestAnimationFrame y puede
+    // figurar oculta, así que el silencio automático la dejaría muda. Se apaga al entrar
+    sinSilencioAutomatico() { vigila = false; silenciar(false); },
     // Volúmenes de la configuración: { general, efectos, musica, silencio }
     volumenes(v) { Object.assign(vol, v); aplicarVolumenes(); },
     // Para la música: el contexto y el canal donde conectarse
