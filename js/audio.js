@@ -198,6 +198,7 @@ const Audio_ = (() => {
       case 'cerrojo':        return CERROJO_MANUAL.has(id) ? ['cerrojo_cerrar', {}] : ['escopeta_rack', { vel: peso }];
       case 'cerrojo-abrir':  return id === 'mp5' ? ['pistola_trabar', { vel: 0.85 }] : ['cerrojo_abrir', {}];
       case 'palmada':        return ['pistola_liberar', { vel: 0.85, vol: 1.1 }];
+      case 'cierra-solo':    return ['escopeta_cerrar', { vel: 0.95 }];   // el cerrojo del Garand salta adelante solo (el de la escopeta semiautomática al soltarlo)
       case 'palmada-hk':     return ['escopeta_cerrar', { vel: 1.05 }];
       case 'bombear':        return ['bombeo_rack', {}];
       case 'palanca':        return ['cerrojo_22', { vel: id === 'winchester1887' ? 0.82 : 0.95 }];
@@ -519,6 +520,37 @@ const Audio_ = (() => {
     }
     return t0 + 0.5;
   }
+  /* ---------- El «ping» del M1 Garand ----------
+   * Con la última bala el cerrojo queda atrás y el resorte despide el peine en bloque vacío: una U de acero de resorte
+   * que pega contra el cajón al salir y sigue sonando en el aire, como una campanita. No hay grabación ni mediciones
+   * publicadas del sonido real: es síntesis modal desde la física del peine. Cada pared de la U vibra como una lengüeta
+   * de unos 15 mm de acero de 0,8 mm empotrada en el lomo, y eso da el primer modo entre 2,5 y 3,3 kHz. Las dos paredes,
+   * acopladas por el lomo, suenan casi iguales y se baten (el temblor de campana, unas 4 veces por segundo); arriba
+   * van la torsión (×1,49) y los modos altos, que se apagan antes. El golpe contra el cajón es un chasquido ancho de
+   * pocos milisegundos, y al girar en el aire el peine muestra al oído ora el canto, ora la cara: el volumen ondula
+   * apenas. modos: [relación con el primero, amplitud, segundos hasta apagarse].
+   */
+  const PING = { f: 2650, modos: [[1, 1, 1.1], [1.0016, 0.45, 0.95], [1.49, 0.36, 0.5], [2.27, 0.17, 0.28], [2.98, 0.09, 0.16], [4.12, 0.045, 0.09]], giro: 7, ondula: 0.12, golpe: 0.5 };
+  function genPing(ac, salida, t0, nodos, op = {}) {
+    const o = { ...PING, ...op }, f0 = o.f * (0.97 + Math.random() * 0.06);
+    const giro = ac.createOscillator(), prof = ganancia(ac, o.ondula), cuerpo = ganancia(ac, 1 - o.ondula);   // el peine girando
+    giro.frequency.value = o.giro * (0.85 + Math.random() * 0.3);
+    giro.connect(prof); prof.connect(cuerpo.gain); cuerpo.connect(salida);
+    let fin = t0;
+    for (const [r, amp, d] of o.modos) {
+      const m = ac.createOscillator(), g = ganancia(ac, 0);
+      m.frequency.value = f0 * r;
+      curva(g.gain, [[t0, 0.0001], [t0 + 0.0012, amp], [t0 + d, 0.0001]]);
+      m.connect(g); g.connect(cuerpo); m.start(t0); m.stop(t0 + d + 0.02);
+      nodos.push(m, g); fin = Math.max(fin, t0 + d);
+    }
+    giro.start(t0); giro.stop(fin + 0.02);
+    const a = aire(ac, t0, 0.03), bp = filtro(ac, 'bandpass', 6500, 0.9), gc = ganancia(ac, 0);                 // el golpe contra el cajón
+    curva(gc.gain, [[t0, 0.0001], [t0 + 0.0004, o.golpe], [t0 + 0.012, 0.0001]]);
+    a.connect(bp); bp.connect(gc); gc.connect(salida);
+    nodos.push(giro, prof, cuerpo, a, bp, gc);
+    return fin + 0.05;
+  }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
   function sonar(generador, rev, vol, ...args) {
     if (!asegurar()) return;
@@ -591,6 +623,7 @@ const Audio_ = (() => {
         case 'cerrojo':        metal({ f: 1500, dur: 0.08, vol: 0.24 }); friccion({ desde: 1000, hasta: 1900, dur: 0.1, vol: 0.12, retraso: 0.02 }); metal({ f: 1250, dur: 0.15, vol: 0.32, retraso: 0.13 }); golpe({ f: 180, dur: 0.06, vol: 0.25, retraso: 0.13 }); break;
         case 'cerrojo-abrir':  metal({ f: 1400, dur: 0.07, vol: 0.24 }); friccion({ desde: 1700, hasta: 900, dur: 0.12, vol: 0.13, retraso: 0.03 }); break;
         case 'palmada':        golpe({ f: 140, dur: 0.05, vol: 0.32 }); metal({ f: 1500, dur: 0.13, vol: 0.3, retraso: 0.04 }); break;
+        case 'cierra-solo':    friccion({ desde: 2000, hasta: 1000, dur: 0.05, vol: 0.1 }); metal({ f: 1350, dur: 0.16, vol: 0.34, retraso: 0.04 }); golpe({ f: 150, dur: 0.05, vol: 0.28, retraso: 0.04 }); break;
         case 'palmada-hk':     golpe({ f: 150, dur: 0.04, vol: 0.28 }); friccion({ desde: 2100, hasta: 1000, dur: 0.06, vol: 0.12, retraso: 0.03 }); metal({ f: 1350, dur: 0.16, vol: 0.36, retraso: 0.05 }); break;
         case 'bombear':        friccion({ desde: 800, hasta: 1500, dur: 0.08, vol: 0.2 }); metal({ f: 1100, dur: 0.08, vol: 0.22, retraso: 0.06 }); friccion({ desde: 1500, hasta: 800, dur: 0.08, vol: 0.2, retraso: 0.13 }); metal({ f: 950, dur: 0.13, vol: 0.32, retraso: 0.2 }); golpe({ f: 170, dur: 0.05, vol: 0.25, retraso: 0.2 }); break;
         case 'palanca':        metal({ f: 1300, dur: 0.07, vol: 0.22 }); friccion({ desde: 900, hasta: 1600, dur: 0.1, vol: 0.12, retraso: 0.03 }); metal({ f: 1100, dur: 0.11, vol: 0.28, retraso: 0.17 }); golpe({ f: 160, dur: 0.05, vol: 0.22, retraso: 0.17 }); break;
@@ -634,6 +667,7 @@ const Audio_ = (() => {
         case 'tambor':    sono = grabacion('cargador_al_piso', op(1.1, 0.7)); break;
         case 'speedloader': sono = grabacion('cargador_al_piso', op(0.5, 1.35)); break;
         case 'peine':     sono = grabacion('cargador_al_piso', op(0.4, 1.5)); break;
+        case 'enBloque':  sono = grabacion('cargador_al_piso', op(0.45, 1.4)); break;
         case 'pasador':   metal({ f: 4800, dur: 0.06, vol: 0.09 * nivel }); metal({ f: 3600, dur: 0.08, vol: 0.07 * nivel, retraso: 0.05 }); sono = true; break;
       }
       if (sono) return;
@@ -771,8 +805,10 @@ const Audio_ = (() => {
     // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
     susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
     duracionSusurro,
+    // El peine vacío del Garand que salta con la última bala
+    pingGarand() { sonar(genPing, 0.15, 0.08); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
-    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe },
+    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, ping: genPing },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {

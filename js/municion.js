@@ -103,8 +103,9 @@ function cartuchoEn(ctx, cal, x, y, ang = 0, op) {
 /* ---------- Lo que lleva la mano al cargar (en cm; la punta de las balas hacia +x) ---------- */
 // Peine: las balas una sobre otra tomadas del culote por la lámina de acero. El en bloque del Garand lleva ocho en dos
 // hileras (de costado se ven cuatro). cuantas: las que le quedan (se van metiendo en el depósito de arriba hacia abajo)
+const altoPeine = armaId => (armaId === 'garand' ? 4 : 5) * calibreDe(armaId).d * 1.08;   // la pila de balas que se ve, en cm
 function dibujarPeine(ctx, armaId, cuantas = null) {
-  const cal = calibreDe(armaId), enBloque = armaId === 'garand', n = enBloque ? 4 : 5, paso = cal.d * 1.08, alto = n * paso, q = cuantas == null ? n : Math.max(0, Math.min(n, cuantas));
+  const cal = calibreDe(armaId), enBloque = armaId === 'garand', n = enBloque ? 4 : 5, paso = cal.d * 1.08, alto = altoPeine(armaId), q = cuantas == null ? n : Math.max(0, Math.min(n, cuantas));
   for (let k = n - q; k < n; k++) { ctx.save(); ctx.translate(0, -alto / 2 + paso * (k + 0.5)); dibujarCartucho(ctx, cal); ctx.restore(); }
   if (Pincel.silueta) return;
   const g = ctx.createLinearGradient(-0.5, 0, enBloque ? cal.vaina * 0.62 : 0.5, 0), A = TONOS_MUNICION.acero;

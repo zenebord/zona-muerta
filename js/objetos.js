@@ -377,17 +377,19 @@ class Particula {
 /* Casquillo (o cargador vacío) que sale volando, rebota en el piso y se esfuma enseguida */
 class Casquillo {
   constructor(x, y, direccion, tipo, suave) {
-    this.x = x; this.y = y; this.tipo = tipo;   // pistola | bala | escopeta | grande | cargador | cargadorPistola | tambor | granada40 | peine | speedloader
+    this.x = x; this.y = y; this.tipo = tipo;   // pistola | bala | escopeta | grande | cargador | cargadorPistola | tambor | granada40 | peine | speedloader | enBloque
     const esCargador = tipo === 'cargador' || tipo === 'cargadorPistola' || tipo === 'tambor' || tipo === 'speedloader' || tipo === 'peine';
     if (suave) {   // cae del arma al abrirla, sin salir disparado
       this.vx = -direccion * (0.2 + Math.random() * 0.6); this.vy = 0.3 + Math.random() * 0.4;
+    } else if (tipo === 'enBloque') {   // el peine vacío del Garand: el resorte lo tira para arriba, un poco hacia atrás y girando
+      this.vx = -direccion * (0.5 + Math.random() * 0.7); this.vy = -(4.6 + Math.random() * 1.0); this.lado = direccion;
     } else {
       this.vx = -direccion * (esCargador ? 0.4 + Math.random() * 0.4 : 1.2 + Math.random() * 1.4);
       this.vy = esCargador ? 0.5 : -(2.5 + Math.random() * 2.2);
     }
-    this.rot = esCargador ? (Math.random() - 0.5) * 0.4 : Math.random() * Math.PI * 2;   // el cargador cae parado y se va acostando
-    this.vrot = (Math.random() - 0.5) * (esCargador ? 0.2 : 0.7);
-    this.vida = esCargador || tipo === 'pasador' ? 2.4 : 1.0; this.vidaMax = this.vida;
+    this.rot = esCargador || tipo === 'enBloque' ? (Math.random() - 0.5) * 0.4 : Math.random() * Math.PI * 2;   // el cargador cae parado y se va acostando
+    this.vrot = tipo === 'enBloque' ? -direccion * (0.22 + Math.random() * 0.18) : (Math.random() - 0.5) * (esCargador ? 0.2 : 0.7);
+    this.vida = esCargador || tipo === 'pasador' || tipo === 'enBloque' ? 2.4 : 1.0; this.vidaMax = this.vida;
     this.profundidad = 2 + Math.random() * 14;   // dónde cae dentro de la banda de la calle
     this.rebotes = 0; this.vivo = true;
   }
@@ -409,6 +411,7 @@ class Casquillo {
           const [ex, ey] = this.cargador.ejeLargo || this.cargador.eje, b = Math.atan2(ey, ex * this.lado);
           this.rot = Math.round((this.rot + b) / Math.PI) * Math.PI - b;
         } else if (this.tipo === 'cargador' || this.tipo === 'cargadorPistola') this.rot = Math.PI / 2;
+        else if (this.tipo === 'enBloque') this.rot = Math.round(this.rot / (Math.PI / 2)) * (Math.PI / 2);   // queda apoyado sobre un canto
       }
       this.vx *= 0.6;
     }
@@ -417,13 +420,20 @@ class Casquillo {
     ctx.save();
     ctx.globalAlpha = Math.min(1, this.vida / 0.3);   // se desvanece en los últimos 0,3 s
     ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot);
-    if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
+    if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.tipo !== 'enBloque' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
       ctx.fillStyle = 'rgba(255, 240, 190, 0.3)'; ctx.beginPath(); ctx.arc(0, 0, 1.8, 0, Math.PI * 2); ctx.fill();
     }
     if (this.cargador) {   // el cargador de su arma, en cm, girado alrededor de donde lo tenía la mano
       const M = this.cargador, K = ESCALA_JUGADOR * CM;
       ctx.scale(this.lado * K, K); ctx.translate(-M.agarre[0], -M.agarre[1]);
       dibujarCargadorSuelto(ctx, M, false);
+      ctx.restore();
+      return;
+    }
+    if (this.tipo === 'enBloque') {   // el mismo peine que entra en el Garand (js/municion.js), vacío, girando sobre su centro
+      const K = ESCALA_JUGADOR * CM;
+      ctx.scale(this.lado * K, K); ctx.translate(-calibreDe('garand').vaina * 0.31 + 0.35, 0);
+      dibujarPeine(ctx, 'garand', 0);
       ctx.restore();
       return;
     }

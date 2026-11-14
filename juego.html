@@ -1389,7 +1389,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261114-1406-1e6482b';
+const VERSION_JUEGO = '20261114-1502-33314a2';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -2299,6 +2299,7 @@ const Audio_ = (() => {
       case 'cerrojo':        return CERROJO_MANUAL.has(id) ? ['cerrojo_cerrar', {}] : ['escopeta_rack', { vel: peso }];
       case 'cerrojo-abrir':  return id === 'mp5' ? ['pistola_trabar', { vel: 0.85 }] : ['cerrojo_abrir', {}];
       case 'palmada':        return ['pistola_liberar', { vel: 0.85, vol: 1.1 }];
+      case 'cierra-solo':    return ['escopeta_cerrar', { vel: 0.95 }];   // el cerrojo del Garand salta adelante solo (el de la escopeta semiautomática al soltarlo)
       case 'palmada-hk':     return ['escopeta_cerrar', { vel: 1.05 }];
       case 'bombear':        return ['bombeo_rack', {}];
       case 'palanca':        return ['cerrojo_22', { vel: id === 'winchester1887' ? 0.82 : 0.95 }];
@@ -2620,6 +2621,37 @@ const Audio_ = (() => {
     }
     return t0 + 0.5;
   }
+  /* ---------- El «ping» del M1 Garand ----------
+   * Con la última bala el cerrojo queda atrás y el resorte despide el peine en bloque vacío: una U de acero de resorte
+   * que pega contra el cajón al salir y sigue sonando en el aire, como una campanita. No hay grabación ni mediciones
+   * publicadas del sonido real: es síntesis modal desde la física del peine. Cada pared de la U vibra como una lengüeta
+   * de unos 15 mm de acero de 0,8 mm empotrada en el lomo, y eso da el primer modo entre 2,5 y 3,3 kHz. Las dos paredes,
+   * acopladas por el lomo, suenan casi iguales y se baten (el temblor de campana, unas 4 veces por segundo); arriba
+   * van la torsión (×1,49) y los modos altos, que se apagan antes. El golpe contra el cajón es un chasquido ancho de
+   * pocos milisegundos, y al girar en el aire el peine muestra al oído ora el canto, ora la cara: el volumen ondula
+   * apenas. modos: [relación con el primero, amplitud, segundos hasta apagarse].
+   */
+  const PING = { f: 2650, modos: [[1, 1, 1.1], [1.0016, 0.45, 0.95], [1.49, 0.36, 0.5], [2.27, 0.17, 0.28], [2.98, 0.09, 0.16], [4.12, 0.045, 0.09]], giro: 7, ondula: 0.12, golpe: 0.5 };
+  function genPing(ac, salida, t0, nodos, op = {}) {
+    const o = { ...PING, ...op }, f0 = o.f * (0.97 + Math.random() * 0.06);
+    const giro = ac.createOscillator(), prof = ganancia(ac, o.ondula), cuerpo = ganancia(ac, 1 - o.ondula);   // el peine girando
+    giro.frequency.value = o.giro * (0.85 + Math.random() * 0.3);
+    giro.connect(prof); prof.connect(cuerpo.gain); cuerpo.connect(salida);
+    let fin = t0;
+    for (const [r, amp, d] of o.modos) {
+      const m = ac.createOscillator(), g = ganancia(ac, 0);
+      m.frequency.value = f0 * r;
+      curva(g.gain, [[t0, 0.0001], [t0 + 0.0012, amp], [t0 + d, 0.0001]]);
+      m.connect(g); g.connect(cuerpo); m.start(t0); m.stop(t0 + d + 0.02);
+      nodos.push(m, g); fin = Math.max(fin, t0 + d);
+    }
+    giro.start(t0); giro.stop(fin + 0.02);
+    const a = aire(ac, t0, 0.03), bp = filtro(ac, 'bandpass', 6500, 0.9), gc = ganancia(ac, 0);                 // el golpe contra el cajón
+    curva(gc.gain, [[t0, 0.0001], [t0 + 0.0004, o.golpe], [t0 + 0.012, 0.0001]]);
+    a.connect(bp); bp.connect(gc); gc.connect(salida);
+    nodos.push(giro, prof, cuerpo, a, bp, gc);
+    return fin + 0.05;
+  }
   // En el juego: por la mezcla de efectos; al terminar se desarma (los ecos con lazo no se apagan solos)
   function sonar(generador, rev, vol, ...args) {
     if (!asegurar()) return;
@@ -2692,6 +2724,7 @@ const Audio_ = (() => {
         case 'cerrojo':        metal({ f: 1500, dur: 0.08, vol: 0.24 }); friccion({ desde: 1000, hasta: 1900, dur: 0.1, vol: 0.12, retraso: 0.02 }); metal({ f: 1250, dur: 0.15, vol: 0.32, retraso: 0.13 }); golpe({ f: 180, dur: 0.06, vol: 0.25, retraso: 0.13 }); break;
         case 'cerrojo-abrir':  metal({ f: 1400, dur: 0.07, vol: 0.24 }); friccion({ desde: 1700, hasta: 900, dur: 0.12, vol: 0.13, retraso: 0.03 }); break;
         case 'palmada':        golpe({ f: 140, dur: 0.05, vol: 0.32 }); metal({ f: 1500, dur: 0.13, vol: 0.3, retraso: 0.04 }); break;
+        case 'cierra-solo':    friccion({ desde: 2000, hasta: 1000, dur: 0.05, vol: 0.1 }); metal({ f: 1350, dur: 0.16, vol: 0.34, retraso: 0.04 }); golpe({ f: 150, dur: 0.05, vol: 0.28, retraso: 0.04 }); break;
         case 'palmada-hk':     golpe({ f: 150, dur: 0.04, vol: 0.28 }); friccion({ desde: 2100, hasta: 1000, dur: 0.06, vol: 0.12, retraso: 0.03 }); metal({ f: 1350, dur: 0.16, vol: 0.36, retraso: 0.05 }); break;
         case 'bombear':        friccion({ desde: 800, hasta: 1500, dur: 0.08, vol: 0.2 }); metal({ f: 1100, dur: 0.08, vol: 0.22, retraso: 0.06 }); friccion({ desde: 1500, hasta: 800, dur: 0.08, vol: 0.2, retraso: 0.13 }); metal({ f: 950, dur: 0.13, vol: 0.32, retraso: 0.2 }); golpe({ f: 170, dur: 0.05, vol: 0.25, retraso: 0.2 }); break;
         case 'palanca':        metal({ f: 1300, dur: 0.07, vol: 0.22 }); friccion({ desde: 900, hasta: 1600, dur: 0.1, vol: 0.12, retraso: 0.03 }); metal({ f: 1100, dur: 0.11, vol: 0.28, retraso: 0.17 }); golpe({ f: 160, dur: 0.05, vol: 0.22, retraso: 0.17 }); break;
@@ -2735,6 +2768,7 @@ const Audio_ = (() => {
         case 'tambor':    sono = grabacion('cargador_al_piso', op(1.1, 0.7)); break;
         case 'speedloader': sono = grabacion('cargador_al_piso', op(0.5, 1.35)); break;
         case 'peine':     sono = grabacion('cargador_al_piso', op(0.4, 1.5)); break;
+        case 'enBloque':  sono = grabacion('cargador_al_piso', op(0.45, 1.4)); break;
         case 'pasador':   metal({ f: 4800, dur: 0.06, vol: 0.09 * nivel }); metal({ f: 3600, dur: 0.08, vol: 0.07 * nivel, retraso: 0.05 }); sono = true; break;
       }
       if (sono) return;
@@ -2872,8 +2906,10 @@ const Audio_ = (() => {
     // js/armas-especiales.js (al sacarlo, y al pegar o matar, con un tiempo de espera)
     susurroCazador() { sonar(genSusurro, 0.12, 0.9); },
     duracionSusurro,
+    // El peine vacío del Garand que salta con la última bala
+    pingGarand() { sonar(genPing, 0.15, 0.08); },
     // Para escucharlos fuera del juego: (contexto, salida, momento, nodos, ...) en un OfflineAudioContext
-    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe },
+    generadores: { susurro: genSusurro, tajo: genTajo, golpe: genGolpe, ping: genPing },
     // Minigun: en cada cuadro, la velocidad de los cañones (0 quietos … 1 a velocidad de tiro) y si está tirando.
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {
@@ -7726,8 +7762,9 @@ function cartuchoEn(ctx, cal, x, y, ang = 0, op) {
 /* ---------- Lo que lleva la mano al cargar (en cm; la punta de las balas hacia +x) ---------- */
 // Peine: las balas una sobre otra tomadas del culote por la lámina de acero. El en bloque del Garand lleva ocho en dos
 // hileras (de costado se ven cuatro). cuantas: las que le quedan (se van metiendo en el depósito de arriba hacia abajo)
+const altoPeine = armaId => (armaId === 'garand' ? 4 : 5) * calibreDe(armaId).d * 1.08;   // la pila de balas que se ve, en cm
 function dibujarPeine(ctx, armaId, cuantas = null) {
-  const cal = calibreDe(armaId), enBloque = armaId === 'garand', n = enBloque ? 4 : 5, paso = cal.d * 1.08, alto = n * paso, q = cuantas == null ? n : Math.max(0, Math.min(n, cuantas));
+  const cal = calibreDe(armaId), enBloque = armaId === 'garand', n = enBloque ? 4 : 5, paso = cal.d * 1.08, alto = altoPeine(armaId), q = cuantas == null ? n : Math.max(0, Math.min(n, cuantas));
   for (let k = n - q; k < n; k++) { ctx.save(); ctx.translate(0, -alto / 2 + paso * (k + 0.5)); dibujarCartucho(ctx, cal); ctx.restore(); }
   if (Pincel.silueta) return;
   const g = ctx.createLinearGradient(-0.5, 0, enBloque ? cal.vaina * 0.62 : 0.5, 0), A = TONOS_MUNICION.acero;
@@ -9371,6 +9408,9 @@ const ACCION_MANUAL = { remington700: 'cerrojo', mosin: 'cerrojo', mossberg: 'bo
 const CICLO_CERROJO = 130;          // ms del cerrojo atrás y adelante (js/armas-recamara.js dibuja la ventana)
 const recargaSola = (arma, d) => !!(d && d.casquillo) && arma.recargaTipo !== 'cargador-pistola' && !ACCION_MANUAL[arma.id];
 const cicloCerrojo = arma => Math.min((RECAMARAS[arma.id] && RECAMARAS[arma.id].ciclo) || CICLO_CERROJO, arma.cadencia * 0.75);
+// Peine en bloque (M1 Garand): con la última bala el resorte lo despide vacío con su «ping» y el cerrojo queda trabado
+// atrás; para recargar se mete el peine lleno por arriba y el cerrojo cierra solo, sin tocar la manija
+const EN_BLOQUE = new Set(['garand']);
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
@@ -9448,7 +9488,10 @@ class Jugador {
     const vaina = this.vainaPendiente;
     if (vaina && this.ahora >= vaina.en) {
       this.vainaPendiente = null;
-      if (!this.montada && this.arma().id === vaina.arma) { const p = this.puntoArma('expulsion'); juego.casquillos.push(new Casquillo(p.x, p.y, this.direccion, vaina.tipo)); }
+      if (!this.montada && this.arma().id === vaina.arma) {
+        const p = this.puntoArma('expulsion'); juego.casquillos.push(new Casquillo(p.x, p.y, this.direccion, vaina.tipo));
+        if (vaina.peine) { const q = this.puntoArma('cargador'); juego.casquillos.push(new Casquillo(q.x, q.y, this.direccion, 'enBloque')); Audio_.pingGarand(); }   // y el peine vacío salta para arriba
+      }
     }
     // Golpe cuerpo a cuerpo en curso: pega en su momento y termina
     const g = this.golpeActual;
@@ -9564,7 +9607,7 @@ class Jugador {
     // recámara queda abierta; las de acción manual la escupen al accionar (iniciarCiclo); la M2, enseguida
     if (!this.montada && tipoCasquillo && !accion) {
       const retraso = arma.recargaTipo === 'cargador-pistola' ? 20 : cicloCerrojo(arma) * 0.3;
-      this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id };
+      this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id, peine: EN_BLOQUE.has(arma.id) && this.municion[arma.id] === 0 };
     }
     juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null);
     Audio_.disparo(arma.categoria, arma.id);
@@ -9637,8 +9680,9 @@ class Jugador {
     const tipo = this.montada ? 'cinta' : arma.recargaTipo;
     const vacio = this.municionActual() === 0;
     const trabada = tipo === 'cargador-pistola' && vacio;   // la corredera quedó atrás con el último tiro
+    const enBloque = !this.montada && EN_BLOQUE.has(arma.id) && vacio;   // y el cerrojo del Garand, también
     const T = arma.recarga, unidad = arma.recargaUnidad;
-    const l = new LineaTiempo(juego.ahora, { ab: 0, co: trabada ? 1 : 0, incl: 0 }, tipo);
+    const l = new LineaTiempo(juego.ahora, { ab: enBloque ? 1 : 0, co: trabada ? 1 : 0, incl: 0 }, tipo);
     const s = nombre => () => Audio_.recarga(nombre, arma.id);
     const encastrar = sonido => () => { this.golpeEn = this.ahora; if (sonido) Audio_.recarga(sonido, arma.id); };
     const llenar = sonido => () => { this.llenarCargador(); this.sinCargador = false; encastrar(sonido)(); };
@@ -9654,10 +9698,13 @@ class Jugador {
       encastrar(sonido)();
     };
     // De a una: la mano va a la cadera, trae una unidad y la mete en el arma
-    const deAUna = (cuantas, u, incl, objeto, sonido) => {
+    // De a una: la mano llega con la bala a la boca (el agujero de la recámara, la ventana, la boca del depósito) en el
+    // primer 70 % y en el resto la mete; la bala se ve hasta que entró. (Antes llegaba recién al final y la bala se
+    // borraba al 85 %, todavía en camino: parecía que la ponía lejos del agujero.) empuje: desde dónde la mete
+    const deAUna = (cuantas, u, incl, objeto, sonido, empuje = null) => {
       for (let k = 0; k < cuantas; k++) {
         l.fase('cadera', u * 0.45, { a: 'cadera', incl, mano: [[objeto, 0.5, 1]] });
-        l.fase('cargar', u * 0.55, { a: 'cargador', incl, mano: [[objeto, 0, 0.85]], alTerminar: meterUna(sonido) });
+        l.fase('cargar', u * 0.55, Object.assign({ a: 'cargador', incl, llegada: 0.7, mano: [[objeto, 0, 0.95]], alTerminar: meterUna(sonido) }, empuje));
       }
     };
     const abrirTambor = (dur) => l.fase('abrir', dur, { a: 'cargador', llegada: 0.5, ab: 1, incl: -0.1, eventos: [[0.5, s('abrir')]] });
@@ -9724,7 +9771,18 @@ class Jugador {
         break;
 
       case 'peine':   // vacío: cerrojo atrás, peine en la guía, se empujan todas, al cerrar salta el peine
-        if (vacio) {
+        if (enBloque) {   // Garand: el cerrojo ya está atrás. El pulgar mete el peine entero en el cajón y, apenas sale de
+                          // encima, el cerrojo salta adelante solo y monta la primera bala; la mano nunca va a la manija
+          const alto = altoPeine(arma.id), baja = (alto + 0.85) * CM;   // lo que baja el peine hasta quedar debajo del borde del cajón
+          l.fase('cadera', 380, { a: 'cadera', incl: -0.12, mano: [['peine', 0.5, 1]] });
+          // lo apoya en la guía con la punta de los dedos: queda justo donde lo dibuja el cajón, sin saltar al soltarlo
+          l.fase('llevar', 320, { a: 'cargador', offset: { x: 0, y: -(alto / 2 + 0.2) * CM }, mano: [['peine', 0, 1]] });
+          // sube el pulgar al borde de arriba del peine y lo empuja hasta adentro
+          l.fase('peine', 470, { a: 'cargador', llegada: 0.3, offset: { x: 0, y: -(baja + 1.5) }, presionar: baja, peine: true, enBloque: true, gesto: 'empuja', alTerminar: llenar('cargador-poner') });
+          // la mano se va al guardamanos y, apenas el pulgar sale del cajón, el cerrojo salta adelante solo
+          l.fase('cerrar', 460, { a: 'arma', ab: 0, snap: 0.12, incl: 0, eventos: [[0.13, s('cierra-solo')]] });
+          l.ajustar(T);
+        } else if (vacio) {
           l.fase('abrir', 320, { a: 'corredera', llegada: 0.45, ab: 1, incl: -0.15, eventos: [[0.5, s('cerrojo-abrir')]] });
           l.fase('cadera', 380, { a: 'cadera', mano: [['peine', 0.5, 1]] });
           l.fase('peine', 560, { a: 'cargador', llegada: 0.35, offset: { x: 0, y: -8 }, presionar: 8, peine: true, mano: [['peine', 0, 0.35]], eventos: [[0.4, s('peine')]], alTerminar: llenar(null) });
@@ -9741,7 +9799,7 @@ class Jugador {
 
       case 'cerrojo':   // rifle de cerrojo con depósito interno: abre la recámara y pone bala por bala
         l.fase('abrir', 320, { a: 'corredera', llegada: 0.45, ab: 1, incl: -0.1, eventos: [[0.5, s('cerrojo-abrir')]] });
-        deAUna(arma.cargador - this.municionActual(), (T - 820) / arma.cargador, 0.05, 'bala', 'bala');
+        deAUna(arma.cargador - this.municionActual(), (T - 820) / arma.cargador, 0.05, 'bala', 'bala', { offset: { x: 0, y: -2.6 }, presionar: 3.2 });   // desde arriba, hacia adentro de la ranura
         l.fase('cerrar', 320, { a: 'corredera', llegada: 0.35, ab: 0, incl: 0, eventos: [[0.4, s('cerrojo')]] });
         l.fase('volver', 180, { a: 'arma' });
         break;
@@ -9891,13 +9949,14 @@ class Jugador {
         e.recamara = t < 20 ? 'sale' : municion > 0 ? 'entra' : null;   // a los 20 ms la vaina sale (vainaPendiente)
       }
     }
+    const trabado = !this.montada && EN_BLOQUE.has(arma.id) && municion === 0;   // Garand vacío: el cerrojo quedó atrás
     if (!this.montada && !this.recarga && recargaSola(arma, d)) {   // fusiles, metralletas y semiautomáticas: el cerrojo va y vuelve
       const t = ahora - this.tiroEn, dur = cicloCerrojo(arma);
       if (t >= 0 && t < dur) {
         const p = t / dur;   // abre rápido (con la vaina servida), queda atrás (ahí la escupe) y cierra con la bala nueva
-        e.cerrojo = p < 0.28 ? suavizar(p / 0.28) : p < 0.5 ? 1 : 1 - suavizar((p - 0.5) / 0.5);
+        e.cerrojo = p < 0.28 ? suavizar(p / 0.28) : p < 0.5 || trabado ? 1 : 1 - suavizar((p - 0.5) / 0.5);
         e.recamara = p < 0.3 ? 'sale' : p >= 0.5 && municion > 0 ? 'entra' : null;
-      }
+      } else if (trabado) e.cerrojo = 1;
     }
     if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
     e.sinPasador = !!this.pasadorFuera;
@@ -10008,7 +10067,10 @@ class Jugador {
     if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
     e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
-    if (f.peine && pm >= 1) { const b = punto('cargador'); e.peine = { x: b.x, y: b.y, restante: 1 - q, incl: e.incl }; }
+    if (f.peine && (pm >= 1 || f.enBloque)) {   // el de láminas suelta las balas de a una; el en bloque baja entero con el pulgar (cm)
+      const b = punto('cargador');
+      e.peine = { x: b.x, y: b.y, restante: 1 - q, incl: e.incl, enBloque: !!f.enBloque, baja: f.enBloque ? f.presionar * q / CM : 0 };
+    }
 
     // 4) Qué está haciendo la mano de apoyo (e.gesto) y cuánto cerró ya sobre lo que agarra (e.agarra, 0..1). La pose
     // la arma el dibujo con la anatomía (js/anatomia.js): cada gesto sigue al antebrazo dentro de lo que da la muñeca,
@@ -10017,6 +10079,7 @@ class Jugador {
     const CHICOS = { bala: 1, cartucho: 1, granada40: 1, speedloader: 1, peine: 1, pasador: 1 };
     e.agarra = 1;
     if (objeto) e.gesto = CHICOS[objeto] ? 'pinza' : ES_CARGADOR.has(objeto) ? 'cargador' : 'punio';
+    else if (f.gesto) e.gesto = f.gesto;                                                              // la fase lo dice (el pulgar que sale del Garand)
     else if (f.nombre === 'soltar' || f.nombre === 'lanzar' && p > 0.45) e.gesto = 'suelta';       // abre la mano: suelta el cargador o la granada
     else if (pm < 1 && tramoViaje > 1.5) { e.gesto = 'viaja'; e.agarra = pm; }                      // en camino, entreabierta
     else if (f.a === 'cadera') { e.gesto = 'bolsa'; e.agarra = cerrando((p - 0.35) / 0.15); }       // dedos hacia abajo, a la bolsa
@@ -10976,11 +11039,15 @@ function dibujarUnidad(ctx, tipo, x, y, apunta = -Math.PI / 2, nueva = false, ar
   ctx.restore();
 }
 
-/* Peine apoyado en la guía del cajón, con las balas hacia adelante: van bajando al depósito a medida que el pulgar empuja */
+/* Peine apoyado en la guía del cajón, con las balas hacia adelante: van bajando al depósito a medida que el pulgar empuja.
+ * El en bloque del Garand entra entero, peine y balas juntos: lo que pasa el borde del cajón (0,3 cm debajo del punto de
+ * carga) queda adentro y no se ve */
 function dibujarPeineEnArma(ctx, peine, armaId) {
-  const cal = calibreDe(armaId), n = armaId === 'garand' ? 4 : 5, alto = n * cal.d * 1.08;
-  ctx.save(); ctx.translate(peine.x, peine.y); ctx.rotate(peine.incl || 0); ctx.scale(CM, CM); ctx.translate(0, -alto / 2 - 0.2);
-  dibujarPeine(ctx, armaId, Math.ceil(n * peine.restante));
+  const n = armaId === 'garand' ? 4 : 5, alto = altoPeine(armaId);
+  ctx.save(); ctx.translate(peine.x, peine.y); ctx.rotate(peine.incl || 0); ctx.scale(CM, CM);
+  if (peine.enBloque) { ctx.beginPath(); ctx.rect(-6, -30, 24, 30.3); ctx.clip(); ctx.translate(0, peine.baja); }
+  ctx.translate(0, -alto / 2 - 0.2);
+  dibujarPeine(ctx, armaId, peine.enBloque ? n : Math.ceil(n * peine.restante));
   ctx.restore();
 }
 
@@ -13000,17 +13067,19 @@ class Particula {
 /* Casquillo (o cargador vacío) que sale volando, rebota en el piso y se esfuma enseguida */
 class Casquillo {
   constructor(x, y, direccion, tipo, suave) {
-    this.x = x; this.y = y; this.tipo = tipo;   // pistola | bala | escopeta | grande | cargador | cargadorPistola | tambor | granada40 | peine | speedloader
+    this.x = x; this.y = y; this.tipo = tipo;   // pistola | bala | escopeta | grande | cargador | cargadorPistola | tambor | granada40 | peine | speedloader | enBloque
     const esCargador = tipo === 'cargador' || tipo === 'cargadorPistola' || tipo === 'tambor' || tipo === 'speedloader' || tipo === 'peine';
     if (suave) {   // cae del arma al abrirla, sin salir disparado
       this.vx = -direccion * (0.2 + Math.random() * 0.6); this.vy = 0.3 + Math.random() * 0.4;
+    } else if (tipo === 'enBloque') {   // el peine vacío del Garand: el resorte lo tira para arriba, un poco hacia atrás y girando
+      this.vx = -direccion * (0.5 + Math.random() * 0.7); this.vy = -(4.6 + Math.random() * 1.0); this.lado = direccion;
     } else {
       this.vx = -direccion * (esCargador ? 0.4 + Math.random() * 0.4 : 1.2 + Math.random() * 1.4);
       this.vy = esCargador ? 0.5 : -(2.5 + Math.random() * 2.2);
     }
-    this.rot = esCargador ? (Math.random() - 0.5) * 0.4 : Math.random() * Math.PI * 2;   // el cargador cae parado y se va acostando
-    this.vrot = (Math.random() - 0.5) * (esCargador ? 0.2 : 0.7);
-    this.vida = esCargador || tipo === 'pasador' ? 2.4 : 1.0; this.vidaMax = this.vida;
+    this.rot = esCargador || tipo === 'enBloque' ? (Math.random() - 0.5) * 0.4 : Math.random() * Math.PI * 2;   // el cargador cae parado y se va acostando
+    this.vrot = tipo === 'enBloque' ? -direccion * (0.22 + Math.random() * 0.18) : (Math.random() - 0.5) * (esCargador ? 0.2 : 0.7);
+    this.vida = esCargador || tipo === 'pasador' || tipo === 'enBloque' ? 2.4 : 1.0; this.vidaMax = this.vida;
     this.profundidad = 2 + Math.random() * 14;   // dónde cae dentro de la banda de la calle
     this.rebotes = 0; this.vivo = true;
   }
@@ -13032,6 +13101,7 @@ class Casquillo {
           const [ex, ey] = this.cargador.ejeLargo || this.cargador.eje, b = Math.atan2(ey, ex * this.lado);
           this.rot = Math.round((this.rot + b) / Math.PI) * Math.PI - b;
         } else if (this.tipo === 'cargador' || this.tipo === 'cargadorPistola') this.rot = Math.PI / 2;
+        else if (this.tipo === 'enBloque') this.rot = Math.round(this.rot / (Math.PI / 2)) * (Math.PI / 2);   // queda apoyado sobre un canto
       }
       this.vx *= 0.6;
     }
@@ -13040,13 +13110,20 @@ class Casquillo {
     ctx.save();
     ctx.globalAlpha = Math.min(1, this.vida / 0.3);   // se desvanece en los últimos 0,3 s
     ctx.translate(this.x - camaraX, this.y); ctx.rotate(this.rot);
-    if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
+    if (this.tipo !== 'cargador' && this.tipo !== 'cargadorPistola' && this.tipo !== 'tambor' && this.tipo !== 'pasador' && this.tipo !== 'enBloque' && this.rebotes === 0 && Math.sin(this.rot * 3) > 0.6) {   // destello del latón al girar
       ctx.fillStyle = 'rgba(255, 240, 190, 0.3)'; ctx.beginPath(); ctx.arc(0, 0, 1.8, 0, Math.PI * 2); ctx.fill();
     }
     if (this.cargador) {   // el cargador de su arma, en cm, girado alrededor de donde lo tenía la mano
       const M = this.cargador, K = ESCALA_JUGADOR * CM;
       ctx.scale(this.lado * K, K); ctx.translate(-M.agarre[0], -M.agarre[1]);
       dibujarCargadorSuelto(ctx, M, false);
+      ctx.restore();
+      return;
+    }
+    if (this.tipo === 'enBloque') {   // el mismo peine que entra en el Garand (js/municion.js), vacío, girando sobre su centro
+      const K = ESCALA_JUGADOR * CM;
+      ctx.scale(this.lado * K, K); ctx.translate(-calibreDe('garand').vaina * 0.31 + 0.35, 0);
+      dibujarPeine(ctx, 'garand', 0);
       ctx.restore();
       return;
     }
