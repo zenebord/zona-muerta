@@ -52,8 +52,9 @@ const elegir = pesos => { const e = Object.entries(pesos), t = e.reduce((s, [, p
 
 /* ---------- Textos de la guía (español de México) ---------- */
 const CONTROLES = [
-  'Visor: el agarre derecho toma y deja el arma (o apunta a una de la mesa y aprieta el gatillo). Gatillo: disparar. A: soltar el cargador. B: montar. Con el agarre izquierdo en el arma la sostienes con las dos manos o cargas; lejos del arma sacas munición nueva. Palanca izquierda: caminar; derecha: girar. Y: este menú.',
-  'Sin visor: el mouse apunta, clic dispara, clic derecho mira por las miras. E toma el arma que miras, del 1 al 0 las tomas directo, Q la deja, R recarga, B monta, W A S D caminas. M: este menú.',
+  'Armas: una de cada tipo en la mesa y todas las demás del juego en el armero de la pared de atrás (voltéate). Las tomas con la mano o apuntándoles desde lejos; al dejarlas vuelven solas a su lugar.',
+  'Visor: el agarre derecho toma y deja el arma (o apunta a una de la mesa o del armero y aprieta el gatillo). Gatillo: disparar. A: soltar el cargador. B: montar (en los revólveres y las de quiebre, abrir y cerrar). Con el agarre izquierdo en el arma la sostienes con las dos manos o cargas; lejos del arma sacas munición nueva. Mjölnir, la Égida y Gungnir se lanzan soltándolas en pleno movimiento (la Égida y Gungnir vuelven solas); Excalibur y el Tridente sueltan su poder con un tajo fuerte. Palanca izquierda: caminar; derecha: girar. Y: este menú.',
+  'Sin visor: el mouse apunta, clic dispara (con Excalibur y el Tridente, golpe y poder), clic derecho mira por las miras o lanza Mjölnir, la Égida y Gungnir. E toma el arma que miras, de la mesa o del armero; del 1 al 0 tomas las de la mesa; Q la deja, R recarga, B monta o abre, W A S D caminas. M: este menú.',
 ];
 const GUIAS = {
   entrenamiento: ['Se levantan blancos de chapa en el campo. Dispárales antes de que bajen: cada blanco vale 1 punto y la cabeza roja vale 2. Si uno baja sin que le pegues, pierdes 1 punto.',

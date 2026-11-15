@@ -18,6 +18,8 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { A_METROS } from './armas-vr.js';
 import { crearArma } from './especiales.js';
+import { ARMAS_PARED } from './armas-todas.js';
+import { colgarEnPared } from './armero.js';
 import { Efectos, texturaCanvas } from './efectos.js';
 import { prepararZombies, asegurarTipos, tipoListo, Horda, moldeInfo, TIPOS } from './zombie3d.js';
 import { Emergentes } from './blancos.js';
@@ -62,6 +64,18 @@ function cambiarConfig(clave, valor) {
   try { localStorage.setItem(CONFIG_CLAVE, JSON.stringify(config)); } catch (e) { /* sin almacenamiento: dura la sesión */ }
   aplicarConfig();
 }
+/* ---------- Como app del Quest: directo al visor ----------
+ * Instalada desde el APK (quest/, Bubblewrap de Meta), la página abre con ?pwa=1 (el start_url de vr/manifest.webmanifest)
+ * y entra al visor apenas abre, como pide Meta: tocar el ícono de la app vale como el gesto que exige el navegador. La
+ * sesión la pide vr/index.html antes de bajar los scripts (el permiso del gesto dura poco) y acá se conecta ya; mientras
+ * se arman las armas y los zombies, el visor muestra su pantalla de carga, y al final se ubica al jugador y se abre el
+ * menú (alEntrarVisor). Si no se pudo, queda la portada con «Entrar». */
+const OPCIONES_XR = { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] };
+if (window.__sesionApp) window.__sesionApp.then(async sesion => {
+  if (!sesion) return;
+  try { Audio_.activar(); Audio_.sinSilencioAutomatico(); Audio_.lugar('galpon'); } catch (e) { /* el audio arranca con el primer gatillo */ }
+  try { await renderer.xr.setSession(sesion); } catch (e) { console.warn('No se pudo conectar la sesión de la app:', e); }
+});
 const ruido = (g, w, h, n, colores) => { for (let k = 0; k < n; k++) { g.fillStyle = colores[k % colores.length]; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1 + Math.random() * 2); } };
 
 /* ---------- El galpón (como el del campo de pruebas: chapa gris azulada, columnas y el poste con bandas) ---------- */
@@ -191,17 +205,40 @@ const mundo = {
   explotar: (pos, radio) => explotar(pos, radio),
   barrer: (antes, ahora) => barrer(antes, ahora),
   golpearZombie: (h, dano, tipo) => golpear(h, dano, tipo),
+  mano: () => manos.right ? manos.right.agarre.getWorldPosition(v3()) : desdeCamara(0.24, -0.22, -0.45),
+  ojo: () => camara.getWorldPosition(v3()), mirada: () => camara.getWorldDirection(v3()),
+  zombiesEnTramo: (p0, p1, radio) => zombiesEnTramo(p0, p1, radio),
+  golpearCuerpo: (z, dano, tipo, dir, punto) => golpearCuerpo(z, dano, tipo, dir, punto),
+  zombiesCerca: (p, r) => horda.vivos.filter(z => !z.bajoTierra && z.grupo.position.distanceTo(p.clone().setY(z.grupo.position.y)) < r).sort((a, b) => a.grupo.position.distanceToSquared(p) - b.grupo.position.distanceToSquared(p)),
+  blancosEn: (p, r) => { const n = emergentes.enRadio(p, r).length; if (n) { marcador.impactos += n; dibujarTablero(); } return n; },
   fuego: (p, r, dano) => fuego(p, r, dano),
-  rayo: p => { efectos.rayo(p); Audio_.trueno(); vibrar('right', 1, 220); vibrar('left', 0.6, 220); },
+  rayo: (p, callado = false) => { efectos.rayo(p); if (!callado) { Audio_.trueno(); vibrar('right', 1, 220); vibrar('left', 0.6, 220); } },   // callado: los rayos que siguen al primero
   volverAMesa: (a, ya) => volverAMesa(a, ya),
 };
 // La normal de lo que tocó un rayo, del lado de donde venía
 function normalDe(h, dir) { const n = h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : dir.clone().negate(); if (n.dot(dir) > 0) n.negate(); return n; }
 // Golpe de hoja, martillo o rayo contra un zombie o un blanco que sube
 function golpear(h, dano, tipo) {
-  if (h.blanco) { if (emergentes.golpear(h.zona, h.punto, h.dir.clone().negate())) { marcador.impactos++; dibujarTablero(); } return; }
-  const z = h.zona && h.zona.userData.zombie; if (!z) return;
-  z.recibir({ punto: h.punto, dir: h.dir, dano, tipo, zona: h.zona }); efectos.impacto(h.punto, h.dir.clone().negate(), 'carne'); marcador.impactos++; dibujarTablero();
+  if (h.blanco) { if (emergentes.golpear(h.zona, h.punto, h.dir.clone().negate())) { marcador.impactos++; dibujarTablero(); } return null; }
+  const z = h.zona && h.zona.userData.zombie; if (!z) return null;
+  const murio = z.recibir({ punto: h.punto, dir: h.dir, dano, tipo, zona: h.zona }); efectos.impacto(h.punto, h.dir.clone().negate(), 'carne'); marcador.impactos++; dibujarTablero();
+  return { zombie: z, murio };
+}
+// Lo que barre un tramo a ras del piso (la onda de Excalibur, la ola del Tridente): los zombies a menos de `radio` de él
+function zombiesEnTramo(p0, p1, radio) {
+  const dx = p1.x - p0.x, dz = p1.z - p0.z, L2 = dx * dx + dz * dz, fuera = [];
+  for (const z of horda.vivos) {
+    if (z.vuela || z.bajoTierra) continue;
+    const g = z.grupo.position, t = L2 > 1e-9 ? limitar(((g.x - p0.x) * dx + (g.z - p0.z) * dz) / L2, 0, 1) : 0;
+    if (Math.hypot(p0.x + dx * t - g.x, p0.z + dz * t - g.z) < radio + (z.especie === 'toro' ? 0.45 : 0.2)) fuera.push(z);
+  }
+  return fuera;
+}
+// Un golpe a un zombie entero (sin la zona que tocó una bala): en el pecho, o donde diga `punto`
+function golpearCuerpo(z, dano, tipo, dir, punto) {
+  const p = punto || z.grupo.position.clone().add(v3(0, z.clase === 'animal' ? 0.5 : 1.25 * z.grupo.scale.x, 0));
+  const murio = z.recibir({ punto: p, dir, dano, tipo }); efectos.impacto(p, dir.clone().negate(), 'carne'); marcador.impactos++; dibujarTablero();
+  return { zombie: z, murio };
 }
 // Llamas: prenden al zombie que tocan (también al que cae) y tiran el blanco que esté arriba
 function fuego(p, r, dano) {
@@ -209,7 +246,6 @@ function fuego(p, r, dano) {
   if (z) { z.incendiar(3); z.recibir({ dano, tipo: 'fuego' }); return true; }
   return !!emergentes.tocar(p, r);
 }
-const LIVIANAS = new Set(['glock', 'ak47', 'mossberg', 'minigun']);
 // El rabioso esquiva los tiros pesados (rifle, lanzagranadas, bazuca): si va por la línea del tiro, se corre de costado
 function esquivanPesado(origen, dir) {
   for (const z of horda.vivos) {
@@ -220,7 +256,7 @@ function esquivanPesado(origen, dir) {
 }
 function impacto(origen, dir, golpe) {
   if (golpe.primero) marcador.disparos++;
-  const pesado = golpe.arma && !LIVIANAS.has(golpe.arma.id);
+  const pesado = golpe.arma && ['rifle', 'lanzagranadas', 'bazuca'].includes(golpe.arma.datos.categoria);
   if (pesado && golpe.primero) esquivanPesado(origen, dir);
   rayo.set(origen, dir); rayo.far = 120;
   const golpes = rayo.intersectObjects([...mallasObjetos(), ...horda.zonas()], false);
@@ -322,7 +358,9 @@ function hudEscritorio(H) { if (!hudDiv) return; hudDiv.style.display = escritor
 
 /* ---------- Armas sobre la mesa ---------- */
 const armas = ARMAS_MESA.map(id => crearArma(id, mundo));
-const mjolnir = armas.find(a => a.id === 'mjolnir');
+// Las que se tiran y vuelven (Mjölnir, Égida, Gungnir): la que está tirada y todavía no viene (la Égida y Gungnir vuelven
+// solas, pero también se las puede llamar antes)
+const tirada = () => armas.find(a => a.llamar && a.tirado && !a.volviendoAMano);
 const ACOSTADA = new THREE.Quaternion().setFromAxisAngle(v3(0, 0, 1), Math.PI / 2);   // sobre su lado izquierdo, la ventana arriba
 function acomodarEnMesa() {
   // ancho de cada una acostada (su alto) y su largo hacia atrás (culata), medidos en la pose acostada
@@ -347,11 +385,24 @@ function acomodarEnMesa() {
 }
 
 /* ---------- Tomar y dejar ---------- */
-function tomar(a, lado = 'right') {
+function tomar(a, lado = 'right', atrapada = false) {
   if (a.suelto) { efectos.quitarSuelto(a.suelto, false); a.suelto = null; }
+  if (a.a.pintarTextura) a.a.pintarTextura();
   a.volviendo = null; a.tirado = false; a.volando = false; a.enMano = lado; manoDerecha = a;
-  Audio_.recoger(); vibrar(lado, 0.5, 40);
+  // el ruido de sacar esa arma, como en el juego (la que vuelve volando a la mano ya sonó al atraparla); el machete del
+  // cazador no hace ruido de arma: susurra
+  if (a.id === 'macheteCazador') susurrar('sacar'); else if (!atrapada) Audio_.sacarArma(a.datos);
+  vibrar(lado, 0.5, 40);
   dibujarTablero();
+}
+// El susurro del machete del cazador (js/armas-especiales.js): al tomarlo, y al pegar (4 de cada 10) o matar con él, con
+// su tiempo de espera; dos no se pisan
+const SUSURRO = { alSacar: 4000, entreGolpes: 8000, alPegar: 0.4 };
+let susurroEn = -1e9;
+function susurrar(motivo) {
+  const ahora = performance.now(), espera = Math.max(Audio_.duracionSusurro() * 1000 + 300, motivo === 'sacar' ? SUSURRO.alSacar : SUSURRO.entreGolpes);
+  if (ahora - susurroEn < espera) return;
+  susurroEn = ahora; Audio_.susurroCazador();
 }
 function dejar(a, velocidad) {
   soltarIzquierda();
@@ -369,7 +420,7 @@ function dejar(a, velocidad) {
 function volverAMesa(a, ya = false) {
   a.cabeceo.position.set(0, 0, 0); a.cabeceo.rotation.set(0, 0, 0); a.tirado = false; a.volando = false;
   if (ya) { a.volviendo = null; a.soporte.position.copy(a.lugar.pos); a.soporte.quaternion.copy(a.lugar.quat); return; }
-  a.volviendo = { desde: a.soporte.position.clone(), qDesde: a.soporte.quaternion.clone(), t0: performance.now(), dura: 350 };
+  a.volviendo = { desde: a.soporte.position.clone(), qDesde: a.soporte.quaternion.clone(), t0: performance.now(), dura: 350 + 110 * Math.min(8, a.soporte.position.distanceTo(a.lugar.pos)) };
 }
 function actualizarMesa(ahora) {
   for (const a of armas) if (a.volviendo) {
@@ -378,8 +429,10 @@ function actualizarMesa(ahora) {
     if (t >= 1) a.volviendo = null;
   }
 }
-// El arma de la mesa que cruza un rayo (la cruz sin visor o el rayo del mando), a menos de `alcance` metros
-function armaApuntada(origen, dir, alcance = 3) {   // contra las piezas de cada arma (las cajas de las armas largas se pisan)
+// El arma de la mesa o de la pared que cruza un rayo (la cruz sin visor o el rayo del mando), a menos de `alcance`
+// metros: desde la mesa se alcanza el armero de atrás (está a 5,5 m) sin caminar
+const ALCANCE_TOMAR = 9;
+function armaApuntada(origen, dir, alcance = ALCANCE_TOMAR) {   // contra las piezas de cada arma (las cajas de las armas largas se pisan)
   const r = new THREE.Raycaster(origen, dir.clone().normalize(), 0, alcance); let mejor = null, dmin = Infinity;
   for (const x of armas) { if (x.enMano || x.volando) continue; const h = r.intersectObject(x.modelo, true)[0]; if (h && h.distance < dmin) { dmin = h.distance; mejor = x; } }
   return mejor;
@@ -482,15 +535,16 @@ function entradaVisor(ahora, dt) {
     const pA = der.agarre.getWorldPosition(v3()), qR = der.rayo.getWorldQuaternion(new THREE.Quaternion());
     der.modeloMando.visible = !manoDerecha;
     const pR = der.rayo.getWorldPosition(v3()), dR = v3(0, 0, -1).applyQuaternion(qR);
-    const senalada = manoDerecha ? null : (armaApuntada(pR, dR, 4) || armaCerca(pA));
+    const senalada = manoDerecha ? null : (armaApuntada(pR, dR, ALCANCE_TOMAR) || armaCerca(pA));
     mostrarPuntero(!manoDerecha, pR, dR, senalada);
     if (manoDerecha) { if (apreto('right', 1)) dejar(manoDerecha, velMano.right); }
     else if (apreto('right', 1) || apreto('right', 0)) {   // la mano vacía toma con el agarre o con el gatillo
       if (senalada) { tomar(senalada); esperarGatillo = boton('right', 0); }
-      else if (apreto('right', 1) && mjolnir && mjolnir.tirado) mjolnir.llamar(() => der.agarre.getWorldPosition(v3()));
+      else if (apreto('right', 1) && tirada()) tirada().llamar(() => der.agarre.getWorldPosition(v3()));
     }
     const a = manoDerecha;
     if (a) {
+      a.porTajo = true;   // con el visor, el tajo fuerte suelta el poder de Excalibur y del Tridente
       posarArma(der, pI);
       if (esperarGatillo && !boton('right', 0)) esperarGatillo = false;
       a.gatillo(boton('right', 0) && !esperarGatillo && !aturdido() && !rapto);
@@ -530,7 +584,7 @@ function caminar(x, z, dt) {
   const derecha = v3(-adelante.z, 0, adelante.x);
   const vel = { lenta: 1.4, normal: 2.2, rapida: 3.0 }[config.caminar] || 2.2;
   jugador.position.addScaledVector(adelante, -z * vel * dt).addScaledVector(derecha, x * vel * dt);
-  jugador.position.x = limitar(jugador.position.x, -11.5, 11.5); jugador.position.z = limitar(jugador.position.z, -90, 4.5);
+  jugador.position.x = limitar(jugador.position.x, -11.5, 11.5); jugador.position.z = limitar(jugador.position.z, -90, 5.05);
 }
 
 /* ---------- Sin visor: mouse y teclado ---------- */
@@ -550,6 +604,7 @@ function entradaEscritorio(ahora, dt) {
   if ((mx || mz) && !menu.abierto && !aturdido()) caminar(mx, mz, dt);
   camara.updateMatrixWorld(true);
   const a = manoDerecha; if (!a) return;
+  a.porTajo = false;
   if (a.agarreMano) {   // hoja, martillo o granada: a la derecha, hacia adelante; el clic da un golpe de derecha a izquierda
     const t = escritorio.golpe ? (performance.now() - escritorio.golpe) / 280 : 1, s = t < 1 ? t * t * (3 - 2 * t) : 0, golpe = t < 1;
     a.soporte.position.copy(desdeCamara(golpe ? 0.3 - 0.6 * s : 0.24, golpe ? 0.08 - 0.4 * s : -0.22, -0.45));
@@ -596,8 +651,8 @@ renderer.domElement.addEventListener('mousedown', ev => {
   if (menu.abierto) { if (ev.button === 0) { ratonMenu.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1); apuntarMenuEscritorio(); menu.apretar('mouse'); } return; }
   if (document.pointerLockElement !== renderer.domElement) { pedirMouse(); return; }
   const a = manoDerecha;
-  if (ev.button === 0 && a && !aturdido() && !rapto) { if (a.def.mecanica === 'cuerpo') escritorio.golpe = performance.now(); else a.gatillo(true); }
-  if (ev.button === 2) { if (a && a.id === 'mjolnir') tirarMjolnir(); else if (!a && mjolnir.tirado) mjolnir.llamar(() => desdeCamara(0.24, -0.22, -0.45)); else escritorio.apuntando = true; }
+  if (ev.button === 0 && a && !aturdido() && !rapto) { if (a.def.mecanica === 'cuerpo') golpeEscritorio(a); else a.gatillo(true); }
+  if (ev.button === 2) { if (a && a.llamar) tirarArrojadiza(a); else if (!a && tirada()) tirada().llamar(() => desdeCamara(0.24, -0.22, -0.45)); else escritorio.apuntando = true; }
 });
 addEventListener('mouseup', ev => {
   if (!escritorio.activo || menu.abierto) return;
@@ -605,7 +660,10 @@ addEventListener('mouseup', ev => {
   if (ev.button === 0 && a) { if (a.id === 'granadas' && a.armada) dejar(a, tiroHacia(a, 5.5, 2.2)); else a.gatillo(false); }
   if (ev.button === 2) escritorio.apuntando = false;
 });
-function tirarMjolnir() { dejar(mjolnir, tiroHacia(mjolnir, 8, 0.4)); }
+function tirarArrojadiza(a) { dejar(a, tiroHacia(a, 8, a.vuelveSola ? 0 : 0.4)); }   // la Égida y Gungnir vuelan rectas: a la cruz
+// Sin visor, el clic es el golpe: la hoja barre de derecha a izquierda; Excalibur y el Tridente sueltan su poder (en el
+// visor lo suelta el tajo fuerte)
+function golpeEscritorio(a) { escritorio.golpe = performance.now(); if (a.poder) a.poder(); }
 addEventListener('contextmenu', ev => { if (escritorio.activo) ev.preventDefault(); });
 addEventListener('mousemove', ev => {
   if (!escritorio.activo) return;
@@ -623,8 +681,8 @@ addEventListener('keydown', ev => {
   if (ev.code === 'KeyR' && a) a.recargaEscritorio(ahora);
   if (ev.code === 'KeyB' && a) a.botonB(ahora);
   if (ev.code === 'KeyQ' && a) dejar(a);
-  if (ev.code === 'KeyE') {   // toma el arma de la mesa que mira la cruz, a menos de 3 m
-    const mejor = armaApuntada(camara.getWorldPosition(v3()), camara.getWorldDirection(v3()), 3);
+  if (ev.code === 'KeyE') {   // toma el arma (de la mesa o de la pared) que mira la cruz
+    const mejor = armaApuntada(camara.getWorldPosition(v3()), camara.getWorldDirection(v3()), ALCANCE_TOMAR);
     if (mejor) tomarEscritorio(mejor);
   }
   // 1 a 9, 0 y las dos teclas que siguen (código físico: sirve con cualquier distribución de teclado)
@@ -862,8 +920,19 @@ function escenaLibre(si) { for (const e of escenarioLibre) { e.grupo.visible = s
 const cartel = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.36), new THREE.MeshBasicMaterial({ map: tablero }));
 cartel.position.set(0, 1.95, MESA.z1 - 0.3); cartel.rotation.x = 0.18; escena.add(cartel);
 acomodarEnMesa();
+// Las otras 36, en el armero de la pared de atrás (la que queda a la espalda al empezar)
+const armasPared = ARMAS_PARED.map(id => crearArma(id, mundo));
+const armero = colgarEnPared(armasPared, escena, { z: 5.5 });
+armas.push(...armasPared);
+// El dibujo del juego de cada una (vr/modelo3d.js, texturaDeArma) se pinta de a una arma después de arrancar: la entrada
+// no se demora y, mientras tanto, cada pieza se ve de su color. La que se toma antes, se pinta en el momento.
+const sinPintar = armasPared.filter(a => a.a.pintarTextura);
+const pintarSiguiente = () => { const a = sinPintar.shift(); if (!a) return; if (a.a.pintarTextura) a.a.pintarTextura(); setTimeout(pintarSiguiente, 60); };
+setTimeout(pintarSiguiente, 500);
 for (const a of armas) a.alCambiar = () => { if (a === manoDerecha) dibujarTablero(); };
-mjolnir.alVolver = a => { if (manoDerecha && manoDerecha !== a) dejar(manoDerecha); tomar(a); };
+for (const a of armas) if (a.llamar) a.alVolver = x => { if (manoDerecha && manoDerecha !== x) dejar(manoDerecha); tomar(x, 'right', true); };
+const macheteCazador = armas.find(a => a.id === 'macheteCazador');
+if (macheteCazador) macheteCazador.alGolpe = r => { if (r && (r.murio || Math.random() < SUSURRO.alPegar)) susurrar(r.murio ? 'matar' : 'pegar'); };
 jugador.position.set(0, 0, -0.02);
 const jugadorEnPiso = () => camara.getWorldPosition(v3()).setY(0);
 function reubicar() {   // vuelve al lugar de tiro, detrás de la mesa, mirando al campo
@@ -959,7 +1028,14 @@ renderer.setAnimationLoop(() => {
   renderer.render(escena, camara);
 });
 
-renderer.xr.addEventListener('sessionstart', () => { portada.classList.add('oculta'); reubicar(); abrirAlEntrar = 6; if (hudDiv) hudDiv.style.display = 'none'; });
+// Al entrar al visor: fuera la portada, al lugar de tiro y el menú en cuanto se sabe dónde está la cabeza. El primer
+// gatillo o agarre reanuda el audio (en la app la sesión arranca sola y el contexto de audio puede quedar suspendido)
+function alEntrarVisor() {
+  portada.classList.add('oculta'); reubicar(); abrirAlEntrar = 6; if (hudDiv) hudDiv.style.display = 'none';
+  const s = renderer.xr.getSession(); if (s) for (const t of ['selectstart', 'squeezestart']) s.addEventListener(t, () => Audio_.activar());
+}
+renderer.xr.addEventListener('sessionstart', alEntrarVisor);
+if (renderer.xr.isPresenting) alEntrarVisor();   // la app entró al visor mientras se armaba todo
 renderer.xr.addEventListener('sessionend', () => { portada.classList.remove('oculta'); puntero.visible = false; menu.cerrar(); aplicarConfig(); });
 sinVisor.disabled = false;
 if (navigator.xr) {
@@ -972,7 +1048,7 @@ if (navigator.xr) {
 entrar.addEventListener('click', async () => {
   Audio_.activar(); Audio_.sinSilencioAutomatico(); Audio_.lugar('galpon'); aplicarConfig();
   try {
-    const sesion = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] });
+    const sesion = await navigator.xr.requestSession('immersive-vr', OPCIONES_XR);
     await renderer.xr.setSession(sesion);
   } catch (e) { estado.textContent = 'No se pudo entrar en realidad virtual: ' + e.message; }
 });
@@ -1030,9 +1106,10 @@ window.__campo = {
     return { mano: manoDerecha && manoDerecha.id, puntero: puntero.visible, verde: puntero.material.color.getHex() === 0x7dff4a, menu: menu.abierto };
   },
   get info() { return { llamadas: renderer.info.render.calls, triangulos: renderer.info.render.triangles }; },
-  golpe() { escritorio.golpe = performance.now(); },
-  tirar() { if (manoDerecha && manoDerecha.id === 'mjolnir') tirarMjolnir(); else if (manoDerecha && manoDerecha.id === 'granadas') { manoDerecha.gatillo(true); dejar(manoDerecha, tiroHacia(manoDerecha, 5.5, 2.2)); } },
-  llamar() { if (mjolnir.tirado) mjolnir.llamar(() => desdeCamara(0.24, -0.22, -0.45)); },
+  golpe() { if (manoDerecha) golpeEscritorio(manoDerecha); else escritorio.golpe = performance.now(); },
+  tirar() { if (manoDerecha && manoDerecha.llamar) tirarArrojadiza(manoDerecha); else if (manoDerecha && manoDerecha.id === 'granadas') { manoDerecha.gatillo(true); dejar(manoDerecha, tiroHacia(manoDerecha, 5.5, 2.2)); } },
+  llamar() { const t = tirada(); if (t) t.llamar(() => desdeCamara(0.24, -0.22, -0.45)); },
+  get armero() { return armero; }, get sinPintar() { return sinPintar.length; },
   // Adelanta el juego (zombies, blancos y el nivel) sin dibujar: el Chrome de pruebas dibuja lento y el paso tiene tope
   avanzar(seg, paso = 0.02) {
     for (let k = 0; k < seg / paso && !menu.abierto; k++) { reloj += paso * 1000; emergentes.actualizar(paso); actualizarPeligros(paso); actualizarProyectiles(performance.now(), paso); horda.actualizar(reloj, paso, jugadorEnPiso(), camara.getWorldPosition(v3()), mordida); modos.actualizar(reloj, paso); actualizarRapto(); }

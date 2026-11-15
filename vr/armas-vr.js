@@ -303,7 +303,7 @@ export class Arma {
     this.atrasHecho = true;
     if (this.vaina) { this.expulsar(false); this.vaina = false; }
     else if (this.recamara) { this.expulsar(true); this.recamara = false; }
-    const s = SONIDO_ACCION[this.def.mecanica]; if (s.atras) Audio_.recarga(s.atras, this.id);
+    const s = this.def.sonidos || SONIDO_ACCION[this.def.mecanica]; if (s.atras) Audio_.recarga(s.atras, this.id);   // def.sonidos: los propios (la palanca)
     this.mundo.vibrar('left', 0.4, 30);
     this.dibujarContador();
   }
@@ -312,7 +312,7 @@ export class Arma {
     const liberar = this.bloqueada;
     this.bloqueada = false;
     if (!this.recamara && this.municion > 0 && (this.puesto || this.def.municion !== 'cargador')) { this.municion--; this.recamara = true; }
-    const s = liberar ? 'liberar' : SONIDO_ACCION[this.def.mecanica].adelante; if (s) Audio_.recarga(s, this.id);
+    const s = liberar ? 'liberar' : (this.def.sonidos || SONIDO_ACCION[this.def.mecanica]).adelante; if (s) Audio_.recarga(s, this.id);
     this.mundo.vibrar('left', 0.5, 40); this.mundo.vibrar('right', 0.35, 30);
     this.dibujarContador();
   }
@@ -434,7 +434,12 @@ export class Arma {
     const k = this.retroceso * this.retroceso * (this.dosManos ? 0.5 : 1);
     this.cabeceo.position.set(0, 0, r.atras * k);
     this.cabeceo.rotation.x = (this.dosManos && this.modoApoyo !== 'estabiliza' ? this.anguloApoyo : 0) + r.sube * k;
-    for (let i = this.cola.length - 1; i >= 0; i--) if (ahora >= this.cola[i][0]) { const f = this.cola[i][1]; this.cola.splice(i, 1); f(); }
+    // Los pasos vencidos, en orden (si un cuadro se demora pueden vencer varios juntos: abrir, volcar, cargar, cerrar)
+    if (this.cola.some(c => ahora >= c[0])) {
+      const listos = this.cola.filter(c => ahora >= c[0]).sort((p, q) => p[0] - q[0]);
+      this.cola = this.cola.filter(c => ahora < c[0]);
+      for (const [, f] of listos) f();
+    }
   }
   // R sin visor: la recarga entera, con los tiempos de la mano
   recargaEscritorio(ahora) {

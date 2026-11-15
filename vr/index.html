@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zona Muerta VR · Campo de pruebas</title>
+<!-- Como app del Quest (quest/: el APK que arma Bubblewrap de Meta a partir de este manifiesto) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#141018">
+<link rel="icon" type="image/png" href="icono-192.png">
+<script>
+  // Como app del Quest (abre con ?pwa=1): la sesión inmersiva se pide ya, antes de bajar el resto, porque el gesto de tocar
+  // el ícono dura poco; vr/campo.js la conecta. En el navegador (sin ?pwa=1) no hace nada.
+  if (/[?&]pwa\b/.test(location.search) && navigator.xr) window.__sesionApp = navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] }).catch(() => null);
+</script>
 <!-- Versión en realidad virtual (Meta Quest, WebXR): el campo de pruebas en primera persona, con las armas del juego
      sobre una mesa y tres modos (entrenamiento, ataque zombie y libre). Los modelos de las armas salen de los del
      juego (js/armas-modelos*.js) y los sonidos de js/audio.js; la escena está en vr/campo.js. Sin visor se puede
@@ -51,11 +60,12 @@
   <p id="estado">Buscando el visor…</p>
 </div>
 <div id="mira"></div>
-<div id="pista">Mouse: apuntar · Clic: disparar · Clic derecho: miras · E: tomar el arma que miras · 1 a 0 y las dos teclas que siguen: tomar directo · Q: dejarla · R: recargar · B: montar · W A S D: caminar · M o Esc: menú y pausa</div>
+<div id="pista">Mouse: apuntar · Clic: disparar · Clic derecho: miras · E: tomar el arma que miras (de la mesa o del armero de atrás) · 1 a 0 y las dos teclas que siguen: tomar las de la mesa · Q: dejarla · R: recargar · B: montar · W A S D: caminar · M o Esc: menú y pausa</div>
 <div id="hud"></div>
 
 <!-- Del juego: los sonidos, el catálogo de armas, los calibres y los modelos de las armas (en cm), que vr/ pasa a 3D -->
 <script src="../js/sonidos-datos.js?v=7384f89d08"></script>
+<script src="../js/sonidos-armas.js?v=e377a1bd0a"></script>
 <script src="../js/audio.js?v=28f2c3629c"></script>
 <script src="../js/armas.js?v=047c637500"></script>
 <script src="../js/municion.js?v=85ed14404d"></script>
@@ -74,18 +84,23 @@
   { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
                  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
                  "./animales3d.js": "./animales3d.js?v=2b60655ba4",
-                 "./armas-vr.js": "./armas-vr.js?v=a5aa347870",
+                 "./armas-todas.js": "./armas-todas.js?v=fc3185b682",
+                 "./armas-vr.js": "./armas-vr.js?v=1d2384fb96",
+                 "./armero.js": "./armero.js?v=3fbb9b3762",
                  "./blancos.js": "./blancos.js?v=306a8cdf63",
                  "./efectos.js": "./efectos.js?v=4d85811d4a",
-                 "./especiales.js": "./especiales.js?v=852567a41e",
+                 "./especiales.js": "./especiales.js?v=df8a864e58",
                  "./forma3d.js": "./forma3d.js?v=51425c5f2d",
                  "./menu.js": "./menu.js?v=2f14cc32a9",
-                 "./modelo3d.js": "./modelo3d.js?v=e7e068b9ba",
-                 "./modos.js": "./modos.js?v=d01937d2c8",
+                 "./modelo3d.js": "./modelo3d.js?v=7505e71ca7",
+                 "./modos.js": "./modos.js?v=dce645b1cf",
                  "./piel3d.js": "./piel3d.js?v=4e589d037c",
+                 "./sw.js": "./sw.js?v=2cf07a7677",
                  "./zombie-tipos.js": "./zombie-tipos.js?v=266cb54bc1",
-                 "./zombie3d.js": "./zombie3d.js?v=3bcd695865" } }
+                 "./zombie3d.js": "./zombie3d.js?v=70d02c8dc5" } }
 </script>
-<script type="module" src="campo.js?v=c32071e910"></script>
+<script type="module" src="campo.js?v=1786ed8748"></script>
+<!-- Lo que se baja queda guardado: la app abre sin conexión (vr/sw.js) -->
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

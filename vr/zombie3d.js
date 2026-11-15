@@ -335,7 +335,8 @@ function materialesAccesorios() {
 
 /* ---------- Un zombie ---------- */
 const IDENTIDAD = new THREE.Matrix4();
-const LIVIANAS = new Set(['glock', 'ak47', 'mossberg', 'minigun']);
+// Las balas «chicas» (las que el escudo frena y el blindaje achica): las de pistola, metralleta, escopeta y ametralladora
+const LIVIANAS = new Set(['pistola', 'metralleta', 'escopeta', 'ametralladora']);
 export class Zombie {
   constructor(escena, efectos, M, horda) {
     this.escena = escena; this.efectos = efectos; this.M = M; this.horda = horda; this.clase = 'humano';
@@ -489,7 +490,7 @@ export class Zombie {
   recibir(golpe) {
     if (!this.vivo || this.bajoTierra) return false;
     const V = this.T, zona = golpe.zona ? golpe.zona.userData.tipo : 'tronco', hueso = golpe.zona ? golpe.zona.userData.hueso : 'pecho';
-    const arma = golpe.arma && golpe.arma.id, liviana = LIVIANAS.has(arma) && (golpe.tipo === 'bala' || golpe.tipo === 'perdigon');
+    const liviana = !!golpe.arma && LIVIANAS.has(golpe.arma.datos.categoria) && (golpe.tipo === 'bala' || golpe.tipo === 'perdigon');
     if (zona === 'escudo' && (liviana || golpe.tipo === 'filo' || golpe.tipo === 'golpe')) {   // el escudo frena las balas chicas y los golpes
       if (golpe.punto) this.efectos.impacto(golpe.punto, golpe.dir ? golpe.dir.clone().negate() : v3(0, 0, 1), 'metal');
       Audio_.blanco('acero'); return false;
@@ -514,7 +515,7 @@ export class Zombie {
   herida(golpe, zona, hueso) {
     if (!golpe.punto || this.heridas >= 2 || (this.T.jefe && golpe.tipo !== 'explosion')) return;
     const ojo = this.horda.ojo, cerca = ojo && golpe.punto.distanceTo(ojo) < 5;
-    const fuerte = golpe.tipo === 'explosion' || golpe.tipo === 'filo' || (zona === 'cabeza' && golpe.dano >= 5) || (golpe.tipo === 'perdigon' && golpe.tiro && !golpe.tiro.herida && cerca) || (golpe.arma && golpe.arma.id === 'remington700');
+    const fuerte = golpe.tipo === 'explosion' || golpe.tipo === 'filo' || (zona === 'cabeza' && golpe.dano >= 5) || (golpe.tipo === 'perdigon' && golpe.tiro && !golpe.tiro.herida && cerca) || (golpe.arma && golpe.arma.datos.categoria === 'rifle');
     if (!fuerte) return;
     if (golpe.tiro) golpe.tiro.herida = true;
     const b = this.huesos[hueso]; b.updateWorldMatrix(true, false);
