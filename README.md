@@ -129,9 +129,42 @@ el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo d
   pieza se extruye con su espesor o se tornea alrededor de su eje (cañones, tubos, miras telescópicas, cohetes, mangos).
   Lo que se mueve sale de comparar el dibujo en reposo con el del otro extremo: un desplazamiento o un giro con su
   pivote. Las piezas fijas de cada arma se juntan en una malla por material: con las 12 armas, el zombie y el galpón
-  son 162 llamadas de dibujo por cuadro (281 sin juntar) y 112 000 triángulos.
+  son 162 llamadas de dibujo por cuadro (281 sin juntar) y 112 000 triángulos. Si el dibujo cambia el orden de las piezas
+  entre los dos extremos (la escopeta de dos caños y el M79 pintan la báscula antes o después del caño según estén
+  abiertos), las piezas se emparejan por color y cantidad de puntos: antes el M79 de la mesa no se veía abrir (el
+  ajuste daba cero).
+- **El dibujo del juego como textura** (las 36 del armero; `def.textura`, `texturaDeArma`): el 2D pinta mucho más que
+  los polígonos (degradados, veta, cuadriculado de las cachas, bisel, desgaste, grabados como «PYTHON 357», tornillos,
+  el alambre del bate, la sangre del machete del cazador, los rayos de la Égida: el acabado de `js/armas-modelos.js` a
+  más de 3 px/cm). Se dibuja el arma entera a 4–8 px/cm y se proyecta de costado sobre las piezas; los bordes se corren
+  11 px para que los cantos tomen el color del borde. Con textura el metal refleja menos (la luz ya viene pintada).
+  Cada pieza se ve de su color (colores por vértice) hasta que su dibujo está listo: se pintan de a una arma, 60 ms
+  entre una y otra, después de arrancar (en el Chrome de pruebas por software el dibujo y los bordes costaban 4,4 s
+  juntos; así la página queda lista igual que antes, en 4,1 s, y las texturas a los 7,3 s). La que se toma antes, se
+  pinta en el momento.
+- **Los trazos en el aire** (`def.trazos`, `grabarTrazos`): las líneas que el dibujo traza fuera de las piezas
+  (guardamontes, colas del disparador, la palanca de las Winchester, los clavos del bate, los cables de la bazuca) se
+  vuelven varillas; las que caen sobre una pieza (ranuras, rayas, grabados) ya están en la textura. Cuenta como «en el
+  aire» si lo que queda afuera mide al menos 0,8 cm y el 40 % del trazo (las marcas de la vara de Gungnir no).
 - **La mesa**: una de cada tipo de `NOMBRE_CATEGORIA`, acostadas con la empuñadura hacia el jugador y un cartel con el
   nombre. Agarre derecho cerca de una la toma; otra vez la deja (sobre la mesa vuelve a su lugar; lejos, cae y vuelve).
+- **El armero de la pared de atrás** (`vr/armero.js`, `vr/armas-todas.js`): las otras 36 armas del juego (todas menos la
+  M2, que es la ametralladora fija del monte) en un tablero perforado corrido de 13 m sobre la pared que queda a la
+  espalda al empezar, a 5,5 m: pistolas, metralletas, rifles, escopetas, lanzagranadas y bazuca, cuerpo a cuerpo y
+  legendarias, cada grupo con su cartel y cada arma con su nombre. Las de fuego cuelgan de dos ganchos en lo más bajo de
+  su mitad de atrás y de su mitad de adelante, con la boca a la derecha y el lado dibujado a la vista, como en el juego;
+  las de pie, con los mangos a 0,95 m (la Égida, de frente). Si el juego suma armas o categorías, entran solas (las
+  categorías nuevas, en un grupo «OTRAS»). Se toman con la mano (se puede caminar hasta 45 cm de la pared) o apuntándoles
+  desde la mesa: el rayo del mando y la tecla E llegan a 9 m. Al dejarlas vuelven a su lugar (tarda más cuanto más
+  lejos). Tablero, marcos, ganchos y carteles van en cuatro mallas; mirando la pared son 181 llamadas de dibujo y
+  142 000 triángulos (mirando al campo, 107). Armar las 36: 140 ms en la computadora.
+- **Cada arma de la pared se arma sola desde el juego** (`fichaDe` en `vr/armas-todas.js`): la empuñadura donde apoya la
+  mano del gatillo en el 2D; el apoyo en `manoDelantera`; la carga en el ancla `cargador`; lo que se mueve (corredera,
+  cerrojo o manija, bomba, palanca, quiebre, tambor); la mecánica y la munición de `ARMAS` (`recargaTipo`); las miras
+  telescópicas del SVD (4×), el Barrett (10×) y la Mosin (3,5×) en el tubo del dibujo; el retroceso por categoría (más
+  fuerte en la Desert Eagle, los revólveres y el Barrett). Los materiales se deciden por el color medido como lo pinta el
+  juego (sRGB: `tipoDeColor` lo mide en lineal y los marrones oscuros quedaban goma y los dorados, madera): madera los
+  marrones, latón los dorados (en las legendarias, también el bronce), acero los grises, goma o polímero los oscuros.
 - **Menú** (`vr/menu.js`): un panel en el aire que aparece al empezar y se abre cuando quieras con **Y** (mando
   izquierdo) o **M** sin visor (Esc también, al soltar el mouse); se apunta con el rayo de cualquier mando, el gatillo
   aprieta, y mientras está abierto el juego está en pausa (no corren los zombies, los blancos ni el reloj del nivel; el
@@ -167,7 +200,40 @@ el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo d
 | Lanzallamas | M2 | Chorro de llamas que prende al zombie (4 de vida por segundo, la piel se chamusca) |
 | Láser | Alienígena | Energía que atraviesa (hasta 3); la celda es el huevo verde |
 | Cuerpo a cuerpo | Machete | Pega según la velocidad de la mano (más de 2 m/s); silba al blandirlo |
-| Legendaria | Mjölnir | Pega con un rayo; se tira soltándolo rápido y vuelve con el agarre de la mano vacía |
+| Legendaria | Mjölnir | Pega con rayos: el golpeado y hasta 3 zombies más a menos de 6,3 m (como en el juego; un solo trueno); se tira soltándolo rápido y vuelve con el agarre de la mano vacía |
+
+Las del armero (lo que ya hacían en el 2D, en 3D):
+
+| Grupo | Armas | Cómo funcionan |
+|---|---|---|
+| Pistolas | Colt 1911, Desert Eagle, Beretta 92FS, Walther PPK, Mauser C96 | Como la Glock: cargador propio de cada una (`js/cargadores.js`) y corredera trabada atrás al vaciarse |
+| Revólveres | Magnum .44, Colt Python | B abre el tambor y la varilla vuelca todo (vainas y balas, como en el juego). La Magnum se carga de a una; la Python con el cargador rápido, las seis de una vez, y el cargador vacío se cae de la mano |
+| Metralletas | Uzi, M16, MP5, Thompson (tambor), Kriss Vector, P90 | Automáticas con su cargador; vacías, se monta con la mano o con B |
+| Rifles | Barrett M82, Dragunov SVD | Semiautomáticos con cargador y mira telescópica |
+| | M1 Garand | Peine en bloque de 8: con la última sale el peine con su «ping» y el cerrojo queda trabado atrás; la mano izquierda trae un peine lleno y, al entrar, el cerrojo cierra solo |
+| | Mosin-Nagant | Cerrojo a mano; vacía y con el cerrojo atrás, el peine de 5 en la guía empuja las cinco y salta al cerrar (a medias, bala por bala) |
+| | Winchester 1894 | Palanca (con su sonido) después de cada tiro; balas de a una por el portillo |
+| Escopetas | SPAS-12, Remington 870 | Bomba |
+| | Benelli M4, Saiga-12, AA-12 | Semiautomáticas (la Benelli con tubo; la Saiga y la AA-12 con cargador; la AA-12 automática) |
+| | Winchester 1887 | Palanca y cartuchos por el portillo |
+| | Escopeta de dos cañones | Se quiebra en la bisagra (salen sólo los gastados); cada tiro baja su martillo y, al cerrarla, el pulgar monta los caídos (uno y otro, con su clic). Con los dos abajo no tira |
+| Lanzadores | Milkor MGL | Se abre como un revólver; granadas de 40 mm de a una, en parábola |
+| | Bazuca M9 | Un cohete por vez, que se encastra atrás |
+| Cuerpo a cuerpo | Katana, Hacha de bombero, Bate con alambre de púas, Mazo | Como el machete |
+| | Machete del cazador | Al tomarlo susurra en vez de hacer ruido de arma; al matar (y 4 de cada 10 golpes) vuelve a susurrar, con la espera del juego (4 s y 8 s) |
+| Legendarias | Excalibur | Cada tajo fuerte (con el visor) o cada clic (sin visor) suelta una medialuna de luz que avanza a 12 m/s y atraviesa a todos hasta 10,7 m |
+| | Tridente de Poseidón | La ola: crece, barre el piso hasta 5,3 m, pega 0,7 del daño y empuja 1,6 m (aturde) |
+| | Égida, Gungnir | Se tiran rectas (la lanza con la punta adelante, 15 m/s y 10,7 m; el escudo acostado y girando, 11 m/s y 7,2 m), pegan a cada zombie que cruzan, a la ida y a la vuelta, y vuelven solas a la mano |
+
+  Todas toman con el ruido de sacar esa arma del juego (`Audio_.sacarArma`) y tiran con su disparo grabado. Sin visor, R
+  hace la recarga entera con los tiempos de la mano.
+- **Pasos de la recarga en orden**: la cola de pasos (abrir, volcar, cargar, cerrar) ejecutaba de atrás para adelante
+  los que vencían en el mismo cuadro; con un cuadro largo (por ejemplo, mientras se pinta una textura) la Magnum
+  cerraba antes de cargar. Ahora corren en orden (probado con un tirón de 3 s: Magnum, MGL, dos caños y Mosin cargan
+  completas).
+- **Balas chicas por categoría**: lo que frena el escudo y lo que achica el blindaje (`vr/zombie3d.js`), y los tiros
+  pesados que esquiva el rabioso, ahora van por categoría (pistola, metralleta, escopeta y ametralladora; rifle,
+  lanzagranadas y bazuca) en lugar de por nombre: con nombres fijos, cualquier pistola de la pared atravesaba el escudo.
 
 - **Miras**: el dibujo es de costado y, pasado a 3D tal cual, de atrás no servía (el bloque del alza de la AK tapaba la
   vista y el guion era una placa maciza). Las armas de fuego tienen muesca y poste (o la mira telescópica) y la bala sale

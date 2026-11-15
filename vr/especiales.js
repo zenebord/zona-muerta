@@ -209,7 +209,7 @@ class Quiebre extends Arma {
 }
 
 /* ---------- RPG-7: el cohete sale por la boca ---------- */
-class Cohete extends Arma {
+export class Cohete extends Arma {
   constructor(id, mundo) { super(id, mundo); this.municion = 0; this.recamara = true; this.dibujarContador(); }
   listo() { return this.puesto; }
   actualizar(ahora, dt) {
@@ -221,8 +221,8 @@ class Cohete extends Arma {
     Audio_.disparo('bazuca', this.id);
     const c = this.a.cargadorSuelto(), g = new THREE.Group(); g.add(c); g.scale.setScalar(A_METROS);
     this.modelo.updateMatrixWorld(true); this.modelo.matrixWorld.decompose(g.position, g.quaternion, v3());
-    const dir = this.direccionMira(), atras = this.mundoDe(P(-76, 4));
-    this.mundo.efectos.disparo(this.mundoDe(P(20, 4.2)), this.direccion(), ahora, 0.3);
+    const dir = this.direccionMira(), atras = this.mundoDe(this.colaTubo || P(-76, 4));   // la boca y la cola del tubo (las del RPG-7, si no)
+    this.mundo.efectos.disparo(this.mundoDe(this.bocaTubo || P(20, 4.2)), this.direccion(), ahora, 0.3);
     for (let k = 0; k < 8; k++) this.mundo.efectos.particula(this.mundo.efectos.matHumo, atras.clone(), this.direccion().multiplyScalar(-2 - Math.random() * 3).add(v3((Math.random() - 0.5), Math.random() * 0.5, (Math.random() - 0.5))), 0.3, 1.6, 1.4);   // fogonazo de atrás
     this.mundo.lanzar({ objeto: g, vel: dir.clone().multiplyScalar(28), empuje: 70, velMax: 75, gravedad: 1.2, vida: 6, estela: true, orientar: false,
       alChocar: h => { this.mundo.explotar(h.punto, 3.5); return true; } });
@@ -336,7 +336,7 @@ class Laser extends Arma {
 }
 
 /* ---------- Cuerpo a cuerpo: pega según la velocidad de la mano ---------- */
-class Cuerpo extends Arma {
+export class Cuerpo extends Arma {
   constructor(id, mundo) { super(id, mundo); this.agarreMano = true; this.previos = null; this.velPunta = 0; this.enfriamiento = 0; this.silbo = false; this.puntos = this.def.hoja.map(([x, y]) => P(x, y)); }
   gatillo() {}
   actualizar(ahora, dt) {
@@ -349,21 +349,33 @@ class Cuerpo extends Arma {
         const h = this.mundo.barrer(this.previos, pts);
         if (h) {
           const fuerza = limitar(this.velPunta / 4, 0.6, 2);
-          this.mundo.golpearZombie(h, this.datos.dano * fuerza, this.def.filo ? 'filo' : 'golpe');
+          const r = this.mundo.golpearZombie(h, this.datos.dano * fuerza, this.def.filo ? 'filo' : 'golpe');
           Audio_.golpeCuerpo(this.def.filo ? 'filo' : 'golpe', fuerza > 1.2, this.id); this.mundo.vibrar('right', 1, 70);
           this.enfriamiento = ahora + 350;
-          if (this.def.poder === 'rayo') { this.mundo.rayo(h.punto); this.mundo.golpearZombie(h, 15, 'rayo'); }
+          if (this.def.poder === 'rayo') this.rayos(h);
+          if (this.alGolpe) this.alGolpe(r, h, fuerza);   // el machete del cazador susurra (vr/campo.js)
         }
       }
     }
     this.previos = pts;
     this.retrocesoYCola(ahora, dt);
   }
+  // Mjölnir (js/poderes.js): el golpe hace caer rayos sobre el golpeado y sobre hasta 3 zombies más a menos de 6,3 m
+  rayos(h) {
+    this.mundo.rayo(h.punto); this.mundo.golpearZombie(h, 15, 'rayo');
+    const golpeado = h.zona && h.zona.userData.zombie, ojo = this.mundo.ojo ? this.mundo.ojo() : null;
+    if (!ojo || !this.mundo.zombiesCerca) return;
+    this.mundo.zombiesCerca(ojo, 6.3).filter(z => z !== golpeado).slice(0, 3).forEach((z, k) => setTimeout(() => {
+      if (!z.vivo) return;
+      const p = z.grupo.position.clone().add(v3(0, z.clase === 'animal' ? 0.5 : 1.3 * z.grupo.scale.x, 0));
+      this.mundo.rayo(p, true); this.mundo.golpearCuerpo(z, 15, 'rayo', p.clone().sub(ojo).setY(0).normalize(), p);
+    }, 70 + k * 80));
+  }
   recargaEscritorio() {}
 }
 
 /* ---------- Mjölnir: se tira y vuelve a la mano ---------- */
-class Mjolnir extends Cuerpo {
+export class Mjolnir extends Cuerpo {
   constructor(id, mundo) { super(id, mundo); this.tirado = false; this.volviendoAMano = null; }
   // Al soltarlo rápido vuela; despacio, se cae como cualquier arma
   lanzar(vel) {
@@ -390,5 +402,6 @@ class Mjolnir extends Cuerpo {
 }
 
 /* ---------- Cuál clase usa cada arma ---------- */
-const CLASES = { minigun: Minigun, m79: Quiebre, rpg7: Cohete, granadas: Granada, lanzallamas: Lanzallamas, laser: Laser, machete: Cuerpo, mjolnir: Mjolnir };
+// (vr/armas-todas.js agrega las de la pared)
+export const CLASES = { minigun: Minigun, m79: Quiebre, rpg7: Cohete, granadas: Granada, lanzallamas: Lanzallamas, laser: Laser, machete: Cuerpo, mjolnir: Mjolnir };
 export function crearArma(id, mundo) { return new (CLASES[id] || Arma)(id, mundo); }
