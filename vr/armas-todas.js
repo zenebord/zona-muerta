@@ -205,6 +205,8 @@ function tamborDe(id, base, def, clase, d) {
 }
 
 /* ---------- Revólveres, la escopeta de dos caños y el MGL: se abren (B o la mano) y se cargan de a una ---------- */
+// Abierto, el borde derecho del tambor queda a esto (cm) del medio del arma: el armazón mide 3 cm de ancho y el del MGL, 3,2
+const TAMBOR_HOLGURA = 1.8;
 class Basculante extends Arma {
   constructor(id, mundo) {
     super(id, mundo);
@@ -213,6 +215,21 @@ class Basculante extends Arma {
     // Revólveres y MGL: el tambor redondo (vr/tambores3d.js) gira 60° con cada tiro (vueltas) y muestra lo que tiene
     this.tambor = this.a.raiz.getObjectByName('tambor'); this.vueltas = 0; this.giroVisto = 0;
     this.carga = this.def.carga ? P(...this.def.carga.punto) : this.pozo.clone();
+    /* Abierto, el tambor sale hacia la izquierda (pedido de Leandro: «en vez de abrirse para abajo, que se abran para el
+     * lado de la izquierda»): gira 90° alrededor de un eje paralelo al cañón que va arriba y a la izquierda de él, y
+     * termina al costado izquierdo del arma, a la misma altura y sin tocarla (en el medio del recorrido baja un poco: así
+     * no roza el armazón de arriba al salir). En los revólveres es lo único que se mueve; en el MGL, la placa, el cañón y
+     * la empuñadura (que el dibujo del juego vuelca hacia abajo junto con el tambor) quedan en su lugar. La recámara
+     * donde se carga va con el tambor. */
+    if (this.tambor && this.parteAccion) {
+      const t = this.tambor, d = (t.userData.radio + TAMBOR_HOLGURA) / 2, base = t.position.clone(), py = base.y + d, pz = base.z - d;
+      const vy = base.y - py, vz = base.z - pz;
+      this.cargaTambor = this.carga.clone().sub(base);
+      this.parteAccion.mover = function (u) {
+        this.t = u; const th = Math.PI / 2 * u, c = Math.cos(th), s = Math.sin(th);
+        t.position.set(base.x, py + vy * c - vz * s, pz + vy * s + vz * c); t.rotation.set(th, 0, 0);
+      };
+    }
     // La de dos caños tiene martillos a la vista (js/armas-modelos-3.js): 1 montado, 0 caído; cada tiro baja el suyo
     if (this.a.partes.martillo1) { this.martillos = [1, 1]; this.verMartillos = [1, 1]; }
     this.dibujarContador();
@@ -224,7 +241,7 @@ class Basculante extends Arma {
     const t = performance.now(); let k = 0;
     for (const m of [0, 1]) if (!this.martillos[m]) { k++; this.cola.push([t + 40 + 220 * k, () => { this.martillos[m] = 1; Audio_.recarga('martillo', this.id); this.mundo.vibrar('right', 0.25, 20); }]); }
   }
-  recamaraMundo() { return (this.parteAccion ? this.parteAccion.grupo : this.a.raiz).localToWorld(this.carga.clone()); }
+  recamaraMundo() { return this.cargaTambor ? this.tambor.localToWorld(this.cargaTambor.clone()) : (this.parteAccion ? this.parteAccion.grupo : this.a.raiz).localToWorld(this.carga.clone()); }
   actualizar(ahora, dt) {
     this.abierto = limitar(this.abierto + Math.sign(this.objetivo - this.abierto) * dt / 0.25, 0, 1);
     if (this.parteAccion) this.parteAccion.mover(this.abierto * this.abierto * (3 - 2 * this.abierto));
@@ -321,19 +338,6 @@ function cargadorRapido3d(id, cargado, rc = null) {   // cm: la perilla atrás, 
   return g;
 }
 class Revolver extends Basculante {
-  constructor(id, mundo) {
-    super(id, mundo);
-    /* Abierto, el tambor sale hacia la izquierda sobre la grúa (el eje de la bisagra, paralelo al cañón, va abajo y a la
-     * izquierda del tambor), como en uno de verdad: el dibujo del juego, de costado, lo baja; en 3D, bajarlo lo metía
-     * en el guardamonte. */
-    const t = this.tambor && this.tambor.userData, parte = this.parteAccion;
-    if (!t || !parte) return;
-    const g = parte.grupo, py = this.tambor.position.y - t.radio * 1.05, pz = -t.radio * 0.35;
-    parte.mover = function (u) {
-      this.t = u; const th = -1.75 * u, c = Math.cos(th), s = Math.sin(th);
-      g.rotation.set(th, 0, 0); g.position.set(0, py - (c * py - s * pz), pz - (s * py + c * pz));
-    };
-  }
   vaciar() {   // vainas y balas: todo al piso
     for (let k = 0; k < this.vainas + this.municion; k++) this.caer(k >= this.vainas);
     this.vainas = 0; this.municion = 0; this.dibujarContador();

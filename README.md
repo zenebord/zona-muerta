@@ -187,12 +187,17 @@ el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo d
   (la reconoce por lo que hace: la más grande de las que se mueven al abrir, o lo que se va con el cargador) y pone en
   su lugar el tambor de verdad, con las medidas del dibujo:
   - **Colt Python y Magnum .44**: seis recámaras pasantes, estrías entre ellas que no llegan hasta atrás, la estrella
-    del extractor y la varilla (cerrado, adentro de la funda bajo el cañón). Abierto, el tambor sale hacia la izquierda
-    sobre la grúa, como en uno de verdad (el dibujo lo baja y en 3D se metía en el guardamonte), y el escudo de atrás
-    queda en el armazón. Gira 60° con cada tiro: la Colt a la derecha y la Smith & Wesson a la izquierda, mirados desde
-    atrás. El contador de balas pasó al costado del cañón (iba sobre el tambor y lo tapaba).
+    del extractor y la varilla (cerrado, adentro de la funda bajo el cañón); el escudo de atrás queda en el armazón.
+    Gira 60° con cada tiro: la Colt a la derecha y la Smith & Wesson a la izquierda, mirados desde atrás. El contador de
+    balas pasó al costado del cañón (iba sobre el tambor y lo tapaba).
   - **Milkor MGL**: seis recámaras de 40 mm (la de arriba, en línea con el cañón), estrías anchas y la placa trasera
     oscura; 18,6 cm de diámetro, como en el dibujo.
+  - **Se abren hacia la izquierda** (los dos revólveres y el MGL): el tambor gira 90° alrededor de un eje paralelo al
+    cañón, arriba y a la izquierda de él, y termina al costado izquierdo del arma a la misma altura, con su borde a
+    1,8 cm del medio (en la mitad del recorrido baja 0,8 cm en los revólveres y 2,3 en el MGL: así no roza el armazón
+    de arriba al salir). El dibujo del juego los baja (y al MGL le vuelca hacia abajo todo el frente): en el MGL ahora
+    sale sólo el tambor y la placa, el cañón y la empuñadura quedan en su lugar. La recámara donde entra la bala o la
+    granada va con el tambor.
   - **Thompson**: el tambor de 50 es un disco de perfil, de 13,2 cm y 5,4 de ancho (como lo dibuja el juego cuando cae
     al piso), con el canto de dos aros, la cara estampada, la llave de cuerda del lado izquierdo y la torre que entra en
     el cajón; va 1,6 cm más adelante que la pieza del dibujo para no meterse en el armazón del disparador. El que cae,
