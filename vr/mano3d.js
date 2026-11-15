@@ -1,15 +1,16 @@
-/* ===== Zona Muerta VR: la mano izquierda del jugador =====
- * En lugar del modelo del control, la mano del sobreviviente del juego (js/skins.js): guante arena con la palma y las
+/* ===== Zona Muerta VR: las manos del jugador =====
+ * En lugar del modelo del control, las manos del sobreviviente del juego (js/skins.js): guante arena con la palma y las
  * yemas de cuero, el abrojo de la muñeca, las almohadillas de los nudillos y la manga oliva de la chaqueta. Se arma como
  * los cuerpos de los zombies (vr/forma3d.js): primitivas anatómicas unidas en una sola superficie, con 16 huesos (la
  * palma, tres falanges por dedo y el pulgar) para que los dedos se doblen.
  *   - Marco de la mano (en el que se modela): la muñeca en el origen, los dedos hacia −z, la palma hacia −y y el pulgar
- *     hacia +x (es la izquierda).
+ *     hacia +x (es la izquierda; la derecha es su espejo: la malla se arma una sola vez).
  *   - En el control va en el «grip» de WebXR: el origen en el centro de los dedos cerrados sobre el mango, −z hacia el
- *     pulgar y el dorso de la izquierda hacia −x; el antebrazo, hacia atrás por el rayo del control. Con el puño cerrado,
- *     los dedos abrazan el mango del control (3,4 cm), que no se ve.
- *   - posar({ agarre, gatillo, pulgar }): el agarre cierra medio, anular y meñique; el gatillo, el índice; el pulgar baja
- *     cuando toca los botones. Lo que se sostiene (cargador, guardamanos, cerrojo) cierra la mano entera. */
+ *     pulgar y el dorso hacia afuera (−x en la izquierda, +x en la derecha); el antebrazo, hacia atrás por el rayo del
+ *     control. Con el puño cerrado, los dedos abrazan el mango del control (3,4 cm), que no se ve.
+ *   - posar({ agarre, gatillo, pulgar, enGatillo }): el agarre cierra medio, anular y meñique; el gatillo, el índice; el
+ *     pulgar baja cuando toca los botones; enGatillo pone el índice en el gatillo de un arma de fuego. Lo que se sostiene
+ *     (cargador, guardamanos, cerrojo, un mango) cierra la mano entera. */
 import * as THREE from 'three';
 import { Forma, malla, normales, geometria, fbm, limitar } from './forma3d.js';
 
@@ -90,18 +91,15 @@ function pesosDe(F, x, y, z) {
   return [...acum.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
 }
 
-/* ---------- La mano ---------- */
-export function crearManoIzquierda() {
+/* ---------- La malla (una sola vez: la derecha es su espejo) ---------- */
+let base = null;
+function armarBase() {
+  if (base) return base;
   // La manga se corta a 6 cm de la muñeca, adentro de la grilla: malla() (vr/forma3d.js) no cierra lo que toca el borde
   // de la grilla, y ahí armaba triángulos con celdas de otra capa (láminas que iban de la manga a los dedos)
   const J = articulaciones(), F = forma(J), sdf = (x, y, z) => Math.max(F.distancia(x, y, z), z - CORTE);
   const m = malla(sdf, [-0.062, -0.05, -0.2], [0.078, 0.05, CORTE + 0.01], 0.0024), n = m.pos.length / 3, nor = normales(sdf, m.pos, 0.0015);
-  // Huesos: la palma en la muñeca; cada falange en su articulación
   const NOMBRES = ['palma', ...DEDOS.flatMap(d => [d.n + '1', d.n + '2', d.n + '3']), 'pulgar1', 'pulgar2', 'pulgar3'], IDX = Object.fromEntries(NOMBRES.map((h, i) => [h, i]));
-  const huesos = {}, poner = (h, p, padre, pp) => { const b = new THREE.Bone(); b.name = h; b.position.set(p[0] - pp[0], p[1] - pp[1], p[2] - pp[2]); if (padre) padre.add(b); huesos[h] = b; };
-  poner('palma', [0, 0, 0], null, [0, 0, 0]);
-  for (const d of DEDOS) { const [j0, j1, j2] = J[d.n].pts; poner(d.n + '1', j0, huesos.palma, [0, 0, 0]); poner(d.n + '2', j1, huesos[d.n + '1'], j0); poner(d.n + '3', j2, huesos[d.n + '2'], j1); }
-  { const [p0, p1, p2] = J.pulgar.pts; poner('pulgar1', p0, huesos.palma, [0, 0, 0]); poner('pulgar2', p1, huesos.pulgar1, p0); poner('pulgar3', p2, huesos.pulgar2, p1); }
   // Piel y colores (en reposo): cuero en la palma y en las yemas, almohadilla en los nudillos, abrojo, manga y su puño
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), color = new Float32Array(n * 3), c = new THREE.Color();
   for (let v = 0; v < n; v++) {
@@ -119,48 +117,195 @@ export function crearManoIzquierda() {
     const tela = 0.9 + 0.2 * fbm(x * 260, y * 260, z * 260), sombra = limitar(0.55 + 0.45 * sdf(x + nor[v * 3] * 0.01, y + ny * 0.01, z + nor[v * 3 + 2] * 0.01) / 0.01, 0.5, 1);
     const k = ALBEDO * tela * sombra; color[v * 3] = c.r * k; color[v * 3 + 1] = c.g * k; color[v * 3 + 2] = c.b * k;
   }
-  const malla3d = new THREE.SkinnedMesh(geometria({ pos: m.pos, nor, idx: m.idx, si, sw, color }),
+  base = { J, NOMBRES, pos: Float32Array.from(m.pos), nor, idx: m.idx, si, sw, color };
+  return base;
+}
+
+/* ---------- Dónde va la mano ----------
+ * «control»: en el grip de WebXR, el marco de la mano girado (en la izquierda, +x de la mano → −z, +y → −x, +z → +y; la
+ *   derecha es el espejo) y, además, 45° sobre x: en el Touch el mango cruza la palma en diagonal y el antebrazo va hacia
+ *   atrás por el rayo del control (entre +y y +z del grip), no por +y. Así el pulgar queda arriba, el antebrazo atrás y
+ *   el dorso afuera. Es también como empuña la culata o la empuñadura de un arma de fuego (a unos 17° de la vertical).
+ * «mango»: sin esos 45°, el puño cierra sobre el eje del mango del control (−z del grip): así agarra las hojas, los
+ *   mangos y la granada, que se llevan a lo largo del mango.
+ * En los dos, el centro del puño en el origen. */
+const BASES = { izquierda: new THREE.Matrix4().makeBasis(v3(0, 0, -1), v3(-1, 0, 0), v3(0, 1, 0)), derecha: new THREE.Matrix4().makeBasis(v3(0, 0, 1), v3(1, 0, 0), v3(0, 1, 0)) };
+const GIRO_CONTROL = new THREE.Matrix4().makeRotationX(Math.PI / 4);
+// El índice sobre el gatillo de un arma de fuego (rad), si no se sabe dónde está el disparador: apoyado y apretando
+const INDICE_APOYADO = [0.32, 0.85, 0.35], INDICE_APRETANDO = [0.45, 1.1, 0.5];
+
+/* ---------- La mano en la empuñadura de un arma de fuego ----------
+ * El control pone el centro del puño en la empuñadura del arma (vr/armas-vr.js), pero esa empuñadura se eligió para el
+ * control, no para una mano: en algunas armas largas el puño quedaba debajo de la culata. Así que, una vez por arma, la
+ * mano busca dónde agarrarla, corriéndose (hasta 5 cm) e inclinándose (la muñeca: de 50° hacia adelante a 20° hacia
+ * atrás) desde donde la pone el control:
+ *   - que el mango quede adentro del puño: el meñique, el anular y el medio alrededor de él, y centrado (el dibujo del
+ *     arma visto de costado: dentro(x, y, z));
+ *   - que la yema del índice —el 65 % de la última falange, como en el 2D (js/jugador-dibujo.js, ajusteGatillo)— quede
+ *     en el disparador de esa arma (DEDO_GATILLO, js/armas-modelos-3.js), con la curvatura del índice y cuánto se separa
+ *     del medio;
+ *   - moviéndose e inclinándose lo menos posible.
+ * Primero de a 1 cm y 10°, después fino (2,5 mm y 2,5°) alrededor de lo mejor. Apretar dobla el índice un poco más. */
+const CURVA_INDICE = [1, 1.33, 0.62], APRIETA = 0.14;   // cuánto se dobla cada falange por unidad de curvatura
+// Lo que tiene que quedar adentro del arma (marco de la mano izquierda, m): el eje del puño a la altura del meñique, el
+// anular y el medio, y 1,1 cm adelante y atrás de él; con su peso
+const DENTRO_PUNO = [-0.022, -0.012, -0.002, 0.008].flatMap(s => [[MANGO[0] + s, MANGO[1], MANGO[2], 3], [MANGO[0] + s, MANGO[1], MANGO[2] - 0.011, 1], [MANGO[0] + s, MANGO[1], MANGO[2] + 0.011, 1]]);
+// Las poses del índice (una sola vez): curvatura de 0 a 1,2 y giro de 20° hacia el pulgar a 7° hacia el medio (más, se le
+// montaría encima); dónde queda la yema (marco de la mano izquierda) y cuánto cuesta la pose: el índice estirado del todo
+// o hecho un gancho no se ve como un dedo en el gatillo (por 1 cm se prefiere doblarlo 0,4 menos)
+const poses = {};
+function posesIndice(J, grueso = false) {
+  const clave = grueso ? 'grueso' : 'fino', paso = grueso ? 2 : 1;
+  if (poses[clave]) return poses[clave];
+  const d = J.indice, [j0, j1, j2, j3] = d.pts.map(p => v3(...p)), eje = v3(...d.eje), normal = v3(0, 1, 0);
+  const l1 = j1.clone().sub(j0), l2 = j2.clone().sub(j1), l3 = j3.clone().sub(j2).multiplyScalar(0.65);
+  const q1 = new THREE.Quaternion(), q2 = new THREE.Quaternion(), q3 = new THREE.Quaternion(), qg = new THREE.Quaternion(), p = v3(), t = v3();
+  const c = [], g = [], yema = [], costo = [];
+  for (let ci = 0; ci <= 60; ci += paso) for (let gi = -14; gi <= 5; gi += paso) {
+    const cc = ci * 0.02, gg = gi * 0.025;
+    q1.setFromAxisAngle(eje, cc * CURVA_INDICE[0]).premultiply(qg.setFromAxisAngle(normal, gg));
+    q2.copy(q1).multiply(qg.setFromAxisAngle(eje, cc * CURVA_INDICE[1])); q3.copy(q2).multiply(qg.setFromAxisAngle(eje, cc * CURVA_INDICE[2]));
+    p.copy(j0).add(t.copy(l1).applyQuaternion(q1)).add(t.copy(l2).applyQuaternion(q2)).add(t.copy(l3).applyQuaternion(q3));
+    c.push(cc); g.push(gg); yema.push(p.x, p.y, p.z); costo.push(0.00002 * gg * gg + 0.0006 * (cc - 0.45) * (cc - 0.45));
+  }
+  return (poses[clave] = { c, g, yema: Float32Array.from(yema), costo: Float32Array.from(costo) });
+}
+// H0: de la mano (su malla) al padre, como la pone el control; T: el disparador (en el padre) o null; dentro(x, y, z): si
+// un punto del padre cae dentro del arma; sx: −1 en la derecha. Devuelve { th, ty, tz, k }: la inclinación sobre x del
+// padre (el costado del arma), la corrida (y, z del padre) y la pose del índice
+function buscarAgarre(J, H0, T, dentro, sx) {
+  let P = posesIndice(J, true), n = P.c.length;
+  const Q = new Float32Array(posesIndice(J).c.length * 3), m = new THREE.Matrix4(), v = v3();
+  let mejor = null;
+  const conAngulo = th => {   // las yemas y los puntos del puño, con la mano inclinada th
+    m.makeRotationX(th).multiply(H0);
+    for (let k = 0; k < n; k++) { v.set(P.yema[k * 3] * sx, P.yema[k * 3 + 1], P.yema[k * 3 + 2]).applyMatrix4(m); Q[k * 3] = v.x; Q[k * 3 + 1] = v.y; Q[k * 3 + 2] = v.z; }
+    return DENTRO_PUNO.map(([x, y, z, w]) => { v.set(x * sx, y, z).applyMatrix4(m); return [v.x, v.y, v.z, w]; });
+  };
+  const probar = (th, puno, ty, tz) => {
+    if (Math.abs(ty) > 0.05 || Math.abs(tz) > 0.05) return;
+    let costo = (ty * ty + tz * tz) / 0.0016 + (th / 0.6) * (th / 0.6);   // 4 cm o 34°: lo que cuesta 1 cm de yema lejos del disparador
+    for (const [x, y, z, w] of puno) if (!dentro(x, y + ty, z + tz)) costo += w;
+    let k = -1;
+    if (T) {
+      let r = Infinity; const tx = T.x, ry = T.y - ty, rz = T.z - tz;
+      for (let i = 0; i < n; i++) { const dx = Q[i * 3] - tx, dy = Q[i * 3 + 1] - ry, dz = Q[i * 3 + 2] - rz, d = dx * dx + dy * dy + dz * dz + P.costo[i]; if (d < r) { r = d; k = i; } }
+      costo += r / 1e-4;
+    }
+    if (!mejor || costo < mejor.costo) mejor = { costo, th, ty, tz, k };
+  };
+  for (let a = -5; a <= 2; a++) { const th = a * Math.PI / 18, puno = conAngulo(th); for (let i = -5; i <= 5; i++) for (let j = -5; j <= 5; j++) probar(th, puno, i * 0.01, j * 0.01); }
+  const g = { ...mejor };
+  for (let a = -4; a <= 4; a++) { const th = g.th + a * Math.PI / 72, puno = conAngulo(th); for (let i = -4; i <= 4; i++) for (let j = -4; j <= 4; j++) probar(th, puno, g.ty + i * 0.0025, g.tz + j * 0.0025); }
+  // la pose del índice, con todas las poses, para la mano donde quedó (k es de la tabla fina)
+  P = posesIndice(J); n = P.c.length; const f = mejor; mejor = null; probar(f.th, conAngulo(f.th), f.ty, f.tz);
+  return mejor;
+}
+
+/* ---------- Una mano ---------- */
+export function crearMano(lado = 'izquierda') {
+  const B = armarBase(), J = B.J, der = lado === 'derecha', sx = der ? -1 : 1;
+  // la derecha: x al revés (posiciones y normales) y los triángulos dados vuelta
+  const pos = Float32Array.from(B.pos), nor = Float32Array.from(B.nor), idx = B.idx.slice();
+  if (der) {
+    for (let i = 0; i < pos.length; i += 3) { pos[i] = -pos[i]; nor[i] = -nor[i]; }
+    for (let t = 0; t < idx.length; t += 3) { const a = idx[t + 1]; idx[t + 1] = idx[t + 2]; idx[t + 2] = a; }
+  }
+  // Huesos: la palma en la muñeca; cada falange en su articulación
+  const huesos = {}, poner = (h, p, padre, pp) => { const b = new THREE.Bone(); b.name = h; b.position.set((p[0] - pp[0]) * sx, p[1] - pp[1], p[2] - pp[2]); if (padre) padre.add(b); huesos[h] = b; };
+  poner('palma', [0, 0, 0], null, [0, 0, 0]);
+  for (const d of DEDOS) { const [j0, j1, j2] = J[d.n].pts; poner(d.n + '1', j0, huesos.palma, [0, 0, 0]); poner(d.n + '2', j1, huesos[d.n + '1'], j0); poner(d.n + '3', j2, huesos[d.n + '2'], j1); }
+  { const [p0, p1, p2] = J.pulgar.pts; poner('pulgar1', p0, huesos.palma, [0, 0, 0]); poner('pulgar2', p1, huesos.pulgar1, p0); poner('pulgar3', p2, huesos.pulgar2, p1); }
+  const malla3d = new THREE.SkinnedMesh(geometria({ pos, nor, idx, si: B.si, sw: B.sw, color: B.color }),
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0, envMapIntensity: 0.22 }));   // tela y cuero: casi nada de reflejo (con más, el reflejo del galpón la aclaraba hasta el crema)
   malla3d.frustumCulled = false; malla3d.add(huesos.palma); malla3d.updateMatrixWorld(true);
-  malla3d.bind(new THREE.Skeleton(NOMBRES.map(h => huesos[h])));
-  // En el grip: el marco de la mano girado (+x de la mano → −z, +y → −x, +z → +y) y, además, 45° sobre x: en el Touch el
-  // mango cruza la palma en diagonal y el antebrazo va hacia atrás por el rayo del control (entre +y y +z del grip), no
-  // por +y. Así el pulgar queda arriba, el antebrazo atrás y el dorso afuera. El centro del puño, en el origen
-  const grupo = new THREE.Group(), R = new THREE.Matrix4().makeRotationX(Math.PI / 4).multiply(new THREE.Matrix4().makeBasis(v3(0, 0, -1), v3(-1, 0, 0), v3(0, 1, 0)));
-  grupo.quaternion.setFromRotationMatrix(R); grupo.position.copy(v3(...MANGO).applyMatrix4(R).negate()); grupo.add(malla3d);
-  // El reloj (la vida o los puntos) va sobre la manga, del lado del pulgar, que es el de arriba con el control en la mano,
-  // inclinado 35° hacia los ojos: se lee de un vistazo, de izquierda a derecha a lo ancho del antebrazo
-  const reloj = new THREE.Group(); reloj.position.set(0.043, 0.003, 0.036);
-  const cara = v3(Math.cos(0.61), 0, Math.sin(0.61)), derecha = v3(0, -1, 0);
-  reloj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(derecha, cara.clone().cross(derecha), cara)); huesos.palma.add(reloj);
+  malla3d.bind(new THREE.Skeleton(B.NOMBRES.map(h => huesos[h])));
+  const grupo = new THREE.Group(); grupo.add(malla3d);
+  const centro = v3(MANGO[0] * sx, MANGO[1], MANGO[2]), lugares = {};
+  for (const [modo, giro] of [['control', GIRO_CONTROL], ['mango', new THREE.Matrix4()]]) {
+    const R = giro.clone().multiply(BASES[lado]);
+    lugares[modo] = { q: new THREE.Quaternion().setFromRotationMatrix(R), p: centro.clone().applyMatrix4(R).negate() };
+  }
+  // El reloj (la vida o los puntos), sólo en la izquierda: sobre la manga, del lado del pulgar, que es el de arriba con el
+  // control en la mano, inclinado 35° hacia los ojos; se lee de un vistazo, de izquierda a derecha a lo ancho del antebrazo
+  let reloj = null;
+  if (!der) {
+    reloj = new THREE.Group(); reloj.position.set(0.043, 0.003, 0.036);
+    const cara = v3(Math.cos(0.61), 0, Math.sin(0.61)), derecha = v3(0, -1, 0);
+    reloj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(derecha, cara.clone().cross(derecha), cara)); huesos.palma.add(reloj);
+  }
 
-  // Poses: los dedos se doblan sobre su eje (cada falange respecto de la anterior); el pulgar va de tramo en tramo
-  const actual = { agarre: 0, gatillo: 0, pulgar: 0 }, q = new THREE.Quaternion(), qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
+  // Poses: los dedos se doblan sobre su eje (cada falange respecto de la anterior); el pulgar va de tramo en tramo. Se
+  // calculan como en la izquierda; en la derecha cada giro va en espejo (x, −y, −z, w)
+  const actual = { agarre: 0, gatillo: 0, pulgar: 0, enGatillo: 0 }, qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
   const ejeDe = {}; for (const d of DEDOS) ejeDe[d.n] = v3(...J[d.n].eje);
   const restoPulgar = J.pulgar.dirs.map(d => v3(...d)), cerradoPulgar = PULGAR_CERRADO.map(d => v3(...d));
+  const fijar = (h, q) => { if (der) huesos[h].quaternion.set(q.x, -q.y, -q.z, q.w); else huesos[h].quaternion.copy(q); };
+  let indiceArma = null;   // { c, g }: la curvatura y el giro del índice en el disparador del arma que agarra
+  const normal = v3(0, 1, 0);
   function aplicar() {
     for (const d of DEDOS) {
-      const indice = d.n === 'indice', t = indice ? actual.gatillo : actual.agarre, A = indice ? INDICE_SUELTO : ABIERTA, B = indice ? INDICE_GATILLO : CERRADA;
-      for (let k = 0; k < 3; k++) huesos[d.n + (k + 1)].quaternion.setFromAxisAngle(ejeDe[d.n], A[k] + (B[k] - A[k]) * t);
+      const indice = d.n === 'indice', t = indice ? actual.gatillo : actual.agarre;
+      for (let k = 0; k < 3; k++) {
+        let ang;
+        if (!indice) ang = ABIERTA[k] + (CERRADA[k] - ABIERTA[k]) * t;
+        else {   // el índice libre (suelto ↔ cerrado) o sobre el gatillo de un arma (apoyado ↔ apretando)
+          const libre = INDICE_SUELTO[k] + (INDICE_GATILLO[k] - INDICE_SUELTO[k]) * t;
+          const arma = indiceArma ? (indiceArma.c + APRIETA * t) * CURVA_INDICE[k] : INDICE_APOYADO[k] + (INDICE_APRETANDO[k] - INDICE_APOYADO[k]) * t;
+          ang = libre + (arma - libre) * actual.enGatillo;
+        }
+        qa.setFromAxisAngle(ejeDe[d.n], ang);
+        if (indice && k === 0 && indiceArma) qa.premultiply(qb.setFromAxisAngle(normal, indiceArma.g * actual.enGatillo));
+        fijar(d.n + (k + 1), qa);
+      }
     }
-    // pulgar: cada tramo hacia su dirección (entre suelto y cerrado); el giro local sale de restar el del tramo anterior
     let previo = new THREE.Quaternion();
     for (let k = 0; k < 3; k++) {
       const destino = restoPulgar[k].clone().lerp(cerradoPulgar[k], actual.pulgar).normalize();
       qa.setFromUnitVectors(restoPulgar[k], destino);
-      huesos['pulgar' + (k + 1)].quaternion.copy(qb.copy(previo).invert().multiply(qa));
+      fijar('pulgar' + (k + 1), qb.copy(previo).invert().multiply(qa));
       previo = qa.clone();
     }
   }
   aplicar();
-  return {
-    grupo, reloj, huesos,
-    // objetivo: { agarre, gatillo, pulgar } de 0 a 1; dt: lo que pasó (s). Los dedos van hacia el objetivo en ~60 ms
+  const relativo = new THREE.Quaternion(), ajuste = { q: new THREE.Quaternion(), t: v3() }, ultimo = { modo: 'control', rel: new THREE.Quaternion() }, recuerdos = new WeakMap();
+  const mano = {
+    lado, grupo, reloj, huesos,
+    // modo: 'control' o 'mango'; rel: el giro del grip respecto del padre (cuando la mano va con el arma: el rayo del
+    // control → su grip). Pone el grupo en su lugar, con el ajuste a la empuñadura del arma, si lo hay
+    colocar(modo = 'control', rel = null) {
+      const L = lugares[modo]; relativo.copy(rel || qb.identity()); ultimo.modo = modo; ultimo.rel.copy(relativo);
+      grupo.quaternion.copy(relativo).multiply(L.q).premultiply(ajuste.q);
+      grupo.position.copy(L.p).applyQuaternion(relativo).applyQuaternion(ajuste.q).add(ajuste.t);
+    },
+    // Agarra el arma de fuego en la que está (llamar después de colocar): gatillo, su disparador en el marco del padre (o
+    // null); dentro(x, y, z), si un punto del padre cae dentro del arma. Sin nada, vuelve a como la pone el control.
+    // Devuelve lo que eligió: inclinación (rad), corrida (m), pose del índice y a qué distancia quedó la yema (m)
+    agarrar(gatillo = null, dentro = null) {
+      ajuste.q.identity(); ajuste.t.set(0, 0, 0); indiceArma = null;
+      mano.colocar(ultimo.modo, ultimo.rel);
+      if (!dentro) { aplicar(); return null; }
+      // se busca una vez por arma (y por control: si cambia el giro del grip respecto del rayo, otra vez)
+      grupo.updateMatrix(); const e = grupo.matrix.elements;
+      let rec = recuerdos.get(grupo.parent);
+      if (!rec || rec.e.some((v, i) => Math.abs(v - e[i]) > 1e-4)) recuerdos.set(grupo.parent, rec = { e: e.slice(), r: buscarAgarre(J, grupo.matrix.clone(), gatillo, dentro, sx) });
+      const r = rec.r, P = posesIndice(J);
+      ajuste.q.setFromAxisAngle(v3(1, 0, 0), r.th); ajuste.t.set(0, r.ty, r.tz);
+      mano.colocar(ultimo.modo, ultimo.rel);
+      if (r.k >= 0) indiceArma = { c: P.c[r.k], g: P.g[r.k] };
+      aplicar();
+      let yema = null;
+      if (gatillo && r.k >= 0) { grupo.updateMatrix(); yema = v3(P.yema[r.k * 3] * sx, P.yema[r.k * 3 + 1], P.yema[r.k * 3 + 2]).applyMatrix4(grupo.matrix).distanceTo(gatillo); }
+      return { inclinacion: r.th, corrida: ajuste.t.clone(), indice: indiceArma, yema, costo: r.costo };
+    },
+    // objetivo: { agarre, gatillo, pulgar, enGatillo } de 0 a 1; dt: lo que pasó (s). Los dedos van hacia el objetivo en ~60 ms
     posar(objetivo, dt = 1) {
       const k = 1 - Math.exp(-dt / 0.06);
-      for (const clave of ['agarre', 'gatillo', 'pulgar']) actual[clave] += ((objetivo[clave] ?? 0) - actual[clave]) * k;
+      for (const clave of ['agarre', 'gatillo', 'pulgar', 'enGatillo']) actual[clave] += ((objetivo[clave] ?? 0) - actual[clave]) * k;
       aplicar();
     },
     get estado() { return { ...actual }; },
   };
+  mano.colocar('control');
+  return mano;
 }
