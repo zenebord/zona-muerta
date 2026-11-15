@@ -5,7 +5,12 @@
  *
  * Recarga de cada arma:
  *   recargaTipo    cargador-pistola | cargador | tambor | tambor-rapido | peine | cerrojo | palanca | cartuchos | quiebre | cinta | granada | ignicion
- *   recargaFinal   qué hace al terminar de poner el cargador: corredera | liberar | palmada | palmada-hk | cerrojo | ninguno
+ *   recargaFinal   qué hace al terminar de poner el cargador, si el arma estaba vacía:
+ *                    reten       aprieta el botón que suelta la corredera o el cerrojo, que habían quedado atrás, y se
+ *                                cierran solos (las pistolas, la M16 y la Kriss Vector)
+ *                    palmada-hk  la manija se traba atrás antes de sacar el cargador y al final se la baja de una palmada (MP5)
+ *                    cerrojo     tira de la manija y la suelta
+ *                    ninguno
  *   recargaUnidad  qué lleva en la mano: cargador | cargador-curvo | cargador-plano | tambor-cargador | bala | cartucho | peine | speedloader | cinta | granada40 | celda | ignicion
  *                  (cajaMinigun: la caja de la minigun, que dibuja su propio modelo en la mano; js/armas-especiales.js)
  *   balanceo       el cargador se engancha de adelante hacia atrás (AK, Saiga)
@@ -18,22 +23,22 @@ const VIDA_ZOMBIE_NORMAL = 15;
 
 const ARMAS = {
   // --- Pistolas: 3 tiros ---
-  glock:    { id: 'glock',    nombre: 'Glock 17',        categoria: 'pistola', dano: 5, cargador: 17, cadencia: 240, recarga: 1300, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#b0966f' },
+  glock:    { id: 'glock',    nombre: 'Glock 17',        categoria: 'pistola', dano: 5, cargador: 17, cadencia: 240, recarga: 1300, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#b0966f' },
   magnum:   { id: 'magnum',   nombre: 'Magnum .44',      categoria: 'pistola', dano: 5, cargador: 6,  cadencia: 380, recarga: 2600, automatica: false, velocidad: 17, alcance: 700, recargaTipo: 'tambor', recargaUnidad: 'bala', color: '#b9b9c4' },
-  colt1911: { id: 'colt1911', nombre: 'Colt 1911',       categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 300, recarga: 1250, automatica: false, velocidad: 16, alcance: 600, recargaTipo: 'cargador-pistola', recargaFinal: 'liberar', recargaUnidad: 'cargador', color: '#3b3f44' },
-  deagle:   { id: 'deagle',   nombre: 'Desert Eagle',    categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 420, recarga: 1600, automatica: false, velocidad: 18, alcance: 760, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#c9c6bf' },
+  colt1911: { id: 'colt1911', nombre: 'Colt 1911',       categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 300, recarga: 1250, automatica: false, velocidad: 16, alcance: 600, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#3b3f44' },
+  deagle:   { id: 'deagle',   nombre: 'Desert Eagle',    categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 420, recarga: 1600, automatica: false, velocidad: 18, alcance: 760, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#c9c6bf' },
   python:   { id: 'python',   nombre: 'Colt Python',     categoria: 'pistola', dano: 5, cargador: 6,  cadencia: 340, recarga: 2000, automatica: false, velocidad: 17, alcance: 700, recargaTipo: 'tambor-rapido', recargaUnidad: 'speedloader', color: '#c4c6ca' },
-  beretta92: { id: 'beretta92', nombre: 'Beretta 92FS',  categoria: 'pistola', dano: 5, cargador: 15, cadencia: 250, recarga: 1350, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#2c2d31' },
-  ppk:      { id: 'ppk',      nombre: 'Walther PPK',     categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 230, recarga: 1150, automatica: false, velocidad: 15, alcance: 560, recargaTipo: 'cargador-pistola', recargaFinal: 'liberar', recargaUnidad: 'cargador', color: '#9aa0a8' },
-  mauser:   { id: 'mauser',   nombre: 'Mauser C96',      categoria: 'pistola', dano: 5, cargador: 10, cadencia: 260, recarga: 2200, automatica: false, velocidad: 16, alcance: 640, recargaTipo: 'cargador-pistola', recargaFinal: 'corredera', recargaUnidad: 'cargador', color: '#45484f' },
+  beretta92: { id: 'beretta92', nombre: 'Beretta 92FS',  categoria: 'pistola', dano: 5, cargador: 15, cadencia: 250, recarga: 1350, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#2c2d31' },
+  ppk:      { id: 'ppk',      nombre: 'Walther PPK',     categoria: 'pistola', dano: 5, cargador: 7,  cadencia: 230, recarga: 1150, automatica: false, velocidad: 15, alcance: 560, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#9aa0a8' },
+  mauser:   { id: 'mauser',   nombre: 'Mauser C96',      categoria: 'pistola', dano: 5, cargador: 10, cadencia: 260, recarga: 2200, automatica: false, velocidad: 16, alcance: 640, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#45484f' },
 
   // --- Metralletas: 5 tiros, automáticas ---
   uzi:      { id: 'uzi',      nombre: 'Uzi',             categoria: 'metralleta', dano: 3, cargador: 32, cadencia: 75,  recarga: 1500, automatica: true, velocidad: 15, alcance: 520, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', color: '#4a4a52' },
   ak47:     { id: 'ak47',     nombre: 'AK-47',           categoria: 'metralleta', dano: 3, cargador: 30, cadencia: 100, recarga: 1800, automatica: true, velocidad: 16, alcance: 640, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador-curvo', balanceo: true, color: '#7a4a2a' },
-  m16:      { id: 'm16',      nombre: 'M16',             categoria: 'metralleta', dano: 3, cargador: 30, cadencia: 85,  recarga: 1600, automatica: true, velocidad: 17, alcance: 680, recargaTipo: 'cargador', recargaFinal: 'palmada', recargaUnidad: 'cargador', color: '#2f3a2f' },
+  m16:      { id: 'm16',      nombre: 'M16',             categoria: 'metralleta', dano: 3, cargador: 30, cadencia: 85,  recarga: 1600, automatica: true, velocidad: 17, alcance: 680, recargaTipo: 'cargador', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#2f3a2f' },
   mp5:      { id: 'mp5',      nombre: 'MP5',             categoria: 'metralleta', dano: 3, cargador: 30, cadencia: 80,  recarga: 1700, automatica: true, velocidad: 15, alcance: 600, recargaTipo: 'cargador', recargaFinal: 'palmada-hk', recargaUnidad: 'cargador-curvo', color: '#2a2a2e' },
   thompson: { id: 'thompson', nombre: 'Thompson M1928',  categoria: 'metralleta', dano: 3, cargador: 50, cadencia: 90,  recarga: 2400, automatica: true, velocidad: 15, alcance: 560, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'tambor-cargador', color: '#6b4a2b' },
-  vector:   { id: 'vector',   nombre: 'Kriss Vector',    categoria: 'metralleta', dano: 3, cargador: 25, cadencia: 55,  recarga: 1600, automatica: true, velocidad: 16, alcance: 580, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', color: '#2b2c2f' },
+  vector:   { id: 'vector',   nombre: 'Kriss Vector',    categoria: 'metralleta', dano: 3, cargador: 25, cadencia: 55,  recarga: 1600, automatica: true, velocidad: 16, alcance: 580, recargaTipo: 'cargador', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#2b2c2f' },
   p90:      { id: 'p90',      nombre: 'P90',             categoria: 'metralleta', dano: 3, cargador: 50, cadencia: 70,  recarga: 2100, automatica: true, velocidad: 16, alcance: 620, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador-plano', color: '#55585e' },
 
   // --- Rifles: 1 tiro ---

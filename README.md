@@ -995,17 +995,17 @@ mientras el arma gira para cargarla ya va camino a la canana.
 
 | Mecanismo | Armas | Qué hace |
 |---|---|---|
-| Cargador de pistola | Glock, Desert Eagle, Colt 1911 | Saca el cargador, toma otro del cinturón y lo mete. Si quedó vacía, la corredera está trabada atrás: la Glock y la Deagle la tiran, la 1911 suelta el retén. |
+| Cargador de pistola | Glock, Colt 1911, Desert Eagle, Beretta 92FS, Walther PPK, Mauser C96 | Saca el cargador, toma otro del cinturón y lo mete. Si quedó vacía, la corredera está trabada atrás: la mano vuelve a tomar el arma, el pulgar baja el retén y la corredera se va adelante sola con la primera bala; nadie la toca (pedido de Enzo). Antes la Glock, la Deagle, la Beretta y la Mauser tiraban de la corredera después de una pausa de 0,4 s: con el retén esa pausa no hace falta y la recarga en vacío dura 0,4 s menos. |
 | Tambor | Magnum .44 | Abre el tambor, boca arriba vacía los seis casquillos, baja el revólver a la altura de la canana, carga bala por bala y cierra. |
 | Cargador rápido | Colt Python | Abre, vacía, mete las seis juntas con el cargador rápido, lo suelta al piso y cierra. |
 | (los dos revólveres) | Magnum .44, Colt Python | La ventana del armazón donde va el tambor es hueca: con el tambor volcado se ve a través de ella lo que hay detrás, y al cerrarlo el tambor la vuelve a tapar entera (`ventana` en `PY_FORMAS` y `MG_FORMAS`, `js/armas-modelos-3.js`). |
-| Peine | Mosin-Nagant, Mauser C96 | Vacía: abre el cerrojo, apoya el peine, empuja las balas y al cerrar salta el peine. A medias: completa bala por bala. |
+| Peine | Mosin-Nagant | Vacía: abre el cerrojo, apoya el peine, empuja las balas y al cerrar salta el peine. A medias: completa bala por bala. |
 | Peine en bloque | M1 Garand | Con la última bala el cerrojo queda trabado atrás y el peine vacío salta para arriba girando, con su «ping». Vacía: no toca la manija; apoya el peine lleno en la guía, lo empuja entero con el pulgar (peine y balas bajan juntos y desaparecen en el cajón) y, cuando la mano se va, el cerrojo salta adelante solo. A medias: completa bala por bala. |
 | Cerrojo | Remington 700 | Abre la recámara, pone bala por bala por arriba, metiéndola en la ranura de la recámara abierta (antes la bala se borraba unos centímetros antes), y cierra. |
 | Palanca | Winchester 1894 y 1887 | Gira el arma y carga por la ventana lateral de a una. Si estaba vacía, acciona la palanca: el lazo baja y se adelanta girando sobre su pivote (`GIRO_PALANCA`, unos 57°), con la mano del gatillo adentro. |
 | Bombeo | Mossberg 500, SPAS-12 | Da vuelta el arma y mete los cartuchos por abajo de a uno; bombea si estaba vacía. Disparar interrumpe la carga. |
 | Quiebre | Recortada, M79 | Se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe. La recortada tiene martillos exteriores: con cada tiro cae uno (primero el de este lado) y, ya cerrada, el pulgar monta los caídos uno por uno, con su clic (pedido de Enzo). |
-| Cargador extraíble | Uzi, AK-47, M16, MP5, P90, Barrett, AA-12, Saiga-12, láser | El vacío cae al piso. La AK y la Saiga lo enganchan con balanceo; la M16 palmea el retén; la MP5 traba la manija al empezar y la baja de un palmazo al final; las demás tiran del cerrojo si estaban vacías. |
+| Cargador extraíble | Uzi, AK-47, M16, MP5, Thompson, Kriss Vector, P90, Barrett, SVD, AA-12, Saiga-12, láser | El vacío cae al piso. La AK y la Saiga lo enganchan con balanceo. Si estaban vacías (pedidos de Enzo): la **M16** y la **Vector** cierran con el retén del cerrojo (`RETEN` en `js/jugador.js`): la mano sube por el costado del cajón, aprieta el botón y el cerrojo se va adelante solo, sin tocar la manija; la **MP5** traba la manija atrás al empezar y al final la mano se alza abierta y la baja de una palmada (suena la palma contra la manija y, enseguida, el cerrojo que llega adelante); la **Thompson**, que quedó con el cerrojo y la perilla atrás, toma la perilla, la tira apenas y la suelta; las demás tiran de la manija y la sueltan. |
 | Cinta | M2 Browning | Levanta la tapa, tiende la cinta nueva, cierra y tira de la manija. |
 
 Las de acción manual (Remington, Mosin, Mossberg y las dos Winchester) accionan el cerrojo, la
@@ -1022,6 +1022,14 @@ la corredera (la vaina sale a los 20 ms; si se vació, la recámara queda abiert
 en las de palanca con la palanca. La manija de carga va con el portacerrojo donde en el arma real va (AK, SVD,
 Saiga, SPAS-12, Benelli, Uzi, Thompson); en la M16, la MP5, la Vector, la Barrett y la AA-12 queda quieta. En
 cámara lenta (L, en el campo de pruebas) se ve cada paso.
+
+**Recámara abierta al vaciarse** (pedido de Enzo; `QUEDA_ABIERTA` en `js/jugador.js`): en la M16, la MP5, la
+Thompson y la Kriss Vector, con la última bala el cerrojo queda atrás y la ventana, abierta (el hueco oscuro en
+lugar de la franja clara del cerrojo), todo el tiempo que el arma esté vacía. Se cierra recién en la recarga, después
+de sacar el cargador y poner uno nuevo, cuando se suelta el cerrojo (el retén, la palmada o la perilla, según el
+arma): ahí se ve entrar la primera bala. En la Thompson la perilla queda atrás con el cerrojo. Las pistolas (la
+corredera trabada) y el Garand ya quedaban abiertos; la AK, la Uzi, la P90, el SVD, la Barrett, la Saiga y la
+AA-12 cierran con la última bala, como antes.
 
 **Cargadores** (`js/cargadores.js`): cada arma con cargador extraíble tiene el suyo, el mismo dibujo que se ve
 puesto en el arma (el modelo lo llama desde ahí). El que se saca, el que va en la mano y el que cae al piso son ese
@@ -1202,6 +1210,23 @@ artefacto escondido), el audio se suspende y la partida se pausa. Lo último no 
 - Cada zombie sale distinto: pelo, heridas, desgarros, manchas y a veces un brazo colgando. Al morir cae sobre un charco de sangre.
 - Los mecanismos de recarga (cargadores, correderas, cerrojos, bombeo, cartuchos, balas) son grabaciones reales
   de armas, recortadas en eventos sueltos y elegidas según el arma. Fuentes y licencias en `sonidos/CREDITOS.md`.
+- **Cada golpe suena cuando la pieza llega** (`sonidos` en las fases de `LineaTiempo`, `js/jugador.js`;
+  `PARTES_GRABACION` y `Audio_.anticipo`, `js/audio.js`). Las grabaciones de «abrir y cerrar» (tirar de una manija,
+  bombear, accionar un cerrojo o una palanca) traen sus dos golpes con el ritmo de quien las grabó, de 0,17 a 0,55 s
+  entre uno y otro; la animación tiene el suyo, distinto en cada arma y casi siempre más corto, y el segundo golpe
+  sonaba con la pieza ya cerrada y la mano de vuelta (Enzo lo notó: «el sonido puede ser más rápido o más lento»).
+  Ahora cada fase dice en qué momento tiene que caer el golpe (cuando la pieza llega atrás, cuando cierra, cuando el
+  pestillo suelta el tambor, cuando el cargador traba) y la grabación se larga antes lo que su golpe tarda en sonar;
+  las de dos golpes se tocan en dos partes, una por movimiento, y si la animación no da tiempo se saltea el silencio
+  del principio. En cámara lenta el anticipo se achica con el juego, porque el sonido sigue a velocidad normal. Lo
+  mismo vale para el tambor de los revólveres (cerraba con dos golpes separados por un cuarto de segundo; ahora uno),
+  el quiebre, los martillos de la recortada, la tapa de la M2, el cargador (el chasquido de la traba cae cuando
+  termina de entrar; antes, 0,1 s después), el peine del Mosin (su golpe caía 0,7 s tarde) y el último cartucho de
+  una tanda (la cola de la grabación seguía 0,3 s con la mano ya de vuelta en el arma). Medido en 105 casos (cada arma
+  vacía, a medias, faltándole una y accionando después del tiro): antes 40 tenían algún golpe de pieza a más de 60 ms
+  de su movimiento y 37 a más de 120 (el cierre de la AA-12, 0,66 s tarde); ahora el peor es de 31 ms y nada suena
+  más de 86 ms después de terminada la animación (antes, hasta 331). Los llamados de siempre, `Audio_.recarga(evento,
+  arma)`, suenan enteros como antes (la VR y el bastión los usan así).
 - Voces de zombies, pasos, impactos de bala en la carne y quejidos del protagonista también son grabaciones reales.
   El viento de fondo, la sirena de cada ronda y el latido con poca vida son sintetizados.
 - El «ping» del M1 Garand (el peine vacío que sale despedido) es síntesis modal desde la física del peine: el modo

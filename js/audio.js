@@ -121,7 +121,7 @@ const Audio_ = (() => {
   }
   // Reproduce una grabación; la velocidad cambia el peso (más lenta = arma más pesada) y varía un poco cada vez.
   // desde/dur: sólo un pedazo (en segundos de la grabación); pasoAlto/pasoBajo: filtros; eco: envío al eco de exterior
-  function grabacion(nombre, { vol = 1, vel = 1, retraso = 0, rev = 0.12, eco = 0, pasoBajo = 0, pasoAlto = 0, desde = 0, dur = 0, variar = 0.03 } = {}) {
+  function grabacion(nombre, { vol = 1, vel = 1, retraso = 0, rev = 0.12, eco = 0, pasoBajo = 0, pasoAlto = 0, desde = 0, dur = 0, variar = 0.03, entrada = 0 } = {}) {
     const b = grabaciones[nombre];
     if (!b) return false;
     const fuente = ctx.createBufferSource(); fuente.buffer = b;
@@ -134,6 +134,7 @@ const Audio_ = (() => {
     nodo.connect(g);
     conectar(g, rev, eco);
     const t = ctx.currentTime + retraso;
+    if (entrada) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(nivel, t + entrada); }   // arranca empezada: entra en unos ms, sin clic
     if (dur) {   // el pedazo termina con una salida de 12 ms, sin clic
       const fin = t + dur / ritmo;
       g.gain.setValueAtTime(nivel, Math.max(t, fin - 0.012)); g.gain.linearRampToValueAtTime(0.0001, fin);
@@ -219,8 +220,9 @@ const Audio_ = (() => {
       case 'cerrojo':        return CERROJO_MANUAL.has(id) ? ['cerrojo_cerrar', {}] : ['escopeta_rack', { vel: peso }];
       case 'cerrojo-abrir':  return id === 'mp5' ? ['pistola_trabar', { vel: 0.85 }] : ['cerrojo_abrir', {}];
       case 'palmada':        return ['pistola_liberar', { vel: 0.85, vol: 1.1 }];
-      case 'cierra-solo':    return ['escopeta_cerrar', { vel: 0.95 }];
-      case 'martillo':       return ['pistola_trabar', { vel: 0.82, vol: 0.9 }];   // el pulgar monta un martillo de la escopeta de dos caños   // el cerrojo del Garand salta adelante solo (el de la escopeta semiautomática al soltarlo)
+      case 'reten':          return PISTOLAS_CORREDERA.has(id) || id === 'mauser' ? ['pistola_liberar', {}] : ['escopeta_cerrar', { vel: 1.12 }];   // el retén: la corredera o el cerrojo se van adelante solos
+      case 'cierra-solo':    return ['escopeta_cerrar', { vel: 0.95 }];   // el cerrojo del Garand salta adelante solo (el de la escopeta semiautomática al soltarlo)
+      case 'martillo':       return ['pistola_trabar', { vel: 0.82, vol: 0.9 }];   // el pulgar monta un martillo de la escopeta de dos caños
       case 'palmada-hk':     return ['escopeta_cerrar', { vel: 1.05 }];
       case 'bombear':        return ['bombeo_rack', {}];
       case 'palanca':        return ['cerrojo_22', { vel: id === 'winchester1887' ? 0.82 : 0.95 }];
@@ -234,6 +236,35 @@ const Audio_ = (() => {
       case 'tapa':           return ['escopeta_cerrar', { vel: 0.7, vol: 1.15 }];
       default:               return null;   // granada y celda del láser siguen sintetizadas
     }
+  }
+
+  /* Las grabaciones de «abrir y cerrar» (tirar de una corredera, bombear, accionar un cerrojo o una palanca) traen sus
+   * dos golpes con el ritmo de quien las grabó: entre uno y otro hay de 0,17 a 0,55 s. La animación tiene el suyo, que
+   * cambia con cada arma, y casi siempre es más corto: el segundo golpe sonaba con la pieza ya cerrada y la mano de
+   * vuelta (hasta medio segundo tarde con la manija de un fusil). Por eso se tocan en dos partes, cada una cuando la
+   * pieza llega: Audio_.recarga(evento, arma, parte) y Audio_.anticipo, que dice cuánto tarda en sonar el golpe desde
+   * que arranca la parte, para largarla antes. [desde, hasta, golpe] de cada parte, en segundos de la grabación */
+  const PARTES_GRABACION = {
+    pistola_corredera: [[0.04, 0.2, 0.1], [0.22, 0.412, 0.265]],
+    escopeta_rack:     [[0.05, 0.3, 0.17], [0.6, 0.854, 0.665]],
+    bombeo_rack:       [[0, 0.18, 0.1], [0.185, 0.473, 0.295]],
+    cerrojo_22:        [[0.02, 0.3, 0.18], [0.36, 0.62, 0.51]],
+    cerrojo_abrir:     [[0, 0.12, 0.02], [0.25, 0.456, 0.365]],
+    cerrojo_cerrar:    [[0, 0.12, 0.01], [0.28, 0.442, 0.335]],
+    bombeo_cartucho:   [[0, 0.31, 0.005]],   // el cartucho sin su cola (otros dos golpes, a los 0,43 y 0,48 s): para el último de la tanda
+  };
+  // Y dónde cae el golpe en las de un solo tiempo. El cargador hace dos chasquidos (entra y traba, a 45 y 85 ms): cuenta
+  // el segundo. El peine trae un segundo largo de roce y recién a los 1155 ms el golpe de las balas que terminan de bajar
+  const GOLPE_GRABACION = { pistola_liberar: 0.035, escopeta_cerrar: 0.06, pistola_trabar: 0.065, escopeta_abrir: 0.04, pistola_cargador_poner: 0.085, rifle_peine: 1.155 };
+  // El martillo usa la grabación de trabar la corredera, que tiene dos chasquidos (65 y 115 ms): el segundo es el del
+  // martillo que queda montado
+  const GOLPE_EVENTO = { martillo: 0.115 };
+  // La palma contra la manija de la MP5: el golpe sordo de la mano, el chasquido contra la chapa y la manija que salta
+  // de su muesca. Después suena el cerrojo que se va adelante
+  function palmadaMano() {
+    golpe({ f: 165, dur: 0.05, vol: 0.5 });
+    ruido({ dur: 0.028, vol: 0.3, filtro: 'bandpass', freq: 1900, q: 1.1, ataque: 0.001, rev: 0.1 });
+    metal({ f: 2300, dur: 0.04, vol: 0.13, retraso: 0.006 });
   }
 
   // Conecta una voz a la mezcla, con envíos opcionales a la reverberación y al eco
@@ -726,11 +757,23 @@ const Audio_ = (() => {
     },
 
     // Sonidos de cada fase de las recargas y del accionamiento: grabaciones reales con respaldo sintético
-    recarga(evento, armaId) {
+    // parte (0 o 1): solo esa parte de una grabación de dos golpes (PARTES_GRABACION); sin ella suena entera, como
+    // siempre. salto: segundos del principio que se saltean (la animación no dio tiempo a todo el arranque)
+    recarga(evento, armaId, parte = null, salto = 0) {
       asegurar();
       if (FOLEY_GRANADA[evento] && FOLEY_GRANADA[evento]()) return;   // granada de mano: foley real
       const real = grabacionDeRecarga(evento, armaId);
-      if (real && grabacion(real[0], real[1])) return;
+      if (evento === 'palmada-hk') {   // primero la palma; el cerrojo llega adelante unos 30 ms después
+        palmadaMano();
+        if (real && grabacion(real[0], { ...real[1], desde: 0.03, retraso: 0.004 })) return;
+      }
+      if (real) {
+        const partes = parte == null ? null : PARTES_GRABACION[real[0]], corre = salto * (real[1].vel || 1);   // el salto, en segundos de la grabación
+        if (partes) { const [desde, hasta] = partes[parte]; if (grabacion(real[0], { ...real[1], desde: desde + corre, dur: Math.max(0.03, hasta - desde - corre), entrada: corre ? 0.004 : 0 })) return; }
+        else if (parte === 1) return;                                  // de un solo golpe, pedida en dos: ya sonó en la primera
+        else if (grabacion(real[0], corre ? { ...real[1], desde: corre, entrada: 0.004 } : real[1])) return;
+      }
+      if (parte === 1) return;                                         // el respaldo sintético suena entero en la primera parte
       switch (evento) {
         case 'cargador-sacar': metal({ f: 1900, dur: 0.05, vol: 0.18 }); friccion({ desde: 1900, hasta: 900, dur: 0.12, vol: 0.12, retraso: 0.02 }); break;
         case 'cargador-poner': friccion({ desde: 900, hasta: 1600, dur: 0.07, vol: 0.1 }); golpe({ f: 170, dur: 0.06, vol: 0.35, retraso: 0.065 }); metal({ f: 2500, dur: 0.06, vol: 0.2, retraso: 0.07 }); break;
@@ -741,7 +784,8 @@ const Audio_ = (() => {
         case 'palmada':        golpe({ f: 140, dur: 0.05, vol: 0.32 }); metal({ f: 1500, dur: 0.13, vol: 0.3, retraso: 0.04 }); break;
         case 'martillo':       metal({ f: 1800, dur: 0.04, vol: 0.16 }); metal({ f: 1400, dur: 0.06, vol: 0.2, retraso: 0.05 }); break;
         case 'cierra-solo':    friccion({ desde: 2000, hasta: 1000, dur: 0.05, vol: 0.1 }); metal({ f: 1350, dur: 0.16, vol: 0.34, retraso: 0.04 }); golpe({ f: 150, dur: 0.05, vol: 0.28, retraso: 0.04 }); break;
-        case 'palmada-hk':     golpe({ f: 150, dur: 0.04, vol: 0.28 }); friccion({ desde: 2100, hasta: 1000, dur: 0.06, vol: 0.12, retraso: 0.03 }); metal({ f: 1350, dur: 0.16, vol: 0.36, retraso: 0.05 }); break;
+        case 'reten':          metal({ f: 2600, dur: 0.03, vol: 0.12 }); metal({ f: 1500, dur: 0.14, vol: 0.32, retraso: 0.03 }); golpe({ f: 200, dur: 0.05, vol: 0.22, retraso: 0.03 }); break;
+        case 'palmada-hk':     friccion({ desde: 2100, hasta: 1000, dur: 0.06, vol: 0.12, retraso: 0.03 }); metal({ f: 1350, dur: 0.16, vol: 0.36, retraso: 0.05 }); break;
         case 'bombear':        friccion({ desde: 800, hasta: 1500, dur: 0.08, vol: 0.2 }); metal({ f: 1100, dur: 0.08, vol: 0.22, retraso: 0.06 }); friccion({ desde: 1500, hasta: 800, dur: 0.08, vol: 0.2, retraso: 0.13 }); metal({ f: 950, dur: 0.13, vol: 0.32, retraso: 0.2 }); golpe({ f: 170, dur: 0.05, vol: 0.25, retraso: 0.2 }); break;
         case 'palanca':        metal({ f: 1300, dur: 0.07, vol: 0.22 }); friccion({ desde: 900, hasta: 1600, dur: 0.1, vol: 0.12, retraso: 0.03 }); metal({ f: 1100, dur: 0.11, vol: 0.28, retraso: 0.17 }); golpe({ f: 160, dur: 0.05, vol: 0.22, retraso: 0.17 }); break;
         case 'cartucho':       friccion({ desde: 1300, hasta: 2100, dur: 0.05, vol: 0.1 }); golpe({ f: 280, dur: 0.035, vol: 0.16, retraso: 0.045 }); metal({ f: 2200, dur: 0.05, vol: 0.13, retraso: 0.05 }); break;
@@ -758,6 +802,15 @@ const Audio_ = (() => {
         case 'celda':          tono({ desde: 300, hasta: 1500, dur: 0.28, vol: 0.14, rev: 0.4 }); tono({ desde: 1800, hasta: 2600, dur: 0.18, vol: 0.05, retraso: 0.22, rev: 0.4 }); golpe({ f: 200, dur: 0.04, vol: 0.15 }); break;
         default:               metal({ f: 1500, dur: 0.06, vol: 0.2 });
       }
+    },
+
+    // Cuánto tarda en sonar el golpe de un evento de recarga (o de una de sus dos partes) desde que arranca: el que lo
+    // larga lo hace esa fracción de segundo antes de que la pieza llegue (Jugador: LineaTiempo.terminar)
+    anticipo(evento, armaId, parte = null) {
+      const real = grabacionDeRecarga(evento, armaId);
+      if (!real || evento === 'palmada-hk') return 0;
+      const vel = real[1].vel || 1, partes = parte == null ? null : PARTES_GRABACION[real[0]];
+      return (partes ? partes[parte][2] - partes[parte][0] : parte === 1 ? 0 : GOLPE_EVENTO[evento] ?? GOLPE_GRABACION[real[0]] ?? 0) / vel;
     },
 
     // Lo que cae al piso: latón real que rebota (más agudo cuanto más chica la vaina), cartuchos de plástico,

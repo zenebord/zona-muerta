@@ -199,7 +199,8 @@ const GESTOS_MANO = {
   bolsa:       { cierre: 0.5, nudillo: 0.7, pulgar: { cierra: 0.5, suelto: 0.5 }, abre: 0.2 },               // metida en la bolsa
   manija:      { cierre: 0.8, nudillo: 0.4, pulgar: { suelto: 1 }, abre: 0 },                                // los dedos en gancho
   corredera:   { cierre: 0.7, nudillo: 0.8, pulgar: { cierra: 0.8, suelto: 0.2 }, abre: 0 },                 // por arriba de la corredera
-  palmada:     { cierre: 0.04, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.7 },
+  palmada:     { cierre: 0.04, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.7 },                              // abierta, para golpear con la palma
+  aprieta:     { cierre: 0.32, nudillo: 0.5, pulgar: { cierra: 0.5, largo: 0.5 }, abre: 0.1 },               // contra el costado del arma, el pulgar sobre un botón
   empuja:      { cierre: 0.8, nudillo: 0.9, pulgar: { sube: 1 }, abre: 0 },                                  // el pulgar empuja las balas del peine
   bandeja:     { cierre: 0.3, nudillo: 0.5, pulgar: { arriba: 0.6, suelto: 0.4 }, abre: 0.4 },               // la palma hacia arriba, sosteniendo
   empunadura:  { cierre: [0.4, 0.86, 0.9, 0.92], nudillo: 0.92, pulgar: { largo: 1 }, abre: 0 },               // el índice, en el disparador; el pulgar, estirado del otro lado
@@ -303,6 +304,10 @@ function gestoApoyo(gesto, p, e, op = {}) {
     case 'bolsa':   return libre('bolsa', 55, 28, 0, 2.0, 0, mezclaGesto('viaja', 'bolsa', agarra));
     case 'manija':  return libre('manija', 70, 15, -5, 3.3, 1.2, mezclaGesto('viaja', 'manija', agarra));   // la manija, en el gancho de los dedos
     case 'palmada': return libre('palmada', 35, -25, 0, 1.0);
+    case 'aprieta': return ante3 => {   // el retén del cerrojo: la mano por el costado del cajón y la yema del pulgar en el botón (p)
+      const B = manoDesdeAntebrazo(ante3, true, 14, 6, 10);
+      return { gesto, B, O: [p[0] - B.ex[0] * 1.8 - B.ea[0] * 1.4, p[1] - B.ex[1] * 1.8 - B.ea[1] * 1.4], pose: mezclaGesto('viaja', 'aprieta', agarra) };
+    };
     case 'empuja':  return libre('empuja', 80, 35, 0, 0.4, 1.9);
     case 'suelta':  return libre('suelta', 0, -5, 0);
     case 'cabeza':  return libre('cabeza', -70, 72, 0);                                                 // la palma sobre la cabeza: la muñeca doblada, los dedos hacia atrás
