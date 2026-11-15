@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zona Muerta VR · Campo de pruebas</title>
+<!-- Como app del Quest (quest/: el APK que arma Bubblewrap de Meta a partir de este manifiesto) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#141018">
+<link rel="icon" type="image/png" href="icono-192.png">
+<script>
+  // Como app del Quest (abre con ?pwa=1): la sesión inmersiva se pide ya, antes de bajar el resto, porque el gesto de tocar
+  // el ícono dura poco; vr/campo.js la conecta. En el navegador (sin ?pwa=1) no hace nada.
+  if (/[?&]pwa\b/.test(location.search) && navigator.xr) window.__sesionApp = navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] }).catch(() => null);
+</script>
 <!-- Versión en realidad virtual (Meta Quest, WebXR): el campo de pruebas en primera persona, con las armas del juego
      sobre una mesa y tres modos (entrenamiento, ataque zombie y libre). Los modelos de las armas salen de los del
      juego (js/armas-modelos*.js) y los sonidos de js/audio.js; la escena está en vr/campo.js. Sin visor se puede
@@ -76,5 +85,7 @@
                  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
 </script>
 <script type="module" src="campo.js"></script>
+<!-- Lo que se baja queda guardado: la app abre sin conexión (vr/sw.js) -->
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body>
 </html>

@@ -300,6 +300,39 @@ Las del armero (lo que ya hacían en el 2D, en 3D):
   juego, el menú: `pagina()` y `clic(texto)`, mandos simulados con `visorFalso`, horda, blancos, modos, contadores de
   dibujo y `molde`).
 
+### App para el Meta Quest 3S (`quest/`)
+
+La misma VR, también como app instalable del Quest: las dos versiones conviven. La web sigue en `…/zona-muerta/vr/` para
+el navegador; la app es esa página empaquetada con **Bubblewrap de Meta** (`@meta-quest/bubblewrap-core` 1.24.1) como
+*Trusted Web Activity* en **modo inmersivo**: se instala como APK, tiene su ícono en la biblioteca y corre con el motor
+del navegador del Quest (el mismo WebXR, el mismo rendimiento). No es un port a Unity o Godot: todo el trabajo de la web
+(armas, zombies, modos, sonidos) va tal cual, y cada publicación de la web actualiza la app sin reinstalarla.
+
+- **La parte web** (`vr/`): `manifest.webmanifest` (nombre, íconos, `start_url` con `?pwa=1`, `ovr_package_name`), los
+  íconos (`icono-192.png`, `icono-512.png`, `icono-512-enmascarable.png`: un caminante del juego dibujado con el código
+  2D, el título y la placa VR) y `sw.js`, que guarda cada archivo que se baja (también three.js y los modelos de los
+  mandos de jsDelivr): primero va a la red, sin conexión sirve lo guardado (en el Chrome de pruebas, sin red, carga en
+  3,4 s con las 48 armas; en el visor no está probado). Con `?pwa=1`, `vr/campo.js` pide la sesión inmersiva apenas carga, como pide Meta (tocar el ícono vale como el
+  gesto), y la conecta cuando está todo armado; si no se puede, queda la portada con «Entrar». Sin `?pwa=1` no cambia
+  nada.
+- **Armar el APK**: `cd quest && npm install && node armar.mjs` (con `--base=http://127.0.0.1:8794/` usa los íconos y el
+  manifiesto del árbol de trabajo, antes de publicar). Genera el proyecto de Android con la plantilla de Meta (API 32,
+  minSdk 23; `jcenter` cambiado por `mavenCentral`, como indica Meta), compila con Gradle, alinea, firma y deja
+  `quest/ZonaMuertaVR.apk` y `quest/assetlinks.json` (el APK y el proyecto no van al repositorio). Necesita JDK 17 y el SDK
+  de Android (por defecto, los de Homebrew). Para una versión nueva del APK (sólo hace falta si cambia el nombre, el
+  ícono o la configuración: la web se actualiza sola), subir `appVersionCode` en `twa-manifest.json`.
+- **La firma** vive fuera del repositorio, en `~/.zona-muerta-quest/` (`zona-muerta.keystore` y `firma.json` con la
+  clave): toda versión nueva tiene que salir firmada con la misma. Guardar una copia.
+- **Digital Asset Links**: el Quest abre una app inmersiva sólo si el sitio declara que ese paquete con esa firma es
+  suyo, en `https://zenebord.github.io/.well-known/assetlinks.json` (la raíz del dominio, no la del proyecto): eso es el
+  repositorio de usuario `zenebord/zenebord.github.io` con `quest/assetlinks.json` en `.well-known/` y un `.nojekyll`.
+  Sin ese archivo la app no arranca (en el registro del visor: «TWA verification was unsuccessful!»).
+- **Instalar** (con el visor en modo desarrollador y conectado por USB): `adb install -r quest/ZonaMuertaVR.apk`; aparece
+  en la biblioteca, en «Orígenes desconocidos». Para la tienda de Meta hace falta crear la app en el panel de
+  desarrolladores y subir el APK con `ovr-platform-util`.
+- **Lo que hace Meta con el modo inmersivo**: la página debe entrar al visor apenas se abre, sin pantalla previa; lo
+  que esté fuera de `vr/` se abre en el navegador común.
+
 ## Último bastión (defensa con estrategia)
 
 **Lo que se juega hoy es el rediseño por bandos**, que se describe más abajo, en «El juego: dos bandos con

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.zenebord.zonamuerta",
+      "sha256_cert_fingerprints": [
+        "B1:65:61:25:A9:58:CC:03:8F:CF:DB:34:5B:73:23:07:B6:6D:A3:E1:3F:E0:91:9C:48:9D:51:26:6C:87:48:AE"
+      ]
+    }
+  }
+]

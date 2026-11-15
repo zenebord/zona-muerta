@@ -64,6 +64,18 @@ function cambiarConfig(clave, valor) {
   try { localStorage.setItem(CONFIG_CLAVE, JSON.stringify(config)); } catch (e) { /* sin almacenamiento: dura la sesión */ }
   aplicarConfig();
 }
+/* ---------- Como app del Quest: directo al visor ----------
+ * Instalada desde el APK (quest/, Bubblewrap de Meta), la página abre con ?pwa=1 (el start_url de vr/manifest.webmanifest)
+ * y entra al visor apenas abre, como pide Meta: tocar el ícono de la app vale como el gesto que exige el navegador. La
+ * sesión la pide vr/index.html antes de bajar los scripts (el permiso del gesto dura poco) y acá se conecta ya; mientras
+ * se arman las armas y los zombies, el visor muestra su pantalla de carga, y al final se ubica al jugador y se abre el
+ * menú (alEntrarVisor). Si no se pudo, queda la portada con «Entrar». */
+const OPCIONES_XR = { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] };
+if (window.__sesionApp) window.__sesionApp.then(async sesion => {
+  if (!sesion) return;
+  try { Audio_.activar(); Audio_.sinSilencioAutomatico(); Audio_.lugar('galpon'); } catch (e) { /* el audio arranca con el primer gatillo */ }
+  try { await renderer.xr.setSession(sesion); } catch (e) { console.warn('No se pudo conectar la sesión de la app:', e); }
+});
 const ruido = (g, w, h, n, colores) => { for (let k = 0; k < n; k++) { g.fillStyle = colores[k % colores.length]; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1 + Math.random() * 2); } };
 
 /* ---------- El galpón (como el del campo de pruebas: chapa gris azulada, columnas y el poste con bandas) ---------- */
@@ -1016,7 +1028,14 @@ renderer.setAnimationLoop(() => {
   renderer.render(escena, camara);
 });
 
-renderer.xr.addEventListener('sessionstart', () => { portada.classList.add('oculta'); reubicar(); abrirAlEntrar = 6; if (hudDiv) hudDiv.style.display = 'none'; });
+// Al entrar al visor: fuera la portada, al lugar de tiro y el menú en cuanto se sabe dónde está la cabeza. El primer
+// gatillo o agarre reanuda el audio (en la app la sesión arranca sola y el contexto de audio puede quedar suspendido)
+function alEntrarVisor() {
+  portada.classList.add('oculta'); reubicar(); abrirAlEntrar = 6; if (hudDiv) hudDiv.style.display = 'none';
+  const s = renderer.xr.getSession(); if (s) for (const t of ['selectstart', 'squeezestart']) s.addEventListener(t, () => Audio_.activar());
+}
+renderer.xr.addEventListener('sessionstart', alEntrarVisor);
+if (renderer.xr.isPresenting) alEntrarVisor();   // la app entró al visor mientras se armaba todo
 renderer.xr.addEventListener('sessionend', () => { portada.classList.remove('oculta'); puntero.visible = false; menu.cerrar(); aplicarConfig(); });
 sinVisor.disabled = false;
 if (navigator.xr) {
@@ -1029,7 +1048,7 @@ if (navigator.xr) {
 entrar.addEventListener('click', async () => {
   Audio_.activar(); Audio_.sinSilencioAutomatico(); Audio_.lugar('galpon'); aplicarConfig();
   try {
-    const sesion = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] });
+    const sesion = await navigator.xr.requestSession('immersive-vr', OPCIONES_XR);
     await renderer.xr.setSession(sesion);
   } catch (e) { estado.textContent = 'No se pudo entrar en realidad virtual: ' + e.message; }
 });

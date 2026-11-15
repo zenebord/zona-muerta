@@ -1,0 +1,20 @@
+{
+  "name": "Zona Muerta VR",
+  "short_name": "Zona Muerta",
+  "description": "Campo de pruebas y ataque zombie en realidad virtual: todas las armas del juego, los zombies de Último bastión y tres modos de juego.",
+  "id": "./",
+  "start_url": "./?pwa=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#141018",
+  "theme_color": "#141018",
+  "lang": "es-MX",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512-enmascarable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "ovr_package_name": "io.github.zenebord.zonamuerta"
+}

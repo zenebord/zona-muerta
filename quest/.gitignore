@@ -1,0 +1,5 @@
+# Lo que arma armar.mjs (se regenera) y las dependencias
+node_modules/
+android/
+*.apk
+*.idsig
