@@ -178,7 +178,7 @@ el catálogo (`ARMAS`) y los sonidos. `js/armas-especiales.js` (trae el modelo d
 - **Cada arma de la pared se arma sola desde el juego** (`fichaDe` en `vr/armas-todas.js`): la empuñadura donde apoya la
   mano del gatillo en el 2D; el apoyo en `manoDelantera`; la carga en el ancla `cargador`; lo que se mueve (corredera,
   cerrojo o manija, bomba, palanca, quiebre, tambor); la mecánica y la munición de `ARMAS` (`recargaTipo`); las miras
-  telescópicas del SVD (4×), el Barrett (10×) y la Mosin (3,5×) en el tubo del dibujo; el retroceso por categoría (más
+  telescópicas del SVD (4×), el Barrett (10×) y la Mosin (3,5×) en su tubo y las de punto rojo (ver «Todas las miras»); el retroceso por categoría (más
   fuerte en la Desert Eagle, los revólveres y el Barrett). Los materiales se deciden por el color medido como lo pinta el
   juego (sRGB: `tipoDeColor` lo mide en lineal y los marrones oscuros quedaban goma y los dorados, madera): madera los
   marrones, latón los dorados (en las legendarias, también el bronce), acero los grises, goma o polímero los oscuros.
@@ -277,6 +277,22 @@ Las del armero (lo que ya hacían en el 2D, en 3D):
 - **Miras**: el dibujo es de costado y, pasado a 3D tal cual, de atrás no servía (el bloque del alza de la AK tapaba la
   vista y el guion era una placa maciza). Las armas de fuego tienen muesca y poste (o la mira telescópica) y la bala sale
   por la línea de mira: medido con la AK, a 50 m pasó de 0 de 5 a 5 de 5 en el papel.
+- **Todas las miras del juego andan** (pedido de Leandro: «que todas las armas con mira telescópica o no telescópica
+  funcionen, así es más fácil apuntar»):
+  - **Telescópicas** (Remington 700, Dragunov 4×, Barrett 10×, Mosin 3,5×): como la de la Remington, la lente del ocular
+    muestra lo que ve una cámara angosta desde el objetivo, con la retícula. En las de la pared, `miraDe` buscaba sola
+    la pieza larga y fina de arriba y agarraba otra cosa (en la Dragunov el tubo de gases, en la Mosin el cañón, en la
+    Barrett una pieza del frente) y ponía una lente de 1,2 cm adentro de ella; ahora cada una dice dónde va su tubo
+    (`TELESCOPICAS` en `vr/armas-todas.js`) y las piezas de la mira se tornean.
+  - **De punto rojo** (Kriss Vector, P90, Saiga-12, Milkor MGL y bazuca M9; `vr/miras3d.js`): como la tecla D del 2D,
+    marcan al zombie vivo más cercano al alcance del arma, la retícula de Enzo (el anillo rojo, las cuatro marcas y el
+    punto) se cierra sobre su pecho y el tiro va derecho a él y no falla: los perdigones de la Saiga no se abren y la
+    granada del MGL y el cohete de la bazuca lo siguen. En el 2D el personaje se da vuelta solo; acá apunta la mano,
+    así que se elige entre los que están a menos de 25° de donde apunta el arma, y el que estaba marcado sigue si el
+    nuevo no está al menos 1 m más cerca. Siempre prendida (con el visor no hay D). La mira, que era un bloque macizo,
+    ahora es hueca, y en su vidrio está la misma retícula «en el infinito», como en una de verdad: se ve sobre la línea
+    de la mira aunque el ojo no esté centrado (mientras hay un zombie marcado, el vidrio no la repite). Sin visor, con
+    el clic derecho el ojo va a 13 cm de la ventana. A los blancos del entrenamiento no los marca (en el 2D tampoco).
 - **Las dos manos se ven como manos** (`vr/mano3d.js`), no como los controles: las del sobreviviente del juego
   (`js/skins.js`), con guante arena, palma y yemas de cuero, el abrojo de la muñeca, las almohadillas de los nudillos y la
   manga oliva de la chaqueta (la boca de la manga, oscura). Se arma como los zombies (`vr/forma3d.js`: primitivas unidas en

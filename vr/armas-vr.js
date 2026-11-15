@@ -272,7 +272,8 @@ export class Arma {
     this.retroceso = 1;
     const boca = this.mundoDe(this.boca), dirMira = this.apuntarA ? this.apuntarA.clone().sub(boca).normalize() : this.direccionMira();
     this.mundo.efectos.disparo(boca, this.direccion(), ahora, def.fogonazo);
-    const n = this.datos.perdigones || 1, cono = def.cono, tiro = { impacto: false };   // los perdigones de un tiro cuentan como un tiro
+    // con un zombie marcado por la mira de punto rojo, también los perdigones van derecho a él (como en el 2D)
+    const n = this.datos.perdigones || 1, cono = def.puntoRojo && this.apuntarA ? Math.min(def.cono, 0.004) : def.cono, tiro = { impacto: false };   // los perdigones de un tiro cuentan como un tiro
     for (let k = 0; k < n; k++) {
       const dir = dirMira.clone();
       const a = Math.random() * Math.PI * 2, r = (n > 1 ? Math.sqrt(Math.random()) : Math.random() - 0.5) * cono;
