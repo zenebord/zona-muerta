@@ -8,7 +8,7 @@
  *   Mecanizados  máquinas con dotación: cierran el paso; al romperse, queda un soldado a pie, herido
  *     torreta        ráfagas de bala chica: no apunta al aire y el blindaje le resta
  *     tanque         cañón de un blanco, al de más vida; las mordidas le hacen la mitad; se mueve
- *     mortero        granada con área de 4 a 6,5 celdas, una cada 7 s, que tarda 1,5 s en caer donde estaba el blanco
+ *     mortero        granada con área de 4 a 6,5 celdas, una cada 5 s, que tarda 1,5 s en caer donde estaba el blanco
  *     antiaérea      ráfagas con área, sólo a lo que vuela
  *   Dentro de un búnker cada uno usa su arma, con 20 % más de alcance y un poco más de cadencia.
  * También: lo que pasa cuando algo propio recibe daño o cae (contagio), las explosiones, el gas y las granadas.
