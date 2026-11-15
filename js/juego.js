@@ -10,9 +10,12 @@ class Juego {
     this.ultra = !!opciones.ultra;        // defensa ultra: 4 carriles, el sector a la izquierda (js/defensa-ultra.js)
     this.estrategia = !!opciones.estrategia;   // último bastión: defensa con estrategia sobre una grilla (js/estrategia.js)
     this.opcionesEstrategia = opciones.estrategia;   // { nivel, continuar } (js/bastion-niveles.js)
-    // Mapa de la pelea infinita: la ciudad en ruinas o la cloaca (canal subterráneo con zombies tóxicos)
-    this.mapa = opciones.mapa === 'cloaca' && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !mision ? 'cloaca' : 'ciudad';
+    // Mapa de la pelea infinita: la ciudad en ruinas, la cloaca (canal subterráneo con zombies tóxicos) o la nieve
+    // (bosque de pinos nevados con colinas y zombies congelados: js/escenario-nieve.js y js/zombie-congelado.js)
+    this.mapa = (opciones.mapa === 'cloaca' || opciones.mapa === 'nieve') && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !mision ? opciones.mapa : 'ciudad';
     this.cloaca = this.mapa === 'cloaca';
+    this.nieve = this.mapa === 'nieve';
+    Mundo.nieve = this.nieve;   // pisadas que crujen (Jugador.superficie)
     Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra;
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
     Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
@@ -24,7 +27,7 @@ class Juego {
     this.escupitajos = []; this.charcos = [];   // ácido de los zombies tóxicos
     this.ametralladoras = new Map();          // índice de trozo → AmetralladoraFija
     this.especialesTomadas = new Map();       // índice de trozo → momento en que se agarró la caja especial
-    this.ambiente = new Ambiente();
+    this.ambiente = this.nieve ? new AmbienteNieve() : new Ambiente();   // en la nieve, la nevada
     this.camaraX = this.jugador.x - ANCHO / 2;
     this.sacudida = 0;
     this.ahora = 0; this.tiempoJugado = 0;
@@ -58,7 +61,7 @@ class Juego {
       this.proximaCaja = Infinity;
     }
     this.proximoLatido = 0; this.proximoGemidoLejano = 6000;
-    Audio_.ambiente(this.cloaca ? 0 : this.entrenamiento || this.pruebas ? 0.012 : 0.07);   // viento de fondo (en los galpones, apenas el de afuera)
+    Audio_.ambiente(this.cloaca ? 0 : this.entrenamiento || this.pruebas ? 0.012 : this.nieve ? 0.11 : 0.07);   // viento de fondo (en los galpones, apenas el de afuera; en la nieve, más fuerte)
     Audio_.agua(this.cloaca ? 0.09 : 0);   // en la cloaca, el agua del canal
     this.proximaGota = 0;
     if (this.entrenamiento) {
@@ -309,7 +312,7 @@ class Juego {
     if (this.torreta || this.ultra) {
       const novedades = [this.ronda >= 2 ? t('ronda.rapidos') : '', this.ronda >= 3 ? t('ronda.corredores') : '', this.ronda >= 4 ? t('ronda.resistentes') : ''].filter(Boolean);
       this.avisoRonda(`${t('ronda.ola')} ${this.ronda}`, t('ronda.olaZombies', { n: this.porAparecer }) + (novedades.length ? ' · ' + novedades.join(', ') : ''));
-    } else this.avisoRonda(`${t('ronda.ronda')} ${this.ronda}`, t('ronda.zombies', { n: this.porAparecer }) + (this.cloaca && this.ronda === 1 ? t('ronda.toxicos') : ''));
+    } else this.avisoRonda(`${t('ronda.ronda')} ${this.ronda}`, t('ronda.zombies', { n: this.porAparecer }) + (this.cloaca && this.ronda === 1 ? t('ronda.toxicos') : '') + (this.nieve && this.ronda === 1 ? t('ronda.congelados') : ''));
     Audio_.sirena();
   }
 
@@ -552,7 +555,9 @@ class Juego {
       const corredor = this.ronda >= d.rondaCorredores && Math.random() < d.probCorredor;
       // En la cloaca se mezclan los tóxicos: uno de cada cinco al principio, hasta la mitad en las rondas altas
       const toxico = this.cloaca && Math.random() < Math.min(0.5, 0.2 + (this.ronda - 1) * 0.05);
-      this.zombies.push(toxico ? new ZombieToxico(x, d) : new Zombie(x, corredor, d));
+      // En la nieve, los congelados: casi uno de cada cinco al principio, hasta cuatro de cada diez en las rondas altas
+      const congelado = this.nieve && Math.random() < Math.min(0.4, 0.18 + (this.ronda - 1) * 0.04);
+      this.zombies.push(toxico ? new ZombieToxico(x, d) : congelado ? new ZombieCongelado(x, d) : new Zombie(x, corredor, d));
       this.porAparecer--;
     }
   }
@@ -680,7 +685,7 @@ class Juego {
     const tiros = disparosParaMatar(arma, vidaActual);
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
-    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : '') + this.dificultad.nombre.toUpperCase();
+    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
     if (modo !== this.textoModo) { this.textoModo = modo; h.dificultad.textContent = modo; }
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +
@@ -733,6 +738,7 @@ class Juego {
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
     else if (this.pruebas) Escenario.dibujarCampo(ctx, cam, (this.puestoX ?? j.x) - cam, j.x - cam);   // anclado al puesto; lo que se repite cubre lo que se ve
+    else if (this.nieve) Escenario.dibujarNieve(ctx, cam, this.tiempoJugado);   // js/escenario-nieve.js
     else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); EscenarioHistoria.sogas(ctx, cam, this); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);
@@ -768,6 +774,7 @@ class Juego {
     for (const x of this.explosiones) x.dibujar(ctx, cam);
     for (const p of this.particulas) p.dibujar(ctx, cam);
     if (this.cloaca) Escenario.dibujarCloacaFrente(ctx, cam, this.tiempoJugado);
+    else if (this.nieve) Escenario.dibujarNieveFrente(ctx, cam, this.ambiente, this.tiempoJugado);
     else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia, this); }
     else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
     if (this.pruebas) ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);

@@ -23,7 +23,7 @@ y entrá a <http://127.0.0.1:8791/>.
   grande, con panza). Los **corredores** (5), más chicos y rápidos: maratonista (musculosa con dorsal y una
   zapatilla), basquetbolista (camiseta con número y vincha), encapuchado, ciclista (casco y calzas) y
   adolescente (el más chico, gorra para atrás). Cada uno varía además el tono de la piel y de la ropa. El
-  **tóxico** (cloaca) lleva el traje amarillo.
+  **tóxico** (cloaca) lleva el traje amarillo y el **congelado** (bosque nevado), campera y gorro de lana nevados.
 - **Personaje**: arriba a la derecha del menú principal se elige la skin, con vista previa animada:
   Sobreviviente (el de siempre), Dios del trueno, Armadura de combate, Cazador enmascarado, Centinela, Bufón
   del caos, Rey de los mares, Vaquero y Ninja. Están inspirados en arquetipos conocidos pero con diseños
@@ -42,6 +42,23 @@ y entrá a <http://127.0.0.1:8791/>.
     esquiva agachándose. Además **saltan encima** del jugador desde media distancia y, a veces, cuando les
     pegan, dan una **voltereta hacia atrás**. El ácido envenena: la vida baja de a poco unos segundos y la
     barra se pone verde. En la cloaca no hay montañas, así que no hay M2 ni cajas especiales.
+  - **Bosque nevado** (`js/escenario-nieve.js`, pedido: «un mapa de nieve con pinos nevados con nieve en las hojas»):
+    el mismo mundo de la ciudad (trozos de 1200 px), todo nevado. Cielo de invierno con el sol velado, dos
+    cordilleras nevadas y tres filas de **pinos con nieve en las ramas** (cada piso de ramas con su capa de nieve,
+    blanca al sol y celeste a la sombra, con gotas que cuelgan) que se lavan con la distancia. El camino tapado de
+    nieve tiene las huellas de las ruedas, pisadas y ventisqueros; atrás hay pinos grandes, rocas nevadas, troncos,
+    carteles de ruta y autos enterrados. Las **colinas** son las montañas de la ciudad, con su **M2 Browning** arriba
+    y la **caja especial**, pinos en las laderas, cornisa, carámbanos y rocas. Nieva en tres profundidades, el viento
+    levanta ráfagas al ras del piso y las pisadas crujen. Vienen los mismos zombies que en la ciudad y, además,
+    **zombies congelados** (`js/zombie-congelado.js`: casi uno de cada cinco al principio, hasta cuatro de cada
+    diez en las rondas altas): excursionistas con campera acolchada y gorro de lana con pompón, con **nieve en la
+    ropa** (hombros, pecho, ruedo y gorro) y carámbanos, la piel gris azulada escarchada, ojos celestes y vaho al
+    respirar; caminan más lento y aguantan 25 % más. De lejos (de 140 a 560 px) levantan un **bloque de hielo
+    azul** por detrás de la cabeza y lo tiran por elevación adonde va a estar el jugador: si pega, **saca 5 de
+    vida** y se rompe en astillas, igual que contra el piso. Probado: en 4 tiros desde 200 a 420 px, de los dos
+    lados, cada bloque le sacó exactamente 5 al jugador; en cinco rondas salieron 14 congelados de 70 zombies.
+    Los pinos se dibujan una vez por variante y tamaño, y cada fila de bosque en una tira de 2048 px que se repite;
+    aun así, el cuadro de la nieve cuesta 1,6 veces el de la ciudad (medido sin placa de video).
 - **Misiones**: 17 misiones que se juegan dentro de la pelea infinita (matar zombies, conseguir
   armas, sobrevivir, y varias contrarreloj). El progreso queda guardado en el navegador.
 - **Defensa zombie ultra** (`js/defensa-ultra.js`): el tirador defiende su sector, a la izquierda, y los zombies llegan
@@ -1297,11 +1314,13 @@ js/terreno.js     mundo infinito por trozos, montañas, farolas, chatarra, ruina
 js/escenario.js   cielo, cordilleras, ciudad lejana y suelo en perspectiva
 js/escenario-objetos.js  ruinas, farolas, chatarra, alambrado del frente, periódicos, bolas de paja, campo de pruebas y galpón
 js/escenario-cloaca.js   canal subterráneo: bóveda, arcos, caños, desagües, vereda y canal de agua
+js/escenario-nieve.js    bosque nevado: cielo de invierno, cordilleras, pinos nevados, camino, colinas, objetos y nevada
 js/jugador.js     jugador, inventario, disparo, recarga por fases
 js/jugador-dibujo.js  cuerpo del jugador con los brazos siguiendo la recarga
 js/skins.js       personajes elegibles: colores, capa, torso y cabeza de cada uno
 js/zombie.js      zombie (verde, camiseta azul manchada, pantalón marrón roto)
 js/zombie-toxico.js  zombie tóxico de la cloaca, escupitajo de ácido y charco
+js/zombie-congelado.js  zombie congelado del bosque nevado y su bloque de hielo
 js/armas-modelos-2.js  las 20 armas nuevas (fuego, cuerpo a cuerpo y legendarias)
 js/armas-modelos-3.js  rediseño realista de las armas de fuego (medidas reales, estrías, cuadrillé, rieles, miras)
 js/poderes.js     golpe cuerpo a cuerpo y poderes de las legendarias (rayo, onda, ola, armas que vuelven)

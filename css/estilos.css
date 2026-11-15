@@ -469,6 +469,10 @@ kbd {
 .tarjeta-mapa p { margin: 0 14px; font-size: 13px; opacity: .8; line-height: 1.4; }
 .tarjeta-mapa .etiqueta { align-self: flex-start; margin: 10px 14px 0; font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border: 1px solid rgba(255,255,255,.2); opacity: .85; }
 .tarjeta-mapa .etiqueta.toxica { border-color: #8fe83a; color: #b6ff5c; }
+/* Bosque nevado: la vista se dibuja con el mismo escenario del juego (js/escenario-nieve.js: vistaNieve) */
+.tarjeta-mapa.nieve .vista { background: linear-gradient(#8a9fb3, #dde6ee 62%, #f2f6f9) center / cover no-repeat; }
+.tarjeta-mapa.nieve:hover, .tarjeta-mapa.nieve:focus-visible { border-color: #9fd4ff; background: rgba(159,212,255,.08); }
+.tarjeta-mapa .etiqueta.helada { border-color: #9fd4ff; color: #cdeaff; }
 /* Último bastión: niveles con vista del escenario; cerrado hasta ganar el anterior */
 .lista-bastion { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); width: min(1180px, 100%); }
 .tarjeta-bastion canvas.vista { width: 100%; height: auto; aspect-ratio: 320 / 150; }

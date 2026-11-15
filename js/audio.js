@@ -929,6 +929,11 @@ const Audio_ = (() => {
     // Pasos del protagonista: asfalto en la calle, arena en las montañas y en el campo
     paso(superficie = 'asfalto', fuerza = 1) {
       asegurar();
+      if (superficie === 'nieve') {   // nieve: la pisada en la arena, más aguda, y el crujido de la nieve que se aplasta
+        variante('paso_arena', 6, { vol: 0.12 * fuerza, vel: 1.12 + Math.random() * 0.16, rev: 0.03 });
+        ruido({ dur: 0.09, vol: 0.05 * fuerza, filtro: 'highpass', freq: 2400, ataque: 0.004, retraso: 0.01 });
+        return;
+      }
       variante(superficie === 'arena' ? 'paso_arena' : 'paso_asfalto', 6, { vol: 0.15 * fuerza, vel: 0.9 + Math.random() * 0.2, rev: 0.03 });
     },
     aterrizar(superficie = 'asfalto') {
@@ -1040,6 +1045,21 @@ const Audio_ = (() => {
       asegurar();
       ruido({ dur: 0.18, vol: 0.38 * fuerza, filtro: 'lowpass', freq: 1800, freqFin: 300, ataque: 0.002, rev: 0.15 });
       ruido({ dur: 0.5, vol: 0.06 * fuerza, filtro: 'highpass', freq: 4200, ataque: 0.03, retraso: 0.05, rev: 0.05 });   // chisporroteo del ácido
+    },
+    /* ---------- Zombie congelado (js/zombie-congelado.js) ---------- */
+    // Bloque de hielo que sale volando: el resoplido del brazo y el zumbido del aire
+    hieloLanzar(distancia = 200) {
+      asegurar();
+      const cerca = Math.max(0.25, 1 - distancia / 650);
+      ruido({ dur: 0.2, vol: 0.2 * cerca, filtro: 'bandpass', freq: 500, freqFin: 2300, q: 1.4, ataque: 0.03, rev: 0.12 });
+      tono({ desde: 160, hasta: 120, dur: 0.14, vol: 0.06 * cerca, sat: 1.5, rev: 0.1 });
+    },
+    // Hielo que se rompe: el estallido agudo, las astillas que tintinean y el golpe sordo
+    hieloRompe(fuerza = 1) {
+      asegurar();
+      ruido({ dur: 0.1, vol: 0.32 * fuerza, filtro: 'highpass', freq: 3200, ataque: 0.001, rev: 0.12 });
+      ruido({ dur: 0.07, vol: 0.18 * fuerza, filtro: 'bandpass', freq: 1200, q: 1.2, ataque: 0.001 });
+      for (let k = 0; k < 3; k++) tono({ desde: 2600 + Math.random() * 1800, hasta: 2400 + Math.random() * 1400, dur: 0.06 + Math.random() * 0.05, vol: 0.05 * fuerza, retraso: 0.02 + k * 0.035 + Math.random() * 0.02, rev: 0.2 });
     },
     // Ambiente de fondo: viento (nivel 0 lo apaga)
     ambiente(nivel) { asegurar(); if (nivel > 0) encenderViento(nivel); else { apagarViento(); apagarAgua(); } },

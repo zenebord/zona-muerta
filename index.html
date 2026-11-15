@@ -68,6 +68,12 @@
         <p data-t="mapas.cloaca.texto">Un canal subterráneo gigante. Entre los zombies de siempre aparecen zombies tóxicos: saltan, dan volteretas y escupen ácido. Agáchate (↓) para esquivar el chorro y no pises los charcos.</p>
         <span class="etiqueta toxica" data-t="mapas.cloaca.etiqueta">ZOMBIES TÓXICOS</span>
       </button>
+      <button class="tarjeta-mapa nieve" data-accion="mapa-nieve">
+        <span class="vista" id="vista-nieve" aria-hidden="true"></span>
+        <h3 data-t="mapas.nieve">BOSQUE NEVADO</h3>
+        <p data-t="mapas.nieve.texto">Pinos cargados de nieve y colinas con ametralladoras M2 y armas especiales. Entre los zombies de siempre aparecen zombies congelados que tiran bloques de hielo.</p>
+        <span class="etiqueta helada" data-t="mapas.nieve.etiqueta">ZOMBIES CONGELADOS</span>
+      </button>
     </div>
     <div class="fila-botones">
       <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
@@ -471,12 +477,14 @@
   <script src="js/escenario.js"></script>
   <script src="js/escenario-objetos.js"></script>
   <script src="js/escenario-cloaca.js"></script>
+  <script src="js/escenario-nieve.js"></script>
   <script src="js/jugador.js"></script>
   <script src="js/anatomia.js"></script>
   <script src="js/jugador-dibujo.js"></script>
   <script src="js/skins.js"></script>
   <script src="js/zombie.js"></script>
   <script src="js/zombie-toxico.js"></script>
+  <script src="js/zombie-congelado.js"></script>
   <script src="js/objetos.js"></script>
   <script src="js/juego.js"></script>
   <script src="js/poderes.js"></script>

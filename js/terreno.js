@@ -27,7 +27,7 @@ const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
 function indiceTrozo(x) { return Math.floor(x / TAMANO_TROZO); }
 
 // Modo del mundo: en el campo de pruebas no hay montañas, es una planicie
-const Mundo = { plano: false, interior: false };   // interior: galpón del entrenamiento
+const Mundo = { plano: false, interior: false, nieve: false };   // interior: galpón del entrenamiento; nieve: el mapa de la nieve
 
 // ¿El trozo i es una montaña? Nunca cerca del punto de aparición ni dos montañas seguidas
 function esMontana(i) {
