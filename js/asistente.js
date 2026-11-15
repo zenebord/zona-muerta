@@ -255,7 +255,7 @@ const Asistente = (() => {
       catalogo(),
       '',
       'AJUSTES PERSONALES ACTIVOS: ' + (Object.keys(personal).length ? Object.entries(personal).map(([k, v]) => `${k}=${fmt(v)} (original ${fmt(original[k])})`).join(', ') : 'ninguno'),
-      j ? `PARTIDA EN CURSO: arma en mano ${j.jugador.arma().id}, modo ${j.torreta ? 'defensa zombie' : j.entrenamiento ? 'entrenamiento' : j.pruebas ? 'campo de pruebas' : j.cloaca ? 'cloaca' : 'ciudad'}.` : 'Ahora está en el menú principal.',
+      j ? `PARTIDA EN CURSO: arma en mano ${j.jugador.arma().id}, modo ${j.torreta ? 'defensa zombie' : j.entrenamiento ? 'entrenamiento' : j.pruebas ? 'campo de pruebas' : j.cloaca ? 'cloaca' : j.nieve ? 'bosque nevado' : 'ciudad'}.` : 'Ahora está en el menú principal.',
     ].join('\n');
   }
   const reglas = async () => `${await reglasFijas()}\n\n${estadoDelJuego()}`;

@@ -659,6 +659,8 @@ class Zombie {
       mx = hx + 26 + manotazo * 2.4; my = hy + 1.5 + ang * 15; giro = 10; flexion = 8; desvio = -26 + manotazo * 40;
       cierre = 0.13 + (ataca ? (1 + Math.sin(this.ahora / 90)) * 0.1 : 0); abre = 2.4; suelto = 0.75;   // dedos largos y abiertos, en gancho; al morder la garra se abre y se cierra
     }
+    const lanza = cerca && this.manoLanzando ? this.manoLanzando(hx, hy) : null;   // el congelado tira un bloque de hielo (js/zombie-congelado.js)
+    if (lanza) { [mx, my] = lanza; giro = 30; flexion = 12; desvio = 0; cierre = 0.62; abre = 0.6; suelto = 0.4; }
     const R = resolverBrazo(hx, hy, mx, my, { lado: cerca ? 1 : -1, fondo: cerca ? -2 : 2, afuera: 0.1 }), cx = R.cx, cy = R.cy;
     const en = (x0, y0, x1, y1, k) => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k];
     miembroZombie(ctx, m => juntos(tramoMusculo(hx, hy, cx, cy, 6.0 * g - m, 4.7 * g - m, 0.18, 0.22, 0.5, 0.3), tramoMusculo(cx, cy, mx, my, 4.7 * g - m, 3.4 * g - m, 0.2, 0.1, 0.28, 0.3)), piel);

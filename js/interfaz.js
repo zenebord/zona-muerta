@@ -49,6 +49,16 @@
     }
   }
 
+  // La tarjeta del bosque nevado muestra el mismo escenario del juego, achicado (js/escenario-nieve.js); se dibuja una
+  // vez, la primera que se abre la lista de mapas
+  let vistaNieveLista = false;
+  function vistaDelBosqueNevado() {
+    if (vistaNieveLista) return;
+    vistaNieveLista = true;
+    try { const v = document.getElementById('vista-nieve'); if (v) v.style.backgroundImage = `url(${Escenario.vistaNieve(640, 200).toDataURL('image/jpeg', 0.86)})`; }
+    catch { /* sin lienzo: queda el degradado del CSS */ }
+  }
+
   /* ---- Partida ---- */
   function iniciar(mision, opciones = {}) {
     Audio_.activar();
@@ -70,7 +80,7 @@
     fichaVitrinaId = null;
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
-    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
+    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : opciones.mapa === 'nieve' ? t('aviso.nieve') : t('aviso.sobrevive'), 2500);
     if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? juego.nivelV2.aviso || 'b2.aviso' : 'bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
@@ -412,10 +422,11 @@
     if (!boton) return;
     Audio_.activar();
     switch (boton.dataset.accion) {
-      case 'infinita':  mostrar('panel-mapas'); break;
+      case 'infinita':  mostrar('panel-mapas'); vistaDelBosqueNevado(); break;
       case 'historia':  Historia.abrir(); break;
       case 'mapa-ciudad': iniciar(null); break;
       case 'mapa-cloaca': iniciar(null, { mapa: 'cloaca' }); break;
+      case 'mapa-nieve':  iniciar(null, { mapa: 'nieve' }); break;
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;

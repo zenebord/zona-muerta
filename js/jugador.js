@@ -172,7 +172,7 @@ class Jugador {
 
   arma() { return this.montada ? ARMA_FIJA : ARMAS[this.inventario[this.indiceArma]]; }
   // Qué pisa: piso de cemento en el galpón (suena como el asfalto), arena en el campo de pruebas y en las montañas, asfalto en la calle
-  superficie() { if (Mundo.interior) return 'asfalto'; return Mundo.plano || alturaSuelo(this.x) < SUELO_BASE - 1 ? 'arena' : 'asfalto'; }
+  superficie() { if (Mundo.interior) return 'asfalto'; if (Mundo.nieve) return 'nieve'; return Mundo.plano || alturaSuelo(this.x) < SUELO_BASE - 1 ? 'arena' : 'asfalto'; }
   municionActual() { return this.montada ? this.montada.municion : this.municion[this.arma().id]; }
   recargando() { return !!this.recarga; }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=bb437005a4">
+  <link rel="stylesheet" href="css/estilos.css?v=622052839e">
 </head>
 <body>
 
@@ -67,6 +67,12 @@
         <h3 data-t="mapas.cloaca">CLOACA</h3>
         <p data-t="mapas.cloaca.texto">Un canal subterráneo gigante. Entre los zombies de siempre aparecen zombies tóxicos: saltan, dan volteretas y escupen ácido. Agáchate (↓) para esquivar el chorro y no pises los charcos.</p>
         <span class="etiqueta toxica" data-t="mapas.cloaca.etiqueta">ZOMBIES TÓXICOS</span>
+      </button>
+      <button class="tarjeta-mapa nieve" data-accion="mapa-nieve">
+        <span class="vista" id="vista-nieve" aria-hidden="true"></span>
+        <h3 data-t="mapas.nieve">BOSQUE NEVADO</h3>
+        <p data-t="mapas.nieve.texto">Pinos cargados de nieve y colinas con ametralladoras M2 y armas especiales. Entre los zombies de siempre aparecen zombies congelados que tiran bloques de hielo.</p>
+        <span class="etiqueta helada" data-t="mapas.nieve.etiqueta">ZOMBIES CONGELADOS</span>
       </button>
     </div>
     <div class="fila-botones">
@@ -444,15 +450,15 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=429e1fb191"></script>
+  <script src="js/version.js?v=dd0f34b73c"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
   <script src="js/sonidos-armas.js?v=e377a1bd0a"></script>
   <script src="js/config.js?v=3e8b9d330b"></script>
-  <script src="js/idioma.js?v=b92e67f118"></script>
+  <script src="js/idioma.js?v=94620e694c"></script>
   <script src="js/teclas.js?v=1f3ce9c429"></script>
-  <script src="js/audio.js?v=02b09b3340"></script>
+  <script src="js/audio.js?v=640ec87667"></script>
   <script src="js/musica.js?v=50afd150ca"></script>
   <script src="js/armas.js?v=299b5b2acc"></script>
   <script src="js/dificultad.js?v=cec7b59c76"></script>
@@ -467,18 +473,20 @@
   <script src="js/cargadores.js?v=c46fec28e5"></script>
   <script src="js/misiones.js?v=0f5d75147e"></script>
   <script src="js/fichas-armas.js?v=95408f5016"></script>
-  <script src="js/terreno.js?v=c85e281b9f"></script>
+  <script src="js/terreno.js?v=21020ea523"></script>
   <script src="js/escenario.js?v=417f78f1df"></script>
   <script src="js/escenario-objetos.js?v=8c9ccc7cc9"></script>
   <script src="js/escenario-cloaca.js?v=b8f2e8e22f"></script>
-  <script src="js/jugador.js?v=782e06f1dc"></script>
+  <script src="js/escenario-nieve.js?v=d0ce6c9a71"></script>
+  <script src="js/jugador.js?v=54186e5371"></script>
   <script src="js/anatomia.js?v=4cf570a5d0"></script>
   <script src="js/jugador-dibujo.js?v=d3a68a267e"></script>
   <script src="js/skins.js?v=92c4f293be"></script>
-  <script src="js/zombie.js?v=3ef9e2c40d"></script>
+  <script src="js/zombie.js?v=d9b871a67a"></script>
   <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
+  <script src="js/zombie-congelado.js?v=7245dc0443"></script>
   <script src="js/objetos.js?v=92872f9d7a"></script>
-  <script src="js/juego.js?v=2e4a49f7c5"></script>
+  <script src="js/juego.js?v=65afa1b57a"></script>
   <script src="js/poderes.js?v=93de692929"></script>
   <script src="js/armas-especiales.js?v=2df0a2414c"></script>
   <script src="js/defensa-ultra.js?v=54c14cb81a"></script>
@@ -495,8 +503,8 @@
   <script src="js/bastion-v2-dibujo.js?v=3d259cb722"></script>
   <script src="js/bastion-v2-ui.js?v=94fc2356c3"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
-  <script src="js/asistente.js?v=7bcf596264"></script>
-  <script src="js/interfaz.js?v=409af6069b"></script>
+  <script src="js/asistente.js?v=a4038893a6"></script>
+  <script src="js/interfaz.js?v=4a303d9a07"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>

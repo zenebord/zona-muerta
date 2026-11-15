@@ -476,6 +476,10 @@ kbd {
 .tarjeta-mapa p { margin: 0 14px; font-size: 13px; opacity: .8; line-height: 1.4; }
 .tarjeta-mapa .etiqueta { align-self: flex-start; margin: 10px 14px 0; font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border: 1px solid rgba(255,255,255,.2); opacity: .85; }
 .tarjeta-mapa .etiqueta.toxica { border-color: #8fe83a; color: #b6ff5c; }
+/* Bosque nevado: la vista se dibuja con el mismo escenario del juego (js/escenario-nieve.js: vistaNieve) */
+.tarjeta-mapa.nieve .vista { background: linear-gradient(#8a9fb3, #dde6ee 62%, #f2f6f9) center / cover no-repeat; }
+.tarjeta-mapa.nieve:hover, .tarjeta-mapa.nieve:focus-visible { border-color: #9fd4ff; background: rgba(159,212,255,.08); }
+.tarjeta-mapa .etiqueta.helada { border-color: #9fd4ff; color: #cdeaff; }
 /* Último bastión: niveles con vista del escenario; cerrado hasta ganar el anterior */
 .lista-bastion { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); width: min(1180px, 100%); }
 .tarjeta-bastion canvas.vista { width: 100%; height: auto; aspect-ratio: 320 / 150; }
@@ -1043,6 +1047,12 @@ body.en-bastion.bastion-v2 .bastion-info {
         <p data-t="mapas.cloaca.texto">Un canal subterráneo gigante. Entre los zombies de siempre aparecen zombies tóxicos: saltan, dan volteretas y escupen ácido. Agáchate (↓) para esquivar el chorro y no pises los charcos.</p>
         <span class="etiqueta toxica" data-t="mapas.cloaca.etiqueta">ZOMBIES TÓXICOS</span>
       </button>
+      <button class="tarjeta-mapa nieve" data-accion="mapa-nieve">
+        <span class="vista" id="vista-nieve" aria-hidden="true"></span>
+        <h3 data-t="mapas.nieve">BOSQUE NEVADO</h3>
+        <p data-t="mapas.nieve.texto">Pinos cargados de nieve y colinas con ametralladoras M2 y armas especiales. Entre los zombies de siempre aparecen zombies congelados que tiran bloques de hielo.</p>
+        <span class="etiqueta helada" data-t="mapas.nieve.etiqueta">ZOMBIES CONGELADOS</span>
+      </button>
     </div>
     <div class="fila-botones">
       <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
@@ -1421,7 +1431,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261115-1638-f16e36a';
+const VERSION_JUEGO = '20261115-1723-ff9c9f4';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1565,7 +1575,7 @@ const TEXTOS = {
     'mapas.ciudad': 'CIUDAD EN RUINAS', 'mapas.ciudad.texto': 'La calle al atardecer, con montañas que tienen ametralladoras M2 y cajas con armas especiales.',
     'mapas.ciudad.etiqueta': 'ZOMBIES COMUNES Y CORREDORES',
     'mapas.cloaca': 'CLOACA', 'mapas.cloaca.texto': 'Un canal subterráneo gigante. Entre los zombies de siempre aparecen zombies tóxicos: saltan, dan volteretas y escupen ácido. Agáchate ({k:abajo}) para esquivar el chorro y no pises los charcos.',
-    'mapas.cloaca.etiqueta': 'ZOMBIES TÓXICOS',
+    'mapas.cloaca.etiqueta': 'ZOMBIES TÓXICOS', 'mapas.nieve': 'BOSQUE NEVADO', 'mapas.nieve.texto': 'Pinos cargados de nieve y colinas con ametralladoras M2 y armas especiales. Entre los zombies de siempre aparecen zombies congelados que tiran bloques de hielo.', 'mapas.nieve.etiqueta': 'ZOMBIES CONGELADOS',
     'misiones.titulo': 'MISIONES', 'misiones.ayuda': 'Todas las misiones se juegan dentro de la pelea infinita. Elige una y a sobrevivir.',
     'misiones.borrar': 'BORRAR PROGRESO', 'misiones.borrado': 'PROGRESO BORRADO', 'misiones.confirmar': 'CLIC DE NUEVO PARA BORRAR',
     'misiones.caceria': 'CACERÍA', 'misiones.busqueda': 'BÚSQUEDA', 'misiones.supervivencia': 'SUPERVIVENCIA', 'misiones.cumplida': '✔ CUMPLIDA',
@@ -1595,13 +1605,13 @@ const TEXTOS = {
     'fin.torreta': v => `Aguantaste ${v.olas} ola${v.olas === 1 ? '' : 's'} completa${v.olas === 1 ? '' : 's'} en ${v.dificultad} y mataste ${v.bajas} zombies en ${v.tiempo}. `,
     'fin.record': '¡Nuevo récord!', 'fin.tuRecord': v => `Tu récord: ola ${v.ola}.`,
     'aviso.entrenamiento': 'ENTRENAMIENTO · {k:menuPruebas} ELIGE ARMA · {k:grupo1}-{k:grupo7} GRUPO', 'aviso.torreta': 'DEFENSA ZOMBIE · {k:izquierda} {k:derecha} GIRAN · {k:disparar} DISPARA · {k:recargar} CAMBIA LA CINTA',
-    'aviso.pruebas': 'CAMPO DE PRUEBAS · {k:izquierda} {k:derecha} CAMINAN · {k:saltar} SALTA · {k:armaAnterior} {k:armaSiguiente} CAMBIAN DE ARMA · {k:camaraLenta}: CÁMARA LENTA · {k:menuPruebas}: MENÚ', 'aviso.pruebasTactil': 'CAMPO DE PRUEBAS · TOCA «ARMAS» PARA ELEGIR', 'aviso.torretaTactil': 'DEFENSA ZOMBIE · ◀ ▶ GIRAN · FUEGO DISPARA · RECARGAR CAMBIA LA CINTA', 'aviso.entrenamientoTactil': 'ENTRENAMIENTO · TOCA «ARMAS» PARA ELEGIR', 'aviso.mision': v => 'MISIÓN: ' + v.nombre, 'aviso.cloaca': '¡SOBREVIVE EN LA CLOACA! · {k:abajo} AGACHARSE', 'aviso.sobrevive': '¡SOBREVIVE!',
+    'aviso.pruebas': 'CAMPO DE PRUEBAS · {k:izquierda} {k:derecha} CAMINAN · {k:saltar} SALTA · {k:armaAnterior} {k:armaSiguiente} CAMBIAN DE ARMA · {k:camaraLenta}: CÁMARA LENTA · {k:menuPruebas}: MENÚ', 'aviso.pruebasTactil': 'CAMPO DE PRUEBAS · TOCA «ARMAS» PARA ELEGIR', 'aviso.torretaTactil': 'DEFENSA ZOMBIE · ◀ ▶ GIRAN · FUEGO DISPARA · RECARGAR CAMBIA LA CINTA', 'aviso.entrenamientoTactil': 'ENTRENAMIENTO · TOCA «ARMAS» PARA ELEGIR', 'aviso.mision': v => 'MISIÓN: ' + v.nombre, 'aviso.cloaca': '¡SOBREVIVE EN LA CLOACA! · {k:abajo} AGACHARSE', 'aviso.nieve': '¡SOBREVIVE EN LA NIEVE! · CUIDADO CON EL HIELO', 'aviso.sobrevive': '¡SOBREVIVE!',
     'aviso.sinGrupo': v => `TODAVÍA NO TENÉS ${v.grupo}`, 'aviso.enMano': 'EN MANO: ', 'aviso.miraOn': 'MIRA: APUNTANDO AL ZOMBIE MÁS CERCANO', 'aviso.miraOff': 'MIRA QUITADA', 'aviso.puntoRojoOn': 'PUNTO ROJO: APUNTANDO AL ZOMBIE MÁS CERCANO', 'aviso.puntoRojoOff': 'PUNTO ROJO QUITADO', 'aviso.sinMira': 'SOLO LAS ARMAS CON MIRA TELESCÓPICA O DE PUNTO ROJO', 'aviso.caja': 'CAJA: ', 'aviso.m2Puesta': 'M2 BROWNING PUESTA · {k:abajo} PARA MONTARLA',
     'aviso.m2Quitada': 'M2 QUITADA', 'aviso.borrado': 'TODO BORRADO', 'aviso.bajaste': 'BAJASTE DE LA AMETRALLADORA', 'aviso.m2Montada': 'M2 BROWNING · {k:abajo} PARA SOLTARLA',
     'aviso.aereoEn': v => `ATAQUE AÉREO EN ${v.s} S`, 'aviso.aereo': '¡ATAQUE AÉREO EN CAMINO! ¡A CUBIERTO!', 'aviso.nueva': 'NUEVA ARMA: ', 'aviso.municion': 'MUNICIÓN: ',
     'aviso.sinMunicion': 'SIN MUNICIÓN PARA ',
     'ronda.ola': 'OLA', 'ronda.ronda': 'RONDA', 'ronda.olaZombies': v => `${v.n} zombies por los dos lados`, 'ronda.zombies': v => `${v.n} zombies en camino`,
-    'ronda.toxicos': ' · algunos son tóxicos: saltan y escupen ácido', 'ronda.rapidos': 'más rápidos', 'ronda.corredores': 'más corredores', 'ronda.resistentes': 'más resistentes',
+    'ronda.toxicos': ' · algunos son tóxicos: saltan y escupen ácido', 'ronda.congelados': ' · algunos están congelados: tiran bloques de hielo', 'ronda.rapidos': 'más rápidos', 'ronda.corredores': 'más corredores', 'ronda.resistentes': 'más resistentes',
     'ronda.olaSuperada': 'OLA SUPERADA', 'ronda.olaLlega': v => `+20 de vida · la ola ${v.n} llega en ${v.s} s y viene peor`,
     'ronda.superada': 'RONDA SUPERADA', 'ronda.llega': v => `+20 de vida · la ronda ${v.n} llega en ${v.s} s`,
     'hud.en': v => `en ${v.s} s`, 'hud.quedan': v => `quedan ${v.n}`, 'hud.tiros': v => `(${v.n} tiro${v.n > 1 ? 's' : ''} por zombie)`,
@@ -1610,7 +1620,7 @@ const TEXTOS = {
     'hud.pruebas': 'CAMPO DE PRUEBAS', 'hud.pruebasTactil': 'ARMAS: menú · ◀ ARMA ▶ · ZOMBIE', 'hud.pruebasTeclado': 'C: menú · Q E: arma · L: cámara lenta · Z: zombie',
     'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARGANDO…', 'vitrina.lenta': 'CÁMARA LENTA', 'vitrina.lentaSi': 'CÁMARA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDAD NORMAL', 'vitrina.botonLenta': 'CÁMARA LENTA', 'vitrina.botonZombie': '+ ZOMBIE DE PRUEBA (Z)',
     'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> caminan · <kbd>{k:saltar}</kbd> salta · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> cambian de arma · <kbd>{k:disparar}</kbd> o clic dispara · <kbd>{k:recargar}</kbd> o clic derecho recarga · <kbd>{k:camaraLenta}</kbd> cámara lenta · <kbd>{k:zombie}</kbd> zombie de prueba · <kbd>{k:menuPruebas}</kbd> todas las armas',
-    'hud.entrenamiento': 'ENTRENAMIENTO', 'hud.pruebasModo': 'PRUEBAS', 'hud.torreta': 'DEFENSA ZOMBIE · ', 'hud.cloaca': 'CLOACA · ',
+    'hud.entrenamiento': 'ENTRENAMIENTO', 'hud.pruebasModo': 'PRUEBAS', 'hud.torreta': 'DEFENSA ZOMBIE · ', 'hud.cloaca': 'CLOACA · ', 'hud.nieve': 'NIEVE · ',
     'aereo.nombre': '✈ ATAQUE AÉREO', 'aereo.tocar': 'TOCA AQUÍ', 'aereo.tecla': 'TECLA {k:ataqueAereo}', 'aereo.listo': v => `LISTO · ${v.tecla}`, 'aereo.curso': 'MISILES EN CAMINO', 'aereo.recargando': v => `RECARGANDO · ${v.s} S`,
     'serie.titulo': v => `SERIE ${v.n}`, 'serie.blancos': v => `15 blancos · ${v.nov}`,
     'serie.nov1': 'dianas que se mueven · {k:abajo} para agacharse', 'serie.nov2': 'siluetas y dianas sobre riel', 'serie.nov3': 'blancos altos y platos', 'serie.nov4': 'todo más rápido y de los dos lados',
@@ -1744,7 +1754,7 @@ const TEXTOS = {
     'mapas.ciudad': 'CIDADE EM RUÍNAS', 'mapas.ciudad.texto': 'A rua ao entardecer, com montanhas que têm metralhadoras M2 e caixas com armas especiais.',
     'mapas.ciudad.etiqueta': 'ZUMBIS COMUNS E CORREDORES',
     'mapas.cloaca': 'ESGOTO', 'mapas.cloaca.texto': 'Um canal subterrâneo gigante. Entre os zumbis de sempre aparecem zumbis tóxicos: pulam, dão cambalhotas e cospem ácido. Abaixe-se ({k:abajo}) para desviar do jato e não pise nas poças.',
-    'mapas.cloaca.etiqueta': 'ZUMBIS TÓXICOS',
+    'mapas.cloaca.etiqueta': 'ZUMBIS TÓXICOS', 'mapas.nieve': 'FLORESTA NEVADA', 'mapas.nieve.texto': 'Pinheiros carregados de neve e colinas com metralhadoras M2 e armas especiais. Entre os zumbis de sempre aparecem zumbis congelados que atiram blocos de gelo.', 'mapas.nieve.etiqueta': 'ZUMBIS CONGELADOS',
     'misiones.titulo': 'MISSÕES', 'misiones.ayuda': 'Todas as missões são jogadas dentro da luta infinita. Escolha uma e sobreviva.',
     'misiones.borrar': 'APAGAR PROGRESSO', 'misiones.borrado': 'PROGRESSO APAGADO', 'misiones.confirmar': 'CLIQUE DE NOVO PARA APAGAR',
     'misiones.caceria': 'CAÇADA', 'misiones.busqueda': 'BUSCA', 'misiones.supervivencia': 'SOBREVIVÊNCIA', 'misiones.cumplida': '✔ CUMPRIDA',
@@ -1774,13 +1784,13 @@ const TEXTOS = {
     'fin.torreta': v => `Você aguentou ${v.olas} onda${v.olas === 1 ? '' : 's'} completa${v.olas === 1 ? '' : 's'} no ${v.dificultad} e matou ${v.bajas} zumbis em ${v.tiempo}. `,
     'fin.record': 'Novo recorde!', 'fin.tuRecord': v => `Seu recorde: onda ${v.ola}.`,
     'aviso.entrenamiento': 'TREINAMENTO · {k:menuPruebas} ESCOLHE A ARMA · {k:grupo1}-{k:grupo7} GRUPO', 'aviso.torreta': 'DEFESA ZUMBI · {k:izquierda} {k:derecha} GIRAM · {k:disparar} ATIRA · {k:recargar} TROCA A FITA',
-    'aviso.pruebas': 'CAMPO DE TESTES · {k:izquierda} {k:derecha} ANDAM · {k:saltar} PULA · {k:armaAnterior} {k:armaSiguiente} TROCAM DE ARMA · {k:camaraLenta}: CÂMERA LENTA · {k:menuPruebas}: MENU', 'aviso.pruebasTactil': 'CAMPO DE TESTES · TOQUE «ARMAS» PARA ESCOLHER', 'aviso.torretaTactil': 'DEFESA ZUMBI · ◀ ▶ GIRAM · FOGO ATIRA · RECARREGAR TROCA A FITA', 'aviso.entrenamientoTactil': 'TREINAMENTO · TOQUE «ARMAS» PARA ESCOLHER', 'aviso.mision': v => 'MISSÃO: ' + v.nombre, 'aviso.cloaca': 'SOBREVIVA NO ESGOTO! · {k:abajo} ABAIXAR', 'aviso.sobrevive': 'SOBREVIVA!',
+    'aviso.pruebas': 'CAMPO DE TESTES · {k:izquierda} {k:derecha} ANDAM · {k:saltar} PULA · {k:armaAnterior} {k:armaSiguiente} TROCAM DE ARMA · {k:camaraLenta}: CÂMERA LENTA · {k:menuPruebas}: MENU', 'aviso.pruebasTactil': 'CAMPO DE TESTES · TOQUE «ARMAS» PARA ESCOLHER', 'aviso.torretaTactil': 'DEFESA ZUMBI · ◀ ▶ GIRAM · FOGO ATIRA · RECARREGAR TROCA A FITA', 'aviso.entrenamientoTactil': 'TREINAMENTO · TOQUE «ARMAS» PARA ESCOLHER', 'aviso.mision': v => 'MISSÃO: ' + v.nombre, 'aviso.cloaca': 'SOBREVIVA NO ESGOTO! · {k:abajo} ABAIXAR', 'aviso.nieve': 'SOBREVIVA NA NEVE! · CUIDADO COM O GELO', 'aviso.sobrevive': 'SOBREVIVA!',
     'aviso.sinGrupo': v => `VOCÊ AINDA NÃO TEM ${v.grupo}`, 'aviso.enMano': 'NA MÃO: ', 'aviso.miraOn': 'LUNETA: MIRANDO O ZUMBI MAIS PRÓXIMO', 'aviso.miraOff': 'LUNETA DESLIGADA', 'aviso.puntoRojoOn': 'PONTO VERMELHO: MIRANDO O ZUMBI MAIS PRÓXIMO', 'aviso.puntoRojoOff': 'PONTO VERMELHO DESLIGADO', 'aviso.sinMira': 'SÓ AS ARMAS COM LUNETA OU MIRA DE PONTO VERMELHO', 'aviso.caja': 'CAIXA: ', 'aviso.m2Puesta': 'M2 BROWNING COLOCADA · {k:abajo} PARA MONTÁ-LA',
     'aviso.m2Quitada': 'M2 RETIRADA', 'aviso.borrado': 'TUDO APAGADO', 'aviso.bajaste': 'VOCÊ SAIU DA METRALHADORA', 'aviso.m2Montada': 'M2 BROWNING · {k:abajo} PARA SOLTÁ-LA',
     'aviso.aereoEn': v => `ATAQUE AÉREO EM ${v.s} S`, 'aviso.aereo': 'ATAQUE AÉREO A CAMINHO! PROTEJA-SE!', 'aviso.nueva': 'NOVA ARMA: ', 'aviso.municion': 'MUNIÇÃO: ',
     'aviso.sinMunicion': 'SEM MUNIÇÃO PARA ',
     'ronda.ola': 'ONDA', 'ronda.ronda': 'RODADA', 'ronda.olaZombies': v => `${v.n} zumbis pelos dois lados`, 'ronda.zombies': v => `${v.n} zumbis a caminho`,
-    'ronda.toxicos': ' · alguns são tóxicos: pulam e cospem ácido', 'ronda.rapidos': 'mais rápidos', 'ronda.corredores': 'mais corredores', 'ronda.resistentes': 'mais resistentes',
+    'ronda.toxicos': ' · alguns são tóxicos: pulam e cospem ácido', 'ronda.congelados': ' · alguns estão congelados: atiram blocos de gelo', 'ronda.rapidos': 'mais rápidos', 'ronda.corredores': 'mais corredores', 'ronda.resistentes': 'mais resistentes',
     'ronda.olaSuperada': 'ONDA SUPERADA', 'ronda.olaLlega': v => `+20 de vida · a onda ${v.n} chega em ${v.s} s e vem pior`,
     'ronda.superada': 'RODADA SUPERADA', 'ronda.llega': v => `+20 de vida · a rodada ${v.n} chega em ${v.s} s`,
     'hud.en': v => `em ${v.s} s`, 'hud.quedan': v => `faltam ${v.n}`, 'hud.tiros': v => `(${v.n} tiro${v.n > 1 ? 's' : ''} por zumbi)`,
@@ -1789,7 +1799,7 @@ const TEXTOS = {
     'hud.pruebas': 'CAMPO DE TESTES', 'hud.pruebasTactil': 'ARMAS: menu · ◀ ARMA ▶ · ZUMBI', 'hud.pruebasTeclado': 'C: menu · Q E: arma · L: câmera lenta · Z: zumbi',
     'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARREGANDO…', 'vitrina.lenta': 'CÂMERA LENTA', 'vitrina.lentaSi': 'CÂMERA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDADE NORMAL', 'vitrina.botonLenta': 'CÂMERA LENTA', 'vitrina.botonZombie': '+ ZUMBI DE TESTE (Z)',
     'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> andam · <kbd>{k:saltar}</kbd> pula · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> trocam de arma · <kbd>{k:disparar}</kbd> ou clique atira · <kbd>{k:recargar}</kbd> ou clique direito recarrega · <kbd>{k:camaraLenta}</kbd> câmera lenta · <kbd>{k:zombie}</kbd> zumbi de teste · <kbd>{k:menuPruebas}</kbd> todas as armas',
-    'hud.entrenamiento': 'TREINAMENTO', 'hud.pruebasModo': 'TESTES', 'hud.torreta': 'DEFESA ZUMBI · ', 'hud.cloaca': 'ESGOTO · ',
+    'hud.entrenamiento': 'TREINAMENTO', 'hud.pruebasModo': 'TESTES', 'hud.torreta': 'DEFESA ZUMBI · ', 'hud.cloaca': 'ESGOTO · ', 'hud.nieve': 'NEVE · ',
     'aereo.nombre': '✈ ATAQUE AÉREO', 'aereo.tocar': 'TOQUE AQUI', 'aereo.tecla': 'TECLA {k:ataqueAereo}', 'aereo.listo': v => `PRONTO · ${v.tecla}`, 'aereo.curso': 'MÍSSEIS A CAMINHO', 'aereo.recargando': v => `RECARREGANDO · ${v.s} S`,
     'serie.titulo': v => `SÉRIE ${v.n}`, 'serie.blancos': v => `15 alvos · ${v.nov}`,
     'serie.nov1': 'alvos que se movem · {k:abajo} para abaixar', 'serie.nov2': 'silhuetas e alvos sobre trilho', 'serie.nov3': 'alvos altos e pratos', 'serie.nov4': 'tudo mais rápido e dos dois lados',
@@ -1922,7 +1932,7 @@ const TEXTOS = {
     'mapas.ciudad': 'RUINED CITY', 'mapas.ciudad.texto': 'The street at sunset, with mountains that hold M2 machine guns and crates with special weapons.',
     'mapas.ciudad.etiqueta': 'REGULAR ZOMBIES AND RUNNERS',
     'mapas.cloaca': 'SEWER', 'mapas.cloaca.texto': 'A giant underground canal. Among the usual zombies come toxic zombies: they leap, flip and spit acid. Crouch ({k:abajo}) to dodge the stream and don’t step in the puddles.',
-    'mapas.cloaca.etiqueta': 'TOXIC ZOMBIES',
+    'mapas.cloaca.etiqueta': 'TOXIC ZOMBIES', 'mapas.nieve': 'SNOWY FOREST', 'mapas.nieve.texto': 'Snow-laden pines and hills with M2 machine guns and special weapons. Among the usual zombies come frozen zombies that throw blocks of ice.', 'mapas.nieve.etiqueta': 'FROZEN ZOMBIES',
     'misiones.titulo': 'MISSIONS', 'misiones.ayuda': 'Every mission is played inside the endless fight. Pick one and survive.',
     'misiones.borrar': 'RESET PROGRESS', 'misiones.borrado': 'PROGRESS RESET', 'misiones.confirmar': 'CLICK AGAIN TO RESET',
     'misiones.caceria': 'HUNT', 'misiones.busqueda': 'SEARCH', 'misiones.supervivencia': 'SURVIVAL', 'misiones.cumplida': '✔ DONE',
@@ -1952,13 +1962,13 @@ const TEXTOS = {
     'fin.torreta': v => `You held out for ${v.olas} full wave${v.olas === 1 ? '' : 's'} on ${v.dificultad} and killed ${v.bajas} zombies in ${v.tiempo}. `,
     'fin.record': 'New record!', 'fin.tuRecord': v => `Your record: wave ${v.ola}.`,
     'aviso.entrenamiento': 'TRAINING · {k:menuPruebas} PICKS A WEAPON · {k:grupo1}-{k:grupo7} GROUP', 'aviso.torreta': 'ZOMBIE DEFENSE · {k:izquierda} {k:derecha} TURN · {k:disparar} SHOOTS · {k:recargar} CHANGES THE BELT',
-    'aviso.pruebas': 'TEST FIELD · {k:izquierda} {k:derecha} WALK · {k:saltar} JUMP · {k:armaAnterior} {k:armaSiguiente} SWITCH WEAPON · {k:camaraLenta}: SLOW MOTION · {k:menuPruebas}: MENU', 'aviso.pruebasTactil': 'TEST FIELD · TAP «WEAPONS» TO PICK', 'aviso.torretaTactil': 'ZOMBIE DEFENSE · ◀ ▶ TURN · FIRE SHOOTS · RELOAD CHANGES THE BELT', 'aviso.entrenamientoTactil': 'TRAINING · TAP «WEAPONS» TO PICK', 'aviso.mision': v => 'MISSION: ' + v.nombre, 'aviso.cloaca': 'SURVIVE THE SEWER! · {k:abajo} CROUCH', 'aviso.sobrevive': 'SURVIVE!',
+    'aviso.pruebas': 'TEST FIELD · {k:izquierda} {k:derecha} WALK · {k:saltar} JUMP · {k:armaAnterior} {k:armaSiguiente} SWITCH WEAPON · {k:camaraLenta}: SLOW MOTION · {k:menuPruebas}: MENU', 'aviso.pruebasTactil': 'TEST FIELD · TAP «WEAPONS» TO PICK', 'aviso.torretaTactil': 'ZOMBIE DEFENSE · ◀ ▶ TURN · FIRE SHOOTS · RELOAD CHANGES THE BELT', 'aviso.entrenamientoTactil': 'TRAINING · TAP «WEAPONS» TO PICK', 'aviso.mision': v => 'MISSION: ' + v.nombre, 'aviso.cloaca': 'SURVIVE THE SEWER! · {k:abajo} CROUCH', 'aviso.nieve': 'SURVIVE THE SNOW! · WATCH OUT FOR THE ICE', 'aviso.sobrevive': 'SURVIVE!',
     'aviso.sinGrupo': v => `NO ${v.grupo} YET`, 'aviso.enMano': 'IN HAND: ', 'aviso.miraOn': 'SCOPE: LOCKED ON THE NEAREST ZOMBIE', 'aviso.miraOff': 'SCOPE OFF', 'aviso.puntoRojoOn': 'RED DOT: LOCKED ON THE NEAREST ZOMBIE', 'aviso.puntoRojoOff': 'RED DOT OFF', 'aviso.sinMira': 'ONLY GUNS WITH A SCOPE OR A RED DOT SIGHT', 'aviso.caja': 'CRATE: ', 'aviso.m2Puesta': 'M2 BROWNING PLACED · {k:abajo} TO MOUNT IT',
     'aviso.m2Quitada': 'M2 REMOVED', 'aviso.borrado': 'ALL CLEARED', 'aviso.bajaste': 'YOU LEFT THE MACHINE GUN', 'aviso.m2Montada': 'M2 BROWNING · {k:abajo} TO LET GO',
     'aviso.aereoEn': v => `AIR STRIKE IN ${v.s} S`, 'aviso.aereo': 'AIR STRIKE INBOUND! TAKE COVER!', 'aviso.nueva': 'NEW WEAPON: ', 'aviso.municion': 'AMMO: ',
     'aviso.sinMunicion': 'NO AMMO FOR ',
     'ronda.ola': 'WAVE', 'ronda.ronda': 'ROUND', 'ronda.olaZombies': v => `${v.n} zombies from both sides`, 'ronda.zombies': v => `${v.n} zombies incoming`,
-    'ronda.toxicos': ' · some are toxic: they leap and spit acid', 'ronda.rapidos': 'faster', 'ronda.corredores': 'more runners', 'ronda.resistentes': 'tougher',
+    'ronda.toxicos': ' · some are toxic: they leap and spit acid', 'ronda.congelados': ' · some are frozen: they throw blocks of ice', 'ronda.rapidos': 'faster', 'ronda.corredores': 'more runners', 'ronda.resistentes': 'tougher',
     'ronda.olaSuperada': 'WAVE CLEARED', 'ronda.olaLlega': v => `+20 health · wave ${v.n} arrives in ${v.s} s and it’s worse`,
     'ronda.superada': 'ROUND CLEARED', 'ronda.llega': v => `+20 health · round ${v.n} arrives in ${v.s} s`,
     'hud.en': v => `in ${v.s} s`, 'hud.quedan': v => `${v.n} left`, 'hud.tiros': v => `(${v.n} shot${v.n > 1 ? 's' : ''} per zombie)`,
@@ -1967,7 +1977,7 @@ const TEXTOS = {
     'hud.pruebas': 'TEST FIELD', 'hud.pruebasTactil': 'WEAPONS: menu · ◀ GUN ▶ · ZOMBIE', 'hud.pruebasTeclado': 'C: menu · Q E: weapon · L: slow motion · Z: zombie',
     'vitrina.reserva': v => `reserve ${v.n}`, 'vitrina.recargando': 'RELOADING…', 'vitrina.lenta': 'SLOW MOTION', 'vitrina.lentaSi': 'SLOW MOTION ×¼', 'vitrina.lentaNo': 'NORMAL SPEED', 'vitrina.botonLenta': 'SLOW MOTION', 'vitrina.botonZombie': '+ TEST ZOMBIE (Z)',
     'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> walk · <kbd>{k:saltar}</kbd> jump · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> switch weapon · <kbd>{k:disparar}</kbd> or click shoots · <kbd>{k:recargar}</kbd> or right click reloads · <kbd>{k:camaraLenta}</kbd> slow motion · <kbd>{k:zombie}</kbd> test zombie · <kbd>{k:menuPruebas}</kbd> all weapons',
-    'hud.entrenamiento': 'TRAINING', 'hud.pruebasModo': 'TEST', 'hud.torreta': 'ZOMBIE DEFENSE · ', 'hud.cloaca': 'SEWER · ',
+    'hud.entrenamiento': 'TRAINING', 'hud.pruebasModo': 'TEST', 'hud.torreta': 'ZOMBIE DEFENSE · ', 'hud.cloaca': 'SEWER · ', 'hud.nieve': 'SNOW · ',
     'aereo.nombre': '✈ AIR STRIKE', 'aereo.tocar': 'TAP HERE', 'aereo.tecla': 'KEY {k:ataqueAereo}', 'aereo.listo': v => `READY · ${v.tecla}`, 'aereo.curso': 'MISSILES INBOUND', 'aereo.recargando': v => `RECHARGING · ${v.s} S`,
     'serie.titulo': v => `SERIES ${v.n}`, 'serie.blancos': v => `15 targets · ${v.nov}`,
     'serie.nov1': 'moving targets · {k:abajo} to crouch', 'serie.nov2': 'silhouettes and targets on rails', 'serie.nov3': 'high targets and clays', 'serie.nov4': 'everything faster and from both sides',
@@ -3276,6 +3286,11 @@ const Audio_ = (() => {
     // Pasos del protagonista: asfalto en la calle, arena en las montañas y en el campo
     paso(superficie = 'asfalto', fuerza = 1) {
       asegurar();
+      if (superficie === 'nieve') {   // nieve: la pisada en la arena, más aguda, y el crujido de la nieve que se aplasta
+        variante('paso_arena', 6, { vol: 0.12 * fuerza, vel: 1.12 + Math.random() * 0.16, rev: 0.03 });
+        ruido({ dur: 0.09, vol: 0.05 * fuerza, filtro: 'highpass', freq: 2400, ataque: 0.004, retraso: 0.01 });
+        return;
+      }
       variante(superficie === 'arena' ? 'paso_arena' : 'paso_asfalto', 6, { vol: 0.15 * fuerza, vel: 0.9 + Math.random() * 0.2, rev: 0.03 });
     },
     aterrizar(superficie = 'asfalto') {
@@ -3387,6 +3402,21 @@ const Audio_ = (() => {
       asegurar();
       ruido({ dur: 0.18, vol: 0.38 * fuerza, filtro: 'lowpass', freq: 1800, freqFin: 300, ataque: 0.002, rev: 0.15 });
       ruido({ dur: 0.5, vol: 0.06 * fuerza, filtro: 'highpass', freq: 4200, ataque: 0.03, retraso: 0.05, rev: 0.05 });   // chisporroteo del ácido
+    },
+    /* ---------- Zombie congelado (js/zombie-congelado.js) ---------- */
+    // Bloque de hielo que sale volando: el resoplido del brazo y el zumbido del aire
+    hieloLanzar(distancia = 200) {
+      asegurar();
+      const cerca = Math.max(0.25, 1 - distancia / 650);
+      ruido({ dur: 0.2, vol: 0.2 * cerca, filtro: 'bandpass', freq: 500, freqFin: 2300, q: 1.4, ataque: 0.03, rev: 0.12 });
+      tono({ desde: 160, hasta: 120, dur: 0.14, vol: 0.06 * cerca, sat: 1.5, rev: 0.1 });
+    },
+    // Hielo que se rompe: el estallido agudo, las astillas que tintinean y el golpe sordo
+    hieloRompe(fuerza = 1) {
+      asegurar();
+      ruido({ dur: 0.1, vol: 0.32 * fuerza, filtro: 'highpass', freq: 3200, ataque: 0.001, rev: 0.12 });
+      ruido({ dur: 0.07, vol: 0.18 * fuerza, filtro: 'bandpass', freq: 1200, q: 1.2, ataque: 0.001 });
+      for (let k = 0; k < 3; k++) tono({ desde: 2600 + Math.random() * 1800, hasta: 2400 + Math.random() * 1400, dur: 0.06 + Math.random() * 0.05, vol: 0.05 * fuerza, retraso: 0.02 + k * 0.035 + Math.random() * 0.02, rev: 0.2 });
     },
     // Ambiente de fondo: viento (nivel 0 lo apaga)
     ambiente(nivel) { asegurar(); if (nivel > 0) encenderViento(nivel); else { apagarViento(); apagarAgua(); } },
@@ -8705,7 +8735,7 @@ const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
 function indiceTrozo(x) { return Math.floor(x / TAMANO_TROZO); }
 
 // Modo del mundo: en el campo de pruebas no hay montañas, es una planicie
-const Mundo = { plano: false, interior: false };   // interior: galpón del entrenamiento
+const Mundo = { plano: false, interior: false, nieve: false };   // interior: galpón del entrenamiento; nieve: el mapa de la nieve
 
 // ¿El trozo i es una montaña? Nunca cerca del punto de aparición ni dos montañas seguidas
 function esMontana(i) {
@@ -9824,6 +9854,495 @@ Object.assign(Escenario, {
 
 </script>
   <script>
+/* ===== Mapa de la nieve: bosque de pinos nevados, con colinas (pelea infinita) =====
+ * Pedido: «un mapa de nieve con pinos nevados con nieve en las hojas, con los mismos zombies que la ciudad en ruinas y
+ * un zombie congelado que tira bloques de hielo (js/zombie-congelado.js); colinas donde estén las M2 Browning y las
+ * especiales». El terreno es el de la ciudad (js/terreno.js: trozos de 1200 px; cada tanto una colina con la M2 arriba
+ * y la caja especial), pero todo se dibuja nevado, de atrás hacia adelante:
+ *   cielo    invierno nublado, el sol pálido detrás de las nubes y dos cordilleras nevadas (paralaje 0,05 y 0,1)
+ *   bosque   tres filas de pinos en lomas de nieve, cada vez más cerca y menos lavadas por la neblina (0,22, 0,38, 0,6)
+ *   suelo    el camino tapado de nieve, con huellas y las huellas de las ruedas; las colinas, nieve arriba y una ladera
+ *            con rocas, la cornisa y carámbanos al frente
+ *   objetos  pinos grandes detrás del camino y en las laderas, rocas nevadas, troncos, carteles y autos enterrados
+ *   adelante la nevada en tres profundidades, las ráfagas que levantan nieve al ras del piso y el primer plano
+ *            (montículos, arbolitos y postes con su capucha de nieve)
+ * Los pinos, que son lo caro, se dibujan una vez por variante, tamaño y distancia en un lienzo aparte y se estampan. */
+const NEBLINA_NIEVE = '#c8d5e0';
+const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+// Un color lavado por la neblina (k: 0 nada, 1 todo neblina)
+function lavado(hex, k) {
+  if (k <= 0) return hex;
+  const a = hexRgb(hex), b = hexRgb(NEBLINA_NIEVE);
+  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * k)},${Math.round(a[1] + (b[1] - a[1]) * k)},${Math.round(a[2] + (b[2] - a[2]) * k)})`;
+}
+
+/* ---------- Pinos nevados ----------
+ * De perfil, con la base del tronco en (0, 0) y la punta en (0, -alto). Pisos de ramas de abajo hacia arriba, cada uno
+ * con la punta de las ramas caída y desparejas; arriba de cada piso, la nieve que se juntó en las ramas (la «nieve en
+ * las hojas»): blanca del lado del sol, celeste a la sombra, con el borde de abajo ondulado y gotas que cuelgan.
+ * v: la variante (forma); tono: 0 cerca, 1 lejos (lavado). */
+function trazarPino(c, alto, v, tono) {
+  const az = s => azar(v * 7 + 3, s);
+  const ancho = alto * (0.4 + az(1) * 0.14), tronco = alto * (0.09 + az(2) * 0.04), pisos = 5 + Math.floor(az(3) * 3);
+  const verdeLuz = lavado('#36634c', tono), verde = lavado('#264a3b', tono), verdeOsc = lavado('#15302a', tono), bajo = lavado('#0e211c', tono);
+  const nLuz = lavado('#ffffff', tono * 0.5), nMed = lavado('#e2ecf4', tono * 0.5), nSom = lavado('#b3c6d8', tono * 0.5), nBorde = lavado('#8ea6bd', tono * 0.6);
+  const detalle = alto > 70 && tono < 0.5;
+  // Tronco y la nieve amontonada al pie
+  c.fillStyle = lavado('#4a3426', tono); c.fillRect(-alto * 0.03, -tronco - 6, alto * 0.06, tronco + 6);
+  c.fillStyle = lavado('#2c1f17', tono); c.fillRect(alto * 0.006, -tronco - 6, alto * 0.024, tronco + 6);
+  c.fillStyle = nMed; c.beginPath(); c.ellipse(0, 0, alto * 0.12, alto * 0.025 + 1, 0, Math.PI, 0); c.fill();
+  const util = alto - tronco;
+  for (let k = 0; k < pisos; k++) {
+    const f = k / pisos, ultimo = k === pisos - 1;
+    const yb = -tronco - util * f * 0.8, h = util * (0.34 - f * 0.08), yt = ultimo ? -alto : yb - h;
+    const w = ancho * 0.5 * (1 - f * 0.8) * (0.94 + az(40 + k) * 0.12), caida = (yb - yt) * 0.17;
+    // Borde de abajo: las puntas de las ramas, caídas hacia los costados y desparejas
+    const n = 4 + Math.floor(w / 9), borde = [];
+    for (let i = 0; i <= n; i++) {
+      const u = i / n * 2 - 1;
+      borde.push([u * w * (i % 2 ? 0.95 : 1.02), yb + Math.abs(u) * caida + (i % 2 ? -(yb - yt) * 0.07 : (yb - yt) * 0.03) + (az(10 + k * 13 + i) - 0.5) * (yb - yt) * 0.06]);
+    }
+    const g = c.createLinearGradient(-w, 0, w, 0);
+    g.addColorStop(0, verdeLuz); g.addColorStop(0.5, verde); g.addColorStop(1, verdeOsc);
+    c.fillStyle = g;
+    c.beginPath(); c.moveTo(0, yt);
+    c.quadraticCurveTo(-w * 0.42, yt + (yb - yt) * 0.55, borde[0][0], borde[0][1]);
+    for (const [x, y] of borde) c.lineTo(x, y);
+    c.quadraticCurveTo(w * 0.42, yt + (yb - yt) * 0.55, 0, yt);
+    c.fill();
+    // La sombra de abajo de las ramas y, de cerca, las agujas
+    c.strokeStyle = bajo; c.lineWidth = Math.max(0.6, (yb - yt) * 0.06); c.lineJoin = 'round';
+    c.beginPath(); borde.forEach(([x, y], i) => i ? c.lineTo(x, y - 0.6) : c.moveTo(x, y - 0.6)); c.stroke();
+    if (detalle) {
+      c.strokeStyle = lavado('#0f2620', tono); c.lineWidth = 0.7;
+      for (let i = 0; i < n * 3; i++) {
+        const u = az(60 + k * 31 + i) * 2 - 1, yy = yb - (yb - yt) * (0.15 + az(90 + k * 17 + i) * 0.3), x = u * w * ((yy - yt) / (yb - yt)) * 0.9;
+        c.beginPath(); c.moveTo(x, yy); c.lineTo(x + (u < 0 ? -1.6 : 1.6), yy + 2.2); c.stroke();
+      }
+    }
+    // La nieve sobre el piso: de la punta hasta un poco más de la mitad, con el borde de abajo ondulado
+    const hasta = (yb - yt) * (ultimo ? 0.78 : 0.52 + az(30 + k) * 0.16), lim = [];
+    for (let i = 0; i <= n; i++) {
+      const u = i / n * 2 - 1, yy = yt + hasta + Math.abs(u) * (yb - yt) * 0.1 + (i % 2 ? (yb - yt) * 0.07 : -(yb - yt) * 0.02);
+      lim.push([u * w * ((yy - yt) / (yb - yt)) * 0.97, yy]);
+    }
+    const gn = c.createLinearGradient(-w, 0, w, 0);
+    gn.addColorStop(0, nLuz); gn.addColorStop(0.55, nMed); gn.addColorStop(1, nSom);
+    c.fillStyle = gn;
+    c.beginPath(); c.moveTo(0, yt - 0.8);
+    c.quadraticCurveTo(-w * 0.44, yt + (yb - yt) * 0.5, lim[0][0] - 0.6, lim[0][1]);
+    for (const [x, y] of lim) c.lineTo(x, y);
+    c.quadraticCurveTo(w * 0.44, yt + (yb - yt) * 0.5, 0, yt - 0.8);
+    c.fill();
+    c.strokeStyle = nBorde; c.lineWidth = Math.max(0.5, (yb - yt) * 0.03);   // el canto de la nieve, en sombra
+    c.beginPath(); lim.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+    c.fillStyle = nMed;   // gotas de nieve que cuelgan del borde
+    for (let i = 1; i < n; i += 2) { const [x, y] = lim[i]; c.beginPath(); c.ellipse(x, y + 0.6, Math.max(0.8, w * 0.05), Math.max(1, (yb - yt) * 0.07), 0, 0, Math.PI * 2); c.fill(); }
+    if (detalle) {   // montoncitos sueltos en las puntas de abajo
+      c.fillStyle = nLuz;
+      for (let i = 0; i <= n; i += 2) if (az(120 + k * 7 + i) < 0.55) { const [x, y] = borde[i]; c.beginPath(); c.ellipse(x * 0.92, y - (yb - yt) * 0.1, 1.6 + w * 0.03, 1.1, 0, 0, Math.PI * 2); c.fill(); }
+    }
+  }
+}
+const PINOS_NIEVE = new Map();
+// El pino ya dibujado (lienzo aparte, a la resolución del juego); se agrupan los tamaños para no dibujar de más
+function spritePino(alto, v, tono) {
+  const E = Lienzo.escala, paso = alto < 60 ? 6 : alto < 140 ? 12 : 24, a = Math.max(paso, Math.round(alto / paso) * paso);
+  const variantes = alto < 60 ? 8 : alto < 140 ? 6 : 5, vv = ((v % variantes) + variantes) % variantes, tn = Math.round(tono * 20) / 20;
+  const clave = a + '|' + vv + '|' + tn + '|' + E;
+  let s = PINOS_NIEVE.get(clave);
+  if (!s) {
+    const ancho = a * 0.66 + 8, cv = document.createElement('canvas');
+    cv.width = Math.ceil(ancho * E); cv.height = Math.ceil((a + 10) * E);
+    const c = cv.getContext('2d'); c.scale(E, E); c.translate(ancho / 2, a + 6);
+    trazarPino(c, a, vv, tn);
+    s = { cv, ancho, alto: a + 10, dy: a + 6 };
+    if (PINOS_NIEVE.size > 240) PINOS_NIEVE.delete(PINOS_NIEVE.keys().next().value);
+    PINOS_NIEVE.set(clave, s);
+  }
+  return s;
+}
+function pinoNevado(ctx, x, y, alto, v, tono) { const s = spritePino(alto, v, tono); ctx.drawImage(s.cv, x - s.ancho / 2, y - s.dy, s.ancho, s.alto); }
+
+/* ---------- Lo que hay en cada trozo ---------- */
+// Cerca del camino: pinos grandes detrás, rocas, troncos caídos, carteles y autos enterrados; en las colinas, pinos en
+// las laderas (arriba quedan la M2 y la caja especial) y rocas
+function objetosNieveDeTrozo(i) {
+  const x0 = i * TAMANO_TROZO, lista = [];
+  if (esMontana(i)) {
+    for (const [lx, s] of [[150, 0], [250, 1], [330, 2], [880, 3], [960, 4], [1060, 5]]) if (azar(i, 300 + s) < 0.75) lista.push({ tipo: 'pino', x: x0 + lx + (azar(i, 310 + s) - 0.5) * 50, alto: 120 + azar(i, 320 + s) * 90, v: Math.floor(azar(i, 330 + s) * 40) });
+    lista.push({ tipo: 'pino', x: x0 + MONTANA.cimaInicio + 20 + azar(i, 340) * 40, alto: 150 + azar(i, 341) * 60, v: Math.floor(azar(i, 342) * 40) });   // uno al borde de la cima
+    if (azar(i, 350) < 0.7) lista.push({ tipo: 'roca', x: x0 + 400 + azar(i, 351) * 60, r: 14 + azar(i, 352) * 10 });
+    return lista;
+  }
+  for (let k = 0; k < 6; k++) if (azar(i, 200 + k) < 0.66) lista.push({ tipo: 'pino', x: x0 + 40 + k * 200 + azar(i, 210 + k) * 120, alto: 140 + azar(i, 220 + k) * 120, v: Math.floor(azar(i, 230 + k) * 40) });
+  if (azar(i, 240) < 0.6) lista.push({ tipo: 'roca', x: x0 + 80 + azar(i, 241) * 1040, r: 10 + azar(i, 242) * 14 });
+  if (azar(i, 245) < 0.4) lista.push({ tipo: 'tronco', x: x0 + 100 + azar(i, 246) * 900, largo: 50 + azar(i, 247) * 40 });
+  if (i !== 0 && azar(i, 250) < 0.32) lista.push({ tipo: 'auto', x: x0 + 260 + azar(i, 251) * 680, color: ['#7a2a26', '#2f4a6e', '#5d6a3a', '#7a6a4a'][Math.floor(azar(i, 252) * 4)] });
+  if (azar(i, 255) < 0.3) lista.push({ tipo: 'cartel', x: x0 + 150 + azar(i, 256) * 900, texto: ['REFUGIO 2 KM', 'PELIGRO', 'PASO CERRADO', 'RUTA 40', 'NO PASAR'][Math.floor(azar(i, 257) * 5)] });
+  lista.sort((a, b) => (a.tipo === 'pino' ? 0 : 1) - (b.tipo === 'pino' ? 0 : 1));   // los pinos atrás de todo
+  return lista;
+}
+
+Object.assign(Escenario, {
+  /* ---------- Cielo y montañas ---------- */
+  cieloNieve(ctx, camaraX, tiempo) {
+    const g = ctx.createLinearGradient(0, 0, 0, SUELO_BASE);
+    g.addColorStop(0, '#56697e'); g.addColorStop(0.42, '#8a9fb3'); g.addColorStop(0.78, '#c0cddb'); g.addColorStop(1, '#dde6ee');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, ANCHO, ALTO);
+    // El sol pálido, velado por las nubes
+    const solX = ((640 - camaraX * 0.01) % 2000 + 2000) % 2000 - 300;
+    const halo = ctx.createRadialGradient(solX, 150, 10, solX, 150, 190);
+    halo.addColorStop(0, 'rgba(255, 252, 240, 0.55)'); halo.addColorStop(0.25, 'rgba(250, 248, 238, 0.22)'); halo.addColorStop(1, 'rgba(240, 244, 248, 0)');
+    ctx.fillStyle = halo; ctx.fillRect(solX - 190, 0, 380, 340);
+    ctx.fillStyle = 'rgba(255, 253, 245, 0.7)'; ctx.beginPath(); ctx.arc(solX, 150, 26, 0, Math.PI * 2); ctx.fill();
+    // Bancos de nubes bajas, muy lentos
+    for (let k = 0; k < 7; k++) {
+      const x = ((k * 230 - camaraX * 0.02 - tiempo * 3) % 1700 + 1700) % 1700 - 350, y = 70 + k * 30 + (k % 2) * 12;
+      ctx.fillStyle = `rgba(232, 238, 244, ${0.16 + (k % 3) * 0.05})`;
+      ctx.beginPath(); ctx.ellipse(x, y, 180 + k * 18, 14 + (k % 3) * 5, 0, 0, Math.PI * 2); ctx.ellipse(x + 90, y - 8, 110, 12, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    this.cordilleraNevada(ctx, camaraX, 0.05, 330, 150, 170, 3);
+    this.cordilleraNevada(ctx, camaraX, 0.1, 352, 105, 120, 11);
+    const neblina = ctx.createLinearGradient(0, 250, 0, 372);
+    neblina.addColorStop(0, 'rgba(214, 224, 234, 0)'); neblina.addColorStop(1, 'rgba(214, 224, 234, 0.75)');
+    ctx.fillStyle = neblina; ctx.fillRect(0, 250, ANCHO, 122);
+  },
+  // Picos de montaña nevados: la cara iluminada casi blanca, la otra celeste con vetas de roca, y la base en la neblina
+  cordilleraNevada(ctx, camaraX, factor, baseY, amplitud, paso, sal) {
+    const desplaza = camaraX * factor, inicio = Math.floor(desplaza / paso) - 1, lejos = factor < 0.08;
+    const luz = lejos ? '#e6edf3' : '#edf2f6', sombra = lejos ? '#a9bacb' : '#9cb0c4', roca = lejos ? 'rgba(96, 112, 130, 0.35)' : 'rgba(78, 92, 110, 0.45)';
+    for (let k = inicio; k < inicio + ANCHO / paso + 3; k++) {
+      const x = k * paso - desplaza, h = (0.4 + azar(k, sal) * 0.6) * amplitud, cima = x + paso * (0.35 + azar(k, sal + 1) * 0.3), ancho = paso * 0.9;
+      const izq = cima - ancho * (0.7 + azar(k, sal + 2) * 0.3), der = cima + ancho * (0.7 + azar(k, sal + 3) * 0.3), top = baseY - h;
+      ctx.fillStyle = luz;
+      ctx.beginPath(); ctx.moveTo(izq, baseY); ctx.lineTo(cima - h * 0.08, top + h * 0.06); ctx.lineTo(cima, top); ctx.lineTo(cima, baseY); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = sombra;
+      ctx.beginPath(); ctx.moveTo(cima, top); ctx.lineTo(cima + h * 0.12, top + h * 0.18); ctx.lineTo(der, baseY); ctx.lineTo(cima, baseY); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = roca; ctx.lineWidth = 1.4;   // vetas de roca que asoman en la cara de la sombra
+      ctx.beginPath();
+      for (let j = 0; j < 3; j++) { const t0 = 0.25 + j * 0.2, xa = cima + (der - cima) * t0 * 0.5, ya = top + h * t0; ctx.moveTo(xa, ya); ctx.lineTo(xa + h * 0.1, ya + h * 0.22); ctx.lineTo(xa + h * 0.06, ya + h * 0.34); }
+      ctx.stroke();
+    }
+  },
+
+  /* ---------- Bosques: lomas de nieve con filas de pinos, cada vez más cerca ----------
+   * Cada fila se dibuja una vez en una tira de PERIODO_BOSQUE px que se repite sin costura (las ondas de la loma tienen
+   * períodos que entran justo y los pinos del borde se dibujan de los dos lados), y en cada cuadro se estampa corrida
+   * según su paralaje: dos o tres estampas en lugar de decenas de pinos. */
+  bosqueNieve(ctx, camaraX, factor, base, onda, paso, altoMin, altoMax, tono, sal) {
+    const t = tiraBosque(base, onda, paso, altoMin, altoMax, tono, sal), P = PERIODO_BOSQUE, E = t.cv.width / P;
+    for (let x = -(((camaraX * factor) % P) + P) % P; x < ANCHO; x += P) {   // sólo el pedazo de la tira que se ve
+      const a = Math.max(0, -x), b = Math.min(P, ANCHO + 2 - x);
+      if (b > a) ctx.drawImage(t.cv, a * E, 0, (b - a) * E, t.cv.height, x + a, t.arriba, b - a, t.alto);
+    }
+  },
+
+  // Todo el fondo de la nieve, hasta el camino (las colinas tapan lo de atrás)
+  dibujarNieve(ctx, camaraX, tiempo) {
+    this.cieloNieve(ctx, camaraX, tiempo);
+    this.bosqueNieve(ctx, camaraX, 0.22, 352, 10, 15, 16, 34, 0.74, 21);
+    ctx.fillStyle = 'rgba(214, 224, 234, 0.32)'; ctx.fillRect(0, 300, ANCHO, 90);
+    this.bosqueNieve(ctx, camaraX, 0.38, 370, 9, 26, 30, 62, 0.52, 37);
+    ctx.fillStyle = 'rgba(214, 224, 234, 0.22)'; ctx.fillRect(0, 290, ANCHO, 100);
+    this.bosqueNieve(ctx, camaraX, 0.6, 384, 5, 52, 64, 132, 0.3, 53);
+    this.sueloNieve(ctx, camaraX, tiempo);
+    this.objetosNieve(ctx, camaraX, tiempo);
+  },
+
+  /* ---------- Suelo: el camino y las colinas ----------
+   * Con formas continuas (no columnas, que dejaban rayas): la superficie que se pisa, entre el borde de atrás (y - 50)
+   * y el de adelante (y + 100), clara atrás y en sombra adelante siguiendo el terreno; el lomo de nieve del borde de
+   * atrás; en las colinas, la ladera de adelante con la cornisa, carámbanos, lomas de nieve y rocas; en el llano, las
+   * huellas de las ruedas, montoncitos y pisadas. */
+  sueloNieve(ctx, camaraX, tiempo) {
+    const paso = 8, desde = Math.floor(camaraX / paso) * paso - paso * 2, hasta = camaraX + ANCHO + paso * 3, pts = [];
+    for (let wx = desde; wx <= hasta; wx += paso) pts.push([wx - camaraX, alturaSuelo(wx), wx]);
+    const banda = (lista, arriba, abajo) => {   // la franja entre y + arriba(wx) e y + abajo(wx), a lo largo del terreno
+      ctx.beginPath();
+      lista.forEach(([sx, y, wx], i) => i ? ctx.lineTo(sx, y + arriba(wx)) : ctx.moveTo(sx, y + arriba(wx)));
+      for (let i = lista.length - 1; i >= 0; i--) { const [sx, y, wx] = lista[i]; ctx.lineTo(sx, Math.min(ALTO + 4, y + abajo(wx))); }
+      ctx.closePath();
+    };
+    const c = v => () => v;
+    // La superficie que se pisa
+    ctx.fillStyle = '#e2eaf1'; banda(pts, c(-FONDO_CALLE), c(FRENTE_CALLE + 4)); ctx.fill();
+    ctx.fillStyle = '#eef3f7'; banda(pts, c(-FONDO_CALLE), c(-FONDO_CALLE + 44)); ctx.fill();
+    ctx.fillStyle = 'rgba(146, 170, 194, 0.24)'; banda(pts, c(FRENTE_CALLE - 56), c(FRENTE_CALLE + 4)); ctx.fill();
+    ctx.fillStyle = 'rgba(146, 170, 194, 0.2)'; banda(pts, c(FRENTE_CALLE - 24), c(FRENTE_CALLE + 4)); ctx.fill();
+    // Ventisqueros: manchones largos un poco más claros o más azules, para que la nieve no sea pareja
+    for (let k = Math.floor(desde / 140); k <= hasta / 140; k++) {
+      const wx = k * 140 + azar(k, 191) * 80, y = alturaSuelo(wx), dy = 8 + azar(k, 192) * 120;
+      if (y + dy > y + FRENTE_CALLE - 6) continue;
+      ctx.fillStyle = azar(k, 193) < 0.5 ? 'rgba(255, 255, 255, 0.45)' : 'rgba(170, 192, 214, 0.18)';
+      ctx.beginPath(); ctx.ellipse(wx - camaraX, y + dy, 50 + azar(k, 194) * 60, 4 + azar(k, 195) * 4, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // El lomo de nieve del borde de atrás, con su sombra
+    const lomo = wx => -FONDO_CALLE - 7 - Math.sin(wx * 0.05) * 2 - Math.sin(wx * 0.017) * 3;
+    ctx.fillStyle = '#f8fbfd'; banda(pts, lomo, c(-FONDO_CALLE + 1)); ctx.fill();
+    ctx.fillStyle = 'rgba(160, 182, 204, 0.75)'; banda(pts, c(-FONDO_CALLE - 0.5), c(-FONDO_CALLE + 2)); ctx.fill();
+    // Colinas: la ladera de adelante, de a tramos seguidos
+    let tramo = [];
+    const cerrarTramo = () => {
+      if (tramo.length > 1) {
+        const lad = ctx.createLinearGradient(0, SUELO_BASE - ALTURA_MONTANA + FRENTE_CALLE, 0, ALTO);
+        lad.addColorStop(0, '#dbe5ee'); lad.addColorStop(0.5, '#bccad8'); lad.addColorStop(1, '#94a6b9');
+        ctx.fillStyle = lad; banda(tramo, c(FRENTE_CALLE), () => ALTO); ctx.fill();
+        // Ventisqueros en la ladera: lomos redondeados más claros, con la sombra azulada debajo
+        const a0 = tramo[0][2], a1 = tramo[tramo.length - 1][2];
+        for (let k = Math.floor(a0 / 120); k <= a1 / 120; k++) {
+          const wx = k * 120 + azar(k, 181) * 60, y = alturaSuelo(wx); if (y > SUELO_BASE - 12) continue;
+          const sx = wx - camaraX, top = y + FRENTE_CALLE + 14, cy = top + azar(k, 182) * Math.max(0, ALTO - top - 24), rx = 22 + azar(k, 183) * 26, ry = 2.6 + azar(k, 184) * 2.4;
+          ctx.fillStyle = 'rgba(96, 120, 146, 0.14)'; ctx.beginPath(); ctx.ellipse(sx + 2, cy + ry, rx, ry, 0, 0, Math.PI); ctx.fill();
+          ctx.fillStyle = 'rgba(246, 249, 252, 0.4)'; ctx.beginPath(); ctx.ellipse(sx, cy, rx, ry, 0, Math.PI, 0); ctx.fill();
+        }
+        // La cornisa del borde, su sombra y los carámbanos
+        ctx.fillStyle = '#ffffff'; banda(tramo, c(FRENTE_CALLE - 1.5), c(FRENTE_CALLE + 3)); ctx.fill();
+        ctx.fillStyle = 'rgba(80, 104, 130, 0.42)'; banda(tramo, c(FRENTE_CALLE + 3), c(FRENTE_CALLE + 4.8)); ctx.fill();
+        ctx.fillStyle = 'rgba(214, 238, 255, 0.9)';
+        for (const [sx, y, wx] of tramo) {
+          if (azar(Math.floor(wx / 8), 195) > 0.5 || y > SUELO_BASE - 8) continue;
+          const l = 4 + azar(Math.floor(wx / 8), 194) * 9, yy = y + FRENTE_CALLE + 3;
+          ctx.beginPath(); ctx.moveTo(sx + 1, yy); ctx.lineTo(sx + 5, yy); ctx.lineTo(sx + 3, yy + l); ctx.closePath(); ctx.fill();
+        }
+      }
+      tramo = [];
+    };
+    for (const p of pts) { if (p[1] < SUELO_BASE - 0.5) tramo.push(p); else { if (tramo.length) { tramo.push(p); cerrarTramo(); } } }
+    cerrarTramo();
+    // Rocas que asoman en las laderas
+    const i0 = indiceTrozo(camaraX) - 1, i1 = indiceTrozo(camaraX + ANCHO) + 1;
+    for (let i = i0; i <= i1; i++) {
+      if (!esMontana(i)) continue;
+      for (let k = 0; k < 10; k++) {
+        if (azar(i, 400 + k) > 0.68) continue;
+        const wx = i * TAMANO_TROZO + MONTANA.subidaInicio + 30 + k * 86 + azar(i, 410 + k) * 40, y = alturaSuelo(wx);
+        if (y > SUELO_BASE - 20) continue;
+        const frente = y + FRENTE_CALLE, ry = frente + 22 + azar(i, 420 + k) * Math.max(0, ALTO - frente - 44), r = 8 + azar(i, 430 + k) * 11;
+        if (ry > ALTO - 6) continue;
+        rocaNevada(ctx, wx - camaraX, ry, r, i * 10 + k);
+      }
+      for (let k = 0; k < 5; k++) {   // arbolitos nevados en la cara de la colina
+        if (azar(i, 440 + k) > 0.6) continue;
+        const wx = i * TAMANO_TROZO + MONTANA.subidaInicio + 80 + k * 170 + azar(i, 450 + k) * 60, y = alturaSuelo(wx);
+        if (y > SUELO_BASE - 30) continue;
+        const frente = y + FRENTE_CALLE, py = frente + 30 + azar(i, 460 + k) * Math.max(0, ALTO - frente - 50);
+        if (py < ALTO - 4) pinoNevado(ctx, wx - camaraX, py, 26 + azar(i, 470 + k) * 22, i * 5 + k, 0.12);
+      }
+    }
+    // En el llano: las huellas de las ruedas, montoncitos y pisadas
+    if (!Mundo.carriles) {
+      let a = null;
+      const surcos = (x0, x1) => { for (const yy of [SUELO_BASE + 14, SUELO_BASE + 52]) {
+        ctx.fillStyle = 'rgba(146, 170, 194, 0.3)'; ctx.fillRect(x0, yy, x1 - x0, 7);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.fillRect(x0, yy - 1.2, x1 - x0, 1.4);
+        ctx.fillStyle = 'rgba(120, 146, 172, 0.18)'; ctx.fillRect(x0, yy + 5.5, x1 - x0, 1.5);
+      } };
+      for (const [sx, y] of pts) { if (y >= SUELO_BASE - 0.5) { if (a === null) a = sx; } else if (a !== null) { surcos(a, sx); a = null; } }
+      if (a !== null) surcos(a, pts[pts.length - 1][0]);
+    }
+    for (let k = Math.floor(desde / 16); k <= hasta / 16; k++) {
+      const wx = k * 16, y = alturaSuelo(wx);
+      if (y < SUELO_BASE - 0.5 || azar(k, 199) > 0.2) continue;
+      const sx = wx - camaraX, py = y - FONDO_CALLE + 12 + azar(k, 198) * 120;
+      if (azar(k, 189) < 0.3) {   // montoncito de nieve
+        ctx.fillStyle = '#f7fafc'; ctx.beginPath(); ctx.ellipse(sx, py, 6, 2.6, 0, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = 'rgba(146, 170, 194, 0.35)'; ctx.fillRect(sx - 6, py - 0.2, 12, 1);
+      } else {                    // pisada
+        ctx.fillStyle = 'rgba(140, 162, 186, 0.42)'; ctx.beginPath(); ctx.ellipse(sx + 4, py, 3, 1.5, 0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; ctx.fillRect(sx + 1.6, py - 1.7, 4.6, 0.8);
+      }
+    }
+    // Destellos del sol en la nieve de las cimas
+    for (let k = Math.floor(desde / 24); k <= hasta / 24; k++) {
+      const wx = k * 24 + azar(k, 187) * 20, y = alturaSuelo(wx);
+      if (y > SUELO_BASE - 20 || azar(k, 186) > 0.4) continue;
+      const brillo = 0.5 + 0.5 * Math.sin(tiempo * 2.4 + k);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + brillo * 0.5})`; ctx.fillRect(wx - camaraX, y - FONDO_CALLE + 10 + azar(k, 185) * 80, 1.4, 1.4);
+    }
+  },
+
+  /* ---------- Objetos cerca del camino ---------- */
+  objetosNieve(ctx, camaraX, tiempo) {
+    const desde = indiceTrozo(camaraX) - 1, hasta = indiceTrozo(camaraX + ANCHO) + 1;
+    for (let i = desde; i <= hasta; i++) for (const o of objetosNieveDeTrozo(i)) {
+      const sx = o.x - camaraX;
+      if (sx < -200 || sx > ANCHO + 200) continue;
+      const base = alturaSuelo(o.x) - FONDO_CALLE + 2;   // apoyado en el borde de atrás del camino (o de la cima)
+      if (o.tipo === 'pino') pinoNevado(ctx, sx, base + 4, o.alto, o.v, 0.08);
+      else if (o.tipo === 'roca') rocaNevada(ctx, sx, base + 6, o.r, Math.round(o.x));
+      else if (o.tipo === 'tronco') troncoNevado(ctx, sx, base + 8, o.largo);
+      else if (o.tipo === 'auto') autoEnterrado(ctx, sx, base + 10, o.color);
+      else if (o.tipo === 'cartel') cartelNevado(ctx, sx, base + 4, o.texto);
+    }
+  },
+
+  /* ---------- Adelante: nevada, ráfagas y primer plano ---------- */
+  dibujarNieveFrente(ctx, camaraX, ambiente, tiempo) {
+    // Primer plano: montículos, arbolitos y postes con capucha de nieve, más rápidos que el camino
+    const factor = 1.35, desplaza = camaraX * factor, base = ALTO - 2;
+    const inicio = Math.floor(desplaza / SEGMENTO_FRENTE) - 1;
+    let anterior = null;
+    for (let k = inicio; k < inicio + ANCHO / SEGMENTO_FRENTE + 3; k++) {
+      for (const p of frenteDeSegmento(k)) {
+        const sx = p.x - desplaza;
+        if (p.tipo === 'poste') {
+          ctx.fillStyle = '#3a3036'; ctx.fillRect(sx - 3, base - p.alto, 6, p.alto);
+          ctx.fillStyle = '#f2f6f9'; ctx.beginPath(); ctx.ellipse(sx, base - p.alto, 5.2, 3, 0, Math.PI, 0); ctx.fill();   // capucha de nieve
+          if (anterior) { ctx.strokeStyle = 'rgba(40, 34, 40, 0.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(anterior.x, anterior.y); ctx.quadraticCurveTo((anterior.x + sx) / 2, anterior.y + 14, sx, base - p.alto + 8); ctx.stroke(); }
+          anterior = { x: sx, y: base - p.alto + 8 };
+        } else if (p.tipo === 'arbusto') {
+          pinoNevado(ctx, sx, base + 6, p.r * 3.2, Math.round(p.x), 0);
+        } else if (p.tipo === 'piedra') {
+          ctx.fillStyle = '#d4dfe8'; ctx.beginPath(); ctx.ellipse(sx, base, p.r * 2.4, p.r * 1.1, 0, Math.PI, 0); ctx.fill();
+          ctx.fillStyle = '#f6f9fb'; ctx.beginPath(); ctx.ellipse(sx - p.r * 0.4, base - p.r * 0.2, p.r * 1.8, p.r * 0.8, 0, Math.PI, 0); ctx.fill();
+        }
+      }
+    }
+    // Ráfagas: la nieve que el viento levanta al ras del piso
+    for (const r of ambiente.rafagas) {
+      const a = Math.sin(Math.PI * Math.min(1, r.t / r.dura)) * 0.32;
+      for (let j = 0; j < 5; j++) {
+        ctx.fillStyle = `rgba(245, 249, 252, ${a * (0.6 + (j % 2) * 0.4)})`;
+        ctx.beginPath(); ctx.ellipse(r.x + j * 46, r.y + Math.sin(r.t * 3 + j) * 4 - j * 3, 60 + j * 8, 3 + (j % 3), 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // La nevada: copos en tres profundidades (en pantalla), un solo trazado por profundidad
+    const COLOR_COPO = ['rgba(245, 249, 252, 0.6)', 'rgba(250, 252, 255, 0.8)', 'rgba(255, 255, 255, 0.92)'];
+    for (let capa = 0; capa < 3; capa++) {
+      ctx.beginPath();
+      for (const c of ambiente.copos) if (c.capa === capa) { ctx.moveTo(c.x + c.r, c.y); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); }
+      ctx.fillStyle = COLOR_COPO[capa]; ctx.fill();
+    }
+  },
+
+  // Vista chica para la tarjeta del mapa (el mismo dibujo, achicado, sobre una colina)
+  vistaNieve(ancho, alto) {
+    const cv = document.createElement('canvas'); cv.width = ancho; cv.height = alto;
+    const ctx = cv.getContext('2d'), k = ancho / ANCHO, escalaAntes = Lienzo.escala;   // todo el ancho; del alto, la franja de las copas a la nieve
+    let i = 2; while (!esMontana(i) && i < 60) i++;
+    const cam = i * TAMANO_TROZO + 300 - ANCHO * 0.35;
+    Lienzo.escala = k;   // los pinos se dibujan a la resolución de la tarjeta
+    ctx.setTransform(k, 0, 0, k, 0, -Math.max(0, 470 - alto / k) * k);
+    this.cieloNieve(ctx, cam, 0);
+    this.bosqueNieve(ctx, cam, 0.22, 352, 10, 15, 16, 34, 0.74, 21);
+    this.bosqueNieve(ctx, cam, 0.38, 370, 9, 26, 30, 62, 0.52, 37);
+    this.bosqueNieve(ctx, cam, 0.6, 384, 5, 52, 64, 132, 0.3, 53);
+    this.sueloNieve(ctx, cam, 0); this.objetosNieve(ctx, cam, 0);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    for (let n = 0; n < 140; n++) { const r = 0.8 + azar(n, 77) * 2; ctx.beginPath(); ctx.arc(azar(n, 78) * ANCHO, 60 + azar(n, 79) * ALTO, r, 0, Math.PI * 2); ctx.fill(); }
+    Lienzo.escala = escalaAntes;
+    return cv;
+  },
+});
+
+const PERIODO_BOSQUE = 2048, TIRAS_BOSQUE = new Map();
+function tiraBosque(base, onda, paso, altoMin, altoMax, tono, sal) {
+  const E = Lienzo.escala, clave = [base, paso, tono, sal, E].join('|');
+  let t = TIRAS_BOSQUE.get(clave);
+  if (t) return t;
+  const P = PERIODO_BOSQUE, arriba = base - onda - altoMax - 14, abajo = SUELO_BASE - FONDO_CALLE + 16, n = Math.round(P / paso), d = P / n;
+  const cv = document.createElement('canvas'); cv.width = Math.ceil(P * E); cv.height = Math.ceil((abajo - arriba) * E);
+  const c = cv.getContext('2d'); c.scale(E, E); c.translate(0, -arriba);
+  const loma = x => base + Math.sin(x * Math.PI * 2 / 1024 + sal) * onda * 0.6 + Math.sin(x * Math.PI * 2 / (P / 6) + sal * 2) * onda * 0.4;
+  const vecinos = Math.ceil(altoMax * 0.4 / d) + 1;   // los pinos del borde, también del otro lado
+  for (let k = -vecinos; k < n + vecinos; k++) {
+    const kk = ((k % n) + n) % n;
+    if (azar(kk, sal + 5) < 0.16) continue;   // claros
+    const x = k * d + (azar(kk, sal + 6) - 0.5) * d * 0.8, alto = altoMin + azar(kk, sal + 7) * (altoMax - altoMin);
+    pinoNevado(c, x, loma(x) + 4, alto, Math.floor(azar(kk, sal + 8) * 40), tono);
+  }
+  const g = c.createLinearGradient(0, base - onda, 0, base + 40);
+  g.addColorStop(0, lavado('#f2f6f9', tono * 0.4)); g.addColorStop(1, lavado('#cbd8e3', tono * 0.4));
+  c.fillStyle = g; c.beginPath(); c.moveTo(0, abajo);
+  for (let x = 0; x <= P; x += 16) c.lineTo(x, loma(x));
+  c.lineTo(P, abajo); c.closePath(); c.fill();
+  t = { cv, arriba, alto: abajo - arriba };
+  if (TIRAS_BOSQUE.size > 8) TIRAS_BOSQUE.delete(TIRAS_BOSQUE.keys().next().value);
+  TIRAS_BOSQUE.set(clave, t);
+  return t;
+}
+
+/* Roca con nieve encima: gris azulada, con la capucha blanca y la sombra en la base */
+function rocaNevada(ctx, x, y, r, sal) {
+  const a = (s) => azar(sal, s);
+  ctx.fillStyle = 'rgba(70, 92, 116, 0.25)'; ctx.beginPath(); ctx.ellipse(x + 2, y + 1, r * 1.3, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#6c7886'; ctx.beginPath();
+  ctx.moveTo(x - r * 1.2, y); ctx.lineTo(x - r * (0.9 + a(1) * 0.2), y - r * 0.7); ctx.lineTo(x - r * 0.2, y - r * (1 + a(2) * 0.2)); ctx.lineTo(x + r * 0.6, y - r * 0.8); ctx.lineTo(x + r * 1.15, y - r * 0.2); ctx.lineTo(x + r * 1.1, y);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#525d6a'; ctx.beginPath(); ctx.moveTo(x + r * 0.15, y - r * 0.9); ctx.lineTo(x + r * 0.6, y - r * 0.8); ctx.lineTo(x + r * 1.15, y - r * 0.2); ctx.lineTo(x + r * 1.1, y); ctx.lineTo(x + r * 0.2, y); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#f4f8fb'; ctx.beginPath();   // la nieve de arriba
+  ctx.moveTo(x - r * 1.0, y - r * 0.55); ctx.lineTo(x - r * 0.85, y - r * 0.75); ctx.lineTo(x - r * 0.2, y - r * 1.08); ctx.lineTo(x + r * 0.62, y - r * 0.9); ctx.lineTo(x + r * 1.05, y - r * 0.32);
+  ctx.quadraticCurveTo(x + r * 0.5, y - r * 0.5, x + r * 0.1, y - r * 0.6); ctx.quadraticCurveTo(x - r * 0.5, y - r * 0.42, x - r * 1.0, y - r * 0.55); ctx.fill();
+  ctx.fillStyle = 'rgba(160, 182, 204, 0.8)'; ctx.fillRect(x - r * 0.1, y - r * 0.62, r * 0.9, 1);
+}
+/* Tronco caído, tapado de nieve, con el corte de los anillos a la vista */
+function troncoNevado(ctx, x, y, largo) {
+  ctx.fillStyle = 'rgba(70, 92, 116, 0.22)'; ctx.beginPath(); ctx.ellipse(x, y + 1, largo * 0.55, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#5a4030'; ctx.fillRect(x - largo / 2, y - 12, largo, 11);
+  ctx.fillStyle = '#3e2c21'; ctx.fillRect(x - largo / 2, y - 4, largo, 3);
+  ctx.fillStyle = '#b08a64'; ctx.beginPath(); ctx.ellipse(x + largo / 2, y - 6.5, 3.2, 5.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#7a5a3e'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.ellipse(x + largo / 2, y - 6.5, 1.8, 3.2, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#f4f8fb'; ctx.beginPath(); ctx.moveTo(x - largo / 2 - 1, y - 10);
+  for (let k = 0; k <= 6; k++) ctx.lineTo(x - largo / 2 + largo * k / 6, y - 13.5 - (k % 2) * 1.6);
+  ctx.lineTo(x + largo / 2 + 1, y - 9); ctx.quadraticCurveTo(x, y - 7.5, x - largo / 2 - 1, y - 10); ctx.fill();
+}
+/* Auto enterrado en la nieve: sólo asoman el techo, los vidrios y un poco de la puerta */
+function autoEnterrado(ctx, x, y, color) {
+  ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(x - 48, y - 8); ctx.lineTo(x - 40, y - 24); ctx.lineTo(x - 24, y - 38); ctx.lineTo(x + 20, y - 38); ctx.lineTo(x + 36, y - 22); ctx.lineTo(x + 50, y - 16); ctx.lineTo(x + 52, y - 6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#26323e'; ctx.beginPath(); ctx.moveTo(x - 20, y - 34); ctx.lineTo(x - 2, y - 34); ctx.lineTo(x - 2, y - 24); ctx.lineTo(x - 30, y - 24); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x + 2, y - 34); ctx.lineTo(x + 18, y - 34); ctx.lineTo(x + 28, y - 24); ctx.lineTo(x + 2, y - 24); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(200, 225, 245, 0.35)'; ctx.fillRect(x - 16, y - 33, 6, 8);
+  ctx.fillStyle = '#f4f8fb';   // nieve en el techo y la que lo tapa hasta la mitad
+  ctx.beginPath(); ctx.moveTo(x - 26, y - 37); ctx.quadraticCurveTo(x - 2, y - 46, x + 22, y - 37); ctx.lineTo(x + 18, y - 36); ctx.lineTo(x - 22, y - 36); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 60, y + 2); ctx.quadraticCurveTo(x - 50, y - 20, x - 30, y - 18); ctx.quadraticCurveTo(x, y - 10, x + 30, y - 16); ctx.quadraticCurveTo(x + 56, y - 20, x + 64, y + 2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(160, 182, 204, 0.7)'; ctx.fillRect(x - 30, y - 17, 60, 1.4);
+}
+/* Cartel de ruta de madera con nieve arriba */
+function cartelNevado(ctx, x, y, texto) {
+  ctx.fillStyle = '#4a3426'; ctx.fillRect(x - 2, y - 46, 4, 46);
+  ctx.fillStyle = '#6a4a32'; ctx.fillRect(x - 30, y - 56, 60, 18);
+  ctx.strokeStyle = '#3a281c'; ctx.lineWidth = 1; ctx.strokeRect(x - 30, y - 56, 60, 18);
+  ctx.fillStyle = '#efe6d2'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(texto, x, y - 46.5, 54);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#f4f8fb'; ctx.beginPath(); ctx.moveTo(x - 32, y - 56); ctx.quadraticCurveTo(x, y - 63, x + 32, y - 56); ctx.lineTo(x + 30, y - 55); ctx.lineTo(x - 30, y - 55); ctx.closePath(); ctx.fill();
+}
+
+/* ===== Nevada: copos en tres profundidades que bajan con el viento, y ráfagas que levantan nieve al ras del piso =====
+ * Los copos están en pantalla y se corren al revés que la cámara según su profundidad (los de cerca, más). */
+class AmbienteNieve {
+  constructor() {
+    this.copos = []; this.rafagas = []; this.tiempo = 0; this.viento = 0.6; this.proximaRafaga = 5; this.camAntes = null;
+    for (let k = 0; k < 120; k++) this.copos.push(this.nuevoCopo(true));
+  }
+  nuevoCopo(enPantalla) {
+    const capa = Math.random() < 0.45 ? 0 : Math.random() < 0.7 ? 1 : 2;
+    return { x: Math.random() * ANCHO, y: enPantalla ? Math.random() * ALTO : -8 - Math.random() * 30, capa, r: [0.9, 1.5, 2.5][capa] * (0.8 + Math.random() * 0.4),
+      v: [0.4, 0.75, 1.3][capa] * (0.8 + Math.random() * 0.5), fase: Math.random() * 6.28 };
+  }
+  actualizar(dt, camaraX) {
+    this.tiempo += dt;
+    const paso = dt * 60, dcam = this.camAntes === null ? 0 : camaraX - this.camAntes; this.camAntes = camaraX;
+    this.viento = 0.55 + Math.sin(this.tiempo * 0.3) * 0.45 + Math.sin(this.tiempo * 1.3) * 0.15;
+    for (const c of this.copos) {
+      c.fase += dt * 2;
+      c.y += c.v * paso;
+      c.x += (this.viento * [0.35, 0.65, 1.05][c.capa] + Math.sin(c.fase) * 0.22) * paso - dcam * [0.3, 0.65, 1.15][c.capa];
+      if (c.y > ALTO + 4) Object.assign(c, this.nuevoCopo(false));
+      if (c.x > ANCHO + 12) c.x -= ANCHO + 24; else if (c.x < -12) c.x += ANCHO + 24;
+    }
+    if ((this.proximaRafaga -= dt) <= 0) {
+      this.proximaRafaga = 7 + Math.random() * 8;
+      this.rafagas.push({ x: -380, y: 410 + Math.random() * 70, t: 0, dura: 3.4 + Math.random() * 1.6, v: 4.5 + Math.random() * 2 });
+    }
+    for (const r of this.rafagas) { r.t += dt; r.x += (r.v + this.viento) * paso - dcam; }
+    this.rafagas = this.rafagas.filter(r => r.t < r.dura);
+  }
+}
+
+</script>
+  <script>
 /* ===== Jugador: movimiento, inventario, disparo, acción manual y recarga por fases ===== */
 const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;   // el salto llega a unos 120 px de alto
 const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay que saltar
@@ -9998,7 +10517,7 @@ class Jugador {
 
   arma() { return this.montada ? ARMA_FIJA : ARMAS[this.inventario[this.indiceArma]]; }
   // Qué pisa: piso de cemento en el galpón (suena como el asfalto), arena en el campo de pruebas y en las montañas, asfalto en la calle
-  superficie() { if (Mundo.interior) return 'asfalto'; return Mundo.plano || alturaSuelo(this.x) < SUELO_BASE - 1 ? 'arena' : 'asfalto'; }
+  superficie() { if (Mundo.interior) return 'asfalto'; if (Mundo.nieve) return 'nieve'; return Mundo.plano || alturaSuelo(this.x) < SUELO_BASE - 1 ? 'arena' : 'asfalto'; }
   municionActual() { return this.montada ? this.montada.municion : this.municion[this.arma().id]; }
   recargando() { return !!this.recarga; }
 
@@ -13039,6 +13558,8 @@ class Zombie {
       mx = hx + 26 + manotazo * 2.4; my = hy + 1.5 + ang * 15; giro = 10; flexion = 8; desvio = -26 + manotazo * 40;
       cierre = 0.13 + (ataca ? (1 + Math.sin(this.ahora / 90)) * 0.1 : 0); abre = 2.4; suelto = 0.75;   // dedos largos y abiertos, en gancho; al morder la garra se abre y se cierra
     }
+    const lanza = cerca && this.manoLanzando ? this.manoLanzando(hx, hy) : null;   // el congelado tira un bloque de hielo (js/zombie-congelado.js)
+    if (lanza) { [mx, my] = lanza; giro = 30; flexion = 12; desvio = 0; cierre = 0.62; abre = 0.6; suelto = 0.4; }
     const R = resolverBrazo(hx, hy, mx, my, { lado: cerca ? 1 : -1, fondo: cerca ? -2 : 2, afuera: 0.1 }), cx = R.cx, cy = R.cy;
     const en = (x0, y0, x1, y1, k) => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k];
     miembroZombie(ctx, m => juntos(tramoMusculo(hx, hy, cx, cy, 6.0 * g - m, 4.7 * g - m, 0.18, 0.22, 0.5, 0.3), tramoMusculo(cx, cy, mx, my, 4.7 * g - m, 3.4 * g - m, 0.2, 0.1, 0.28, 0.3)), piel);
@@ -13381,6 +13902,273 @@ class CharcoToxico {
       ctx.strokeStyle = `rgba(210, 255, 130, ${(1 - ciclo) * 0.8 * a})`; ctx.lineWidth = 0.7;
       ctx.beginPath(); ctx.arc(bx, by, 0.8 + ciclo * 1.6, 0, Math.PI * 2); ctx.stroke();
     }
+  }
+}
+
+</script>
+  <script>
+/* ===== Zombie congelado (mapa de la nieve, js/escenario-nieve.js) =====
+ * Pedido: «un zombie que tiene nieve en la ropa, como un zombie congelado, que nos tira bloques de hielo pequeños,
+ * azules, que nos sacan 5 puntos de vida». Un excursionista que quedó en la tormenta: campera acolchada azul pizarra con
+ * la capucha bajada y gorro de lana con pompón, todo con nieve encima (los hombros, el pecho, el gorro y el ruedo, del
+ * que cuelgan carámbanos), la piel gris azulada y escarchada, los ojos celestes, carámbanos en el mentón y el vaho que
+ * le sale de la boca. Camina más tieso y más lento que el común y aguanta un poco más.
+ * Además de caminar y morder, de lejos (de 140 a 560 px, a la vista) arranca un bloque de hielo: lo levanta por detrás
+ * de la cabeza y lo tira por elevación adonde va a estar el jugador. El bloque (BloqueHielo) saca 5 de vida si pega y
+ * se rompe en astillas azules contra el piso. Al morir se le desprende el hielo.
+ */
+const COLORES_CONGELADO = { ...COLORES_ZOMBIE, camiseta: '#41566f', pantalon: '#2c3440', sangre: '#4a1622', sangreFresca: '#7a2236',
+  boca: '#13202b', dientes: '#d8e2e6', mancha: 'rgba(85, 30, 48, 0.7)' };
+const PIELES_CONGELADO = ['#a9bfc9', '#9fb6c2', '#b4c8d0', '#98b0bd'];
+const GORROS_CONGELADO = ['#8a2a30', '#2f5f8a', '#5f7030', '#8a6226'];
+const NIEVE = { luz: '#f6f9fc', medio: '#dde8f1', sombra: '#b6c8d8', borde: 'rgba(90, 115, 140, 0.55)' };
+const DANO_BLOQUE_HIELO = 5;   // lo que saca un bloque que pega (fijo: el pedido dice 5 puntos de vida)
+
+class ZombieCongelado extends Zombie {
+  constructor(x, dificultad) {
+    super(x, false, dificultad);
+    this.congelado = true;
+    this.vidaMax = this.vida = Math.max(1, Math.round(dificultad.vidaZombie * 1.25 * AJUSTE.vidaZombie));
+    this.velocidad = (0.72 + Math.random() * 0.35) * dificultad.velocidad * AJUSTE.velocidadZombie;   // tieso de frío
+    this.estilo = { id: 'congelado', torso: 'capucha', piernas: 'largo', accesorio: 'gorro-pompon', escala: [0.98, 1.08], gorro: GORROS_CONGELADO[Math.floor(Math.random() * GORROS_CONGELADO.length)] };
+    this.escala = azarEntre(...this.estilo.escala);
+    this.ancho = 26 * this.escala; this.alto = 64 * this.escala;
+    this.piel = PIELES_CONGELADO[Math.floor(Math.random() * PIELES_CONGELADO.length)];
+    this.colores = { ...COLORES_CONGELADO, camiseta: variarColor(COLORES_CONGELADO.camiseta), pantalon: variarColor(COLORES_CONGELADO.pantalon) };
+    this.colorSangre = '#5a1a2a'; this.colorCharco = 'rgba(70, 20, 35, 0.6)';
+    Object.assign(this.variante, { brazoColgando: false, pelo: 'ralo', desgarroCamiseta: false });
+    // La nieve que tiene encima: montoncitos en el pecho y la panza (además de los hombros, el gorro y el ruedo)
+    this.copos = Array.from({ length: 4 + Math.floor(Math.random() * 3) }, () => ({ x: azarEntre(-8, 8), y: azarEntre(-52, -38), r: azarEntre(1.2, 2.4) }));
+    this.carambanos = Array.from({ length: 6 }, (_, k) => ({ x: -8 + k * 3.2 + azarEntre(-0.6, 0.6), largo: azarEntre(1.4, 3.6) }));
+    this.escarcha = Array.from({ length: 7 }, () => ({ x: azarEntre(-7, 9), y: azarEntre(-78, -66), r: azarEntre(0.35, 0.8) }));
+    this.vaho = []; this.proximoVaho = 0;
+    this.lanzamiento = null; this.proximoLanzamiento = undefined;
+  }
+
+  actualizar(dt, jugador, juego) {
+    const ahora = juego.ahora;
+    this.ahora = ahora;
+    if (this.proximoLanzamiento === undefined) this.proximoLanzamiento = ahora + 1400 + Math.random() * 2200;
+    // Vaho: una nubecita que sale de la boca cada tanto, sube un poco y se deshace
+    for (const v of this.vaho) { v.t += dt; v.x += v.vx * dt * 60; v.y -= 0.18 * dt * 60; }
+    this.vaho = this.vaho.filter(v => v.t < 1.3);
+    if (this.estado !== 'muerto' && ahora >= this.proximoVaho) {
+      this.proximoVaho = ahora + 1300 + Math.random() * 1500;
+      const s = this.escala;
+      this.vaho.push({ x: this.x + this.direccion * 10 * s, y: this.y - 67 * s, vx: this.direccion * (0.25 + Math.random() * 0.2), t: 0, r: 2.2 + Math.random() * 1.2 });
+    }
+    if (this.estado === 'muerto') { this.lanzamiento = null; super.actualizar(dt, jugador, juego); return; }
+    const dx = jugador.x - this.x, distancia = Math.abs(dx);
+    // Lanzando: quieto, mirando al jugador; suelta el bloque al 62 % del movimiento
+    if (this.lanzamiento) {
+      const L = this.lanzamiento, p = (ahora - L.desde) / L.dur;
+      this.direccion = dx >= 0 ? 1 : -1;
+      this.estado = 'prepara';
+      if (!L.tirado && p >= 0.62) { L.tirado = true; this.lanzar(jugador, juego); }
+      if (p >= 1) this.lanzamiento = null;
+      this.y = alturaSuelo(this.x);
+      return;
+    }
+    const enPantalla = Math.abs(this.x - (juego.camaraX + ANCHO / 2)) < ANCHO / 2 - 20;
+    if (!jugador.muerto && enPantalla && distancia > 140 && distancia < 560 && ahora >= this.proximoLanzamiento && this.estado !== 'ataca') {
+      this.lanzamiento = { desde: ahora, dur: 900, tirado: false };
+      this.proximoLanzamiento = ahora + 3000 + Math.random() * 2400;
+      return;
+    }
+    super.actualizar(dt, jugador, juego);
+  }
+
+  // Dónde va la mano del brazo de adelante mientras lanza (relativa al hombro; zombie.js: brazo): la lleva por detrás de
+  // la cabeza, la descarga por arriba y adelante y la deja caer
+  manoLanzando(hx, hy) {
+    const L = this.lanzamiento; if (!L) return null;
+    const p = limitar((this.ahora - L.desde) / L.dur, 0, 1);
+    const reposo = [hx + 26, hy + 1.5], atras = [hx - 7, hy - 22], arriba = [hx + 9, hy - 21], adelante = [hx + 24, hy - 3];
+    const entre = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    if (p < 0.55) return entre(reposo, atras, suavizar(p / 0.55));
+    if (p < 0.7) { const k = (p - 0.55) / 0.15; return k < 0.5 ? entre(atras, arriba, k * 2) : entre(arriba, adelante, k * 2 - 1); }
+    return entre(adelante, reposo, suavizar((p - 0.7) / 0.3));
+  }
+
+  // Tiro por elevación adonde va a estar el jugador (un poco adelantado si camina), a la altura del pecho
+  lanzar(jugador, juego) {
+    const s = this.escala, d = this.direccion, bx = this.x + d * 9 * s, by = this.y - 80 * s, g = 0.26;
+    const destino = jugador.x + jugador.vx * 18, caida = (alturaSuelo(destino) - 40) - by;
+    let vy = -4.2 - Math.random() * 1.1;
+    if (vy * vy + 2 * g * caida < 0) vy = -Math.sqrt(-2 * g * caida) - 1.5;   // más arriba (en la colina): más fuerte
+    const t = (-vy + Math.sqrt(vy * vy + 2 * g * caida)) / g;
+    const vx = limitar((destino - bx) / Math.max(1, t), -11, 11);
+    juego.escupitajos.push(new BloqueHielo(bx, by, vx, vy, g));
+    Audio_.hieloLanzar(Math.abs(jugador.x - this.x));
+  }
+
+  recibirDano(cantidad, direccion, arma, juego) {
+    const antes = this.estado;
+    super.recibirDano(cantidad, direccion, arma, juego);
+    if (antes === 'muerto') return;
+    juego.salpicar(this.x, this.y - this.altura - 50 * this.escala, '#e8f2fa', 3, 2.2);   // cada impacto le saca nieve
+    if (this.estado === 'muerto') {   // se le desprende el hielo
+      this.lanzamiento = null;
+      astillasDeHielo(juego, this.x, this.y - 40 * this.escala, 12, 3.4);
+      juego.salpicar(this.x, this.y - 55 * this.escala, '#f2f7fb', 10, 3);
+      Audio_.hieloRompe(0.7);
+    }
+  }
+
+  dibujar(ctx, camaraX, ahora) {
+    super.dibujar(ctx, camaraX, ahora);
+    if (Pincel.silueta || !this.vaho.length) return;
+    for (const v of this.vaho) {   // el vaho, en el mundo: crece, sube y se esfuma
+      const k = v.t / 1.3, r = v.r * (1 + k * 2.2);
+      ctx.fillStyle = `rgba(236, 244, 250, ${0.42 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(v.x - camaraX, v.y, r, 0, Math.PI * 2); ctx.arc(v.x - camaraX + r * 0.8, v.y - r * 0.3, r * 0.7, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // El cuerpo de siempre y encima, con la inclinación del torso: la nieve en los hombros y el bloque en la mano
+  cuerpo(ctx, golpeado) {
+    super.cuerpo(ctx, golpeado);   // deja aplicada la escala y la dirección
+    if (Pincel.silueta || golpeado) return;
+    const camina = this.estado === 'camina';
+    const s = camina ? Math.sin(this.fase) : 0, ty = camina ? -Math.abs(Math.cos(this.fase)) * 1.2 : 0;
+    ctx.save();
+    ctx.translate(0, -34); ctx.rotate(0.16 + Math.abs(s) * 0.04); ctx.translate(0, 34 + ty);
+    // Nieve sobre los hombros (y la parte de arriba de las mangas), con su sombra azulada debajo
+    montonNieve(ctx, [[-10.6, -55.4], [-9.2, -58.6], [-5, -60.2], [0, -59.6], [5, -60.4], [9.4, -59], [11.4, -55.6], [9, -56.6], [6.6, -55.2], [3, -56.8], [-1, -55.6], [-4.4, -56.8], [-7.8, -55]]);
+    // El bloque de hielo en la mano, mientras lo levanta (hasta que lo suelta)
+    const L = this.lanzamiento;
+    if (L && !L.tirado) { const m = this.manoLanzando(7, -54); if (m) cuboHielo(ctx, m[0] + 1.5, m[1] - 4.5, 6.6, 0.3); }
+    ctx.restore();
+  }
+
+  // La campera: costuras del acolchado, cierre, bolsillos, la nieve que se le pegó y el ruedo escarchado con carámbanos
+  prendaEncima(ctx, hemY, col, golpeado, est) {
+    if (Pincel.silueta) return;
+    const tela = this.colores.camiseta, oscuro = ajustarColor(tela, -0.32);
+    pieza(ctx, poli([[-10.4, -56], [-4, -60], [4.6, -60], [10.4, -56], [6, -57.6], [0, -58.4], [-6, -57.4]]), col(ajustarColor(tela, 0.12)), -10.4, 10.4);   // la capucha bajada, sobre los hombros
+    if (golpeado) return;
+    for (const y of [-51, -45, -39]) linea(ctx, oscuro, 0.55, [[-10.2, y], [-4, y + 0.8], [3, y + 0.4], [10, y - 0.6]]);   // costuras del acolchado
+    linea(ctx, '#aab4bc', 0.7, [[2.6, -57.6], [2.2, -46], [2.4, hemY + 1]]);                                           // cierre
+    for (let y = -55; y < hemY; y += 2.6) detalle(ctx, '#d6dde2', circulo(2.4, y, 0.32));
+    pieza(ctx, redondo(4, -42, 5.6, 4.4, 0.8), col(ajustarColor(tela, -0.1)), 4, 9.6);                                  // bolsillo
+    for (const c of this.copos) montonNieve(ctx, [[c.x - c.r * 1.4, c.y + c.r * 0.5], [c.x - c.r, c.y - c.r * 0.6], [c.x, c.y - c.r], [c.x + c.r * 1.1, c.y - c.r * 0.5], [c.x + c.r * 1.4, c.y + c.r * 0.5], [c.x, c.y + c.r * 0.3]]);
+    // Ruedo: costra de nieve y carámbanos colgando
+    montonNieve(ctx, [[-9.6, hemY + 2], [-9.2, hemY - 1.4], [-4, hemY - 2], [2, hemY - 1.2], [8.6, hemY - 2], [9.4, hemY + 1.6], [4, hemY + 0.6], [-2, hemY + 1.4]]);
+    for (const k of this.carambanos) carambano(ctx, k.x, hemY + 1, 0.9, k.largo);
+  }
+
+  // Gorro de lana con pompón (el de siempre, zombie.js: accesorio) con nieve arriba y escarcha en el borde
+  accesorio(ctx, est, golpeado) {
+    super.accesorio(ctx, est, golpeado);
+    if (Pincel.silueta || golpeado) return;
+    const hy = -79;
+    montonNieve(ctx, [[-9, hy - 1], [-8, hy - 5.6], [-3, hy - 8.4], [2.6, hy - 8.6], [8, hy - 6.4], [10.4, hy - 1.6], [7, hy - 3.6], [2, hy - 5.2], [-3.4, hy - 4.6], [-7, hy - 2.4]]);
+    montonNieve(ctx, [[-2.6, hy - 10.4], [-1.4, hy - 12.4], [1.4, hy - 12.6], [2.8, hy - 10.4], [0, hy - 9.6]]);   // el pompón, nevado
+    for (let k = 0; k < 4; k++) carambano(ctx, -6 + k * 4.4, hy + 3.4, 0.7, 1.6 + (k % 2) * 1.1);
+  }
+
+  // La cabeza de siempre, con los ojos celestes, la cara escarchada y carámbanos en el mentón
+  cabeza(ctx, piel, pielOscura, golpeado, ataca) {
+    super.cabeza(ctx, piel, pielOscura, golpeado, ataca);
+    if (Pincel.silueta || golpeado) return;
+    const hy = -79;
+    for (const e of this.escarcha) detalle(ctx, 'rgba(240, 248, 255, 0.75)', circulo(e.x, e.y + 2, e.r));
+    linea(ctx, 'rgba(235, 246, 255, 0.7)', 0.6, [[-7, hy + 9], [-5, hy + 11], [-2, hy + 12.4]]);   // escarcha en la quijada
+    if (!this.ojosApagados) {   // los ojos: celestes, fríos (rojos cuando muerde, como los otros)
+      const brillo = ctx.createRadialGradient(5.4, hy + 5.2, 0, 5.4, hy + 5.2, 4);
+      brillo.addColorStop(0, ataca ? 'rgba(255, 70, 60, 0.5)' : 'rgba(150, 225, 255, 0.6)'); brillo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = brillo; ctx.fillRect(1, hy + 1, 9, 9);
+      detalle(ctx, ataca ? '#ff3b2b' : '#a8ecff', circulo(5.6, hy + 5.3, 1.25));
+      detalle(ctx, '#0c2030', circulo(6, hy + 5.3, 0.45));
+    }
+    const boca = this.bocaAbierta > 0 ? 2.5 + this.bocaAbierta * 4.5 : 1.6;
+    for (const [x, l] of [[2.6, 2.4], [5.2, 3.4], [7.6, 1.8]]) carambano(ctx, x, hy + 15.4 + boca * 0.6, 0.6, l);   // del mentón
+  }
+}
+
+/* Un montón de nieve pegado a algo: el borde de abajo en sombra azulada y la cara de arriba iluminada */
+function montonNieve(ctx, pts) {
+  ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+  ctx.fillStyle = NIEVE.sombra; ctx.fill();
+  ctx.strokeStyle = NIEVE.borde; ctx.lineWidth = 0.4; ctx.stroke();
+  ctx.save(); ctx.clip();
+  ctx.translate(-0.3, -0.9); ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+  ctx.fillStyle = NIEVE.medio; ctx.fill();
+  ctx.translate(-0.2, -0.7); ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+  ctx.fillStyle = NIEVE.luz; ctx.fill();
+  ctx.restore();
+}
+/* Carámbano: gota de hielo larga y transparente, con el brillo de un costado */
+function carambano(ctx, x, y, ancho, largo) {
+  ctx.beginPath(); ctx.moveTo(x - ancho, y); ctx.lineTo(x + ancho, y); ctx.lineTo(x + ancho * 0.15, y + largo); ctx.closePath();
+  ctx.fillStyle = 'rgba(205, 236, 255, 0.85)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(110, 160, 200, 0.6)'; ctx.lineWidth = 0.25; ctx.stroke();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.fillRect(x - ancho * 0.6, y, ancho * 0.4, largo * 0.55);
+}
+/* Cubito de hielo azul visto en 3/4: cara de adelante, la de arriba más clara y la del costado en sombra, con una veta
+ * y el brillo. lado: el ancho de la cara de adelante; giro: radianes */
+function cuboHielo(ctx, x, y, lado, giro) {
+  const h = lado / 2, p = lado * 0.32;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(giro);
+  ctx.fillStyle = '#7fc6f6'; ctx.beginPath(); ctx.moveTo(-h, -h); ctx.lineTo(-h + p, -h - p); ctx.lineTo(h + p, -h - p); ctx.lineTo(h, -h); ctx.closePath(); ctx.fill();   // arriba
+  ctx.fillStyle = '#2f78c4'; ctx.beginPath(); ctx.moveTo(h, -h); ctx.lineTo(h + p, -h - p); ctx.lineTo(h + p, h - p); ctx.lineTo(h, h); ctx.closePath(); ctx.fill();         // costado
+  const g = ctx.createLinearGradient(-h, -h, h, h); g.addColorStop(0, '#9ad6ff'); g.addColorStop(0.55, '#4ea4e8'); g.addColorStop(1, '#2d72bd');
+  ctx.fillStyle = g; ctx.fillRect(-h, -h, lado, lado);                                                                                                                       // adelante
+  ctx.strokeStyle = 'rgba(16, 52, 96, 0.7)'; ctx.lineWidth = 0.45; ctx.strokeRect(-h, -h, lado, lado);
+  ctx.strokeStyle = 'rgba(230, 248, 255, 0.85)'; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(-h + 0.6, h - 0.8); ctx.lineTo(-h + 0.6, -h + 0.6); ctx.lineTo(h - 0.8, -h + 0.6); ctx.stroke();                                              // filo con luz
+  ctx.strokeStyle = 'rgba(220, 244, 255, 0.55)'; ctx.lineWidth = 0.35;
+  ctx.beginPath(); ctx.moveTo(-h * 0.2, -h * 0.7); ctx.lineTo(h * 0.15, -h * 0.05); ctx.lineTo(-h * 0.1, h * 0.6); ctx.stroke();                                           // veta adentro
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.fillRect(-h + 1, -h + 1, lado * 0.18, lado * 0.18);
+  ctx.restore();
+}
+/* Astillas de hielo que saltan (azules y blancas) */
+function astillasDeHielo(juego, x, y, cantidad, fuerza) {
+  const colores = ['#bfe6ff', '#7cc4f5', '#e9f7ff', '#4f9bd9', '#a9dcff'];
+  for (let k = 0; k < cantidad; k++) {
+    const a = -Math.PI * (0.1 + Math.random() * 0.8), v = (0.6 + Math.random()) * fuerza;
+    juego.particulas.push(new Particula(x, y, Math.cos(a) * v, Math.sin(a) * v - 0.6, colores[k % colores.length], 0.45 + Math.random() * 0.5, 1.6 + Math.random() * 2.2, true));
+  }
+}
+
+/* Bloque de hielo que tira el zombie congelado: gira en el aire con una estela de escarcha; si le pega al jugador le
+ * saca 5 de vida (DANO_BLOQUE_HIELO) y se hace pedazos, igual que contra el piso */
+class BloqueHielo {
+  constructor(x, y, vx, vy, g) {
+    this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.g = g; this.dano = DANO_BLOQUE_HIELO;
+    this.lado = 6.4 + Math.random() * 1.6; this.giro = Math.random() * 6.28; this.vgiro = (vx >= 0 ? 1 : -1) * (0.12 + Math.random() * 0.08);
+    this.rastro = []; this.vivo = true; this.edad = 0;
+  }
+  actualizar(dt, juego) {
+    const paso = dt * 60, j = juego.jugador;
+    this.edad += dt;
+    this.rastro.push([this.x, this.y]); if (this.rastro.length > 7) this.rastro.shift();
+    this.vy += this.g * paso; this.x += this.vx * paso; this.y += this.vy * paso; this.giro += this.vgiro * paso;
+    // Contra el jugador (agachado es más bajo)
+    const tope = j.y - 84 + j.agachado * BAJA_AGACHADO;
+    if (!j.muerto && Math.abs(this.x - j.x) < 12 && this.y > tope && this.y < j.y) {
+      j.recibirDano(this.dano, juego);
+      this.romper(juego, 1);
+      return;
+    }
+    if (this.y >= alturaSuelo(this.x) - 2) { this.y = alturaSuelo(this.x) - 2; this.romper(juego, 0.6); return; }
+    if (this.edad > 5) this.vivo = false;
+  }
+  romper(juego, fuerza) {
+    this.vivo = false;
+    astillasDeHielo(juego, this.x, this.y, 9, 2.6 * fuerza + 0.8);
+    juego.salpicar(this.x, this.y, '#eef6fc', 4, 1.6);
+    Audio_.hieloRompe(fuerza);
+  }
+  dibujar(ctx, camaraX) {
+    ctx.save();
+    this.rastro.forEach(([x, y], k) => {   // estela de escarcha
+      const a = (k + 1) / this.rastro.length;
+      ctx.fillStyle = `rgba(200, 235, 255, ${0.32 * a})`;
+      ctx.beginPath(); ctx.arc(x - camaraX, y, 0.8 + a * 1.6, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.restore();
+    cuboHielo(ctx, this.x - camaraX, this.y, this.lado, this.giro);
   }
 }
 
@@ -14043,9 +14831,12 @@ class Juego {
     this.ultra = !!opciones.ultra;        // defensa ultra: 4 carriles, el sector a la izquierda (js/defensa-ultra.js)
     this.estrategia = !!opciones.estrategia;   // último bastión: defensa con estrategia sobre una grilla (js/estrategia.js)
     this.opcionesEstrategia = opciones.estrategia;   // { nivel, continuar } (js/bastion-niveles.js)
-    // Mapa de la pelea infinita: la ciudad en ruinas o la cloaca (canal subterráneo con zombies tóxicos)
-    this.mapa = opciones.mapa === 'cloaca' && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !mision ? 'cloaca' : 'ciudad';
+    // Mapa de la pelea infinita: la ciudad en ruinas, la cloaca (canal subterráneo con zombies tóxicos) o la nieve
+    // (bosque de pinos nevados con colinas y zombies congelados: js/escenario-nieve.js y js/zombie-congelado.js)
+    this.mapa = (opciones.mapa === 'cloaca' || opciones.mapa === 'nieve') && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !mision ? opciones.mapa : 'ciudad';
     this.cloaca = this.mapa === 'cloaca';
+    this.nieve = this.mapa === 'nieve';
+    Mundo.nieve = this.nieve;   // pisadas que crujen (Jugador.superficie)
     Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra;
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
     Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
@@ -14057,7 +14848,7 @@ class Juego {
     this.escupitajos = []; this.charcos = [];   // ácido de los zombies tóxicos
     this.ametralladoras = new Map();          // índice de trozo → AmetralladoraFija
     this.especialesTomadas = new Map();       // índice de trozo → momento en que se agarró la caja especial
-    this.ambiente = new Ambiente();
+    this.ambiente = this.nieve ? new AmbienteNieve() : new Ambiente();   // en la nieve, la nevada
     this.camaraX = this.jugador.x - ANCHO / 2;
     this.sacudida = 0;
     this.ahora = 0; this.tiempoJugado = 0;
@@ -14091,7 +14882,7 @@ class Juego {
       this.proximaCaja = Infinity;
     }
     this.proximoLatido = 0; this.proximoGemidoLejano = 6000;
-    Audio_.ambiente(this.cloaca ? 0 : this.entrenamiento || this.pruebas ? 0.012 : 0.07);   // viento de fondo (en los galpones, apenas el de afuera)
+    Audio_.ambiente(this.cloaca ? 0 : this.entrenamiento || this.pruebas ? 0.012 : this.nieve ? 0.11 : 0.07);   // viento de fondo (en los galpones, apenas el de afuera; en la nieve, más fuerte)
     Audio_.agua(this.cloaca ? 0.09 : 0);   // en la cloaca, el agua del canal
     this.proximaGota = 0;
     if (this.entrenamiento) {
@@ -14342,7 +15133,7 @@ class Juego {
     if (this.torreta || this.ultra) {
       const novedades = [this.ronda >= 2 ? t('ronda.rapidos') : '', this.ronda >= 3 ? t('ronda.corredores') : '', this.ronda >= 4 ? t('ronda.resistentes') : ''].filter(Boolean);
       this.avisoRonda(`${t('ronda.ola')} ${this.ronda}`, t('ronda.olaZombies', { n: this.porAparecer }) + (novedades.length ? ' · ' + novedades.join(', ') : ''));
-    } else this.avisoRonda(`${t('ronda.ronda')} ${this.ronda}`, t('ronda.zombies', { n: this.porAparecer }) + (this.cloaca && this.ronda === 1 ? t('ronda.toxicos') : ''));
+    } else this.avisoRonda(`${t('ronda.ronda')} ${this.ronda}`, t('ronda.zombies', { n: this.porAparecer }) + (this.cloaca && this.ronda === 1 ? t('ronda.toxicos') : '') + (this.nieve && this.ronda === 1 ? t('ronda.congelados') : ''));
     Audio_.sirena();
   }
 
@@ -14585,7 +15376,9 @@ class Juego {
       const corredor = this.ronda >= d.rondaCorredores && Math.random() < d.probCorredor;
       // En la cloaca se mezclan los tóxicos: uno de cada cinco al principio, hasta la mitad en las rondas altas
       const toxico = this.cloaca && Math.random() < Math.min(0.5, 0.2 + (this.ronda - 1) * 0.05);
-      this.zombies.push(toxico ? new ZombieToxico(x, d) : new Zombie(x, corredor, d));
+      // En la nieve, los congelados: casi uno de cada cinco al principio, hasta cuatro de cada diez en las rondas altas
+      const congelado = this.nieve && Math.random() < Math.min(0.4, 0.18 + (this.ronda - 1) * 0.04);
+      this.zombies.push(toxico ? new ZombieToxico(x, d) : congelado ? new ZombieCongelado(x, d) : new Zombie(x, corredor, d));
       this.porAparecer--;
     }
   }
@@ -14713,7 +15506,7 @@ class Juego {
     const tiros = disparosParaMatar(arma, vidaActual);
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
-    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : '') + this.dificultad.nombre.toUpperCase();
+    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
     if (modo !== this.textoModo) { this.textoModo = modo; h.dificultad.textContent = modo; }
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +
@@ -14766,6 +15559,7 @@ class Juego {
     if (this.entrenamiento) Escenario.dibujarGalpon(ctx, cam, this.tiempoJugado);
     else if (this.cloaca) Escenario.dibujarCloaca(ctx, cam, this.tiempoJugado);
     else if (this.pruebas) Escenario.dibujarCampo(ctx, cam, (this.puestoX ?? j.x) - cam, j.x - cam);   // anclado al puesto; lo que se repite cubre lo que se ve
+    else if (this.nieve) Escenario.dibujarNieve(ctx, cam, this.tiempoJugado);   // js/escenario-nieve.js
     else if (this.historia) { EscenarioHistoria.fondo(ctx, cam, this.tiempoJugado, this.historia); EscenarioHistoria.sogas(ctx, cam, this); if (this.aviones) for (const v of this.aviones) v.dibujar(ctx, cam); }
     else {
       Escenario.dibujarCielo(ctx, cam, this.tiempoJugado);
@@ -14801,6 +15595,7 @@ class Juego {
     for (const x of this.explosiones) x.dibujar(ctx, cam);
     for (const p of this.particulas) p.dibujar(ctx, cam);
     if (this.cloaca) Escenario.dibujarCloacaFrente(ctx, cam, this.tiempoJugado);
+    else if (this.nieve) Escenario.dibujarNieveFrente(ctx, cam, this.ambiente, this.tiempoJugado);
     else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia, this); }
     else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
     if (this.pruebas) ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
@@ -23940,7 +24735,7 @@ const Asistente = (() => {
       catalogo(),
       '',
       'AJUSTES PERSONALES ACTIVOS: ' + (Object.keys(personal).length ? Object.entries(personal).map(([k, v]) => `${k}=${fmt(v)} (original ${fmt(original[k])})`).join(', ') : 'ninguno'),
-      j ? `PARTIDA EN CURSO: arma en mano ${j.jugador.arma().id}, modo ${j.torreta ? 'defensa zombie' : j.entrenamiento ? 'entrenamiento' : j.pruebas ? 'campo de pruebas' : j.cloaca ? 'cloaca' : 'ciudad'}.` : 'Ahora está en el menú principal.',
+      j ? `PARTIDA EN CURSO: arma en mano ${j.jugador.arma().id}, modo ${j.torreta ? 'defensa zombie' : j.entrenamiento ? 'entrenamiento' : j.pruebas ? 'campo de pruebas' : j.cloaca ? 'cloaca' : j.nieve ? 'bosque nevado' : 'ciudad'}.` : 'Ahora está en el menú principal.',
     ].join('\n');
   }
   const reglas = async () => `${await reglasFijas()}\n\n${estadoDelJuego()}`;
@@ -24237,6 +25032,16 @@ const Asistente = (() => {
     }
   }
 
+  // La tarjeta del bosque nevado muestra el mismo escenario del juego, achicado (js/escenario-nieve.js); se dibuja una
+  // vez, la primera que se abre la lista de mapas
+  let vistaNieveLista = false;
+  function vistaDelBosqueNevado() {
+    if (vistaNieveLista) return;
+    vistaNieveLista = true;
+    try { const v = document.getElementById('vista-nieve'); if (v) v.style.backgroundImage = `url(${Escenario.vistaNieve(640, 200).toDataURL('image/jpeg', 0.86)})`; }
+    catch { /* sin lienzo: queda el degradado del CSS */ }
+  }
+
   /* ---- Partida ---- */
   function iniciar(mision, opciones = {}) {
     Audio_.activar();
@@ -24258,7 +25063,7 @@ const Asistente = (() => {
     fichaVitrinaId = null;
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
-    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : t('aviso.sobrevive'), 2500);
+    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : opciones.mapa === 'nieve' ? t('aviso.nieve') : t('aviso.sobrevive'), 2500);
     if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? juego.nivelV2.aviso || 'b2.aviso' : 'bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
@@ -24600,10 +25405,11 @@ const Asistente = (() => {
     if (!boton) return;
     Audio_.activar();
     switch (boton.dataset.accion) {
-      case 'infinita':  mostrar('panel-mapas'); break;
+      case 'infinita':  mostrar('panel-mapas'); vistaDelBosqueNevado(); break;
       case 'historia':  Historia.abrir(); break;
       case 'mapa-ciudad': iniciar(null); break;
       case 'mapa-cloaca': iniciar(null, { mapa: 'cloaca' }); break;
+      case 'mapa-nieve':  iniciar(null, { mapa: 'nieve' }); break;
       case 'pruebas':   iniciar(null, { pruebas: true }); break;
       case 'torreta':   iniciar(null, { torreta: true }); break;
       case 'ultra':     iniciar(null, { ultra: true }); break;
