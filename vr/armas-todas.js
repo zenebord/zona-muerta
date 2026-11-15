@@ -22,6 +22,7 @@ import * as THREE from 'three';
 import { Arma, DEFS, A_METROS, cartucho3d } from './armas-vr.js';
 import { grabarArma, caja, v3 } from './modelo3d.js';
 import { CLASES, Cohete, Cuerpo, Mjolnir } from './especiales.js';
+import { tamborRevolver3d, escudoRevolver3d, tamborMgl3d, tamborThompson3d } from './tambores3d.js';
 
 const P = (x, y, z = 0) => v3(x, y, z);
 const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -138,7 +139,69 @@ function fichaDe(id) {
   if (clase === 'quiebre') { def.unidad = id === 'mgl' ? 'granada40' : 'cartucho'; def.granada = id === 'mgl'; }
   if (clase === 'revolver') def.unidad = 'bala';
   if (def.municion !== 'cargador') def.modelo.cargador = false;
+  tamborDe(id, base, def, clase, d);
   return def;
+}
+
+/* ---------- Los tambores redondos (vr/tambores3d.js) ----------
+ * El dibujo los trae de costado: extruidos, eran una placa. Se saca esa pieza y va el tambor de verdad en su lugar, en
+ * el mismo grupo (lo que se vuelca al abrir o el cargador). Cada pieza se reconoce por lo que hace, no por su número:
+ * el tambor de un revólver o del MGL es la pieza más grande de las que se mueven al abrir (y la placa de atrás del MGL,
+ * la que va justo detrás); el de la Thompson es lo que se va con el cargador. */
+// Thompson: el disco va 1,6 cm más adelante que la pieza del dibujo (si no, el armazón del disparador le entra) y su
+// borde de arriba 2,2 cm más abajo (la pieza sube hasta adentro del cajón: ahí va la torre)
+const TAMBOR_THOMPSON = { adelante: 1.6, bajaArriba: 2.2, ancho: 5.4 };
+function tamborDe(id, base, def, clase, d) {
+  const piezas = def.modelo.piezas, cajas = base.map(p => caja(p.pts)), area = c => (c.x1 - c.x0) * (c.y1 - c.y0);
+  const movidas = () => { const ab = grabarArma(id, { abierto: 1 }); return base.map((p, i) => i).filter(i => ab[i] && JSON.stringify(ab[i].pts) !== JSON.stringify(base[i].pts)); };
+  const cartucho = llena => cartucho3d(id, llena);
+  if (clase === 'revolver' || id === 'mgl') {
+    const m = movidas(); if (!m.length) return;
+    const i = m.reduce((a, b) => area(cajas[b]) > area(cajas[a]) ? b : a), c = cajas[i], eje = -(c.y0 + c.y1) / 2;
+    // la recámara de arriba, en línea con el cañón: el radio de las recámaras es lo que hay del eje del tambor a la boca
+    const boca = d.boca ? enCm(d.boca)[1] : null;
+    piezas[i] = { omitir: true };
+    if (clase === 'revolver') {
+      const radio = (c.y1 - c.y0) / 2;
+      // el contador iba de costado sobre el tambor (lo tapaba, y ahora el tambor sale hasta ahí): al costado del cañón,
+      // justo delante del tambor
+      const canon = cajas.map((k, n) => n).filter(n => cajas[n].x0 >= c.x1 - 1 && !m.includes(n)).sort((a, b) => (cajas[b].x1 - cajas[b].x0) - (cajas[a].x1 - cajas[a].x0))[0];
+      if (canon !== undefined && def.contador) {
+        const k = cajas[canon], alto = k.y1 - k.y0;
+        def.contador = { ...def.contador, x: c.x1 + def.contador.ancho / 2 + 0.5, y: -(k.y0 + k.y1) / 2, z: -(limitar(alto * 0.55, 0.8, 3) / 2 + 0.2) };
+      }
+      def.modelo.extras = arma => {
+        const t = tamborRevolver3d({ largo: c.x1 - c.x0, radio, calibre: calibreDe(id), color: base[i].color, cartucho, sentido: id === 'magnum' ? -1 : 1 });   // la Smith & Wesson gira al revés que la Colt
+        t.position.set(c.x0, eje, 0); arma.partes.abrir.grupo.add(t);
+        const escudo = escudoRevolver3d({ radio, color: base[i].color }); escudo.position.set(c.x0, eje, 0); arma.raiz.add(escudo);
+      };
+    } else {
+      const j = m.filter(k => k !== i && cajas[k].x0 < c.x0 && cajas[k].x1 > c.x0 - 1 && cajas[k].y1 - cajas[k].y0 > (c.y1 - c.y0) * 0.6).sort((a, b) => cajas[b].x1 - cajas[a].x1)[0];
+      const atras = j !== undefined ? { largo: c.x0 - cajas[j].x0, radio: (cajas[j].y1 - cajas[j].y0) / 2 } : { largo: 1.3, radio: (c.y1 - c.y0) * 0.42 };
+      if (j !== undefined) piezas[j] = { omitir: true };
+      const radio = (c.y1 - c.y0) / 2, rc = boca != null ? limitar(boca - eje, radio * 0.5, radio * 0.7) : radio * 0.62;
+      def.modelo.extras = arma => {
+        const t = tamborMgl3d({ largo: c.x1 - c.x0, radio, atras, calibre: calibreDe(id), color: base[i].color, colorAtras: j !== undefined ? base[j].color : '#2e2c28', cartucho, rc });
+        t.position.set(c.x0 - atras.largo, eje, 0); arma.partes.abrir.grupo.add(t);
+      };
+    }
+    return;
+  }
+  if (id === 'thompson' && def.modelo.cargador !== false) {
+    const sin = grabarArma(id, { sinCargador: true }), clave = p => p.color + ':' + p.pts.length + ':' + p.pts[0].map(v => v.toFixed(2)).join(',');
+    const quedan = new Set(sin.map(clave)), van = base.map((p, i) => i).filter(i => !quedan.has(clave(base[i])));
+    if (!van.length) return;
+    const i = van.reduce((a, b) => area(cajas[b]) > area(cajas[a]) ? b : a), c = cajas[i], T = TAMBOR_THOMPSON;
+    const arriba = c.y0 + T.bajaArriba, radio = (c.y1 - arriba) / 2, centro = [(c.x0 + c.x1) / 2 + T.adelante, -(arriba + c.y1) / 2];
+    piezas[i] = { omitir: true };
+    // la mano izquierda lo trae agarrado del canto de abajo
+    def.agarreCargador = [centro[0], centro[1] - radio + 1.0];
+    def.modelo.extras = arma => {
+      arma.cargador.add(tamborThompson3d({ centro, radio, ancho: T.ancho, color: base[i].color, torre: { x: (c.x0 + c.x1) / 2, y0: -arriba - 0.6, y1: -c.y0, ancho: Math.min(3.2, (c.x1 - c.x0) * 0.6) } }));
+      // el cargador suelto (en la mano, o el que cae) es el mismo tambor
+      arma.cargadorSuelto = () => { const g = new THREE.Group(); for (const o of arma.cargador.children) g.add(o.clone()); return g; };
+    };
+  }
 }
 
 /* ---------- Revólveres, la escopeta de dos caños y el MGL: se abren (B o la mano) y se cargan de a una ---------- */
@@ -147,6 +210,8 @@ class Basculante extends Arma {
     super(id, mundo);
     this.parteAccion = this.a.partes.abrir; this.abierto = 0; this.objetivo = 0; this.vainas = 0;
     this.municion = this.capacidad; this.recamara = false;
+    // Revólveres y MGL: el tambor redondo (vr/tambores3d.js) gira 60° con cada tiro (vueltas) y muestra lo que tiene
+    this.tambor = this.a.raiz.getObjectByName('tambor'); this.vueltas = 0; this.giroVisto = 0;
     this.carga = this.def.carga ? P(...this.def.carga.punto) : this.pozo.clone();
     // La de dos caños tiene martillos a la vista (js/armas-modelos-3.js): 1 montado, 0 caído; cada tiro baja el suyo
     if (this.a.partes.martillo1) { this.martillos = [1, 1]; this.verMartillos = [1, 1]; }
@@ -169,6 +234,11 @@ class Basculante extends Arma {
     }
     if (this.abierto > 0.95) this.volcar();   // una vez por apertura
     if (this.abierto < 0.5 && !this.objetivo) this.volcado = false;
+    if (this.tambor) {   // el giro de 60° tarda unos 70 ms; las balas, sólo en la mano (en la pared no se ven y son mallas de más)
+      const t = this.tambor.userData, objetivo = t.sentido * this.vueltas * Math.PI / 3;
+      this.giroVisto += (objetivo - this.giroVisto) * Math.min(1, dt / 0.035); t.giro.rotation.x = this.giroVisto;
+      t.balas.visible = !!this.enMano;
+    }
     if (this.pulso) {
       this.pulso = false;
       if (this.listo() && ahora - this.ultimoTiro >= this.datos.cadencia) this.tirar(ahora);
@@ -178,6 +248,7 @@ class Basculante extends Arma {
   }
   tirar(ahora) {
     const def = this.def; this.municion--; this.vainas++; this.ultimoTiro = ahora; this.tiroEn = ahora; this.disparos++; this.retroceso = 1;
+    if (this.tambor) this.vueltas++;   // la próxima recámara pasa arriba
     if (this.martillos) this.martillos[this.martillos.indexOf(1)] = 0;   // el martillo de ese caño cae sobre el percutor
     const boca = this.mundoDe(this.boca), dirMira = this.apuntarA ? this.apuntarA.clone().sub(boca).normalize() : this.direccionMira();
     this.mundo.efectos.disparo(boca, this.direccion(), ahora, def.fogonazo);
@@ -200,7 +271,7 @@ class Basculante extends Arma {
   }
   vaciar() {   // abierto: los expulsores tiran las vainas gastadas (las balas que quedan, no)
     for (let k = 0; k < this.vainas; k++) this.caer(false);
-    this.vainas = 0;
+    this.vainas = 0; this.verRecamaras();
   }
   caer(llena) {   // una vaina (o una bala entera) que sale de la recámara para atrás y al piso
     const cal = calibreDe(this.id), v = cartucho3d(this.id, llena); v.scale.setScalar(A_METROS); v.position.copy(this.recamaraMundo()); v.quaternion.copy(this.modelo.getWorldQuaternion(new THREE.Quaternion()));
@@ -216,7 +287,18 @@ class Basculante extends Arma {
     this.mundo.vibrar('left', 0.4, 30); this.dibujarContador(); return true;
   }
   zonas() { return this.def.apoyo ? [{ tipo: 'apoyo', punto: this.mundoDe(P(...this.def.apoyo.punto)), radio: this.def.apoyo.radio }] : []; }
-  dibujarContador() { this.recamara = false; super.dibujarContador(); }
+  dibujarContador() { this.recamara = false; super.dibujarContador(); this.verRecamaras(); }
+  /* Qué hay en cada recámara, en el orden en que van a tirar desde la de arriba (k = 0): las balas que quedan, después
+   * las vacías y al final las vainas de los tiros (la última, la de recién). La recámara j del tambor está arriba
+   * cuando j ≡ −sentido·vueltas (mod 6), y la k-ésima en tirar es la j = arriba − sentido·k. */
+  verRecamaras() {
+    if (!this.tambor) return;
+    const t = this.tambor.userData, n = 6, mod = v => ((v % n) + n) % n, arriba = mod(-t.sentido * this.vueltas);
+    for (let k = 0; k < n; k++) {
+      const r = t.recamaras[mod(arriba - t.sentido * k)];
+      r.llena.visible = k < this.municion; r.vaina.visible = k >= this.municion && k >= n - this.vainas;
+    }
+  }
   recargaEscritorio(ahora) {
     if (this.cola.length) return;
     this.objetivo = 1; Audio_.recarga('abrir', this.id);
@@ -230,8 +312,8 @@ class Basculante extends Arma {
 
 /* ---------- Revólveres: abierto el tambor, la varilla vuelca todo (como en el juego); la Magnum se carga de a una y la
  * Colt Python con el cargador rápido, las seis de una vez; el cargador vacío se cae de la mano ---------- */
-function cargadorRapido3d(id, cargado) {   // cm: la perilla atrás, el cuerpo y las seis balas alrededor del eje, como en el tambor
-  const cal = calibreDe(id), g = new THREE.Group(), R = cal.d * 1.08;
+function cargadorRapido3d(id, cargado, rc = null) {   // cm: la perilla atrás, el cuerpo y las seis balas alrededor del eje, como en el tambor
+  const cal = calibreDe(id), g = new THREE.Group(), R = rc || cal.d * 1.08;
   const negro = new THREE.MeshStandardMaterial({ color: 0x1d1d20, roughness: 0.55, metalness: 0.25 });
   const cuerpo = new THREE.Mesh(new THREE.CylinderGeometry(R + cal.d * 0.62, R + cal.d * 0.62, 0.9, 24), negro); cuerpo.rotation.z = Math.PI / 2; cuerpo.position.x = -0.45; g.add(cuerpo);
   const perilla = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.9, 1.7, 18), negro); perilla.rotation.z = Math.PI / 2; perilla.position.x = -1.75; g.add(perilla);
@@ -239,6 +321,19 @@ function cargadorRapido3d(id, cargado) {   // cm: la perilla atrás, el cuerpo y
   return g;
 }
 class Revolver extends Basculante {
+  constructor(id, mundo) {
+    super(id, mundo);
+    /* Abierto, el tambor sale hacia la izquierda sobre la grúa (el eje de la bisagra, paralelo al cañón, va abajo y a la
+     * izquierda del tambor), como en uno de verdad: el dibujo del juego, de costado, lo baja; en 3D, bajarlo lo metía
+     * en el guardamonte. */
+    const t = this.tambor && this.tambor.userData, parte = this.parteAccion;
+    if (!t || !parte) return;
+    const g = parte.grupo, py = this.tambor.position.y - t.radio * 1.05, pz = -t.radio * 0.35;
+    parte.mover = function (u) {
+      this.t = u; const th = -1.75 * u, c = Math.cos(th), s = Math.sin(th);
+      g.rotation.set(th, 0, 0); g.position.set(0, py - (c * py - s * pz), pz - (s * py + c * pz));
+    };
+  }
   vaciar() {   // vainas y balas: todo al piso
     for (let k = 0; k < this.vainas + this.municion; k++) this.caer(k >= this.vainas);
     this.vainas = 0; this.municion = 0; this.dibujarContador();
@@ -246,7 +341,7 @@ class Revolver extends Basculante {
   rapido() { return this.datos.recargaUnidad === 'speedloader'; }
   municionParaMano() {
     if (this.abierto < 0.8 || this.municion + this.vainas >= this.capacidad) return null;
-    return this.rapido() ? (this.municion === 0 && this.vainas === 0 ? { tipo: 'speedloader', cuerpo: cargadorRapido3d(this.id, true), agarre: P(-1.9, 0), punta: true } : null) : super.municionParaMano();
+    return this.rapido() ? (this.municion === 0 && this.vainas === 0 ? { tipo: 'speedloader', cuerpo: cargadorRapido3d(this.id, true, this.tambor && this.tambor.userData.rc), agarre: P(-1.9, 0), punta: true } : null) : super.municionParaMano();
   }
   probarCarga(m) {
     if (m.tipo !== 'speedloader') return super.probarCarga(m);
@@ -255,7 +350,7 @@ class Revolver extends Basculante {
     if (punta.distanceTo(this.recamaraMundo()) > 0.1) return false;
     this.municion = this.capacidad; Audio_.recarga('speedloader', this.id); this.mundo.vibrar('left', 0.6, 40); this.dibujarContador();
     // el cargador rápido, ya vacío, se cae de la mano
-    const vacio = cargadorRapido3d(this.id, false), q = new THREE.Quaternion(), pos = v3(), e = v3(); m.objeto.updateMatrixWorld(true); m.objeto.matrixWorld.decompose(pos, q, e);
+    const vacio = cargadorRapido3d(this.id, false, this.tambor && this.tambor.userData.rc), q = new THREE.Quaternion(), pos = v3(), e = v3(); m.objeto.updateMatrixWorld(true); m.objeto.matrixWorld.decompose(pos, q, e);
     vacio.position.copy(pos); vacio.quaternion.copy(q); vacio.scale.copy(e);
     this.mundo.efectos.soltar(vacio, v3((Math.random() - 0.5) * 0.3, -0.3, (Math.random() - 0.5) * 0.3), v3(3, 1, 2), 'cargador', 0.012).sonido = f => Audio_.casquillo('speedloader', 'asfalto', f);
     return true;
