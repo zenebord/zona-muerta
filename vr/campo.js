@@ -20,14 +20,14 @@ import { A_METROS } from './armas-vr.js';
 import { crearArma } from './especiales.js';
 import { ARMAS_PARED } from './armas-todas.js';
 import { colgarEnPared } from './armero.js';
-import { crearManoIzquierda } from './mano3d.js';
+import { crearMano } from './mano3d.js';
 import { Efectos, texturaCanvas } from './efectos.js';
 import { prepararZombies, asegurarTipos, tipoListo, Horda, moldeInfo, TIPOS } from './zombie3d.js';
 import { Emergentes } from './blancos.js';
 import { crearAnimal, asegurarAnimales, animalListo, ESPECIES } from './animales3d.js';
 import { Menu } from './menu.js';
 import { Modos } from './modos.js';
-import { fusionar } from './modelo3d.js';
+import { fusionar, grabarArma, caja } from './modelo3d.js';
 
 const ARMAS_MESA = ['glock', 'ak47', 'remington700', 'mossberg', 'minigun', 'm79', 'rpg7', 'granadas', 'lanzallamas', 'laser', 'machete', 'mjolnir'];
 const v3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -452,17 +452,73 @@ function armaCerca(p) {
 /* ---------- Visor: mandos ---------- */
 const fabrica = new XRControllerModelFactory();
 const manos = { right: null, left: null };
-// La mano izquierda es la del sobreviviente (vr/mano3d.js), no el control: guante, manga y dedos que siguen los botones
-const manoIzq = crearManoIzquierda();
+// Las dos manos son las del sobreviviente (vr/mano3d.js), no los controles: guante, manga y dedos que siguen los botones
+const manoIzq = crearMano('izquierda'), manoDer = crearMano('derecha');
 manoIzq.reloj.add(muneca.malla);
+// Los botones de un control: cuánto está apretado cada uno (0 a 1) y si el dedo lo toca
+function botonesDe(m) {
+  const b = m.fuente.gamepad ? m.fuente.gamepad.buttons : [];
+  return { valor: i => b[i] ? (b[i].value ?? (b[i].pressed ? 1 : 0)) : 0, toca: i => !!(b[i] && (b[i].touched || b[i].pressed)) };
+}
 function posarManoIzquierda(izq, dt) {
   if (manoIzq.grupo.parent !== izq.agarre) izq.agarre.add(manoIzq.grupo);
   izq.modeloMando.visible = false;
-  const b = izq.fuente.gamepad ? izq.fuente.gamepad.buttons : [], valor = i => b[i] ? (b[i].value ?? (b[i].pressed ? 1 : 0)) : 0, toca = i => !!(b[i] && (b[i].touched || b[i].pressed));
+  const { valor, toca } = botonesDe(izq);
   // agarre: medio, anular y meñique; gatillo: el índice (apenas lo roza, se acerca); el pulgar baja si toca la palanca o
   // los botones. Lo que sostiene (cargador, cartucho, guardamanos, cerrojo) cierra la mano entera
   const sostiene = !!(izquierda.modo || izquierda.item);
   manoIzq.posar({ agarre: sostiene ? 1 : valor(1), gatillo: sostiene ? 1 : Math.max(valor(0), toca(0) ? 0.3 : 0), pulgar: sostiene || [3, 4, 5, 6].some(toca) ? 1 : 0 }, dt);
+}
+// La derecha, vacía, como la izquierda. Con un arma va con el arma (sube con el retroceso y la sigue cuando la izquierda
+// la apunta desde el guardamanos). Con una de fuego, la primera vez busca dónde agarrarla (vr/mano3d.js, agarrar: el mango
+// adentro del puño y la yema del índice en el disparador) y el índice se dobla con el gatillo del control; con una hoja,
+// un mango o la granada, el puño cerrado a lo largo del mango
+const qRayo = new THREE.Quaternion(), qGrip = new THREE.Quaternion();
+let agarreDer = null;   // lo que eligió la mano en el arma que tiene (para las pruebas)
+// El punto del disparador (DEDO_GATILLO del 2D: cm, x hacia la boca, y hacia abajo), en el marco del cabeceo del arma.
+// Se lee de la tabla: el dibujo de la minigun (js/armas-especiales.js) carga después de que js/armas-modelos-3.js le pasa
+// el punto a cada dibujo, y el suyo queda sin dedoGatillo
+function disparadorDe(a) {
+  const d = (typeof DEDO_GATILLO !== 'undefined' && DEDO_GATILLO[a.id]) || (DIBUJO_ARMAS[a.id] && DIBUJO_ARMAS[a.id].dedoGatillo); if (!d) return null;
+  a.modelo.updateMatrix(); return v3(d[0], -d[1], 0).applyMatrix4(a.modelo.matrix);
+}
+// El arma vista de costado: si un punto del marco del cabeceo cae dentro de los polígonos de su dibujo (cm, y abajo)
+const siluetas = new Map();
+function siluetaDe(a) {
+  if (siluetas.has(a)) return siluetas.get(a);
+  const polis = grabarArma(a.id).map(p => ({ formas: [p.pts, ...(p.huecos || [])], c: caja(p.pts) }));
+  a.modelo.updateMatrix(); const e = a.modelo.matrix.clone().invert().elements;
+  const dentro = (x, y, z) => {
+    const px = e[0] * x + e[4] * y + e[8] * z + e[12], py = -(e[1] * x + e[5] * y + e[9] * z + e[13]);
+    for (const p of polis) {
+      if (px < p.c.x0 || px > p.c.x1 || py < p.c.y0 || py > p.c.y1) continue;
+      let adentro = false;
+      for (const f of p.formas) for (let i = 0, j = f.length - 1; i < f.length; j = i++) {
+        const [xi, yi] = f[i], [xj, yj] = f[j];
+        if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) adentro = !adentro;
+      }
+      if (adentro) return true;
+    }
+    return false;
+  };
+  siluetas.set(a, dentro);
+  return dentro;
+}
+function posarManoDerecha(der, dt) {
+  der.modeloMando.visible = false;
+  const { valor, toca } = botonesDe(der), a = manoDerecha;
+  if (a) {
+    const recien = manoDer.grupo.parent !== a.cabeceo;
+    if (recien) a.cabeceo.add(manoDer.grupo);
+    if (a.agarreMano) manoDer.colocar('mango');
+    else manoDer.colocar('control', der.rayo.getWorldQuaternion(qRayo).invert().multiply(der.agarre.getWorldQuaternion(qGrip)));   // el grip visto desde el rayo
+    if (recien) agarreDer = a.agarreMano ? manoDer.agarrar() : manoDer.agarrar(disparadorDe(a), siluetaDe(a));   // dónde la agarra y el índice al disparador
+    manoDer.posar({ agarre: 1, gatillo: a.agarreMano ? 1 : valor(0), pulgar: 1, enGatillo: a.agarreMano ? 0 : 1 }, dt);
+  } else {
+    if (manoDer.grupo.parent !== der.agarre) { der.agarre.add(manoDer.grupo); manoDer.colocar('control'); manoDer.agarrar(); }
+    manoDer.colocar('control');
+    manoDer.posar({ agarre: valor(1), gatillo: Math.max(valor(0), toca(0) ? 0.3 : 0), pulgar: [3, 4, 5, 6].some(toca) ? 1 : 0, enGatillo: 0 }, dt);
+  }
 }
 const previos = { right: [], left: [] };
 const velMano = { right: v3(), left: v3() }, posPrevia = { right: null, left: null };
@@ -471,7 +527,12 @@ for (let i = 0; i < 2; i++) {
   jugador.add(rayoXR); jugador.add(agarre);
   const modeloMando = fabrica.createControllerModel(agarre); agarre.add(modeloMando);
   rayoXR.addEventListener('connected', ev => { manos[ev.data.handedness] = { rayo: rayoXR, agarre, fuente: ev.data, modeloMando }; });
-  rayoXR.addEventListener('disconnected', () => { for (const k of ['right', 'left']) if (manos[k] && manos[k].rayo === rayoXR) manos[k] = null; });
+  rayoXR.addEventListener('disconnected', () => {
+    for (const k of ['right', 'left']) if (manos[k] && manos[k].rayo === rayoXR) {
+      manos[k] = null;
+      if (k === 'right' && manoDer.grupo.parent) manoDer.grupo.parent.remove(manoDer.grupo);   // al salir del visor no queda pegada al arma
+    }
+  });
 }
 function vibrar(lado, fuerza, ms) {
   if (!config.vibracion) return;
@@ -536,7 +597,7 @@ function entradaVisor(ahora, dt) {
   if (apreto('left', 5)) modos.alternar();   // Y: abre y cierra el menú (y pausa)
   if (menu.abierto) {   // los dos rayos apuntan y el gatillo aprieta; el arma sigue la mano pero no tira
     puntero.visible = false;
-    if (der) { der.modeloMando.visible = !manoDerecha; if (manoDerecha) { posarArma(der, pI); manoDerecha.gatillo(false); } }
+    if (der) { if (manoDerecha) { posarArma(der, pI); manoDerecha.gatillo(false); } posarManoDerecha(der, dt); }
     for (const lado of ['right', 'left']) {
       const m = manos[lado]; if (!m) { menu.apuntar(lado, null); continue; }
       menu.apuntar(lado, m.rayo.getWorldPosition(v3()), v3(0, 0, -1).applyQuaternion(m.rayo.getWorldQuaternion(new THREE.Quaternion())));
@@ -546,7 +607,6 @@ function entradaVisor(ahora, dt) {
   }
   if (der) {
     const pA = der.agarre.getWorldPosition(v3()), qR = der.rayo.getWorldQuaternion(new THREE.Quaternion());
-    der.modeloMando.visible = !manoDerecha;
     const pR = der.rayo.getWorldPosition(v3()), dR = v3(0, 0, -1).applyQuaternion(qR);
     const senalada = manoDerecha ? null : (armaApuntada(pR, dR, ALCANCE_TOMAR) || armaCerca(pA));
     mostrarPuntero(!manoDerecha, pR, dR, senalada);
@@ -564,6 +624,7 @@ function entradaVisor(ahora, dt) {
       if (apreto('right', 4)) a.botonA();
       if (apreto('right', 5)) a.botonB(ahora);
     }
+    posarManoDerecha(der, dt);
     const ex = der.fuente.gamepad ? der.fuente.gamepad.axes[2] || 0 : 0;   // palanca derecha: girar de a 30° o 45°, o suave
     if (config.giro === 'suave') { if (Math.abs(ex) > 0.15) girar(-ex * 2.4 * dt); }
     else if (Math.abs(ex) > 0.7 && !girando) { girando = true; girar(-Math.sign(ex) * (config.giro === '45' ? Math.PI / 4 : Math.PI / 6)); } else if (Math.abs(ex) < 0.3) girando = false;
@@ -1122,7 +1183,7 @@ window.__campo = {
   golpe() { if (manoDerecha) golpeEscritorio(manoDerecha); else escritorio.golpe = performance.now(); },
   tirar() { if (manoDerecha && manoDerecha.llamar) tirarArrojadiza(manoDerecha); else if (manoDerecha && manoDerecha.id === 'granadas') { manoDerecha.gatillo(true); dejar(manoDerecha, tiroHacia(manoDerecha, 5.5, 2.2)); } },
   llamar() { const t = tirada(); if (t) t.llamar(() => desdeCamara(0.24, -0.22, -0.45)); },
-  get armero() { return armero; }, get sinPintar() { return sinPintar.length; }, manoIzq,
+  get armero() { return armero; }, get sinPintar() { return sinPintar.length; }, manoIzq, manoDer, get agarreDer() { return agarreDer; },
   // Adelanta el juego (zombies, blancos y el nivel) sin dibujar: el Chrome de pruebas dibuja lento y el paso tiene tope
   avanzar(seg, paso = 0.02) {
     for (let k = 0; k < seg / paso && !menu.abierto; k++) { reloj += paso * 1000; emergentes.actualizar(paso); actualizarPeligros(paso); actualizarProyectiles(performance.now(), paso); horda.actualizar(reloj, paso, jugadorEnPiso(), camara.getWorldPosition(v3()), mordida); modos.actualizar(reloj, paso); actualizarRapto(); }
