@@ -238,6 +238,17 @@ Las del armero (lo que ya hacían en el 2D, en 3D):
 - **Miras**: el dibujo es de costado y, pasado a 3D tal cual, de atrás no servía (el bloque del alza de la AK tapaba la
   vista y el guion era una placa maciza). Las armas de fuego tienen muesca y poste (o la mira telescópica) y la bala sale
   por la línea de mira: medido con la AK, a 50 m pasó de 0 de 5 a 5 de 5 en el papel.
+- **La mano izquierda se ve como una mano** (`vr/mano3d.js`), no como el control: la del sobreviviente del juego
+  (`js/skins.js`), con guante arena, palma y yemas de cuero, el abrojo de la muñeca, las almohadillas de los nudillos y la
+  manga oliva de la chaqueta (la boca de la manga, oscura). Se arma como los zombies (`vr/forma3d.js`: primitivas unidas en
+  una superficie, 31 000 triángulos, 105 ms en la computadora) con 16 huesos: la palma, tres falanges por dedo y el
+  pulgar. Va en el «grip» de WebXR girada 45° (en el Touch el mango cruza la palma en diagonal y el antebrazo va hacia
+  atrás por el rayo): pulgar arriba, dorso afuera. El agarre cierra medio, anular y meñique alrededor del mango (3,4 cm,
+  que no se ve); el gatillo, el índice (con sólo rozarlo, se acerca); el pulgar baja cuando toca la palanca, los botones o
+  el apoyo. Lo que sostiene (cargador, cartucho, guardamanos, cerrojo) cierra la mano entera. El reloj de la vida o los
+  puntos va sobre la manga, del lado del pulgar, inclinado hacia los ojos. El color base va a la mitad (lineal): el galpón
+  está tan iluminado desde arriba que, con el color del 2D tal cual, el guante se veía crema. La mano derecha sigue
+  siendo el control cuando no tiene arma.
 - **Mano izquierda**: agarre en el guardamanos sostiene con las dos manos (la recta entre las manos manda; en pistolas,
   minigun y RPG solo afirma); en la corredera, la manija o el cerrojo los lleva atrás; lejos del arma saca munición
   nueva (cargador, cartucho, bala, granada de 40 mm, cohete, caja, cilindro o celda), que entra al acercarla a su lugar.
