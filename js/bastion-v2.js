@@ -64,7 +64,7 @@ const BASTION2 = {
     medico:        { clase: 'inf', costo: 90,  tiempo: 5,   vida: 25,  donde: 'cuartel', cura: 4, radio: 88 },
     torreta:       { clase: 'mec', costo: 150, tiempo: 8,   vida: 90,  donde: 'obra', bloquea: true, alcance: 195, dano: 2, cadencia: 0.13, arma: 'bala' },
     tanque:        { clase: 'mec', costo: 375, tiempo: 15,  vida: 400, donde: 'taller', bloquea: true, alcance: 220, dano: 70, cadencia: 1.8, arma: 'pesada', elige: 'vida', mordida: 0.3, vel: 38 },
-    mortero:       { clase: 'mec', costo: 130, tiempo: 7,   vida: 60,  donde: 'obra', bloquea: true, alcance: 396, minimo: 176, dano: 14, radio: 40, cadencia: 3.5, vuelo: 1.5, arma: 'explosivo', elige: 'monton' },
+    mortero:       { clase: 'mec', costo: 130, tiempo: 7,   vida: 60,  donde: 'obra', bloquea: true, alcance: 286, minimo: 176, dano: 14, radio: 40, cadencia: 7, vuelo: 1.5, arma: 'explosivo', elige: 'monton' },   // alcance a mitad de camino entre el mínimo y las 9 celdas de antes (396), y el doble de espera entre tiros (antes 3,5 s)
     antiaerea:     { clase: 'mec', costo: 140, tiempo: 8,   vida: 80,  donde: 'obra', bloquea: true, alcance: 264, dano: 6, radio: 34, cadencia: 0.4, arma: 'flak', soloAire: true },
     muro:          { clase: 'est', costo: 35,  tiempo: 2,   vida: 150, donde: 'obra', bloquea: true },
     alambrado:     { clase: 'est', costo: 15,  tiempo: 1.5, vida: 40,  donde: 'obra', liviano: true, frena: 0.45, raspa: 0.2 },

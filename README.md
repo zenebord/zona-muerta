@@ -536,7 +536,7 @@ destello ni empujón.
 | | Médico | 90 | 25 | Cura 4 por segundo a la infantería a 2 celdas. Quien cae a su lado no se contagia; con él cerca el gas no vacía los búnkeres |
 | Mecanizados | Torreta | 150 | 90 | 2 por bala cada 0,13 s a 4,4 celdas. No apunta al aire |
 | | Tanque | 375 | 400 | Cañón de 70 cada 1,8 s a 5 celdas, al que más vida tiene. Las mordidas le hacen un tercio. Se mueve. Ningún topo pasa por debajo a 2 celdas |
-| | Mortero | 130 | 60 | 14 en un radio de 40 px cada 3,5 s, de 4 a 9 celdas, adonde hay más juntos |
+| | Mortero | 130 | 60 | 14 en un radio de 40 px cada 7 s, de 4 a 6,5 celdas, adonde hay más juntos (el 2026-11-15 pasó de 9 celdas y 3,5 s a esto: el alcance a mitad de camino entre el mínimo y el de antes, y el doble de espera) |
 | | Antiaérea | 140 | 80 | 6 en un radio de 34 px cada 0,4 s a 6 celdas, sólo a lo que vuela |
 | Estructuras | Muro | 35 | 150 | Bloquea el paso (nunca del todo) y es el escudo de quien está detrás |
 | | Alambrado | 15 | 40 | No bloquea: frena al 45 % y saca 20 % de la vida. Aguanta 20 pisadas |
@@ -626,7 +626,8 @@ Teclas: `1` a `4` la infantería, `Q W E R` los mecanizados, `A S D F G` las est
 
 **Balance medido en La granja** con bots que juegan con el código real, en dificultad media. Cruce por cruce (una defensa de un solo
 tipo y unos $300 contra una tanda de un solo tipo, en la oleada 6 los doce primeros y en la 8 los acechadores;
-campamento que queda sobre 15 y parte de la defensa en pie):
+campamento que queda sobre 15 y parte de la defensa en pie). Todo lo de esta sección se midió con el mortero anterior
+(9 celdas, un tiro cada 3,5 s); con el de ahora (6,5 celdas, cada 7 s) no se volvió a medir:
 
 | Tanda | Lo que frena | Lo que no |
 |---|---|---|
