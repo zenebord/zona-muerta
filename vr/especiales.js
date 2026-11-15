@@ -221,10 +221,12 @@ export class Cohete extends Arma {
     Audio_.disparo('bazuca', this.id);
     const c = this.a.cargadorSuelto(), g = new THREE.Group(); g.add(c); g.scale.setScalar(A_METROS);
     this.modelo.updateMatrixWorld(true); this.modelo.matrixWorld.decompose(g.position, g.quaternion, v3());
-    const dir = this.direccionMira(), atras = this.mundoDe(this.colaTubo || P(-76, 4));   // la boca y la cola del tubo (las del RPG-7, si no)
-    this.mundo.efectos.disparo(this.mundoDe(this.bocaTubo || P(20, 4.2)), this.direccion(), ahora, 0.3);
+    const bocaTubo = this.mundoDe(this.bocaTubo || P(20, 4.2)), atras = this.mundoDe(this.colaTubo || P(-76, 4));   // la boca y la cola del tubo (las del RPG-7, si no)
+    // con un zombie marcado por la mira de punto rojo (la bazuca), el cohete va derecho a él y lo sigue (como en el 2D)
+    const sigue = this.def.puntoRojo && this.apuntarA ? this.objetivoVivo : null, dir = sigue ? this.apuntarA.clone().sub(bocaTubo).normalize() : this.direccionMira();
+    this.mundo.efectos.disparo(bocaTubo, this.direccion(), ahora, 0.3);
     for (let k = 0; k < 8; k++) this.mundo.efectos.particula(this.mundo.efectos.matHumo, atras.clone(), this.direccion().multiplyScalar(-2 - Math.random() * 3).add(v3((Math.random() - 0.5), Math.random() * 0.5, (Math.random() - 0.5))), 0.3, 1.6, 1.4);   // fogonazo de atrás
-    this.mundo.lanzar({ objeto: g, vel: dir.clone().multiplyScalar(28), empuje: 70, velMax: 75, gravedad: 1.2, vida: 6, estela: true, orientar: false,
+    this.mundo.lanzar({ objeto: g, vel: dir.clone().multiplyScalar(28), empuje: 70, velMax: 75, gravedad: sigue ? 0 : 1.2, sigue, vida: 6, estela: true, orientar: false,
       alChocar: h => { this.mundo.explotar(h.punto, 3.5); return true; } });
     this.mundo.vibrar('right', 1, 120); this.dibujarContador();
   }

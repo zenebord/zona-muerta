@@ -23,6 +23,7 @@ import { Arma, DEFS, A_METROS, cartucho3d } from './armas-vr.js';
 import { grabarArma, caja, v3 } from './modelo3d.js';
 import { CLASES, Cohete, Cuerpo, Mjolnir } from './especiales.js';
 import { tamborRevolver3d, escudoRevolver3d, tamborMgl3d, tamborThompson3d } from './tambores3d.js';
+import { miraReflex3d } from './miras3d.js';
 
 const P = (x, y, z = 0) => v3(x, y, z);
 const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -84,12 +85,55 @@ function piezasDe(base, vertical, mats) {
   });
   return piezas;
 }
-// La mira telescópica: el tubo largo por encima del cañón
-function miraDe(base) {
-  const tubo = base.map(p => caja(p.pts)).filter(c => c.x1 - c.x0 > 14 && c.y1 - c.y0 > 1.4 && c.y1 - c.y0 < 7 && (c.y0 + c.y1) / 2 < -3)
-    .sort((a, b) => (b.x1 - b.x0) - (a.x1 - a.x0))[0];
-  if (!tubo) return null;
-  return { eje: -(tubo.y0 + tubo.y1) / 2, ocular: tubo.x0 + 0.4, objetivo: tubo.x1 - 0.4, aumento: 6, radio: Math.min(2, (tubo.y1 - tubo.y0) / 2 - 0.15) };
+/* ---------- Las miras ----------
+ * Telescópicas (en el 2D: js/jugador.js, MIRA_TELESCOPICA): el eje del tubo (y del dibujo, hacia abajo), de dónde a
+ * dónde va (del ocular, atrás, al objetivo) y cuánto aumenta. Las piezas del dibujo que están sobre ese eje se tornean
+ * (el tubo, las campanas y el ocular de goma) y la lente va en el ocular, como en la Remington 700 de la mesa. Antes se
+ * buscaba sola la pieza larga y fina de arriba: en la Dragunov agarraba el tubo de gases, en la Mosin el cañón y en la
+ * Barrett una pieza del frente, y la lente (de 1,2 cm) quedaba adentro de ellos. */
+const TELESCOPICAS = {
+  svd: { eje: -12.6, x0: -11.9, x1: 25.6, aumento: 4 },        // PSO-1, con el ocular de goma
+  barrett: { eje: -15.4, x0: -10.3, x1: 25.4, aumento: 10 },
+  mosin: { eje: -10.3, x0: -5.6, x1: 21.0, aumento: 3.5 },    // PU
+};
+function telescopicaDe(id, base, def) {
+  const T = TELESCOPICAS[id]; if (!T) return;
+  const piezas = def.modelo.piezas; let rAtras = 0;
+  base.forEach((p, i) => {
+    const c = caja(p.pts), h = c.y1 - c.y0;
+    if (Math.abs((c.y0 + c.y1) / 2 - T.eje) > 0.8 || h > 6 || c.x0 < T.x0 - 0.6 || c.x1 > T.x1 + 0.6) return;
+    piezas[i] = { redonda: { eje: 'x', centro: T.eje } };
+    if (c.x0 <= T.x0 + 0.3) rAtras = Math.max(rAtras, h / 2);
+  });
+  def.mira = { telescopica: { eje: -T.eje, ocular: T.x0, objetivo: T.x1, aumento: T.aumento, radio: Math.max(0.8, (rAtras || 1.2) - 0.35) } };
+}
+/* De punto rojo (en el 2D: MIRA_PUNTO_ROJO, con la retícula de Enzo): la pieza del cuerpo de la mira (su color y de
+ * dónde a dónde va, para reconocerla), el ancho de costado a costado y cuánto de arriba (techo) y de abajo (base) es
+ * pared, en cm; con «hueco», la base llega hasta 0,4 cm debajo de la ventana dibujada. La P90 la tiene dibujada muy
+ * finita: se la levanta 1,2 cm para que se pueda mirar por ella. Las perillas dibujadas sobre el costado van al costado
+ * izquierdo (en el medio quedaban adentro de la ventana). La mira hueca y su vidrio, en vr/miras3d.js */
+const PUNTO_ROJO = {
+  vector: { color: '#26272b', x: [7, 19], ancho: 3, techo: 0.45, hueco: true, perillas: ['#3a3c42'] },
+  saiga: { color: '#26272b', x: [8.6, 19.6], ancho: 3, techo: 0.45, hueco: true },
+  p90: { color: '#2e3034', x: [3.35, 11.94], ancho: 3, techo: 0.3, base: 0.35, sube: 1.2 },
+  mgl: { color: '#41423e', x: [11.16, 23.62], ancho: 5, techo: 0.6, base: 0.6, perillas: ['#1f201e', '#2a2b28'] },
+  bazuca: { color: '#4a5532', x: [8, 17], ancho: 3.4, techo: 0.5, base: 0.5 },
+};
+function puntoRojoDe(id, base, def) {
+  const R = PUNTO_ROJO[id]; if (!R) return;
+  const i = base.findIndex(p => p.color === R.color && Math.abs(caja(p.pts).x0 - R.x[0]) < 1 && Math.abs(caja(p.pts).x1 - R.x[1]) < 1);
+  if (i < 0) return;
+  const p = base[i], c = caja(p.pts), top = c.y0 - (R.sube || 0), hueco = R.hueco && p.huecos && p.huecos[0] ? caja(p.huecos[0]) : null;
+  const bajo = hueco ? hueco.y1 + 0.4 : c.y1 - R.base;   // dibujo: y hacia abajo
+  const caja3 = { x0: c.x0, x1: c.x1, y0: -c.y1, y1: -top }, abertura = { y0: -bajo, y1: -(top + R.techo) }, yc = (abertura.y0 + abertura.y1) / 2;
+  const piezas = def.modelo.piezas; piezas[i] = { omitir: true };
+  base.forEach((q, k) => { if (R.perillas && R.perillas.includes(q.color)) { const b = caja(q.pts); if (b.x0 >= c.x0 - 0.5 && b.x1 <= c.x1 + 0.5 && b.y0 >= top - 0.5 && b.y1 <= c.y1 + 0.5) piezas[k] = { z: -(R.ancho / 2 + 0.25), t: 0.5 }; } });
+  def.mira = { alza: [c.x0, yc], poste: [c.x1, yc] }; def.puntoRojo = true;
+  const previo = def.modelo.extras;
+  def.modelo.extras = arma => {
+    if (previo) previo(arma);
+    arma.raiz.add(miraReflex3d({ caja: caja3, abertura, ancho: R.ancho, color: p.color, lados: R.sube ? null : { pts: p.pts, huecos: p.huecos } }));
+  };
 }
 // El centro de lo que mueve un estado del dibujo (para la zona de la mano izquierda en la palanca)
 function centroDe(id, base, estado) {
@@ -135,11 +179,12 @@ function fichaDe(id) {
     mov.accion = { estado: 'corredera' };
     if (corredera) def.accion = { parte: 'accion', punto: [corredera[0], corredera[1], corta ? 0 : 2.4], radio: corta ? 0.07 : 0.08 };
   }
-  if (id === 'svd' || id === 'barrett' || id === 'mosin') { const m = miraDe(base); if (m) def.mira = { telescopica: { ...m, aumento: id === 'barrett' ? 10 : id === 'mosin' ? 3.5 : 4 } }; }
+  telescopicaDe(id, base, def);
   if (clase === 'quiebre') { def.unidad = id === 'mgl' ? 'granada40' : 'cartucho'; def.granada = id === 'mgl'; }
   if (clase === 'revolver') def.unidad = 'bala';
   if (def.municion !== 'cargador') def.modelo.cargador = false;
   tamborDe(id, base, def, clase, d);
+  puntoRojoDe(id, base, def);
   return def;
 }
 
@@ -272,7 +317,8 @@ class Basculante extends Arma {
     if (def.granada) {   // MGL: la granada de 40 mm en parábola, como la del M79
       Audio_.disparo('lanzagranadas', this.id);
       const g = cartucho3d(this.id, true); g.children[0].visible = false; g.scale.setScalar(A_METROS); g.position.copy(boca); g.quaternion.copy(this.modelo.getWorldQuaternion(new THREE.Quaternion()));
-      this.mundo.lanzar({ objeto: g, vel: dirMira.multiplyScalar(42), gravedad: 9.8, vida: 6, alChocar: h => { this.mundo.explotar(h.punto, 3); return true; } });
+      const sigue = def.puntoRojo && this.apuntarA ? this.objetivoVivo : null;   // con un zombie marcado, derecho a él y lo sigue (como en el 2D)
+      this.mundo.lanzar({ objeto: g, vel: dirMira.multiplyScalar(42), gravedad: sigue ? 0 : 9.8, sigue, vida: 6, alChocar: h => { this.mundo.explotar(h.punto, 3); return true; } });
     } else {
       Audio_.disparo(this.datos.categoria, this.id);
       const n = this.datos.perdigones || 1, cono = def.cono, tiro = { impacto: false };

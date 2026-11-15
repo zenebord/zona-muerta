@@ -21,6 +21,7 @@ import { crearArma } from './especiales.js';
 import { ARMAS_PARED } from './armas-todas.js';
 import { colgarEnPared } from './armero.js';
 import { crearMano } from './mano3d.js';
+import { reticulaMarcado, verReticulaVidrio, ANILLO } from './miras3d.js';
 import { Efectos, texturaCanvas } from './efectos.js';
 import { prepararZombies, asegurarTipos, tipoListo, Horda, moldeInfo, TIPOS } from './zombie3d.js';
 import { Emergentes } from './blancos.js';
@@ -573,6 +574,41 @@ function municionEnMano(m, agarreMano) {
   agarreMano.add(o);
   return { ...m, objeto: o };
 }
+/* ---------- La mira de punto rojo (Kriss Vector, P90, Saiga-12, Milkor MGL y bazuca M9) ----------
+ * Como la tecla D del 2D (js/jugador.js, actualizarMira): marca al zombie vivo más cercano al alcance del arma, la
+ * retícula de Enzo se cierra sobre su pecho (desde 1,5 veces su tamaño, en 180 ms) y el tiro va derecho a él y no
+ * falla (apuntarA; la granada y el cohete, además, lo siguen). En el 2D el personaje se da vuelta solo hacia él; acá
+ * apunta la mano, así que se elige entre los que están a menos de 25° de donde apunta el arma. Tampoco salta a otro por
+ * un pelo: el que ya tenía sigue si el nuevo no está al menos 1 m más cerca. Siempre prendida: con el visor no hay D. */
+const CONO_PUNTO_ROJO = Math.cos(THREE.MathUtils.degToRad(25));
+const puntoRojo = { z: null, desde: 0 };
+const marcaPuntoRojo = reticulaMarcado(); escena.add(marcaPuntoRojo);
+const altoDe = z => z.clase === 'animal' ? (z.especie === 'toro' ? 1.6 : 0.65) : 1.75 * z.grupo.scale.x;
+const pechoDe = z => z.huesos && z.huesos.pecho ? z.huesos.pecho.getWorldPosition(v3()) : z.grupo.position.clone().setY(z.grupo.position.y + altoDe(z) * 0.6);
+function apuntarPuntoRojo(a, dir = a.direccionMira()) {
+  if (!a.def.puntoRojo) return;
+  const origen = a.mundoDe(v3(...a.def.mira.alza, 0)), alcance = (a.datos.alcance || 600) / 10;
+  const ve = z => { if (!z || !z.blanco || !horda.vivos.includes(z)) return Infinity; const v = pechoDe(z).sub(origen), d = v.length(); return d <= alcance && d > 0.3 && v.dot(dir) / d >= CONO_PUNTO_ROJO ? d : Infinity; };
+  let mejor = null, dMejor = Infinity;
+  for (const z of horda.vivos) { const d = ve(z); if (d < dMejor) { dMejor = d; mejor = z; } }
+  const antes = puntoRojo.z;
+  if (antes && mejor !== antes) { const d = ve(antes); if (d < Infinity && d <= dMejor + 1) mejor = antes; }   // si salió del cono o murió, se suelta
+  if (mejor !== antes) puntoRojo.desde = performance.now();
+  puntoRojo.z = mejor;
+  if (mejor) { a.apuntarA = pechoDe(mejor); a.objetivoVivo = () => (mejor.blanco ? pechoDe(mejor) : null); } else a.objetivoVivo = null;
+}
+// Cada cuadro: la retícula sobre el zombie marcado (y, mientras hay uno, el vidrio de la mira no la repite)
+function verPuntoRojo(ahora) {
+  const a = manoDerecha, z = a && a.def.puntoRojo ? puntoRojo.z : null, sobre = !!(z && z.blanco);
+  if (a && a.def.puntoRojo) { const m = a.a.raiz.getObjectByName('puntoRojo'); if (m) verReticulaVidrio(m, !sobre); }
+  marcaPuntoRojo.visible = sobre;
+  if (!sobre) { if (!a || !a.def.puntoRojo) puntoRojo.z = null; return; }
+  const k = limitar((ahora - puntoRojo.desde) / 180, 0, 1), suave = k * k * (3 - 2 * k);
+  marcaPuntoRojo.position.copy(pechoDe(z));
+  marcaPuntoRojo.scale.setScalar(altoDe(z) * 0.46 / (2 * ANILLO) * (1 + 0.5 * (1 - suave)));   // el anillo, del 46 % del alto del zombie, como en el 2D
+  marcaPuntoRojo.material.opacity = 0.35 + 0.65 * k;
+}
+
 // El arma de la mano derecha sigue al mando (con las dos manos, apunta hacia la izquierda)
 function posarArma(der, pI) {
   const a = manoDerecha, pA = der.agarre.getWorldPosition(v3()), qR = der.rayo.getWorldQuaternion(new THREE.Quaternion());
@@ -618,7 +654,7 @@ function entradaVisor(ahora, dt) {
     const a = manoDerecha;
     if (a) {
       a.porTajo = true;   // con el visor, el tajo fuerte suelta el poder de Excalibur y del Tridente
-      posarArma(der, pI);
+      posarArma(der, pI); apuntarPuntoRojo(a);
       if (esperarGatillo && !boton('right', 0)) esperarGatillo = false;
       a.gatillo(boton('right', 0) && !esperarGatillo && !aturdido() && !rapto);
       if (apreto('right', 4)) a.botonA();
@@ -702,12 +738,13 @@ function entradaEscritorio(ahora, dt) {
   const t = a.telescopica, refA = t ? v3(t.ocular, t.eje, 0) : a.mira.alza, refB = t ? v3(t.ocular + 10, t.eje, 0) : a.mira.poste;
   const sDir = a.mundoDe(refB).sub(a.mundoDe(refA)).normalize(), fwd = camara.getWorldDirection(v3());
   a.soporte.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(sDir, fwd)); a.soporte.updateMatrixWorld(true);
-  const ojo = camara.getWorldPosition(v3()), dist = t ? 0.065 : corta ? 0.5 : 0.24;
+  const ojo = camara.getWorldPosition(v3()), dist = t ? 0.065 : a.def.puntoRojo ? 0.13 : corta ? 0.5 : 0.24;   // con el punto rojo, el ojo cerca de la ventana
   a.soporte.position.copy(ojo.clone().addScaledVector(fwd, dist).sub(a.mundoDe(refA)));
   const pMira = a.soporte.position.clone(), qMira = a.soporte.quaternion.clone();
   const s = escritorio.mira * escritorio.mira * (3 - 2 * escritorio.mira);
   a.soporte.position.lerpVectors(pCadera, pMira, s); a.soporte.quaternion.slerpQuaternions(qCadera, qMira, s);
   a.apuntarA = s < 0.5 ? blanco : null;
+  apuntarPuntoRojo(a, fwd);
   document.getElementById('mira').style.display = s > 0.5 ? 'none' : 'block';
 }
 function tomarEscritorio(a) { if (manoDerecha) dejar(manoDerecha); tomar(a); }
@@ -791,6 +828,7 @@ function actualizarProyectiles(ahora, dt) {
     if (p.edad > (p.vida || 8)) { proyectiles.splice(i, 1); if (!p.enEscena) escena.remove(o); continue; }
     if (p.quieto) continue;
     const antes = o.position.clone();
+    if (p.sigue) { const t = p.sigue(); if (t) p.vel.copy(t.sub(o.position).normalize().multiplyScalar(p.vel.length())); }   // va derecho al zombie marcado y lo sigue
     if (p.empuje) { const v = p.vel.length(); if (v < p.velMax) p.vel.multiplyScalar(Math.min(p.velMax, v + p.empuje * dt) / v); }
     p.vel.y -= (p.gravedad || 0) * dt;
     o.position.addScaledVector(p.vel, dt);
@@ -1092,7 +1130,7 @@ renderer.setAnimationLoop(() => {
     horda.actualizar(reloj, dt, jugadorEnPiso(), camara.getWorldPosition(v3()), mordida);
     modos.actualizar(reloj, dt);
   }
-  actualizarAvisos(dt); actualizarOndas(dt); actualizarRapto();
+  actualizarAvisos(dt); actualizarOndas(dt); actualizarRapto(); verPuntoRojo(ahora);
   if (temblando > 0 && !renderer.xr.isPresenting) { camara.rotation.z = (Math.random() - 0.5) * temblando; temblando = Math.max(0, temblando - dt * 0.05); }
   destello.material.opacity = Math.max(0, destello.material.opacity - dt * 1.4);
   if (aturdido()) { destello.material.color.set(0x303030); destello.material.opacity = Math.max(destello.material.opacity, 0.35 + Math.sin(performance.now() * 0.01) * 0.08); } else destello.material.color.set(0x8a0000);
@@ -1183,7 +1221,7 @@ window.__campo = {
   golpe() { if (manoDerecha) golpeEscritorio(manoDerecha); else escritorio.golpe = performance.now(); },
   tirar() { if (manoDerecha && manoDerecha.llamar) tirarArrojadiza(manoDerecha); else if (manoDerecha && manoDerecha.id === 'granadas') { manoDerecha.gatillo(true); dejar(manoDerecha, tiroHacia(manoDerecha, 5.5, 2.2)); } },
   llamar() { const t = tirada(); if (t) t.llamar(() => desdeCamara(0.24, -0.22, -0.45)); },
-  get armero() { return armero; }, get sinPintar() { return sinPintar.length; }, manoIzq, manoDer, get agarreDer() { return agarreDer; },
+  get armero() { return armero; }, get sinPintar() { return sinPintar.length; }, manoIzq, manoDer, get agarreDer() { return agarreDer; }, get puntoRojo() { return puntoRojo; }, marcaPuntoRojo,
   // Adelanta el juego (zombies, blancos y el nivel) sin dibujar: el Chrome de pruebas dibuja lento y el paso tiene tope
   avanzar(seg, paso = 0.02) {
     for (let k = 0; k < seg / paso && !menu.abierto; k++) { reloj += paso * 1000; emergentes.actualizar(paso); actualizarPeligros(paso); actualizarProyectiles(performance.now(), paso); horda.actualizar(reloj, paso, jugadorEnPiso(), camara.getWorldPosition(v3()), mordida); modos.actualizar(reloj, paso); actualizarRapto(); }
