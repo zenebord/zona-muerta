@@ -354,7 +354,7 @@ export class Arma {
     if (def.municion === 'cargador') {
       if (this.puesto) return null;
       const c = this.a.cargadorSuelto(), info = CARGADORES[this.id];
-      const agarre = info ? P(info.agarre[0], -info.agarre[1]) : this.pozo.clone().add(P(0, -6));
+      const agarre = def.agarreCargador ? P(...def.agarreCargador) : info ? P(info.agarre[0], -info.agarre[1]) : this.pozo.clone().add(P(0, -6));   // agarreCargador: cm, y arriba (el tambor de la Thompson)
       const box = new THREE.Box3().setFromObject(c), arriba = P((box.min.x + box.max.x) / 2, box.max.y), abajo = agarre.clone();
       return { tipo: 'cargador', cuerpo: c, agarre, refs: [arriba, abajo], tolerancia: 0.06 };
     }
