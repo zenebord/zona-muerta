@@ -20,6 +20,7 @@ import { A_METROS } from './armas-vr.js';
 import { crearArma } from './especiales.js';
 import { ARMAS_PARED } from './armas-todas.js';
 import { colgarEnPared } from './armero.js';
+import { crearManoIzquierda } from './mano3d.js';
 import { Efectos, texturaCanvas } from './efectos.js';
 import { prepararZombies, asegurarTipos, tipoListo, Horda, moldeInfo, TIPOS } from './zombie3d.js';
 import { Emergentes } from './blancos.js';
@@ -338,7 +339,7 @@ function dibujarTablero() {
 // El reloj de la muñeca izquierda: vida o puntos de un vistazo
 const muneca = { tex: texturaCanvas(384, 192, () => {}) };
 muneca.malla = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.05), new THREE.MeshBasicMaterial({ map: muneca.tex, transparent: true, toneMapped: false }));
-muneca.malla.position.set(0, 0.03, 0.085); muneca.malla.rotation.x = -1.0;
+// (va sobre el dorso de la muñeca de la mano izquierda: manoIzq.reloj)
 function dibujarMuneca(H) {
   const g = muneca.tex.lienzo.getContext('2d');
   g.clearRect(0, 0, 384, 192); g.fillStyle = 'rgba(16,13,20,0.92)'; g.beginPath(); g.roundRect(4, 4, 376, 184, 22); g.fill();
@@ -451,6 +452,18 @@ function armaCerca(p) {
 /* ---------- Visor: mandos ---------- */
 const fabrica = new XRControllerModelFactory();
 const manos = { right: null, left: null };
+// La mano izquierda es la del sobreviviente (vr/mano3d.js), no el control: guante, manga y dedos que siguen los botones
+const manoIzq = crearManoIzquierda();
+manoIzq.reloj.add(muneca.malla);
+function posarManoIzquierda(izq, dt) {
+  if (manoIzq.grupo.parent !== izq.agarre) izq.agarre.add(manoIzq.grupo);
+  izq.modeloMando.visible = false;
+  const b = izq.fuente.gamepad ? izq.fuente.gamepad.buttons : [], valor = i => b[i] ? (b[i].value ?? (b[i].pressed ? 1 : 0)) : 0, toca = i => !!(b[i] && (b[i].touched || b[i].pressed));
+  // agarre: medio, anular y meñique; gatillo: el índice (apenas lo roza, se acerca); el pulgar baja si toca la palanca o
+  // los botones. Lo que sostiene (cargador, cartucho, guardamanos, cerrojo) cierra la mano entera
+  const sostiene = !!(izquierda.modo || izquierda.item);
+  manoIzq.posar({ agarre: sostiene ? 1 : valor(1), gatillo: sostiene ? 1 : Math.max(valor(0), toca(0) ? 0.3 : 0), pulgar: sostiene || [3, 4, 5, 6].some(toca) ? 1 : 0 }, dt);
+}
 const previos = { right: [], left: [] };
 const velMano = { right: v3(), left: v3() }, posPrevia = { right: null, left: null };
 for (let i = 0; i < 2; i++) {
@@ -519,7 +532,7 @@ function entradaVisor(ahora, dt) {
     posPrevia[lado] = p;
   }
   let pI = izq ? izq.agarre.getWorldPosition(v3()) : null;
-  if (izq && muneca.malla.parent !== izq.agarre) izq.agarre.add(muneca.malla);
+  if (izq) posarManoIzquierda(izq, dt);
   if (apreto('left', 5)) modos.alternar();   // Y: abre y cierra el menú (y pausa)
   if (menu.abierto) {   // los dos rayos apuntan y el gatillo aprieta; el arma sigue la mano pero no tira
     puntero.visible = false;
@@ -1109,7 +1122,7 @@ window.__campo = {
   golpe() { if (manoDerecha) golpeEscritorio(manoDerecha); else escritorio.golpe = performance.now(); },
   tirar() { if (manoDerecha && manoDerecha.llamar) tirarArrojadiza(manoDerecha); else if (manoDerecha && manoDerecha.id === 'granadas') { manoDerecha.gatillo(true); dejar(manoDerecha, tiroHacia(manoDerecha, 5.5, 2.2)); } },
   llamar() { const t = tirada(); if (t) t.llamar(() => desdeCamara(0.24, -0.22, -0.45)); },
-  get armero() { return armero; }, get sinPintar() { return sinPintar.length; },
+  get armero() { return armero; }, get sinPintar() { return sinPintar.length; }, manoIzq,
   // Adelanta el juego (zombies, blancos y el nivel) sin dibujar: el Chrome de pruebas dibuja lento y el paso tiene tope
   avanzar(seg, paso = 0.02) {
     for (let k = 0; k < seg / paso && !menu.abierto; k++) { reloj += paso * 1000; emergentes.actualizar(paso); actualizarPeligros(paso); actualizarProyectiles(performance.now(), paso); horda.actualizar(reloj, paso, jugadorEnPiso(), camara.getWorldPosition(v3()), mordida); modos.actualizar(reloj, paso); actualizarRapto(); }
