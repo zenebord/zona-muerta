@@ -969,6 +969,16 @@ todas las explosiones en el zombie); la telescópica, 15 de 15. Con un arma sin 
 
 ## Armas y tiros para matar un zombie
 
+**Escopetas, de a dos** (pedido de Enzo): los perdigones de un tiro comparten la cuenta de zombies alcanzados y, tocados
+dos, los que van hacia un tercero se pierden (`ZOMBIES_POR_PERDIGONADA` en `js/armas.js`; `Proyectil.tanda`). El
+alcance no cambió. La AA-12 trae 10 cartuchos en el cargador (antes 20). Probado: tres zombies a distintas alturas y un
+perdigón del mismo tiro hacia cada uno: con la regla, 2 de 3; sin ella, 3 de 3.
+
+**Animales del modo historia** (pedido de Enzo): van un 13 % más lentos (`LENTITUD_ANIMALES` en
+`js/zombies-autoctonos.js`) y cualquier tiro los voltea, sea del arma que sea; los jefes (el San Bernardo, el toro) no
+cambian, ni los animales del Último bastión, a los que les tiran las unidades. Probado: vaca, ñandú, guanaco y perro
+caen con un tiro de Glock; la vaca pasó de 0,75 a 0,65 de velocidad.
+
 Tiros en dificultad media:
 
 | Tipo | Armas | Tiros |
