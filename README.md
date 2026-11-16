@@ -252,10 +252,10 @@ Las del armero (lo que ya hacían en el 2D, en 3D):
 | | M1 Garand | Peine en bloque de 8: con la última sale el peine con su «ping» y el cerrojo queda trabado atrás; la mano izquierda trae un peine lleno y, al entrar, el cerrojo cierra solo |
 | | Mosin-Nagant | Cerrojo a mano; vacía y con el cerrojo atrás, el peine de 5 en la guía empuja las cinco y salta al cerrar (a medias, bala por bala) |
 | | Winchester 1894 | Palanca (con su sonido) después de cada tiro; balas de a una por el portillo |
-| Escopetas | SPAS-12, Remington 870 | Bomba |
+| Escopetas | SPAS-12, Remington 870 | Bomba (como la Mossberg, ver «La bomba») |
 | | Benelli M4, Saiga-12, AA-12 | Semiautomáticas (la Benelli con tubo; la Saiga y la AA-12 con cargador; la AA-12 automática) |
 | | Winchester 1887 | Palanca y cartuchos por el portillo |
-| | Escopeta de dos cañones | Se quiebra en la bisagra (salen sólo los gastados); cada tiro baja su martillo y, al cerrarla, el pulgar monta los caídos (uno y otro, con su clic). Con los dos abajo no tira |
+| | Escopeta de dos cañones | Dos cañones lado a lado (el dibujo, de costado, muestra uno solo: se tornean dos), cada martillo sobre el suyo y cada tiro sale por su caño, primero el izquierdo. Se quiebra en la bisagra (salen sólo los gastados); cada tiro baja su martillo y, al cerrarla, el pulgar monta los caídos (uno y otro, con su clic). Con los dos abajo no tira |
 | Lanzadores | Milkor MGL | Se abre como un revólver; granadas de 40 mm de a una, en parábola |
 | | Bazuca M9 | Un cohete por vez, que se encastra atrás |
 | Cuerpo a cuerpo | Katana, Hacha de bombero, Bate con alambre de púas, Mazo | Como el machete |
@@ -277,6 +277,12 @@ Las del armero (lo que ya hacían en el 2D, en 3D):
 - **Miras**: el dibujo es de costado y, pasado a 3D tal cual, de atrás no servía (el bloque del alza de la AK tapaba la
   vista y el guion era una placa maciza). Las armas de fuego tienen muesca y poste (o la mira telescópica) y la bala sale
   por la línea de mira: medido con la AK, a 50 m pasó de 0 de 5 a 5 de 5 en el papel.
+- **La bomba** (Mossberg 500, SPAS-12, Remington 870; pedido de Enzo: «que siempre funcione, más fácil y no tan
+  extraño»): con la mano izquierda en el guardamanos (se agarra desde 20 cm), alcanza con llevarla 6 cm atrás (la bomba
+  dibujada corre 8 o 9): pasando el 60 % expulsa, y de vuelta, pasando la mitad, se cierra sola del todo y queda lista
+  para tirar; soltarla a medio camino también la cierra. Antes cargaba al volver al 15 % pero sólo tiraba bajo el 5 %
+  (quedaba cargada y no tiraba), quedaba trabada si se la soltaba a medias, y si la mano se corría hacia adelante
+  mientras apuntaba había que tirarla otro tanto más para atrás: ahora lo que la mano se pasa de un tope no cuenta.
 - **Todas las miras del juego andan** (pedido de Leandro: «que todas las armas con mira telescópica o no telescópica
   funcionen, así es más fácil apuntar»):
   - **Telescópicas** (Remington 700, Dragunov 4×, Barrett 10×, Mosin 3,5×): como la de la Remington, la lente del ocular
