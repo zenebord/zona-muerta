@@ -265,7 +265,7 @@ function emparejar(base, otro) {
   return base.map(p => { const j = otro.findIndex((q, k) => !usados.has(k) && firma(q) === firma(p)); if (j >= 0) usados.add(j); return j; });
 }
 /* def: { id,
- *   piezas: { [índice]: { t, z, redonda: 'x' | 'y' | { eje, centro, radio, lados }, omitir, techo, partir, material, parte } },
+ *   piezas: { [índice]: { t, z, redonda: 'x' | 'y' | { eje, centro, radio, lados }, doble (con redonda: dos, a ±doble cm), omitir, techo, partir, material, parte } },
  *   materiales: { color: tipo },  espesor(caja, pieza): espesor por defecto (cm),
  *   movimientos: { nombre: { estado, piezas? } },  cargador: true | false,
  *   extras(h): agrega piezas propias (miras, perillas, el cerrojo que el dibujo no tiene) }
@@ -316,7 +316,13 @@ export function construirArma(def) {
     const k = conf[i] || {}, m = mat(p.color, k.material);
     let pts = p.pts;
     if (k.techo != null) pts = pts.map(([x, y]) => [x, Math.max(y, -k.techo)]);   // recorta lo que pasa de esa altura (cm, y arriba)
-    if (k.redonda) { const r = typeof k.redonda === 'string' ? { eje: k.redonda } : k.redonda; const malla = tornear(pts, m, r); if (k.z) malla.position.z = k.z; return [malla]; }
+    if (k.redonda) {
+      const r = typeof k.redonda === 'string' ? { eje: k.redonda } : k.redonda, malla = tornear(pts, m, r); if (k.z) malla.position.z = k.z;
+      if (!k.doble) return [malla];
+      // doble: dos iguales, una a cada lado (los dos cañones de la escopeta: de costado el dibujo muestra uno solo)
+      const otra = new THREE.Mesh(malla.geometry.clone(), m); otra.position.z = (k.z || 0) + k.doble; malla.position.z = (k.z || 0) - k.doble;
+      return [malla, otra];
+    }
     const t = k.t ?? espesor(c, p), z = k.z ?? 0;
     if (k.partir) {   // la hoja del alza: partida por la muesca
       const g = k.partir / 2; return [extruir(pts, p.huecos, m, z + g, z + t / 2), extruir(pts, p.huecos, m, z - t / 2, z - g)];

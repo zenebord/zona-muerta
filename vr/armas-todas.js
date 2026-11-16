@@ -185,7 +185,29 @@ function fichaDe(id) {
   if (def.municion !== 'cargador') def.modelo.cargador = false;
   tamborDe(id, base, def, clase, d);
   puntoRojoDe(id, base, def);
+  dosCanonesDe(id, base, def, d);
   return def;
+}
+
+/* ---------- La escopeta de dos caños: dos cañones, lado a lado ----------
+ * El dibujo es de costado y el cañón de enfrente queda tapado por el de este lado: extruida, se veía de un solo caño
+ * (pedido de Enzo: «aunque la perspectiva muestre lo contrario, que tenga 2 cañones»). Las piezas que se vuelcan al
+ * abrirla y van sobre el eje de la boca (el cañón y su boca) se tornean dos veces, una a cada lado; la báscula y el
+ * guardamanos se ensanchan a lo que miden los dos juntos; cada martillo va sobre su caño (el de este lado, el que cae
+ * con el primer tiro, a la izquierda) y cada tiro sale por el suyo (Basculante.tirar: def.canones). */
+function dosCanonesDe(id, base, def, d) {
+  if (id !== 'recortada' || !d.boca) return;
+  const piezas = def.modelo.piezas, cajas = base.map(p => caja(p.pts)), eje = d.boca.y / CM;   // dibujo: y hacia abajo
+  const mueven = estado => { const o = grabarArma(id, estado); return base.map((p, i) => i).filter(i => o[i] && JSON.stringify(o[i].pts) !== JSON.stringify(base[i].pts)); };
+  const abre = mueven({ abierto: 1 }), canon = abre.filter(i => Math.abs((cajas[i].y0 + cajas[i].y1) / 2 - eje) < 0.6 && cajas[i].y1 - cajas[i].y0 <= 3.2);
+  if (!canon.length) return;
+  const r = Math.max(...canon.map(i => cajas[i].y1 - cajas[i].y0)) / 2, sep = r * 0.98;
+  for (const i of canon) piezas[i] = { redonda: { eje: 'x', centro: eje }, doble: sep };
+  const m1 = mueven({ martillos: [0, 1] }), m2 = mueven({ martillos: [1, 0] });
+  for (const i of m1) if (!m2.includes(i)) piezas[i] = { z: -sep };
+  for (const i of m2) if (!m1.includes(i)) piezas[i] = { z: sep };
+  for (const i of abre) if (!piezas[i] && cajas[i].x1 - cajas[i].x0 > 3 && cajas[i].y1 - cajas[i].y0 > 2) piezas[i] = { t: 4 * r * 0.9 };
+  def.canones = sep;
 }
 
 /* ---------- Los tambores redondos (vr/tambores3d.js) ----------
@@ -311,8 +333,10 @@ class Basculante extends Arma {
   tirar(ahora) {
     const def = this.def; this.municion--; this.vainas++; this.ultimoTiro = ahora; this.tiroEn = ahora; this.disparos++; this.retroceso = 1;
     if (this.tambor) this.vueltas++;   // la próxima recámara pasa arriba
-    if (this.martillos) this.martillos[this.martillos.indexOf(1)] = 0;   // el martillo de ese caño cae sobre el percutor
-    const boca = this.mundoDe(this.boca), dirMira = this.apuntarA ? this.apuntarA.clone().sub(boca).normalize() : this.direccionMira();
+    const canonTiro = this.martillos ? this.martillos.indexOf(1) : -1;
+    if (canonTiro >= 0) this.martillos[canonTiro] = 0;   // el martillo de ese caño cae sobre el percutor
+    // la de dos caños: el primer tiro sale por el de este lado (izquierda) y el segundo por el de enfrente
+    const boca = this.mundoDe(def.canones && canonTiro >= 0 ? this.boca.clone().setZ(canonTiro === 0 ? -def.canones : def.canones) : this.boca), dirMira = this.apuntarA ? this.apuntarA.clone().sub(boca).normalize() : this.direccionMira();
     this.mundo.efectos.disparo(boca, this.direccion(), ahora, def.fogonazo);
     if (def.granada) {   // MGL: la granada de 40 mm en parábola, como la del M79
       Audio_.disparo('lanzagranadas', this.id);

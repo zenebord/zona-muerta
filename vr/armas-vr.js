@@ -19,6 +19,8 @@ const EJE_Y = v3(0, 1, 0);
 const SONIDO_ACCION = { semi: { atras: 'corredera' }, auto: { adelante: 'cerrojo' }, cerrojo: { atras: 'cerrojo-abrir', adelante: 'cerrojo' }, bomba: { atras: 'bombear' } };
 const pulso = p => p < 0.28 ? (p / 0.28) ** 2 * (3 - 2 * p / 0.28) : p < 0.5 ? 1 : 1 - ((p - 0.5) / 0.5) ** 2 * (3 - 2 * (p - 0.5) / 0.5);
 const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
+// Cuánto tiene que correr la mano para bombear entera (cm): menos que la bomba dibujada (8 o 9 cm), así es más fácil
+const RECORRIDO_MANO_BOMBA = 6;
 
 /* ---------- Munición en 3D: cartucho o vaina del calibre del arma (cm, base en x=0 y punta hacia +x) ---------- */
 const MAT_LATON = new THREE.MeshStandardMaterial({ color: 0xb39b62, metalness: 0.9, roughness: 0.3 });
@@ -317,18 +319,30 @@ export class Arma {
     this.mundo.vibrar('left', 0.5, 40); this.mundo.vibrar('right', 0.35, 30);
     this.dibujarContador();
   }
-  // La mano izquierda agarra la acción (o la bomba) y la lleva atrás o adelante a lo largo del arma
+  /* La mano izquierda agarra la acción (o la bomba) y la lleva atrás o adelante a lo largo del arma. Lo que la mano se
+   * pasa de un tope no cuenta después (la referencia se corre con ella): antes, si la mano se iba 3 cm adelante
+   * mientras apuntaba, después había que tirarla 3 cm más para que la bomba se moviera.
+   * La bomba (pedido de Enzo: «que siempre funcione, más fácil y no tan extraño»): con 6 cm de la mano alcanza aunque
+   * la bomba dibujada corra 8 o 9; atrás expulsa al pasar el 60 %, y de vuelta, pasando la mitad, se cierra sola del
+   * todo y queda lista para tirar (antes cargaba al 15 % pero sólo tiraba bajo el 5 %: a veces quedaba cargada y no
+   * tiraba). Soltarla a medio camino también la cierra, como el resorte de una corredera. */
   agarrarAccion(pos) { this.manoAccion = { inicio: pos.clone(), t0: this.accion }; }
   moverAccion(pos) {
-    if (!this.manoAccion) return;
-    const atras = this.direccion().negate(), d = pos.clone().sub(this.manoAccion.inicio).dot(atras) / A_METROS;
-    this.ponerAccion(this.manoAccion.t0 + d / this.recorrido);
+    const m = this.manoAccion; if (!m) return;
+    const bomba = this.def.mecanica === 'bomba', largo = bomba ? Math.min(this.recorrido, RECORRIDO_MANO_BOMBA) : this.recorrido;
+    const t = m.t0 + pos.clone().sub(m.inicio).dot(this.direccion().negate()) / A_METROS / largo;
+    if (t < 0 || t > 1) { m.inicio = pos.clone(); m.t0 = limitar(t, 0, 1); }
+    if (!bomba) { this.ponerAccion(t); return; }
+    this.accion = limitar(t, 0, 1);
+    if (this.accion > 0.6 && !this.atrasHecho) this.atras();
+    else if (this.accion < 0.5 && this.atrasHecho) { this.adelante(); this.accion = 0; m.inicio = pos.clone(); m.t0 = 0; }
   }
   soltarAccion() {
     if (!this.manoAccion) return;
     this.manoAccion = null;
-    // la corredera y la manija vuelven solas (resorte); el cerrojo y la bomba quedan donde los dejó la mano
+    // la corredera, la manija y la bomba vuelven solas (resorte); el cerrojo queda donde lo dejó la mano
     if (this.def.mecanica === 'semi' || this.def.mecanica === 'auto') { if (this.atrasHecho || !this.bloqueada) this.ponerAccion(0); }
+    if (this.def.mecanica === 'bomba') { if (this.atrasHecho) this.adelante(); this.accion = 0; }
   }
 
   /* --- Cargador y munición de la mano izquierda --- */
@@ -388,7 +402,7 @@ export class Arma {
     const z = [];
     const pa = this.posicionAccion(); if (pa) z.push({ tipo: 'accion', punto: pa, radio: this.def.accion.radio });
     if (this.def.apoyo) {
-      z.push({ tipo: 'apoyo', punto: this.mundoDe(P(...this.def.apoyo.punto)).add(this.desplazamientoBomba()), radio: this.def.apoyo.radio });
+      z.push({ tipo: 'apoyo', punto: this.mundoDe(P(...this.def.apoyo.punto)).add(this.desplazamientoBomba()), radio: this.modoApoyo === 'bomba' ? Math.max(this.def.apoyo.radio, 0.2) : this.def.apoyo.radio });   // la bomba se agarra de más lejos
     }
     return z;
   }
