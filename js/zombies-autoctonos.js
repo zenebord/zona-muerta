@@ -402,13 +402,16 @@ function dibujarNandu(ctx, z, E, golpeado) {
   }
 }
 
+// Los animales van un 13 % más lentos que lo medido para cada especie (pedido de Enzo: «un 10 o 15 %»)
+const LENTITUD_ANIMALES = 0.87;
+
 class ZombieAnimal extends Zombie {
   constructor(x, especie, dificultad) {
     const E = ESPECIES[especie];
     super(x, !!E.rapido, dificultad);
     this.animal = true; this.especie = especie; this.E = E;
     this.vidaMax = this.vida = Math.max(1, Math.round(dificultad.vidaZombie * E.vida * AJUSTE.vidaZombie));
-    this.velocidad = E.vel * (0.9 + Math.random() * 0.2) * dificultad.velocidad * AJUSTE.velocidadZombie;
+    this.velocidad = E.vel * LENTITUD_ANIMALES * (0.9 + Math.random() * 0.2) * dificultad.velocidad * AJUSTE.velocidadZombie;
     this.escala = 0.94 + Math.random() * 0.12;
     this.ancho = E.ancho * this.escala; this.alto = E.alto * this.escala;
   }
@@ -441,6 +444,9 @@ class ZombieAnimal extends Zombie {
   sonidoMuerte() { Audio_.animalMuere(this.tamañoVoz()); }
   recibirDano(cantidad, direccion, arma, juego) {
     const vivo = this.estado !== 'muerto';
+    // Un tiro de cualquier arma los voltea (pedido de Enzo), salvo a los jefes y en el Último bastión, donde les tiran
+    // las unidades y no el jugador
+    if (vivo && !this.jefe && !juego.estrategia) cantidad = Math.max(cantidad, this.vida);
     super.recibirDano(cantidad, direccion, arma, juego);
     if (!vivo || this.estado !== 'muerto') return;
     const fuerza = arma && arma.explosivo ? 1.8 : 1, peso = this.jefe ? 0.35 : { vaca: 0.55, ciervo: 0.85, guanaco: 0.85 }[this.especie] || 1;

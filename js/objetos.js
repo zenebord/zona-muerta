@@ -78,6 +78,9 @@ class Proyectil {
         continue;
       }
       if (this.arma.explosivo) { this.x = ix; this.y = iy; this.explotar(juego); return; }
+      // Perdigonada: si ya alcanzó a los zombies que le tocan (dos), el perdigón que va hacia otro se pierde
+      if (this.tanda && !this.tanda.zombies.has(z) && this.tanda.zombies.size >= this.tanda.maximo) { this.x = ix; this.y = iy; this.vivo = false; return; }
+      if (this.tanda) this.tanda.zombies.add(z);
       z.recibirDano(this.arma.dano, this.direccion, this.arma, juego);
       if (this.arma.fuego && z.quemar) z.quemar(juego, this.arma.quemaSeg);
       this.golpeados.add(z);

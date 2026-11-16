@@ -199,10 +199,14 @@ class Juego {
       for (let k = 0; k < arma.llamas; k++) this.proyectiles.push(new Proyectil(arma, x + direccion * k * 8, y, v * (0.88 + Math.random() * 0.24) * direccion, (Math.random() - 0.5) * 1.1 - 0.15));   // escalonadas: cubren el hueco entre descargas
       this.explosiones.push(new LuzLlama(x + direccion * 45, y, direccion));
     } else if (arma.categoria === 'escopeta') {
+      // Los perdigones de un tiro comparten la cuenta de zombies alcanzados (pedido de Enzo: dos como mucho):
+      // tocados dos, los que van hacia un tercero se pierden (js/objetos.js: Proyectil.tanda)
+      const tanda = { zombies: new Set(), maximo: ZOMBIES_POR_PERDIGONADA };
       for (let k = 0; k < arma.perdigones; k++) {
         const ang = (Math.random() - 0.5) * arma.dispersion;
         if (vivo) alZombie(ang * 0.5);   // salen abiertos y se juntan en el zombie: ninguno se pierde
         else this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
+        this.proyectiles[this.proyectiles.length - 1].tanda = tanda;
       }
       this.sacudida = 6;
     } else if (arma.categoria === 'granada') {

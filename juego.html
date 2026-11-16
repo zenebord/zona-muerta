@@ -1431,7 +1431,7 @@ body.en-bastion.bastion-v2 .bastion-info {
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261116-2025-3c7a19d';
+const VERSION_JUEGO = '20261116-2025-6e790f5';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -3959,6 +3959,9 @@ const Musica = (() => {
  */
 const VIDA_ZOMBIE_NORMAL = 15;
 
+// Una perdigonada alcanza a dos zombies como mucho (pedido de Enzo; js/juego.js: dispararArma, js/objetos.js: Proyectil)
+const ZOMBIES_POR_PERDIGONADA = 2;
+
 const ARMAS = {
   // --- Pistolas: 3 tiros ---
   glock:    { id: 'glock',    nombre: 'Glock 17',        categoria: 'pistola', dano: 5, cargador: 17, cadencia: 240, recarga: 1300, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#b0966f' },
@@ -3991,7 +3994,7 @@ const ARMAS = {
   recortada: { id: 'recortada', nombre: 'Escopeta de dos cañones', categoria: 'escopeta', dano: 15, cargador: 2, cadencia: 450, recarga: 1600, automatica: false, velocidad: 14, alcance: 260, perdigones: 7, dispersion: 0.35, recargaTipo: 'quiebre', recargaUnidad: 'cartucho', color: '#74391b' },
   mossberg: { id: 'mossberg', nombre: 'Mossberg 500',    categoria: 'escopeta', dano: 15, cargador: 6,  cadencia: 700, recarga: 2200, automatica: false, velocidad: 15, alcance: 320, perdigones: 6, dispersion: 0.22, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#646b7b' },
   spas12:   { id: 'spas12',   nombre: 'SPAS-12',         categoria: 'escopeta', dano: 15, cargador: 8,  cadencia: 400, recarga: 2600, automatica: false, velocidad: 15, alcance: 340, perdigones: 6, dispersion: 0.25, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#1e1e22' },
-  aa12:     { id: 'aa12',     nombre: 'AA-12',           categoria: 'escopeta', dano: 15, cargador: 20, cadencia: 280, recarga: 2600, automatica: true,  velocidad: 14, alcance: 280, perdigones: 5, dispersion: 0.3,  recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', color: '#2b2f33' },
+  aa12:     { id: 'aa12',     nombre: 'AA-12',           categoria: 'escopeta', dano: 15, cargador: 10, cadencia: 280, recarga: 2600, automatica: true,  velocidad: 14, alcance: 280, perdigones: 5, dispersion: 0.3,  recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', color: '#2b2f33' },
   saiga:    { id: 'saiga',    nombre: 'Saiga-12',        categoria: 'escopeta', dano: 15, cargador: 8,  cadencia: 350, recarga: 2000, automatica: false, velocidad: 15, alcance: 320, perdigones: 6, dispersion: 0.25, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', balanceo: true, color: '#2e2a26' },
   benelli:  { id: 'benelli',  nombre: 'Benelli M4',      categoria: 'escopeta', dano: 15, cargador: 7,  cadencia: 300, recarga: 2400, automatica: false, velocidad: 15, alcance: 330, perdigones: 6, dispersion: 0.23, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#2a2b2e' },
   rem870:   { id: 'rem870',   nombre: 'Remington 870',   categoria: 'escopeta', dano: 15, cargador: 6,  cadencia: 680, recarga: 2300, automatica: false, velocidad: 15, alcance: 330, perdigones: 6, dispersion: 0.22, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#5b3a1e' },
@@ -14254,6 +14257,9 @@ class Proyectil {
         continue;
       }
       if (this.arma.explosivo) { this.x = ix; this.y = iy; this.explotar(juego); return; }
+      // Perdigonada: si ya alcanzó a los zombies que le tocan (dos), el perdigón que va hacia otro se pierde
+      if (this.tanda && !this.tanda.zombies.has(z) && this.tanda.zombies.size >= this.tanda.maximo) { this.x = ix; this.y = iy; this.vivo = false; return; }
+      if (this.tanda) this.tanda.zombies.add(z);
       z.recibirDano(this.arma.dano, this.direccion, this.arma, juego);
       if (this.arma.fuego && z.quemar) z.quemar(juego, this.arma.quemaSeg);
       this.golpeados.add(z);
@@ -15020,10 +15026,14 @@ class Juego {
       for (let k = 0; k < arma.llamas; k++) this.proyectiles.push(new Proyectil(arma, x + direccion * k * 8, y, v * (0.88 + Math.random() * 0.24) * direccion, (Math.random() - 0.5) * 1.1 - 0.15));   // escalonadas: cubren el hueco entre descargas
       this.explosiones.push(new LuzLlama(x + direccion * 45, y, direccion));
     } else if (arma.categoria === 'escopeta') {
+      // Los perdigones de un tiro comparten la cuenta de zombies alcanzados (pedido de Enzo: dos como mucho):
+      // tocados dos, los que van hacia un tercero se pierden (js/objetos.js: Proyectil.tanda)
+      const tanda = { zombies: new Set(), maximo: ZOMBIES_POR_PERDIGONADA };
       for (let k = 0; k < arma.perdigones; k++) {
         const ang = (Math.random() - 0.5) * arma.dispersion;
         if (vivo) alZombie(ang * 0.5);   // salen abiertos y se juntan en el zombie: ninguno se pierde
         else this.proyectiles.push(new Proyectil(arma, x, y, Math.cos(ang) * v * direccion, Math.sin(ang) * v));
+        this.proyectiles[this.proyectiles.length - 1].tanda = tanda;
       }
       this.sacudida = 6;
     } else if (arma.categoria === 'granada') {
@@ -17821,13 +17831,16 @@ function dibujarNandu(ctx, z, E, golpeado) {
   }
 }
 
+// Los animales van un 13 % más lentos que lo medido para cada especie (pedido de Enzo: «un 10 o 15 %»)
+const LENTITUD_ANIMALES = 0.87;
+
 class ZombieAnimal extends Zombie {
   constructor(x, especie, dificultad) {
     const E = ESPECIES[especie];
     super(x, !!E.rapido, dificultad);
     this.animal = true; this.especie = especie; this.E = E;
     this.vidaMax = this.vida = Math.max(1, Math.round(dificultad.vidaZombie * E.vida * AJUSTE.vidaZombie));
-    this.velocidad = E.vel * (0.9 + Math.random() * 0.2) * dificultad.velocidad * AJUSTE.velocidadZombie;
+    this.velocidad = E.vel * LENTITUD_ANIMALES * (0.9 + Math.random() * 0.2) * dificultad.velocidad * AJUSTE.velocidadZombie;
     this.escala = 0.94 + Math.random() * 0.12;
     this.ancho = E.ancho * this.escala; this.alto = E.alto * this.escala;
   }
@@ -17860,6 +17873,9 @@ class ZombieAnimal extends Zombie {
   sonidoMuerte() { Audio_.animalMuere(this.tamañoVoz()); }
   recibirDano(cantidad, direccion, arma, juego) {
     const vivo = this.estado !== 'muerto';
+    // Un tiro de cualquier arma los voltea (pedido de Enzo), salvo a los jefes y en el Último bastión, donde les tiran
+    // las unidades y no el jugador
+    if (vivo && !this.jefe && !juego.estrategia) cantidad = Math.max(cantidad, this.vida);
     super.recibirDano(cantidad, direccion, arma, juego);
     if (!vivo || this.estado !== 'muerto') return;
     const fuerza = arma && arma.explosivo ? 1.8 : 1, peso = this.jefe ? 0.35 : { vaca: 0.55, ciervo: 0.85, guanaco: 0.85 }[this.especie] || 1;

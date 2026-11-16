@@ -21,6 +21,9 @@
  */
 const VIDA_ZOMBIE_NORMAL = 15;
 
+// Una perdigonada alcanza a dos zombies como mucho (pedido de Enzo; js/juego.js: dispararArma, js/objetos.js: Proyectil)
+const ZOMBIES_POR_PERDIGONADA = 2;
+
 const ARMAS = {
   // --- Pistolas: 3 tiros ---
   glock:    { id: 'glock',    nombre: 'Glock 17',        categoria: 'pistola', dano: 5, cargador: 17, cadencia: 240, recarga: 1300, automatica: false, velocidad: 16, alcance: 620, recargaTipo: 'cargador-pistola', recargaFinal: 'reten', recargaUnidad: 'cargador', color: '#b0966f' },
@@ -53,7 +56,7 @@ const ARMAS = {
   recortada: { id: 'recortada', nombre: 'Escopeta de dos cañones', categoria: 'escopeta', dano: 15, cargador: 2, cadencia: 450, recarga: 1600, automatica: false, velocidad: 14, alcance: 260, perdigones: 7, dispersion: 0.35, recargaTipo: 'quiebre', recargaUnidad: 'cartucho', color: '#74391b' },
   mossberg: { id: 'mossberg', nombre: 'Mossberg 500',    categoria: 'escopeta', dano: 15, cargador: 6,  cadencia: 700, recarga: 2200, automatica: false, velocidad: 15, alcance: 320, perdigones: 6, dispersion: 0.22, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#646b7b' },
   spas12:   { id: 'spas12',   nombre: 'SPAS-12',         categoria: 'escopeta', dano: 15, cargador: 8,  cadencia: 400, recarga: 2600, automatica: false, velocidad: 15, alcance: 340, perdigones: 6, dispersion: 0.25, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#1e1e22' },
-  aa12:     { id: 'aa12',     nombre: 'AA-12',           categoria: 'escopeta', dano: 15, cargador: 20, cadencia: 280, recarga: 2600, automatica: true,  velocidad: 14, alcance: 280, perdigones: 5, dispersion: 0.3,  recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', color: '#2b2f33' },
+  aa12:     { id: 'aa12',     nombre: 'AA-12',           categoria: 'escopeta', dano: 15, cargador: 10, cadencia: 280, recarga: 2600, automatica: true,  velocidad: 14, alcance: 280, perdigones: 5, dispersion: 0.3,  recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', color: '#2b2f33' },
   saiga:    { id: 'saiga',    nombre: 'Saiga-12',        categoria: 'escopeta', dano: 15, cargador: 8,  cadencia: 350, recarga: 2000, automatica: false, velocidad: 15, alcance: 320, perdigones: 6, dispersion: 0.25, recargaTipo: 'cargador', recargaFinal: 'cerrojo', recargaUnidad: 'cargador', balanceo: true, color: '#2e2a26' },
   benelli:  { id: 'benelli',  nombre: 'Benelli M4',      categoria: 'escopeta', dano: 15, cargador: 7,  cadencia: 300, recarga: 2400, automatica: false, velocidad: 15, alcance: 330, perdigones: 6, dispersion: 0.23, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#2a2b2e' },
   rem870:   { id: 'rem870',   nombre: 'Remington 870',   categoria: 'escopeta', dano: 15, cargador: 6,  cadencia: 680, recarga: 2300, automatica: false, velocidad: 15, alcance: 330, perdigones: 6, dispersion: 0.22, recargaTipo: 'cartuchos', recargaUnidad: 'cartucho', color: '#5b3a1e' },
