@@ -1045,8 +1045,15 @@ reemplazar('recortada', { casquillo: null, casquilloVaciado: 'escopeta', agarre:
     if (abierta) accion();
     // Cañones y delantera: giran alrededor de la bisagra
     ctx.save(); ctx.translate(bx, by); ctx.rotate(e.abierto * 0.6); ctx.translate(-bx, -by);
-    // Los dos cañones (pedido de Enzo: «mejores los gráficos del cañón»): el de enfrente asoma arriba del de este lado,
-    // cada uno con su volumen de acero pavonado; arriba, la banda con el guion, y en la boca el canto de cada uno
+    // Las piezas del cañón, como siempre: con ellas arma la VR el cañón en 3D (vr/modelo3d.js toma solo lo que pasa
+    // por pintar). No sacarlas: sin ellas, en la VR la escopeta se quedó sin cañones
+    pintar(ctx, F.canon, '#1c1e21', { brillo: 0.5 });
+    pintar(ctx, F.boca, '#24262a', { brillo: 0.4 });
+    pintar(ctx, F.banda, '#2a2c30');
+    if (!sil) { trazo(ctx, 'rgba(255,255,255,0.18)', 0.2, [P(305, 188), P(650, 189)]); trazo(ctx, 'rgba(0,0,0,0.5)', 0.14, [P(302, 192.5), P(658, 192)]); }
+    punto(ctx, ...P(652, 183.5), 0.28, '#d8d0b8');
+    // Encima, el dibujo mejorado (pedido de Enzo: «mejores los gráficos del cañón»): el de enfrente asoma arriba del de
+    // este lado, cada uno con su volumen de acero pavonado; arriba, la banda con el guion, y en la boca el canto de cada uno
     const Q = DIBUJO_ARMAS.recortada.quiebre, [xb, xm] = [Q.x, E3(660, 0)[0]], PAV = ['#6c7380', '#30353d', '#15171b'];
     for (const k of [1, 0]) tuboCm(ctx, xb, xm, Q.ys[k], Q.rCanon, 1.04, PAV);
     if (!sil) {
@@ -1350,6 +1357,9 @@ reemplazar('m79', { casquillo: null, casquilloVaciado: 'granada40',
     };
     if (abierta) bascula();
     ctx.save(); ctx.translate(bx, by); ctx.rotate(e.abierto * 0.6); ctx.translate(-bx, -by);
+    // La pieza del cañón, como siempre (con ella arma la VR el cañón en 3D: no sacarla) y encima el dibujo mejorado
+    pintar(ctx, F.canon, ALU, { brillo: 0.55 });
+    if (!sil) { trazo(ctx, 'rgba(255,255,255,0.45)', 0.5, [P(550, 196), P(900, 196)]); trazo(ctx, 'rgba(40,44,50,0.35)', 0.4, [P(550, 226), P(900, 226)]); }
     // Cañón de aluminio de 40 mm (pedido de Enzo: que se vea mejor): cilindro con su luz, el anillo de acero de atrás
     // (el que traba la báscula) y el labio de la boca
     const Q = DIBUJO_ARMAS.m79.quiebre, yc = Q.ys[0], xm = P(911, 0)[0], ALUS = ['#e2e6eb', '#a4abb4', '#646b74'];
