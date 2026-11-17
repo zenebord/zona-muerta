@@ -304,7 +304,10 @@ class Juego {
       const tomada = this.especialesTomadas.get(i);
       const yaHay = this.cajas.some(c => c.especial && c.indiceMontana === i);
       if (!yaHay && (tomada === undefined || this.tiempoJugado - tomada > 90)) {
-        const caja = new Caja(info.cajaX, info.armaEspecial, true);
+        // En la historia y la pelea infinita las cajas no traen legendarias (pedido de Leandro): en su lugar, una especial
+        // elegida con el mismo azar de la montaña (siempre la misma en ese lugar)
+        const legendariaFuera = (this.historia || this.infinita) && ARMAS[info.armaEspecial].legendaria;
+        const caja = new Caja(info.cajaX, legendariaFuera ? ARMAS_ESPECIALES[Math.floor(azar(i, 3) * ARMAS_ESPECIALES.length)] : info.armaEspecial, true);
         caja.indiceMontana = i;
         this.cajas.push(caja);
         this.especialesTomadas.delete(i);

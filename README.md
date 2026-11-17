@@ -1012,7 +1012,7 @@ Tiros en dificultad media:
 | Ametralladora fija | M2 Browning .50, clavada en las montañas, no se puede llevar | 1 |
 | Especiales (solo en montañas) | Lanzagranadas M79, Milkor MGL (6 granadas), Bazuca M9, RPG-7, Granadas M67, Lanzallamas M2, Minigun M134 (300 tiros), Láser alienígena | 1 (el lanzallamas: 0,9 s de fuego) |
 | Cuerpo a cuerpo (tecla 6) | Machete y Bate con alambre de púas (2 golpes), Katana (2, rápida), Hacha de bombero y Mazo (1, lentos; el mazo empuja lejos), Machete del cazador (1; solo con el cazador enmascarado) | 1–2 |
-| Legendarias (tecla 7, solo en montañas) | Mjölnir (llama rayos sobre 4 zombies), Excalibur (onda de luz que atraviesa), Tridente de Poseidón (ola que barre), Égida (escudo que se lanza y vuelve), Gungnir (lanza que se lanza y vuelve) | 1 |
+| Legendarias (tecla 7; en las cajas de las montañas, salvo en la historia y la pelea infinita) | Mjölnir (llama rayos sobre 4 zombies), Excalibur (onda de luz que atraviesa), Tridente de Poseidón (ola que barre), Égida (escudo que se lanza y vuelve), Gungnir (lanza que se lanza y vuelve) | 1 |
 
 Las armas cuerpo a cuerpo y las legendarias no usan munición ni se recargan: `F` da el golpe (alza el arma,
 la baja de golpe y vuelve a la guardia) y pega a los dos o tres zombies más cercanos adelante. Las de dos
