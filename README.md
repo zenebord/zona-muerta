@@ -1098,6 +1098,18 @@ canana del pecho. Antes todo salía de un punto detrás de la cadera y el brazo 
 (ocho veces seguidas con una Winchester). La mano no va en línea recta sino en arco, arranca y llega sin tirón, y
 mientras el arma gira para cargarla ya va camino a la canana.
 
+**Armas de quiebre** (escopeta de dos caños y M79; pedido de Enzo del 17/11): abiertas, se ve la cara de atrás de los
+cañones en escorzo con lo que hay en cada recámara (`caraQuiebre` en `js/armas-modelos-3.js`): vacía (el ánima oscura,
+con las estrías en la M79), con un cartucho o una granada sin tirar (culote con el fulminante sano) o con la vaina
+servida (fulminante marcado y hollín). Cada tiro deja su vaina en el cañón (`Jugador.servidas`); al terminar de abrir,
+el expulsor las tira hacia atrás por el eje del cañón, girando, y caen al piso y se desvanecen como cualquier vaina
+(`Juego.expulsarRecamaras`, dibujadas con la munición de `js/municion.js`: el cartucho del 12 con el cierre abierto, la
+vaina de aluminio de 40 mm con hollín en la boca). Si no se tiró, no sale nada; si se tiró un caño solo, sale una y el
+cartucho sano queda. La mano trae cada cartucho o granada tomado del culote, en línea con el cañón, con la punta en la
+boca, y lo empuja adentro: se lo ve entrar y después queda el culote a la vista hasta cerrar. Los cañones se redibujaron
+con volumen: los dos de la escopeta (el de enfrente asoma arriba) con la banda y el guion, y el del M79 con el anillo de
+acero de atrás y el labio de la boca. El salto máximo de la mano por cuadro quedó como antes (4,4 y 4,3 unidades).
+
 | Mecanismo | Armas | Qué hace |
 |---|---|---|
 | Cargador de pistola | Glock, Colt 1911, Desert Eagle, Beretta 92FS, Walther PPK, Mauser C96 | Saca el cargador, toma otro del cinturón y lo mete. Si quedó vacía, la corredera está trabada atrás: la mano vuelve a tomar el arma, el pulgar baja el retén y la corredera se va adelante sola con la primera bala; nadie la toca (pedido de Enzo). Antes la Glock, la Deagle, la Beretta y la Mauser tiraban de la corredera después de una pausa de 0,4 s: con el retén esa pausa no hace falta y la recarga en vacío dura 0,4 s menos. |

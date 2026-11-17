@@ -145,6 +145,7 @@ class Jugador {
     this.indiceArma = 0;
     this.municion = { [ARMA_INICIAL]: ARMAS[ARMA_INICIAL].cargador };
     this.reserva = {};                 // solo las especiales tienen reserva finita
+    this.servidas = {};                // armas de quiebre: vainas servidas que quedaron en los cañones (salen al abrirla)
     this.recarga = null;               // línea de tiempo de la recarga en curso
     this.ciclo = null;                 // línea de tiempo del accionamiento después de un tiro
     this.sinCargador = false;          // el arma está sin cargador, a mitad de la recarga
@@ -310,6 +311,16 @@ class Jugador {
     return { x: this.x + this.direccion * K * (e.origen.x + a.x * c - a.y * s), y: this.y + K * (e.origen.y + a.x * s + a.y * c + this.agachado * BAJA_AGACHADO) };
   }
 
+  // Posición en el mundo de la recámara k de un arma de quiebre, con los cañones girados como estén, y el ángulo del eje
+  puntoRecamara(k) {
+    const d = DIBUJO_ARMAS[this.arma().id], Q = d && d.quiebre;
+    if (!Q) return Object.assign(this.puntoArma('cargador'), { ang: 0 });
+    const e = this.estadoArma(), a = e.abierto * Q.giro, [bx, by] = Q.bisagra, rx = Q.x - bx, ry = Q.ys[k] - by;
+    const cx = (bx + rx * Math.cos(a) - ry * Math.sin(a)) * CM, cy = (by + rx * Math.sin(a) + ry * Math.cos(a)) * CM;
+    const K = ESCALA_JUGADOR, c = Math.cos(e.incl), s = Math.sin(e.incl);
+    return { x: this.x + this.direccion * K * (e.origen.x + cx * c - cy * s), y: this.y + K * (e.origen.y + cx * s + cy * c + this.agachado * BAJA_AGACHADO), ang: e.incl + a };
+  }
+
   // Golpe cuerpo a cuerpo: alza, baja de golpe (ahí pega) y vuelve a la guardia
   golpear(juego) {
     const arma = this.arma(), ahora = juego.ahora;
@@ -335,6 +346,7 @@ class Jugador {
     if (this.municionActual() <= 0) { Audio_.vacio(); this.ultimoDisparo = ahora; return false; }
     if (!this.montada && arma.categoria === 'granada') { this.ultimoDisparo = ahora; this.iniciarLanzamiento(juego, arma); return true; }
     if (this.montada) this.montada.municion--; else this.municion[arma.id]--;
+    if (!this.montada && arma.recargaTipo === 'quiebre') this.servidas[arma.id] = Math.min(arma.cargador, (this.servidas[arma.id] || 0) + 1);   // la vaina queda en el cañón
     this.ultimoDisparo = ahora; this.tiroEn = ahora;
     this.retroceso = 1;
     const boca = this.puntoArma('boca'), expulsion = this.puntoArma('expulsion');
@@ -578,11 +590,19 @@ class Jugador {
         l.fase('volver', 160, { a: 'arma', incl: 0 });
         break;
 
-      case 'quiebre': {   // se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe
-        const gastados = arma.cargador - this.municionActual();
-        l.fase('abrir', 280, { a: 'arma', llegada: 0.4, ab: 1, incl: 0.3, sonidos: sonidoArranque('abrir', 0.4) });
-        l.fase('vaciar', 240, { a: 'arma', incl: -0.35, eventos: [[0.45, () => juego.expulsarCasquillos(this, gastados)]] });
-        deAUna(gastados, (T - 760) / arma.cargador, 0.3, unidad, unidad === 'granada40' ? 'cargador-poner' : 'cartucho');
+      case 'quiebre': {   // se parte (al terminar de abrir, el expulsor tira las vainas servidas), entran los nuevos y se cierra de un golpe
+        // Pedido de Enzo: si no se tiró, al abrir no sale nada; las servidas salen volando hacia atrás y caen al piso
+        // (Juego.expulsarRecamaras); cada cartucho o granada nueva se ve entrar en su cañón (fase con `meter`: desde
+        // ahí lo dibuja el arma, js/armas-modelos-3.js: caraQuiebre)
+        const gastados = arma.cargador - this.municionActual(), servidas = Math.min(this.servidas[arma.id] || 0, gastados);
+        l.fase('abrir', 280, { a: 'arma', llegada: 0.4, ab: 1, incl: 0.3, sonidos: sonidoArranque('abrir', 0.4),
+          eventos: [[0.9, () => { if (servidas) (juego.expulsarRecamaras ? juego.expulsarRecamaras(this, servidas) : juego.expulsarCasquillos(this, servidas)); this.servidas[arma.id] = 0; }]] });
+        l.fase('vaciar', 240, { a: 'arma', incl: -0.35 });
+        // La mano trae el cartucho tomado del culote, en línea con el cañón, con la punta en la boca, y lo empuja adentro (desde
+        // ahí lo dibuja el arma): así se lo ve entrar, en vez de quedar tapado por la mano
+        const Lu = largoCartucho(calibreDe(arma.id)) * CM, eje = 0.3 + (DIBUJO_ARMAS[arma.id].quiebre ? DIBUJO_ARMAS[arma.id].quiebre.giro : 0.6);
+        deAUna(gastados, (T - 760) / arma.cargador, 0.3, unidad, unidad === 'granada40' ? 'cargador-poner' : 'cartucho',
+          { mano: [[unidad, 0, 0.7]], meter: 0.7, gesto: 'empuja', offset: { x: -Math.cos(eje) * Lu, y: -Math.sin(eje) * Lu } });
         l.fase('cerrar', 240, { a: 'arma', llegada: 0.3, ab: 0, snap: 0.25, incl: 0, sonidos: sonidoLlegada('cerrar', 0.3, 0.25) });
         if (arma.id === 'recortada') {   // martillos exteriores (pedido de Enzo): cerrada, el pulgar monta los que cayeron, uno por uno
           const caidos = martillosRecortada(this.municionActual(), arma.cargador);
@@ -635,7 +655,7 @@ class Jugador {
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = arma.reservaInicial;
       if (!this.montada) { this.indiceArma = this.inventario.indexOf(armaId); this.cancelarRecarga(); }
     } else {
-      this.municion[armaId] = arma.cargador;
+      this.municion[armaId] = arma.cargador; this.servidas[armaId] = 0;   // cargada de nuevo: sin vainas servidas adentro
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = (this.reserva[armaId] || 0) + arma.reservaInicial;
     }
     return nueva;
@@ -728,6 +748,11 @@ class Jugador {
       if (trabado && MANIJA_CON_CERROJO.has(arma.id) && e.cerrojo >= 1) e.corredera = 1;   // la perilla de la Thompson quedó atrás con él
     }
     if (!this.montada && arma.id === 'recortada') e.martillos = this.recarga && this.recarga.inicial.martillos ? this.recarga.inicial.martillos.slice() : martillosRecortada(municion, arma.cargador);
+    // Armas de quiebre: qué hay en cada cañón (se ve al abrirla). Tira primero el 0; los vacíos se llenan del último al primero
+    if (!this.montada && arma.recargaTipo === 'quiebre') {
+      const n = arma.cargador, disparadas = n - municion, servidas = Math.min(this.servidas[arma.id] || 0, disparadas);
+      e.recamaras = Array.from({ length: n }, (_, k) => k >= disparadas ? 'viva' : k < servidas ? 'servida' : null);
+    }
     if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
     e.sinPasador = !!this.pasadorFuera;
     if (!this.montada && arma.recargaTipo === 'cohete' && municion === 0) e.sinCargador = true;     // ya salió el cohete: el tubo queda vacío hasta recargar
@@ -842,7 +867,7 @@ class Jugador {
     };
     const finDe = k => {
       if (k < 0) return punto('arma');
-      const fk = linea.fases[k], b = punto(fk.a), o = desplazamiento(fk, 1);
+      const fk = linea.fases[k], b = punto(fk.a), o = fk.meter ? { x: 0, y: 0 } : desplazamiento(fk, 1);   // la que mete un cartucho termina en la boca
       return { x: b.x + o.x, y: b.y + o.y };
     };
     const inicio = finDe(i - 1), destino = punto(f.a);
@@ -854,6 +879,12 @@ class Jugador {
     e.mano.y += comba; e.mano.x -= comba * 0.3;
 
     if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
+    // El cartucho o la granada que la mano está metiendo: desde que llega a la boca de la recámara lo dibuja el arma
+    if (f.meter && e.enMano) e.porCulote = true;   // armas de quiebre: el cartucho va tomado de atrás (js/jugador-dibujo.js)
+    if (f.meter && e.recamaras && p >= f.meter) { const k = arma.cargador - municion - 1; if (k >= 0) {
+      e.metiendo = { k, avance: suavizar(limitar((p - f.meter) / (0.97 - f.meter), 0, 1)) };
+      if (f.offset) { e.mano.x -= f.offset.x * e.metiendo.avance; e.mano.y -= f.offset.y * e.metiendo.avance; }   // la mano acompaña al cartucho hasta la boca
+    } }
     e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
     if (f.peine && (pm >= 1 || f.enBloque)) {   // el de láminas suelta las balas de a una; el en bloque baja entero con el pulgar (cm)

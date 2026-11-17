@@ -162,6 +162,19 @@ class Juego {
     for (let k = 0; k < cuantos; k++) this.casquillos.push(new Casquillo(p.x + (Math.random() - 0.5) * 4, p.y, jugador.direccion, tipo, true));
   }
 
+  // Armas de quiebre (escopeta de dos caños, M79): al terminar de abrirla, el expulsor tira las vainas servidas de los
+  // cañones 0..cuantas-1: salen volando hacia atrás por el eje del cañón, girando, y caen al piso como cualquier vaina
+  expulsarRecamaras(jugador, cuantas) {
+    const tipo = DIBUJO_ARMAS[jugador.arma().id].casquilloVaciado || 'escopeta';
+    for (let k = 0; k < cuantas; k++) {
+      const p = jugador.puntoRecamara(k), v = 2.6 + Math.random() * 1.2, c = new Casquillo(p.x, p.y, jugador.direccion, tipo);
+      c.vx = -jugador.direccion * Math.cos(p.ang) * v + (Math.random() - 0.5) * 0.4;
+      c.vy = -Math.sin(p.ang) * v - 1.2 - Math.random() * 0.8;
+      c.rot = jugador.direccion > 0 ? p.ang : Math.PI - p.ang; c.vrot = -jugador.direccion * (0.18 + Math.random() * 0.2);
+      this.casquillos.push(c);
+    }
+  }
+
   /* ---------- Avisos ---------- */
   aviso(texto, duracion = 2000) {
     this.hud.aviso.textContent = texto;

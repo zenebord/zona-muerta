@@ -65,9 +65,19 @@ function dibujarCartucho(ctx, cal, op = {}) {
     cilindro(T.laton, r, () => ctx.rect(0.16, -r, 1.34, cal.d));
     cilindro(T.laton, r * 1.07, () => ctx.rect(0, -r * 1.07, 0.2, cal.d * 1.07));   // reborde
     raya(1.5, r, 0.3);
+    if (op.servida) {   // servido: el cierre en estrella se abrió (la boca, más oscura y un poco ensanchada)
+      cilindro(T.plastico, r, () => ctx.rect(v - 0.5, -r, 0.5, cal.d));
+      ctx.fillStyle = 'rgba(20, 8, 6, 0.45)'; ctx.fillRect(v - 0.12, -r * 0.8, 0.12, r * 1.6);
+    }
     return;
   }
   if (cal.forma === 'granada') {    // 40 mm: vaina corta de aluminio, cuerpo verde y ojiva dorada
+    if (op.servida) {   // la vaina sola, ya tirada: la boca abierta con hollín por dentro
+      cilindro(T.aluminio, r, () => ctx.rect(0.2, -r, v - 0.2, cal.d));
+      cilindro(T.aluminio, r * 1.04, () => ctx.rect(0, -r * 1.04, 0.3, cal.d * 1.04));
+      ctx.fillStyle = 'rgba(30, 26, 20, 0.55)'; ctx.fillRect(v - 0.35, -r * 0.92, 0.35, r * 1.84);
+      return;
+    }
     const c0 = v, c1 = v + cal.punta * 0.34, fin = v + cal.punta;
     cilindro(T.oro, r * 0.96, () => { ctx.moveTo(c1, -r * 0.96); ctx.bezierCurveTo(c1 + (fin - c1) * 0.62, -r * 0.96, fin, -r * 0.52, fin, 0); ctx.bezierCurveTo(fin, r * 0.52, c1 + (fin - c1) * 0.62, r * 0.96, c1, r * 0.96); });
     cilindro(T.oliva, r * 0.98, () => ctx.rect(c0 - 0.05, -r * 0.98, c1 - c0 + 0.1, cal.d * 0.98));

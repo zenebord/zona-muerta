@@ -526,7 +526,10 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   pintarBrazo(ctx, cerca, C);
   if (cerca.capas === 'objeto') pintarMano(ctx, cerca, C, 'atras');
   if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); }
-  else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.apuntaMano, e.cajaNueva, arma.id);
+  else if (e.enMano && e.porCulote) {   // tomado del culote: el cartucho entero queda adelante de la mano (armas de quiebre)
+    const m = largoCartucho(calibreDe(arma.id)) * CM / 2;
+    dibujarUnidad(ctx, e.enMano, e.mano.x + Math.cos(e.apuntaMano) * m, e.mano.y + Math.sin(e.apuntaMano) * m, e.apuntaMano, e.cajaNueva, arma.id);
+  } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.apuntaMano, e.cajaNueva, arma.id);
   pintarMano(ctx, cerca, C, cerca.capas ? 'adelante' : null);
 };
 

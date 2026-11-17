@@ -456,11 +456,13 @@ class Casquillo {
     const [, laton, latonSombra] = TONOS_MUNICION.laton, rojo = TONOS_MUNICION.plastico[1];
     switch (this.tipo) {
       case 'pistola':  bloque(ctx, -1.0, -0.45, 2.0, 0.9, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-1.0, -0.45, 0.3, 0.9); break;
-      case 'escopeta': bloque(ctx, -2.2, -0.8, 4.4, 1.6, rojo); ctx.fillStyle = laton; ctx.fillRect(-2.2, -0.8, 1.1, 1.6); break;
+      case 'escopeta': case 'granada40': {   // el cartucho del 12 o la vaina de 40 mm servidos, dibujados como la munición (a escala)
+        const cal = CALIBRES[this.tipo === 'escopeta' ? '12' : '40mm'], K = ESCALA_JUGADOR * CM;
+        ctx.scale(K, K); ctx.translate(-cal.vaina / 2, 0); dibujarCartucho(ctx, cal, { servida: true }); break;
+      }
       case 'grande':   bloque(ctx, -3.0, -0.8, 6.0, 1.6, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-3.0, -0.8, 0.5, 1.6); ctx.fillRect(1.6, -0.5, 1.4, 1.0); break;
       case 'cargador': bloque(ctx, -1.0, -5.2, 2.0, 10.4, '#222'); ctx.fillStyle = '#555'; ctx.fillRect(-1.0, 4.4, 2.0, 0.8); break;
       case 'cargadorPistola': bloque(ctx, -0.8, -3.4, 1.6, 6.8, '#222'); ctx.fillStyle = '#444'; ctx.fillRect(-1.0, 2.8, 2.0, 0.7); break;
-      case 'granada40': bloque(ctx, -1.7, -1.4, 3.4, 2.8, TONOS_MUNICION.aluminio[1]); ctx.fillStyle = TONOS_MUNICION.aluminio[2]; ctx.fillRect(-1.7, -1.4, 0.5, 2.8); break;   // la vaina corta de aluminio
       case 'peine':    bloque(ctx, -0.3, -2.2, 0.6, 4.4, TONOS_MUNICION.acero[1]); break;                                                                                       // la lámina del peine
       case 'pasador':  ctx.beginPath(); ctx.arc(-1.4, 0, 2.0, 0, Math.PI * 2); ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 0.7; ctx.stroke(); bloque(ctx, 0.4, -0.3, 3.8, 0.6, '#9a9a9a'); break;   // anilla y pasador
       case 'tambor':   esfera(ctx, 0, 0, 6.5, '#1e2226'); bloque(ctx, -2, -8, 4, 3, '#2b2f33'); break;

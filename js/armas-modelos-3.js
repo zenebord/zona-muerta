@@ -930,6 +930,70 @@ function bombaNervada(ctx, x, y, w, h, color, desplazamiento) {   // guardamanos
   ctx.restore();
 }
 
+/* ---------- Armas de quiebre (escopeta de dos caños y M79): los cañones y lo que hay adentro ----------
+ * Pedido de Enzo: que al abrirlas se vea el cañón por dentro y no «como si no hubiera nada». Abierta, se ve la cara de
+ * atrás de los cañones en escorzo (una elipse angosta que se ensancha a medida que baja el cañón) con cada recámara:
+ * vacía (el ánima oscura que se pierde hacia adentro, con las estrías en la M79), con un cartucho o una granada sin tirar
+ * (el culote con el fulminante sano) o con la vaina servida (el fulminante marcado y hollín alrededor). Mientras la mano
+ * mete uno, se lo ve entrar a lo largo del cañón. e.recamaras y e.metiendo los arma Jugador.estadoArma (js/jugador.js).
+ * Q: { x: la cara de atrás (cm), ys: el centro de cada recámara, de la 0 (este lado) en adelante, rCanon, rAnima,
+ *      escorzo: el ancho de la elipse abierta del todo, calibre: la clave en CALIBRES (js/municion.js), estrias, tonos: [luz, base, sombra] } */
+// Tubo con volumen: degradé de cilindro de arriba abajo (luz arriba, sombra abajo) y el canto oscuro
+function tuboCm(ctx, x0, x1, yc, r0, r1, tonos, op = {}) {
+  const trazar = () => { ctx.beginPath(); ctx.moveTo(x0, yc - r0); ctx.lineTo(x1, yc - r1); ctx.lineTo(x1, yc + r1); ctx.lineTo(x0, yc + r0); ctx.closePath(); };
+  trazar();
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fill(); return; }
+  const r = Math.max(r0, r1), g = ctx.createLinearGradient(0, yc - r, 0, yc + r);
+  g.addColorStop(0, tonos[1]); g.addColorStop(0.16, tonos[0]); g.addColorStop(0.3, tonos[1]); g.addColorStop(0.72, tonos[2]); g.addColorStop(1, ajustarColor(tonos[2], -0.35));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = op.canto || 'rgba(8,9,11,0.7)'; ctx.lineWidth = op.ancho || 0.1; ctx.stroke();
+}
+// El culote de un cartucho o de una granada visto de atrás en escorzo: reborde, fulminante (marcado si está servido)
+function culoteEnEscorzo(ctx, x, y, rx, cal, servida) {
+  const r = cal.d / 2, T = cal.forma === 'granada' ? TONOS_MUNICION.aluminio : TONOS_MUNICION.laton;
+  const g = ctx.createLinearGradient(0, y - r, 0, y + r);
+  g.addColorStop(0, T[0]); g.addColorStop(0.45, T[1]); g.addColorStop(1, T[2]);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, rx, r * 1.04, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = ajustarColor(T[2], -0.3); ctx.lineWidth = 0.06; ctx.stroke();
+  ctx.strokeStyle = 'rgba(40,30,10,0.35)'; ctx.beginPath(); ctx.ellipse(x, y, rx * 0.8, r * 0.82, 0, 0, Math.PI * 2); ctx.stroke();   // el escalón del reborde
+  if (servida) { ctx.fillStyle = 'rgba(28,22,16,0.45)'; ctx.beginPath(); ctx.ellipse(x, y, rx * 0.55, r * 0.5, 0, 0, Math.PI * 2); ctx.fill(); }   // hollín
+  const rf = cal.forma === 'granada' ? r * 0.2 : r * 0.24;
+  ctx.fillStyle = servida ? '#9c8a6a' : '#d9d6cf'; ctx.beginPath(); ctx.ellipse(x, y, rx * 0.3, rf, 0, 0, Math.PI * 2); ctx.fill();   // fulminante
+  if (servida) { ctx.fillStyle = '#2a2218'; ctx.beginPath(); ctx.ellipse(x - rx * 0.05, y, rx * 0.12, rf * 0.42, 0, 0, Math.PI * 2); ctx.fill(); }   // la marca del percutor
+  else { ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(x - rx * 0.08, y - rf * 0.35, rx * 0.1, rf * 0.25, 0, 0, Math.PI * 2); ctx.fill(); }
+}
+// La cara de atrás de los cañones, con lo que hay en cada recámara, y el que está entrando
+function caraQuiebre(ctx, e, Q) {
+  if (Pincel.silueta || e.abierto <= 0.03) return;
+  const cal = CALIBRES[Q.calibre];   // js/municion.js se carga después de este archivo
+  const rx = Q.escorzo * (0.35 + 0.65 * e.abierto), orden = Q.ys.map((y, k) => k).reverse();   // la de atrás primero
+  for (const k of orden) {   // la cara de acero de cada cañón
+    const y = Q.ys[k], g = ctx.createLinearGradient(0, y - Q.rCanon, 0, y + Q.rCanon);
+    g.addColorStop(0, ajustarColor(Q.tonos[0], 0.12)); g.addColorStop(0.5, Q.tonos[1]); g.addColorStop(1, Q.tonos[2]);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(Q.x, y, rx, Q.rCanon, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(8,9,11,0.7)'; ctx.lineWidth = 0.08; ctx.stroke();
+  }
+  for (const k of orden) {
+    const y = Q.ys[k], estado = e.metiendo && e.metiendo.k === k ? null : e.recamaras ? e.recamaras[k] : null;
+    const ra = Q.rAnima, rxa = rx * 0.86;
+    if (estado) { culoteEnEscorzo(ctx, Q.x - 0.06, y, rxa * 1.02, cal, estado === 'servida'); continue; }
+    // Vacía: la boca de la recámara y el ánima que se oscurece hacia adentro
+    const g = ctx.createRadialGradient(Q.x + rxa * 0.3, y + ra * 0.15, 0, Q.x, y, ra);
+    g.addColorStop(0, '#000'); g.addColorStop(0.55, '#0b0c0e'); g.addColorStop(0.85, '#26292e'); g.addColorStop(1, '#5d636b');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(Q.x, y, rxa, ra, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(220,225,232,0.35)'; ctx.lineWidth = 0.05; ctx.beginPath(); ctx.ellipse(Q.x, y, rxa * 0.62, ra * 0.68, 0, Math.PI * 0.9, Math.PI * 1.6); ctx.stroke();   // el brillo del ánima
+    if (Q.estrias) { ctx.strokeStyle = 'rgba(150,158,168,0.35)'; ctx.lineWidth = 0.05;
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(Q.x + Math.cos(a) * rxa * 0.92, y + Math.sin(a) * ra * 0.92); ctx.lineTo(Q.x + Math.cos(a + 0.5) * rxa * 0.55, y + Math.sin(a + 0.5) * ra * 0.55); ctx.stroke(); } }
+  }
+  if (e.metiendo && Q.ys[e.metiendo.k] !== undefined) {   // entra a lo largo del eje: lo de adentro lo tapa el cañón (recorte)
+    const y = Q.ys[e.metiendo.k], L = cal.vaina + cal.punta, xb = Q.x - 0.06 - (1 - e.metiendo.avance) * L;   // de la punta en la boca a adentro del todo
+    ctx.save(); ctx.beginPath(); ctx.rect(xb - 1, y - Q.rCanon * 2, Q.x - xb + 1, Q.rCanon * 4); ctx.clip();
+    ctx.save(); ctx.translate(xb, y); dibujarCartucho(ctx, cal); ctx.restore();
+    ctx.restore();
+    culoteEnEscorzo(ctx, xb, y, rx * 0.86, cal, false);
+  }
+}
+
 // Escopeta de dos cañones yuxtapuestos con martillos a la vista (101 cm), tipo «coach gun», calcada de una foto:
 // culata recta de madera rojiza con el abultamiento bajo la garganta, báscula y platinas de acero con los dos
 // martillos, guardamonte con los dos disparadores, cañones negros largos con la banda de arriba y el guion, y la
@@ -981,17 +1045,26 @@ reemplazar('recortada', { casquillo: null, casquilloVaciado: 'escopeta', agarre:
     if (abierta) accion();
     // Cañones y delantera: giran alrededor de la bisagra
     ctx.save(); ctx.translate(bx, by); ctx.rotate(e.abierto * 0.6); ctx.translate(-bx, -by);
-    pintar(ctx, F.canon, '#1c1e21', { brillo: 0.5 });
-    pintar(ctx, F.boca, '#24262a', { brillo: 0.4 });
-    pintar(ctx, F.banda, '#2a2c30');
-    if (!sil) { trazo(ctx, 'rgba(255,255,255,0.18)', 0.2, [P(305, 188), P(650, 189)]); trazo(ctx, 'rgba(0,0,0,0.5)', 0.14, [P(302, 192.5), P(658, 192)]); }
-    punto(ctx, ...P(652, 183.5), 0.28, '#d8d0b8');                                                                     // guion
-    if (abierta && !sil) for (const [y, dx] of [[188, 0], [196, 1.2]]) { ctx.fillStyle = '#0a0a0c'; ctx.beginPath(); ctx.ellipse(...P(300 + dx, y), 0.3, 0.75, 0, 0, Math.PI * 2); ctx.fill(); }
+    // Los dos cañones (pedido de Enzo: «mejores los gráficos del cañón»): el de enfrente asoma arriba del de este lado,
+    // cada uno con su volumen de acero pavonado; arriba, la banda con el guion, y en la boca el canto de cada uno
+    const Q = DIBUJO_ARMAS.recortada.quiebre, [xb, xm] = [Q.x, E3(660, 0)[0]], PAV = ['#6c7380', '#30353d', '#15171b'];
+    for (const k of [1, 0]) tuboCm(ctx, xb, xm, Q.ys[k], Q.rCanon, 1.04, PAV);
+    if (!sil) {
+      ctx.fillStyle = '#23262b'; ctx.fillRect(xb + 1.2, Q.ys[1] - 1.24, xm - xb - 1.6, 0.26);                        // banda de arriba
+      ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(xb + 1.2, Q.ys[1] - 1.24, xm - xb - 1.6, 0.07);
+      for (const k of [1, 0]) { ctx.fillStyle = '#0d0e10'; ctx.beginPath(); ctx.ellipse(xm, Q.ys[k], 0.16, 1.02, 0, 0, Math.PI * 2); ctx.fill(); }   // canto de la boca
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 0.1; ctx.beginPath(); ctx.moveTo(xb + 0.5, Q.ys[0] - Q.rCanon + 0.05); ctx.lineTo(xm, Q.ys[0] - 1.0); ctx.stroke();   // donde se juntan
+    }
+    punto(ctx, xm - 0.8, Q.ys[1] - 1.42, 0.28, '#d8d0b8');                                                          // guion
+    caraQuiebre(ctx, e, Q);
     pintar(ctx, F.delantera, MAD, { lustre: true });
     pintar(ctx, F.hierro, ACERO, { brillo: 0.4 });
     ctx.restore();
     if (!abierta) accion();
   } });
+// Cañones para js/jugador.js (estadoArma, puntoRecamara) y caraQuiebre: el 0 es el de este lado, el que tira primero
+DIBUJO_ARMAS.recortada.quiebre = { x: E3(300, 0)[0], ys: [E3(0, 192.5)[1], E3(0, 192.5)[1] - 1.18], rCanon: 1.2, rAnima: 0.98, escorzo: 0.5,
+  calibre: '12', bisagra: E3_BISAGRA, giro: 0.6, tonos: ['#8a919c', '#4d535c', '#24272c'] };
 DIBUJO_ARMAS.recortada.moviles = {
   manoDelantera: e => girarCm(...E3(400, 208), ...E3_BISAGRA, e.abierto * 0.6),
   cargador: e => girarCm(...E3(303, 192), ...E3_BISAGRA, e.abierto * 0.6),
@@ -1277,8 +1350,14 @@ reemplazar('m79', { casquillo: null, casquilloVaciado: 'granada40',
     };
     if (abierta) bascula();
     ctx.save(); ctx.translate(bx, by); ctx.rotate(e.abierto * 0.6); ctx.translate(-bx, -by);
-    pintar(ctx, F.canon, ALU, { brillo: 0.55 });
-    if (!sil) { trazo(ctx, 'rgba(255,255,255,0.45)', 0.5, [P(550, 196), P(900, 196)]); trazo(ctx, 'rgba(40,44,50,0.35)', 0.4, [P(550, 226), P(900, 226)]); }
+    // Cañón de aluminio de 40 mm (pedido de Enzo: que se vea mejor): cilindro con su luz, el anillo de acero de atrás
+    // (el que traba la báscula) y el labio de la boca
+    const Q = DIBUJO_ARMAS.m79.quiebre, yc = Q.ys[0], xm = P(911, 0)[0], ALUS = ['#e2e6eb', '#a4abb4', '#646b74'];
+    tuboCm(ctx, Q.x, xm - 0.7, yc, Q.rCanon, Q.rCanon, ALUS);
+    tuboCm(ctx, xm - 0.75, xm, yc, Q.rCanon + 0.06, Q.rCanon - 0.08, ['#c9ced5', '#8c939c', '#555b63']);            // labio de la boca
+    tuboCm(ctx, Q.x, Q.x + 1.1, yc, Q.rCanon + 0.05, Q.rCanon + 0.05, ['#a9afb6', '#6f757d', '#3e4248']);             // anillo de acero
+    if (!sil) { for (const x of [Q.x + 1.1, xm - 0.75]) trazo(ctx, 'rgba(20,22,26,0.5)', 0.08, [[x, yc - Q.rCanon], [x, yc + Q.rCanon]]);
+      ctx.fillStyle = '#16171a'; ctx.beginPath(); ctx.ellipse(xm, yc, 0.2, Q.rCanon - 0.1, 0, 0, Math.PI * 2); ctx.fill(); }   // canto de la boca
     pintar(ctx, suave(M79F([[888, 150], [904, 160], [904, 177], [888, 177]]), 0.2, 2), '#2a2c30');                   // guion
     pintar(ctx, F.chapa, ACERO, { brillo: 0.3, huecos: [M79F([[597, 233], [640, 233], [640, 250], [597, 250]])] });
     punto(ctx, ...P(598, 252), 0.3, '#4a4f55');
@@ -1289,11 +1368,13 @@ reemplazar('m79', { casquillo: null, casquilloVaciado: 'granada40',
     pintar(ctx, suave(M79F([[698, 152], [726, 152], [726, 172], [698, 172]]), 0.25, 2), '#2a2c30');
     if (!sil) { trazo(ctx, '#2a2c30', 0.32, [P(705, 18), P(705, 152)]); trazo(ctx, '#2a2c30', 0.32, [P(709, 18), P(709, 152)]); }
     punto(ctx, ...P(707, 15), 0.45, '#2a2c30'); punto(ctx, ...P(707, 57), 0.4, '#2a2c30');
-    if (abierta && !sil) { ctx.fillStyle = '#0a0a0c'; ctx.beginPath(); ctx.ellipse(...P(545, 205), 0.6, 2.0, 0, 0, Math.PI * 2); ctx.fill(); }   // recámara a la vista
+    caraQuiebre(ctx, e, Q);   // abierta: la recámara vacía, la granada o la vaina servida
     ctx.restore();
     if (!abierta) bascula();
   } });
 DIBUJO_ARMAS.m79.culataCm = 33;
+DIBUJO_ARMAS.m79.quiebre = { x: M79(543, 0)[0], ys: [M79(0, 205)[1]], rCanon: 2.31, rAnima: 2.05, escorzo: 0.85, estrias: true,
+  calibre: '40mm', bisagra: M79_BISAGRA, giro: 0.6, tonos: ['#c9ced5', '#8d949d', '#545a62'] };
 DIBUJO_ARMAS.m79.moviles = {
   manoDelantera: e => girarCm(...M79(720, 262), ...M79_BISAGRA, e.abierto * 0.6),
   cargador: e => girarCm(...M79(545, 205), ...M79_BISAGRA, e.abierto * 0.6),
