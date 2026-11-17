@@ -1109,6 +1109,10 @@ cartucho sano queda. La mano trae cada cartucho o granada tomado del culote, en 
 boca, y lo empuja adentro: se lo ve entrar y después queda el culote a la vista hasta cerrar. Los cañones se redibujaron
 con volumen: los dos de la escopeta (el de enfrente asoma arriba) con la banda y el guion, y el del M79 con el anillo de
 acero de atrás y el labio de la boca. El salto máximo de la mano por cuadro quedó como antes (4,4 y 4,3 unidades).
+Ojo: la VR (`vr/modelo3d.js`) arma cada arma en 3D solo con las piezas que el dibujo pasa por `pintar`. La primera
+versión dibujó los cañones nuevos por fuera de `pintar` y en la VR la escopeta y el M79 se quedaron sin cañón (la
+escopeta pasó de 101 a 74 cm). Las piezas originales del cañón siguen igual y lo nuevo va encima; antes de tocar un
+dibujo de arma, comparar lo que toma la VR (piezas de `pintar` y trazos sólidos) con el commit anterior.
 
 | Mecanismo | Armas | Qué hace |
 |---|---|---|
