@@ -1524,7 +1524,7 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261116-2200-5ad69a4';
+const VERSION_JUEGO = '20261117-1443-3e8d428';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -6842,6 +6842,70 @@ function bombaNervada(ctx, x, y, w, h, color, desplazamiento) {   // guardamanos
   ctx.restore();
 }
 
+/* ---------- Armas de quiebre (escopeta de dos caños y M79): los cañones y lo que hay adentro ----------
+ * Pedido de Enzo: que al abrirlas se vea el cañón por dentro y no «como si no hubiera nada». Abierta, se ve la cara de
+ * atrás de los cañones en escorzo (una elipse angosta que se ensancha a medida que baja el cañón) con cada recámara:
+ * vacía (el ánima oscura que se pierde hacia adentro, con las estrías en la M79), con un cartucho o una granada sin tirar
+ * (el culote con el fulminante sano) o con la vaina servida (el fulminante marcado y hollín alrededor). Mientras la mano
+ * mete uno, se lo ve entrar a lo largo del cañón. e.recamaras y e.metiendo los arma Jugador.estadoArma (js/jugador.js).
+ * Q: { x: la cara de atrás (cm), ys: el centro de cada recámara, de la 0 (este lado) en adelante, rCanon, rAnima,
+ *      escorzo: el ancho de la elipse abierta del todo, calibre: la clave en CALIBRES (js/municion.js), estrias, tonos: [luz, base, sombra] } */
+// Tubo con volumen: degradé de cilindro de arriba abajo (luz arriba, sombra abajo) y el canto oscuro
+function tuboCm(ctx, x0, x1, yc, r0, r1, tonos, op = {}) {
+  const trazar = () => { ctx.beginPath(); ctx.moveTo(x0, yc - r0); ctx.lineTo(x1, yc - r1); ctx.lineTo(x1, yc + r1); ctx.lineTo(x0, yc + r0); ctx.closePath(); };
+  trazar();
+  if (Pincel.silueta) { ctx.fillStyle = Pincel.silueta; ctx.fill(); return; }
+  const r = Math.max(r0, r1), g = ctx.createLinearGradient(0, yc - r, 0, yc + r);
+  g.addColorStop(0, tonos[1]); g.addColorStop(0.16, tonos[0]); g.addColorStop(0.3, tonos[1]); g.addColorStop(0.72, tonos[2]); g.addColorStop(1, ajustarColor(tonos[2], -0.35));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = op.canto || 'rgba(8,9,11,0.7)'; ctx.lineWidth = op.ancho || 0.1; ctx.stroke();
+}
+// El culote de un cartucho o de una granada visto de atrás en escorzo: reborde, fulminante (marcado si está servido)
+function culoteEnEscorzo(ctx, x, y, rx, cal, servida) {
+  const r = cal.d / 2, T = cal.forma === 'granada' ? TONOS_MUNICION.aluminio : TONOS_MUNICION.laton;
+  const g = ctx.createLinearGradient(0, y - r, 0, y + r);
+  g.addColorStop(0, T[0]); g.addColorStop(0.45, T[1]); g.addColorStop(1, T[2]);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, rx, r * 1.04, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = ajustarColor(T[2], -0.3); ctx.lineWidth = 0.06; ctx.stroke();
+  ctx.strokeStyle = 'rgba(40,30,10,0.35)'; ctx.beginPath(); ctx.ellipse(x, y, rx * 0.8, r * 0.82, 0, 0, Math.PI * 2); ctx.stroke();   // el escalón del reborde
+  if (servida) { ctx.fillStyle = 'rgba(28,22,16,0.45)'; ctx.beginPath(); ctx.ellipse(x, y, rx * 0.55, r * 0.5, 0, 0, Math.PI * 2); ctx.fill(); }   // hollín
+  const rf = cal.forma === 'granada' ? r * 0.2 : r * 0.24;
+  ctx.fillStyle = servida ? '#9c8a6a' : '#d9d6cf'; ctx.beginPath(); ctx.ellipse(x, y, rx * 0.3, rf, 0, 0, Math.PI * 2); ctx.fill();   // fulminante
+  if (servida) { ctx.fillStyle = '#2a2218'; ctx.beginPath(); ctx.ellipse(x - rx * 0.05, y, rx * 0.12, rf * 0.42, 0, 0, Math.PI * 2); ctx.fill(); }   // la marca del percutor
+  else { ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(x - rx * 0.08, y - rf * 0.35, rx * 0.1, rf * 0.25, 0, 0, Math.PI * 2); ctx.fill(); }
+}
+// La cara de atrás de los cañones, con lo que hay en cada recámara, y el que está entrando
+function caraQuiebre(ctx, e, Q) {
+  if (Pincel.silueta || e.abierto <= 0.03) return;
+  const cal = CALIBRES[Q.calibre];   // js/municion.js se carga después de este archivo
+  const rx = Q.escorzo * (0.35 + 0.65 * e.abierto), orden = Q.ys.map((y, k) => k).reverse();   // la de atrás primero
+  for (const k of orden) {   // la cara de acero de cada cañón
+    const y = Q.ys[k], g = ctx.createLinearGradient(0, y - Q.rCanon, 0, y + Q.rCanon);
+    g.addColorStop(0, ajustarColor(Q.tonos[0], 0.12)); g.addColorStop(0.5, Q.tonos[1]); g.addColorStop(1, Q.tonos[2]);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(Q.x, y, rx, Q.rCanon, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(8,9,11,0.7)'; ctx.lineWidth = 0.08; ctx.stroke();
+  }
+  for (const k of orden) {
+    const y = Q.ys[k], estado = e.metiendo && e.metiendo.k === k ? null : e.recamaras ? e.recamaras[k] : null;
+    const ra = Q.rAnima, rxa = rx * 0.86;
+    if (estado) { culoteEnEscorzo(ctx, Q.x - 0.06, y, rxa * 1.02, cal, estado === 'servida'); continue; }
+    // Vacía: la boca de la recámara y el ánima que se oscurece hacia adentro
+    const g = ctx.createRadialGradient(Q.x + rxa * 0.3, y + ra * 0.15, 0, Q.x, y, ra);
+    g.addColorStop(0, '#000'); g.addColorStop(0.55, '#0b0c0e'); g.addColorStop(0.85, '#26292e'); g.addColorStop(1, '#5d636b');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(Q.x, y, rxa, ra, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(220,225,232,0.35)'; ctx.lineWidth = 0.05; ctx.beginPath(); ctx.ellipse(Q.x, y, rxa * 0.62, ra * 0.68, 0, Math.PI * 0.9, Math.PI * 1.6); ctx.stroke();   // el brillo del ánima
+    if (Q.estrias) { ctx.strokeStyle = 'rgba(150,158,168,0.35)'; ctx.lineWidth = 0.05;
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(Q.x + Math.cos(a) * rxa * 0.92, y + Math.sin(a) * ra * 0.92); ctx.lineTo(Q.x + Math.cos(a + 0.5) * rxa * 0.55, y + Math.sin(a + 0.5) * ra * 0.55); ctx.stroke(); } }
+  }
+  if (e.metiendo && Q.ys[e.metiendo.k] !== undefined) {   // entra a lo largo del eje: lo de adentro lo tapa el cañón (recorte)
+    const y = Q.ys[e.metiendo.k], L = cal.vaina + cal.punta, xb = Q.x - 0.06 - (1 - e.metiendo.avance) * L;   // de la punta en la boca a adentro del todo
+    ctx.save(); ctx.beginPath(); ctx.rect(xb - 1, y - Q.rCanon * 2, Q.x - xb + 1, Q.rCanon * 4); ctx.clip();
+    ctx.save(); ctx.translate(xb, y); dibujarCartucho(ctx, cal); ctx.restore();
+    ctx.restore();
+    culoteEnEscorzo(ctx, xb, y, rx * 0.86, cal, false);
+  }
+}
+
 // Escopeta de dos cañones yuxtapuestos con martillos a la vista (101 cm), tipo «coach gun», calcada de una foto:
 // culata recta de madera rojiza con el abultamiento bajo la garganta, báscula y platinas de acero con los dos
 // martillos, guardamonte con los dos disparadores, cañones negros largos con la banda de arriba y el guion, y la
@@ -6893,17 +6957,26 @@ reemplazar('recortada', { casquillo: null, casquilloVaciado: 'escopeta', agarre:
     if (abierta) accion();
     // Cañones y delantera: giran alrededor de la bisagra
     ctx.save(); ctx.translate(bx, by); ctx.rotate(e.abierto * 0.6); ctx.translate(-bx, -by);
-    pintar(ctx, F.canon, '#1c1e21', { brillo: 0.5 });
-    pintar(ctx, F.boca, '#24262a', { brillo: 0.4 });
-    pintar(ctx, F.banda, '#2a2c30');
-    if (!sil) { trazo(ctx, 'rgba(255,255,255,0.18)', 0.2, [P(305, 188), P(650, 189)]); trazo(ctx, 'rgba(0,0,0,0.5)', 0.14, [P(302, 192.5), P(658, 192)]); }
-    punto(ctx, ...P(652, 183.5), 0.28, '#d8d0b8');                                                                     // guion
-    if (abierta && !sil) for (const [y, dx] of [[188, 0], [196, 1.2]]) { ctx.fillStyle = '#0a0a0c'; ctx.beginPath(); ctx.ellipse(...P(300 + dx, y), 0.3, 0.75, 0, 0, Math.PI * 2); ctx.fill(); }
+    // Los dos cañones (pedido de Enzo: «mejores los gráficos del cañón»): el de enfrente asoma arriba del de este lado,
+    // cada uno con su volumen de acero pavonado; arriba, la banda con el guion, y en la boca el canto de cada uno
+    const Q = DIBUJO_ARMAS.recortada.quiebre, [xb, xm] = [Q.x, E3(660, 0)[0]], PAV = ['#6c7380', '#30353d', '#15171b'];
+    for (const k of [1, 0]) tuboCm(ctx, xb, xm, Q.ys[k], Q.rCanon, 1.04, PAV);
+    if (!sil) {
+      ctx.fillStyle = '#23262b'; ctx.fillRect(xb + 1.2, Q.ys[1] - 1.24, xm - xb - 1.6, 0.26);                        // banda de arriba
+      ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(xb + 1.2, Q.ys[1] - 1.24, xm - xb - 1.6, 0.07);
+      for (const k of [1, 0]) { ctx.fillStyle = '#0d0e10'; ctx.beginPath(); ctx.ellipse(xm, Q.ys[k], 0.16, 1.02, 0, 0, Math.PI * 2); ctx.fill(); }   // canto de la boca
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 0.1; ctx.beginPath(); ctx.moveTo(xb + 0.5, Q.ys[0] - Q.rCanon + 0.05); ctx.lineTo(xm, Q.ys[0] - 1.0); ctx.stroke();   // donde se juntan
+    }
+    punto(ctx, xm - 0.8, Q.ys[1] - 1.42, 0.28, '#d8d0b8');                                                          // guion
+    caraQuiebre(ctx, e, Q);
     pintar(ctx, F.delantera, MAD, { lustre: true });
     pintar(ctx, F.hierro, ACERO, { brillo: 0.4 });
     ctx.restore();
     if (!abierta) accion();
   } });
+// Cañones para js/jugador.js (estadoArma, puntoRecamara) y caraQuiebre: el 0 es el de este lado, el que tira primero
+DIBUJO_ARMAS.recortada.quiebre = { x: E3(300, 0)[0], ys: [E3(0, 192.5)[1], E3(0, 192.5)[1] - 1.18], rCanon: 1.2, rAnima: 0.98, escorzo: 0.5,
+  calibre: '12', bisagra: E3_BISAGRA, giro: 0.6, tonos: ['#8a919c', '#4d535c', '#24272c'] };
 DIBUJO_ARMAS.recortada.moviles = {
   manoDelantera: e => girarCm(...E3(400, 208), ...E3_BISAGRA, e.abierto * 0.6),
   cargador: e => girarCm(...E3(303, 192), ...E3_BISAGRA, e.abierto * 0.6),
@@ -7189,8 +7262,14 @@ reemplazar('m79', { casquillo: null, casquilloVaciado: 'granada40',
     };
     if (abierta) bascula();
     ctx.save(); ctx.translate(bx, by); ctx.rotate(e.abierto * 0.6); ctx.translate(-bx, -by);
-    pintar(ctx, F.canon, ALU, { brillo: 0.55 });
-    if (!sil) { trazo(ctx, 'rgba(255,255,255,0.45)', 0.5, [P(550, 196), P(900, 196)]); trazo(ctx, 'rgba(40,44,50,0.35)', 0.4, [P(550, 226), P(900, 226)]); }
+    // Cañón de aluminio de 40 mm (pedido de Enzo: que se vea mejor): cilindro con su luz, el anillo de acero de atrás
+    // (el que traba la báscula) y el labio de la boca
+    const Q = DIBUJO_ARMAS.m79.quiebre, yc = Q.ys[0], xm = P(911, 0)[0], ALUS = ['#e2e6eb', '#a4abb4', '#646b74'];
+    tuboCm(ctx, Q.x, xm - 0.7, yc, Q.rCanon, Q.rCanon, ALUS);
+    tuboCm(ctx, xm - 0.75, xm, yc, Q.rCanon + 0.06, Q.rCanon - 0.08, ['#c9ced5', '#8c939c', '#555b63']);            // labio de la boca
+    tuboCm(ctx, Q.x, Q.x + 1.1, yc, Q.rCanon + 0.05, Q.rCanon + 0.05, ['#a9afb6', '#6f757d', '#3e4248']);             // anillo de acero
+    if (!sil) { for (const x of [Q.x + 1.1, xm - 0.75]) trazo(ctx, 'rgba(20,22,26,0.5)', 0.08, [[x, yc - Q.rCanon], [x, yc + Q.rCanon]]);
+      ctx.fillStyle = '#16171a'; ctx.beginPath(); ctx.ellipse(xm, yc, 0.2, Q.rCanon - 0.1, 0, 0, Math.PI * 2); ctx.fill(); }   // canto de la boca
     pintar(ctx, suave(M79F([[888, 150], [904, 160], [904, 177], [888, 177]]), 0.2, 2), '#2a2c30');                   // guion
     pintar(ctx, F.chapa, ACERO, { brillo: 0.3, huecos: [M79F([[597, 233], [640, 233], [640, 250], [597, 250]])] });
     punto(ctx, ...P(598, 252), 0.3, '#4a4f55');
@@ -7201,11 +7280,13 @@ reemplazar('m79', { casquillo: null, casquilloVaciado: 'granada40',
     pintar(ctx, suave(M79F([[698, 152], [726, 152], [726, 172], [698, 172]]), 0.25, 2), '#2a2c30');
     if (!sil) { trazo(ctx, '#2a2c30', 0.32, [P(705, 18), P(705, 152)]); trazo(ctx, '#2a2c30', 0.32, [P(709, 18), P(709, 152)]); }
     punto(ctx, ...P(707, 15), 0.45, '#2a2c30'); punto(ctx, ...P(707, 57), 0.4, '#2a2c30');
-    if (abierta && !sil) { ctx.fillStyle = '#0a0a0c'; ctx.beginPath(); ctx.ellipse(...P(545, 205), 0.6, 2.0, 0, 0, Math.PI * 2); ctx.fill(); }   // recámara a la vista
+    caraQuiebre(ctx, e, Q);   // abierta: la recámara vacía, la granada o la vaina servida
     ctx.restore();
     if (!abierta) bascula();
   } });
 DIBUJO_ARMAS.m79.culataCm = 33;
+DIBUJO_ARMAS.m79.quiebre = { x: M79(543, 0)[0], ys: [M79(0, 205)[1]], rCanon: 2.31, rAnima: 2.05, escorzo: 0.85, estrias: true,
+  calibre: '40mm', bisagra: M79_BISAGRA, giro: 0.6, tonos: ['#c9ced5', '#8d949d', '#545a62'] };
 DIBUJO_ARMAS.m79.moviles = {
   manoDelantera: e => girarCm(...M79(720, 262), ...M79_BISAGRA, e.abierto * 0.6),
   cargador: e => girarCm(...M79(545, 205), ...M79_BISAGRA, e.abierto * 0.6),
@@ -8315,9 +8396,19 @@ function dibujarCartucho(ctx, cal, op = {}) {
     cilindro(T.laton, r, () => ctx.rect(0.16, -r, 1.34, cal.d));
     cilindro(T.laton, r * 1.07, () => ctx.rect(0, -r * 1.07, 0.2, cal.d * 1.07));   // reborde
     raya(1.5, r, 0.3);
+    if (op.servida) {   // servido: el cierre en estrella se abrió (la boca, más oscura y un poco ensanchada)
+      cilindro(T.plastico, r, () => ctx.rect(v - 0.5, -r, 0.5, cal.d));
+      ctx.fillStyle = 'rgba(20, 8, 6, 0.45)'; ctx.fillRect(v - 0.12, -r * 0.8, 0.12, r * 1.6);
+    }
     return;
   }
   if (cal.forma === 'granada') {    // 40 mm: vaina corta de aluminio, cuerpo verde y ojiva dorada
+    if (op.servida) {   // la vaina sola, ya tirada: la boca abierta con hollín por dentro
+      cilindro(T.aluminio, r, () => ctx.rect(0.2, -r, v - 0.2, cal.d));
+      cilindro(T.aluminio, r * 1.04, () => ctx.rect(0, -r * 1.04, 0.3, cal.d * 1.04));
+      ctx.fillStyle = 'rgba(30, 26, 20, 0.55)'; ctx.fillRect(v - 0.35, -r * 0.92, 0.35, r * 1.84);
+      return;
+    }
     const c0 = v, c1 = v + cal.punta * 0.34, fin = v + cal.punta;
     cilindro(T.oro, r * 0.96, () => { ctx.moveTo(c1, -r * 0.96); ctx.bezierCurveTo(c1 + (fin - c1) * 0.62, -r * 0.96, fin, -r * 0.52, fin, 0); ctx.bezierCurveTo(fin, r * 0.52, c1 + (fin - c1) * 0.62, r * 0.96, c1, r * 0.96); });
     cilindro(T.oliva, r * 0.98, () => ctx.rect(c0 - 0.05, -r * 0.98, c1 - c0 + 0.1, cal.d * 0.98));
@@ -10587,6 +10678,7 @@ class Jugador {
     this.indiceArma = 0;
     this.municion = { [ARMA_INICIAL]: ARMAS[ARMA_INICIAL].cargador };
     this.reserva = {};                 // solo las especiales tienen reserva finita
+    this.servidas = {};                // armas de quiebre: vainas servidas que quedaron en los cañones (salen al abrirla)
     this.recarga = null;               // línea de tiempo de la recarga en curso
     this.ciclo = null;                 // línea de tiempo del accionamiento después de un tiro
     this.sinCargador = false;          // el arma está sin cargador, a mitad de la recarga
@@ -10752,6 +10844,16 @@ class Jugador {
     return { x: this.x + this.direccion * K * (e.origen.x + a.x * c - a.y * s), y: this.y + K * (e.origen.y + a.x * s + a.y * c + this.agachado * BAJA_AGACHADO) };
   }
 
+  // Posición en el mundo de la recámara k de un arma de quiebre, con los cañones girados como estén, y el ángulo del eje
+  puntoRecamara(k) {
+    const d = DIBUJO_ARMAS[this.arma().id], Q = d && d.quiebre;
+    if (!Q) return Object.assign(this.puntoArma('cargador'), { ang: 0 });
+    const e = this.estadoArma(), a = e.abierto * Q.giro, [bx, by] = Q.bisagra, rx = Q.x - bx, ry = Q.ys[k] - by;
+    const cx = (bx + rx * Math.cos(a) - ry * Math.sin(a)) * CM, cy = (by + rx * Math.sin(a) + ry * Math.cos(a)) * CM;
+    const K = ESCALA_JUGADOR, c = Math.cos(e.incl), s = Math.sin(e.incl);
+    return { x: this.x + this.direccion * K * (e.origen.x + cx * c - cy * s), y: this.y + K * (e.origen.y + cx * s + cy * c + this.agachado * BAJA_AGACHADO), ang: e.incl + a };
+  }
+
   // Golpe cuerpo a cuerpo: alza, baja de golpe (ahí pega) y vuelve a la guardia
   golpear(juego) {
     const arma = this.arma(), ahora = juego.ahora;
@@ -10777,6 +10879,7 @@ class Jugador {
     if (this.municionActual() <= 0) { Audio_.vacio(); this.ultimoDisparo = ahora; return false; }
     if (!this.montada && arma.categoria === 'granada') { this.ultimoDisparo = ahora; this.iniciarLanzamiento(juego, arma); return true; }
     if (this.montada) this.montada.municion--; else this.municion[arma.id]--;
+    if (!this.montada && arma.recargaTipo === 'quiebre') this.servidas[arma.id] = Math.min(arma.cargador, (this.servidas[arma.id] || 0) + 1);   // la vaina queda en el cañón
     this.ultimoDisparo = ahora; this.tiroEn = ahora;
     this.retroceso = 1;
     const boca = this.puntoArma('boca'), expulsion = this.puntoArma('expulsion');
@@ -11020,11 +11123,19 @@ class Jugador {
         l.fase('volver', 160, { a: 'arma', incl: 0 });
         break;
 
-      case 'quiebre': {   // se parte, boca arriba saltan los gastados, entran los nuevos y se cierra de un golpe
-        const gastados = arma.cargador - this.municionActual();
-        l.fase('abrir', 280, { a: 'arma', llegada: 0.4, ab: 1, incl: 0.3, sonidos: sonidoArranque('abrir', 0.4) });
-        l.fase('vaciar', 240, { a: 'arma', incl: -0.35, eventos: [[0.45, () => juego.expulsarCasquillos(this, gastados)]] });
-        deAUna(gastados, (T - 760) / arma.cargador, 0.3, unidad, unidad === 'granada40' ? 'cargador-poner' : 'cartucho');
+      case 'quiebre': {   // se parte (al terminar de abrir, el expulsor tira las vainas servidas), entran los nuevos y se cierra de un golpe
+        // Pedido de Enzo: si no se tiró, al abrir no sale nada; las servidas salen volando hacia atrás y caen al piso
+        // (Juego.expulsarRecamaras); cada cartucho o granada nueva se ve entrar en su cañón (fase con `meter`: desde
+        // ahí lo dibuja el arma, js/armas-modelos-3.js: caraQuiebre)
+        const gastados = arma.cargador - this.municionActual(), servidas = Math.min(this.servidas[arma.id] || 0, gastados);
+        l.fase('abrir', 280, { a: 'arma', llegada: 0.4, ab: 1, incl: 0.3, sonidos: sonidoArranque('abrir', 0.4),
+          eventos: [[0.9, () => { if (servidas) (juego.expulsarRecamaras ? juego.expulsarRecamaras(this, servidas) : juego.expulsarCasquillos(this, servidas)); this.servidas[arma.id] = 0; }]] });
+        l.fase('vaciar', 240, { a: 'arma', incl: -0.35 });
+        // La mano trae el cartucho tomado del culote, en línea con el cañón, con la punta en la boca, y lo empuja adentro (desde
+        // ahí lo dibuja el arma): así se lo ve entrar, en vez de quedar tapado por la mano
+        const Lu = largoCartucho(calibreDe(arma.id)) * CM, eje = 0.3 + (DIBUJO_ARMAS[arma.id].quiebre ? DIBUJO_ARMAS[arma.id].quiebre.giro : 0.6);
+        deAUna(gastados, (T - 760) / arma.cargador, 0.3, unidad, unidad === 'granada40' ? 'cargador-poner' : 'cartucho',
+          { mano: [[unidad, 0, 0.7]], meter: 0.7, gesto: 'empuja', offset: { x: -Math.cos(eje) * Lu, y: -Math.sin(eje) * Lu } });
         l.fase('cerrar', 240, { a: 'arma', llegada: 0.3, ab: 0, snap: 0.25, incl: 0, sonidos: sonidoLlegada('cerrar', 0.3, 0.25) });
         if (arma.id === 'recortada') {   // martillos exteriores (pedido de Enzo): cerrada, el pulgar monta los que cayeron, uno por uno
           const caidos = martillosRecortada(this.municionActual(), arma.cargador);
@@ -11077,7 +11188,7 @@ class Jugador {
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = arma.reservaInicial;
       if (!this.montada) { this.indiceArma = this.inventario.indexOf(armaId); this.cancelarRecarga(); }
     } else {
-      this.municion[armaId] = arma.cargador;
+      this.municion[armaId] = arma.cargador; this.servidas[armaId] = 0;   // cargada de nuevo: sin vainas servidas adentro
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = (this.reserva[armaId] || 0) + arma.reservaInicial;
     }
     return nueva;
@@ -11170,6 +11281,11 @@ class Jugador {
       if (trabado && MANIJA_CON_CERROJO.has(arma.id) && e.cerrojo >= 1) e.corredera = 1;   // la perilla de la Thompson quedó atrás con él
     }
     if (!this.montada && arma.id === 'recortada') e.martillos = this.recarga && this.recarga.inicial.martillos ? this.recarga.inicial.martillos.slice() : martillosRecortada(municion, arma.cargador);
+    // Armas de quiebre: qué hay en cada cañón (se ve al abrirla). Tira primero el 0; los vacíos se llenan del último al primero
+    if (!this.montada && arma.recargaTipo === 'quiebre') {
+      const n = arma.cargador, disparadas = n - municion, servidas = Math.min(this.servidas[arma.id] || 0, disparadas);
+      e.recamaras = Array.from({ length: n }, (_, k) => k >= disparadas ? 'viva' : k < servidas ? 'servida' : null);
+    }
     if (!this.montada && arma.recargaTipo === 'granada' && (municion === 0 || this.granadaFuera)) e.sinCargador = true;
     e.sinPasador = !!this.pasadorFuera;
     if (!this.montada && arma.recargaTipo === 'cohete' && municion === 0) e.sinCargador = true;     // ya salió el cohete: el tubo queda vacío hasta recargar
@@ -11284,7 +11400,7 @@ class Jugador {
     };
     const finDe = k => {
       if (k < 0) return punto('arma');
-      const fk = linea.fases[k], b = punto(fk.a), o = desplazamiento(fk, 1);
+      const fk = linea.fases[k], b = punto(fk.a), o = fk.meter ? { x: 0, y: 0 } : desplazamiento(fk, 1);   // la que mete un cartucho termina en la boca
       return { x: b.x + o.x, y: b.y + o.y };
     };
     const inicio = finDe(i - 1), destino = punto(f.a);
@@ -11296,6 +11412,12 @@ class Jugador {
     e.mano.y += comba; e.mano.x -= comba * 0.3;
 
     if (f.mano) for (const [objeto, desde, hasta] of f.mano) if (p >= desde && (p < hasta || hasta >= 1)) { e.enMano = objeto; break; }
+    // El cartucho o la granada que la mano está metiendo: desde que llega a la boca de la recámara lo dibuja el arma
+    if (f.meter && e.enMano) e.porCulote = true;   // armas de quiebre: el cartucho va tomado de atrás (js/jugador-dibujo.js)
+    if (f.meter && e.recamaras && p >= f.meter) { const k = arma.cargador - municion - 1; if (k >= 0) {
+      e.metiendo = { k, avance: suavizar(limitar((p - f.meter) / (0.97 - f.meter), 0, 1)) };
+      if (f.offset) { e.mano.x -= f.offset.x * e.metiendo.avance; e.mano.y -= f.offset.y * e.metiendo.avance; }   // la mano acompaña al cartucho hasta la boca
+    } }
     e.cargadorNuevo = f.nombre !== 'sacar' && f.nombre !== 'soltar';   // el que se saca está vacío; el que se pone, lleno
     if (f.rotMano) e.rotMano = f.rotMano[0] + (f.rotMano[1] - f.rotMano[0]) * suavizar(limitar((p - 0.5) / 0.5, 0, 1));
     if (f.peine && (pm >= 1 || f.enBloque)) {   // el de láminas suelta las balas de a una; el en bloque baja entero con el pulgar (cm)
@@ -12224,7 +12346,10 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   pintarBrazo(ctx, cerca, C);
   if (cerca.capas === 'objeto') pintarMano(ctx, cerca, C, 'atras');
   if (cargadorEnMano) { if (cargadorEnMano.encima) dibujarCargadorEnMano(); }
-  else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.apuntaMano, e.cajaNueva, arma.id);
+  else if (e.enMano && e.porCulote) {   // tomado del culote: el cartucho entero queda adelante de la mano (armas de quiebre)
+    const m = largoCartucho(calibreDe(arma.id)) * CM / 2;
+    dibujarUnidad(ctx, e.enMano, e.mano.x + Math.cos(e.apuntaMano) * m, e.mano.y + Math.sin(e.apuntaMano) * m, e.apuntaMano, e.cajaNueva, arma.id);
+  } else if (e.enMano) dibujarUnidad(ctx, e.enMano, e.mano.x, e.mano.y, e.apuntaMano, e.cajaNueva, arma.id);
   pintarMano(ctx, cerca, C, cerca.capas ? 'adelante' : null);
 };
 
@@ -14730,11 +14855,13 @@ class Casquillo {
     const [, laton, latonSombra] = TONOS_MUNICION.laton, rojo = TONOS_MUNICION.plastico[1];
     switch (this.tipo) {
       case 'pistola':  bloque(ctx, -1.0, -0.45, 2.0, 0.9, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-1.0, -0.45, 0.3, 0.9); break;
-      case 'escopeta': bloque(ctx, -2.2, -0.8, 4.4, 1.6, rojo); ctx.fillStyle = laton; ctx.fillRect(-2.2, -0.8, 1.1, 1.6); break;
+      case 'escopeta': case 'granada40': {   // el cartucho del 12 o la vaina de 40 mm servidos, dibujados como la munición (a escala)
+        const cal = CALIBRES[this.tipo === 'escopeta' ? '12' : '40mm'], K = ESCALA_JUGADOR * CM;
+        ctx.scale(K, K); ctx.translate(-cal.vaina / 2, 0); dibujarCartucho(ctx, cal, { servida: true }); break;
+      }
       case 'grande':   bloque(ctx, -3.0, -0.8, 6.0, 1.6, laton); ctx.fillStyle = latonSombra; ctx.fillRect(-3.0, -0.8, 0.5, 1.6); ctx.fillRect(1.6, -0.5, 1.4, 1.0); break;
       case 'cargador': bloque(ctx, -1.0, -5.2, 2.0, 10.4, '#222'); ctx.fillStyle = '#555'; ctx.fillRect(-1.0, 4.4, 2.0, 0.8); break;
       case 'cargadorPistola': bloque(ctx, -0.8, -3.4, 1.6, 6.8, '#222'); ctx.fillStyle = '#444'; ctx.fillRect(-1.0, 2.8, 2.0, 0.7); break;
-      case 'granada40': bloque(ctx, -1.7, -1.4, 3.4, 2.8, TONOS_MUNICION.aluminio[1]); ctx.fillStyle = TONOS_MUNICION.aluminio[2]; ctx.fillRect(-1.7, -1.4, 0.5, 2.8); break;   // la vaina corta de aluminio
       case 'peine':    bloque(ctx, -0.3, -2.2, 0.6, 4.4, TONOS_MUNICION.acero[1]); break;                                                                                       // la lámina del peine
       case 'pasador':  ctx.beginPath(); ctx.arc(-1.4, 0, 2.0, 0, Math.PI * 2); ctx.strokeStyle = '#b8b8b8'; ctx.lineWidth = 0.7; ctx.stroke(); bloque(ctx, 0.4, -0.3, 3.8, 0.6, '#9a9a9a'); break;   // anilla y pasador
       case 'tambor':   esfera(ctx, 0, 0, 6.5, '#1e2226'); bloque(ctx, -2, -8, 4, 3, '#2b2f33'); break;
@@ -15082,6 +15209,19 @@ class Juego {
     const p = jugador.puntoArma('cargador');
     const tipo = DIBUJO_ARMAS[jugador.arma().id].casquilloVaciado || 'bala';
     for (let k = 0; k < cuantos; k++) this.casquillos.push(new Casquillo(p.x + (Math.random() - 0.5) * 4, p.y, jugador.direccion, tipo, true));
+  }
+
+  // Armas de quiebre (escopeta de dos caños, M79): al terminar de abrirla, el expulsor tira las vainas servidas de los
+  // cañones 0..cuantas-1: salen volando hacia atrás por el eje del cañón, girando, y caen al piso como cualquier vaina
+  expulsarRecamaras(jugador, cuantas) {
+    const tipo = DIBUJO_ARMAS[jugador.arma().id].casquilloVaciado || 'escopeta';
+    for (let k = 0; k < cuantas; k++) {
+      const p = jugador.puntoRecamara(k), v = 2.6 + Math.random() * 1.2, c = new Casquillo(p.x, p.y, jugador.direccion, tipo);
+      c.vx = -jugador.direccion * Math.cos(p.ang) * v + (Math.random() - 0.5) * 0.4;
+      c.vy = -Math.sin(p.ang) * v - 1.2 - Math.random() * 0.8;
+      c.rot = jugador.direccion > 0 ? p.ang : Math.PI - p.ang; c.vrot = -jugador.direccion * (0.18 + Math.random() * 0.2);
+      this.casquillos.push(c);
+    }
   }
 
   /* ---------- Avisos ---------- */
