@@ -511,6 +511,7 @@
     if (!juego) return;
     if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
     if (juego.enTienda) { if ((e.code === 'Escape' || tecla === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
+    if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
     if ((juego.pruebas || juego.entrenamiento) && tecla === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
     if (menuPruebasAbierto) {
       if (armaEnDetalle) {   // en la ficha: Esc vuelve a la lista, Enter la usa
@@ -550,6 +551,7 @@
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
       case 'KeyT':       if (!e.repeat && juego.ultra) juego.comprarTorreta(); break;
       case 'KeyB':       if (!e.repeat && juego.ultra) juego.alternarTienda(); break;
+      case 'KeyV':       if (!e.repeat && juego.bunker) juego.usarBotiquin(); break;   // botiquín comprado en el búnker
       case 'KeyQ': case 'KeyG': if (!e.repeat) { j.cambiarArma(-1); if (juego.pruebas) j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;   // en pruebas, lista para disparar aunque haya cámara lenta
       case 'KeyE': case 'KeyH': if (!e.repeat) { j.cambiarArma(1); if (juego.pruebas) j.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;
       default:
@@ -574,7 +576,7 @@
   // Rueda del mouse: arma anterior / siguiente (con un respiro para que un giro no salte varias)
   let ultimaRueda = 0;
   window.addEventListener('wheel', e => {
-    if (!juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.estrategia) return;
+    if (!juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.estrategia || (juego.bunker && juego.bunker.abierto)) return;
     const ahora = performance.now();
     if (ahora - ultimaRueda < 120) return;
     ultimaRueda = ahora;
@@ -595,7 +597,7 @@
       if (pausado || juego.terminado || sobreControl(e) || e.target.closest('#panel-bastion')) return;
       const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'down', e.button); e.preventDefault(); return;
     }
-    if (e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || sobreControl(e)) return;
+    if (e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
     if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
     else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }
   });

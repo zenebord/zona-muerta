@@ -185,6 +185,7 @@ class Zombie {
   recibirDano(cantidad, direccion, arma, juego) {
     if (this.estado === 'muerto') return;
     if (this.dormido) this.despertar(juego, juego.jugador);
+    if (juego.mejoras && arma && juego.mejoras[arma.id]) cantidad *= multiplicadorMejora(juego.mejoras[arma.id]);   // mejoras del búnker (js/bunker.js)
     this.vida -= cantidad;
     // El fuego pega muchas veces por segundo con poco daño: sin destello, ruido de impacto, empujón ni sangre en cada llama
     const fuego = arma && arma.fuego;

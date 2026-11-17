@@ -22,6 +22,7 @@ const ACCIONES_TECLADO = [
   { id: 'ataqueAereo', teclas: ['KeyA'] },
   { id: 'pausa', teclas: ['KeyP'] },
   { id: 'tienda', teclas: ['KeyB'] },
+  { id: 'botiquin', teclas: ['KeyV'] },
   { id: 'torreta', teclas: ['KeyT'] },
   { id: 'menuPruebas', teclas: ['KeyC'] },
   { id: 'zombie', teclas: ['KeyZ'] },
@@ -32,7 +33,7 @@ const ACCIONES_TECLADO = [
 const SECCIONES_TECLADO = [
   ['mover', ['derecha', 'izquierda', 'saltar', 'abajo']],
   ['armas', ['disparar', 'recargar', 'mira', 'armaAnterior', 'armaSiguiente', 'grupo1', 'grupo2', 'grupo3', 'grupo4', 'grupo5', 'grupo6', 'grupo7']],
-  ['modos', ['ataqueAereo', 'pausa', 'tienda', 'torreta', 'menuPruebas', 'zombie', 'camaraLenta', 'borrar']],
+  ['modos', ['ataqueAereo', 'pausa', 'tienda', 'botiquin', 'torreta', 'menuPruebas', 'zombie', 'camaraLenta', 'borrar']],
 ];
 const TECLAS_PROHIBIDAS = new Set(['Escape', 'MetaLeft', 'MetaRight', 'OSLeft', 'OSRight', 'ContextMenu']);
 

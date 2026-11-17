@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=622052839e">
+  <link rel="stylesheet" href="css/estilos.css?v=b82338209f">
 </head>
 <body>
 
@@ -120,6 +120,7 @@
       <tr><td><kbd data-tecla-de="recargar">S</kbd> / <span data-t="controles.clicDerecho">clic derecho</span></td><td data-t="controles.recargar"></td></tr>
       <tr><td><kbd data-tecla-de="mira">D</kbd></td><td data-t="controles.mira"></td></tr>
       <tr><td><kbd data-tecla-de="ataqueAereo">A</kbd></td><td data-t="controles.ataqueAereo"></td></tr>
+      <tr><td><kbd data-tecla-de="botiquin">V</kbd></td><td data-t="controles.botiquin"></td></tr>
       <tr><td><kbd data-tecla-de="armaAnterior">Q</kbd> / <kbd data-tecla-de="armaSiguiente">E</kbd> · <kbd data-tecla-de="armaAnterior" data-ranura="1">G</kbd> / <kbd data-tecla-de="armaSiguiente" data-ranura="1">H</kbd></td><td data-t="controles.cambiar"></td></tr>
       <tr><td><kbd data-tecla-de="menuPruebas">C</kbd></td><td data-t-html="controles.c"></td></tr>
       <tr><td><kbd data-tecla-de="grupo1">1</kbd> … <kbd data-tecla-de="grupo7">7</kbd></td><td data-t="controles.grupos"></td></tr>
@@ -145,11 +146,13 @@
         <button id="hud-aereo" class="hud-aereo oculta" type="button" data-t-aria="hud.aereo.aria" aria-label="Pedir ataque aéreo"></button>
       </div>
       <div class="hud-centro">
+        <div id="hud-distancia" class="hud-distancia"></div>
         <div id="hud-mision" class="hud-mision"></div>
       </div>
       <div class="hud-der">
         <div id="hud-ronda" class="hud-ronda">RONDA 1</div>
         <div id="hud-bajas">☠ 0</div>
+        <div id="hud-dinero" class="hud-dinero"></div>
         <div id="hud-tiempo">00:00</div>
         <div id="hud-dificultad" class="hud-dificultad"></div>
       </div>
@@ -213,6 +216,7 @@
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
         <button class="boton-tactil pildora solo-ultra" data-tecla="KeyB" data-t="tactil.tienda">TIENDA</button>
+        <button class="boton-tactil pildora solo-botiquin" data-tecla="KeyV" data-t-aria="tactil.botiquin" aria-label="Usar botiquín">✚</button>
         <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
       </div>
     </div>
@@ -240,6 +244,28 @@
       <p id="tienda-dinero" class="tienda-dinero"></p>
       <div id="tienda-contenido" class="tienda-contenido"></div>
       <button class="boton chico" type="button" data-comprar="cerrar" data-t="tienda.seguir">SEGUIR</button>
+    </div>
+    <!-- Búnker de la pelea infinita (js/bunker.js): el comerciante, mejoras, armas y botiquines (pausa la partida) -->
+    <div id="bunker" class="capa capa-bunker oculta" role="dialog" aria-labelledby="bunker-titulo">
+      <div class="bunker-cabeza">
+        <h2 id="bunker-titulo" data-t="bunker.titulo">MEJORAS</h2>
+        <div class="bunker-cuenta"><span id="bunker-bajas">☠ 0</span><span id="bunker-dinero" class="dinero">$ 0</span></div>
+      </div>
+      <div class="bunker-medio">
+        <figure class="bunker-escena"><canvas id="bunker-escena" width="480" height="300" aria-hidden="true"></canvas><figcaption id="bunker-dice"></figcaption></figure>
+        <div class="bunker-detalle">
+          <div class="bunker-vista"><canvas id="bunker-arma" width="640" height="300" aria-hidden="true"></canvas></div>
+          <div id="bunker-accion" class="bunker-accion" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="bunker-pie">
+        <div class="bunker-pestanas" role="tablist">
+          <button type="button" role="tab" data-bunker="pestana:propias" data-t="bunker.tusArmas">TUS ARMAS</button>
+          <button type="button" role="tab" data-bunker="pestana:venta" data-t="bunker.venta">COMPRAR</button>
+          <button type="button" class="boton chico bunker-salir" data-bunker="salir" data-t="bunker.salir">SALIR DEL BÚNKER</button>
+        </div>
+        <div id="bunker-lista" class="bunker-lista"></div>
+      </div>
     </div>
     <div id="menu-pruebas" class="capa oculta">
       <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
@@ -450,14 +476,14 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=29069fcda8"></script>
+  <script src="js/version.js?v=146bb08972"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
   <script src="js/sonidos-armas.js?v=e377a1bd0a"></script>
   <script src="js/config.js?v=3e8b9d330b"></script>
   <script src="js/idioma.js?v=94620e694c"></script>
-  <script src="js/teclas.js?v=1f3ce9c429"></script>
+  <script src="js/teclas.js?v=004f7bb741"></script>
   <script src="js/audio.js?v=640ec87667"></script>
   <script src="js/musica.js?v=50afd150ca"></script>
   <script src="js/armas.js?v=9bc6b2c059"></script>
@@ -482,14 +508,15 @@
   <script src="js/anatomia.js?v=4cf570a5d0"></script>
   <script src="js/jugador-dibujo.js?v=d3a68a267e"></script>
   <script src="js/skins.js?v=92c4f293be"></script>
-  <script src="js/zombie.js?v=d9b871a67a"></script>
+  <script src="js/zombie.js?v=a8f807be2d"></script>
   <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
   <script src="js/zombie-congelado.js?v=7245dc0443"></script>
   <script src="js/objetos.js?v=b4bef41322"></script>
-  <script src="js/juego.js?v=675136458d"></script>
+  <script src="js/juego.js?v=4ea8b9847e"></script>
   <script src="js/poderes.js?v=93de692929"></script>
   <script src="js/armas-especiales.js?v=2df0a2414c"></script>
   <script src="js/defensa-ultra.js?v=54c14cb81a"></script>
+  <script src="js/bunker.js?v=2473a80906"></script>
   <script src="js/escenario-historia.js?v=3224c7c117"></script>
   <script src="js/zombies-autoctonos.js?v=77b31590fb"></script>
   <script src="js/historia.js?v=8bffdb3dff"></script>
@@ -504,7 +531,7 @@
   <script src="js/bastion-v2-ui.js?v=94fc2356c3"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=a4038893a6"></script>
-  <script src="js/interfaz.js?v=4a303d9a07"></script>
+  <script src="js/interfaz.js?v=c0f01b74c6"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>
