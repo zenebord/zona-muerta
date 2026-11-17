@@ -73,6 +73,11 @@ class Juego {
     if (this.ultra) this.prepararUltra();
     if (opciones.historia) this.prepararHistoria(opciones.historia);
     if (this.estrategia) this.prepararBastion();
+    // Pelea infinita (sin misión): distancia arriba y un búnker con un comerciante cada 300 m (js/bunker.js)
+    this.infinita = !mision && !opciones.historia && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !this.estrategia;
+    document.body.classList.toggle('en-infinita', this.infinita); document.body.classList.remove('con-botiquin');
+    document.getElementById('bunker').classList.add('oculta');   // por si se salió al menú con el búnker abierto
+    if (this.infinita) this.prepararBunkers();
     if (this.pruebas || this.entrenamiento) {
       for (const id of ORDEN_INVENTARIO) this.jugador.recoger(id);
       for (const id of ARMAS_ESPECIALES) this.jugador.reserva[id] = 999;
@@ -274,12 +279,14 @@ class Juego {
     this.bajas++;
     if (this.estrategia) this.dinero += (BASTION.zombies[zombie.tipoBastion] || BASTION.zombies.caminante).paga;
     if (this.ultra) this.cobrarZombieUltra(zombie);
+    if (this.bunker) this.cobrarZombieInfinita(zombie);
     if (this.mision) this.mision.alMatar(arma);
   }
 
   alternarMontar() {
     const j = this.jugador;
     if (j.muerto || this.torreta || this.ultra) return;
+    if (this.bunker && !j.montada && this.entrarBunker()) return;   // parado sobre un búnker: ↓ entra
     if (j.montada) { j.desmontar(); this.aviso(t('aviso.bajaste'), 1200); return; }
     for (const a of this.ametralladoras.values()) {
       if (a.cercaDe(j)) { j.montar(a); this.aviso(t('aviso.m2Montada'), 2200); return; }
@@ -585,6 +592,7 @@ class Juego {
   actualizar(dt) {
     if (this.estrategia) { this.ahora += dt * 1000; this.tiempoJugado += dt; this.actualizarBastion(dt); return; }
     if (this.enTienda) { this.actualizarHud(); return; }   // defensa ultra: con la tienda abierta, todo queda quieto
+    if (this.bunker && this.bunker.abierto) { this.actualizarBunkerAbierto(); this.actualizarHud(); return; }   // adentro del búnker, igual
     this.ahora += dt * 1000;
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
@@ -599,6 +607,7 @@ class Juego {
     e.dispararPulsado = false;
 
     this.prepararMontanas();
+    if (this.bunker) this.actualizarBunkers();
     this.aparecerZombies(dt);
     this.aparecerCajas(dt);
 
@@ -686,7 +695,7 @@ class Juego {
     const reserva = j.montada ? '∞' : (j.reserva[arma.id] === undefined ? '∞' : j.reserva[arma.id]);
     const mun = j.municionActual();
     const vidaActual = this.torreta || this.ultra ? Math.round(this.dificultad.vidaZombie * this.ajustesDeOla(Math.max(1, this.ronda)).vida) : this.dificultad.vidaZombie;
-    const tiros = disparosParaMatar(arma, vidaActual);
+    const tiros = disparosParaMatar(this.bunker ? this.armaMejorada(arma) : arma, vidaActual);   // con la mejora del búnker
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
     const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
@@ -698,6 +707,7 @@ class Juego {
       `<span class="municion ${mun <= 0 ? 'vacio' : ''}">${mun}</span> / ${reserva} ${estado}` +
       (j.montada ? '' : `<br><small>${t('hud.armas', { n: j.inventario.length })} · ${t(document.body.classList.contains('tactil') ? 'hud.cambiaTactil' : 'hud.cambiaTeclado')}</small>`);
     h.bajas.textContent = '☠ ' + this.bajas;
+    if (this.bunker) this.hudBunker();
     if (this.aereo) this.actualizarHudAereo();
     h.tiempo.textContent = formatearTiempo(this.tiempoJugado);
     const palabra = t(this.torreta || this.ultra ? 'ronda.ola' : 'ronda.ronda');
@@ -762,12 +772,14 @@ class Juego {
     for (const a of this.ametralladoras.values()) a.dibujar(ctx, cam, j.direccion, a.cercaDe(j), j.montada === a ? eM2.tapa : 0, j.montada === a ? eM2.retroX : 0, j.montada === a ? eM2.corredera : 0);
     if (this.ultra) this.dibujarEntidadesUltra(ctx, cam);   // cajas, torretas, zombies y tirador, del carril del fondo al de adelante
     else {
+      if (this.bunker) this.dibujarBunkers(ctx, cam);   // la boca de cada búnker y su luz verde (js/bunker.js)
       for (const c of this.cajas) c.dibujar(ctx, cam);
       for (const c of this.charcos) c.dibujar(ctx, cam, this.tiempoJugado);
       Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con hordas grandes (o calidad baja) se aliviana el dibujo de los zombies
       for (const z of this.zombies) z.dibujar(ctx, cam, this.ahora);
       Pincel.bisel = !Lienzo.liviano;
       if (!j.montada) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }
+      if (this.bunker) this.dibujarAvisoBunker(ctx, cam);
     }
     if (j.mira && j.objetivoMira && !j.muerto) (tipoMira(j.arma().id) === 'puntoRojo' ? dibujarMiraPuntoRojo : dibujarMiraTelescopica)(ctx, cam, j, this.ahora);   // tecla D
     for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) Fuego.cuerpo(ctx, cam, z, this.ahora);

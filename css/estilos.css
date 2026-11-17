@@ -975,3 +975,70 @@ body.en-bastion.bastion-v2 .bastion-info {
   #panel-bastion2 .boton { padding: 5px 14px; font-size: 12px; } #panel-bastion2 .b2-reglas { max-width: calc(100% - 230px); }
   .b2-fila { margin-bottom: 2px; } .b2-fila h4 { width: 58px; font-size: 8.5px; } .b2-ficha img { width: 27px; } .b2-detalle { min-height: 0; padding: 3px 10px; } .b2-detalle > img { width: 50px; }
 }
+
+/* ===== Pelea infinita: distancia arriba, dinero, botiquines y el búnker con el comerciante (js/bunker.js) ===== */
+.hud-centro { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.hud-distancia, .hud-dinero { display: none; }
+body.en-infinita .hud-distancia { display: block; text-align: center; padding: 2px 14px 3px; background: rgba(0,0,0,.45); border: 1px solid rgba(125,255,160,.45); }
+.hud-distancia b { font-size: 22px; letter-spacing: .06em; color: #fff; }
+.hud-distancia small { display: block; font-size: 11px; letter-spacing: .14em; color: #9dffb0; }
+body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
+.solo-botiquin { display: none; }
+.tactil.con-botiquin .extras-tactiles .solo-botiquin { display: flex; border-color: rgba(22,163,74,.9); color: #b8ffcb; font-size: 18px; }
+@media (max-width: 760px), (max-height: 460px) { .hud-distancia b { font-size: 14px; } .hud-distancia small { font-size: 8.5px; } }
+
+.capa-bunker { justify-content: safe center; gap: clamp(4px, 1.2vh, 10px); padding: clamp(6px, 1.6vh, 14px) 14px; background: radial-gradient(ellipse at 50% 0%, rgba(40,70,48,.96), rgba(8,12,10,.97) 70%); }
+.bunker-cabeza, .bunker-medio, .bunker-pie { width: min(1240px, 100%); }
+.bunker-cabeza { padding-left: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.capa-bunker .bunker-cabeza h2 { margin: 0; font-size: clamp(22px, 5.4vh, 42px); letter-spacing: .3em; color: #b8ffcb; text-shadow: 0 0 14px rgba(80,255,120,.45), 0 3px 0 #0b2414; }
+.bunker-cuenta { display: flex; gap: 16px; font-weight: 900; font-size: clamp(15px, 3.2vh, 24px); letter-spacing: .06em; }
+.bunker-cuenta .dinero { color: #8fe07a; }
+.bunker-medio { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr); gap: 10px; align-items: stretch; }
+.bunker-escena { margin: 0; position: relative; border: 1px solid rgba(157,255,176,.35); background: #111; }
+.bunker-escena canvas { display: block; width: 100%; height: auto; aspect-ratio: 480 / 300; }
+.bunker-escena figcaption { position: absolute; left: 8px; right: 8px; bottom: 6px; padding: 4px 8px; text-align: left; font-size: clamp(11px, 1.9vh, 14px); font-style: italic;
+  background: rgba(10,14,12,.8); border-left: 3px solid #7dffa0; color: #e8fff0; }
+.bunker-escena figcaption:empty { display: none; }
+.bunker-detalle { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid rgba(201,169,110,.4); background: rgba(20,16,24,.85); }
+.bunker-vista canvas { display: block; width: 100%; height: auto; aspect-ratio: 640 / 300; background: radial-gradient(ellipse at center, rgba(236,230,218,.16), rgba(236,230,218,.03) 70%); }
+.bunker-accion { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.bunker-accion h3 { margin: 0; font-size: clamp(16px, 3.2vh, 26px); letter-spacing: .05em; color: var(--luz); }
+.bunker-accion p { margin: 0; max-width: none; font-size: clamp(11px, 1.9vh, 14px); line-height: 1.35; }
+.bunker-accion .estrellas { color: #ffd27a; letter-spacing: .08em; font-weight: 700; }
+.bunker-accion .bunker-desc { opacity: .75; font-size: clamp(10px, 1.7vh, 12.5px); }
+.bunker-accion .aviso-bunker { color: #9dffb0; font-weight: 700; letter-spacing: .1em; }
+.boton-bunker { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: clamp(6px, 1.4vh, 11px) 14px; cursor: pointer;
+  font: inherit; font-weight: 900; letter-spacing: .12em; font-size: clamp(12px, 2.2vh, 17px); color: #eaffea; background: rgba(36,74,40,.92); border: 2px solid #8fe07a; }
+.boton-bunker b { color: #c8ffb0; letter-spacing: .04em; }
+.boton-bunker:hover:not([disabled]), .boton-bunker:focus-visible { background: #8fe07a; color: #10200f; outline: none; }
+.boton-bunker:hover:not([disabled]) b, .boton-bunker:focus-visible b { color: #10200f; }
+.boton-bunker[disabled] { cursor: default; opacity: .6; color: #d9cfc0; background: rgba(40,30,28,.85); border-color: #7a6a5a; }
+.boton-bunker[disabled] b { color: #ff9c88; }
+.boton-bunker.secundario { font-size: clamp(10px, 1.8vh, 13px); border-color: rgba(201,169,110,.6); background: rgba(30,26,22,.85); }
+.bunker-pestanas { display: flex; align-items: stretch; gap: 6px; margin-bottom: 6px; }
+.bunker-pestanas button[role="tab"] { font: inherit; font-weight: 700; letter-spacing: .14em; font-size: clamp(11px, 1.9vh, 14px); padding: 5px 16px; cursor: pointer;
+  color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.5); }
+.bunker-pestanas button[role="tab"].elegida { background: #7dffa0; color: #0d1a12; border-color: #7dffa0; }
+.bunker-pestanas .bunker-salir { margin-left: auto; padding: 5px 16px; font-size: clamp(11px, 1.9vh, 14px); letter-spacing: .14em; min-width: 0; width: auto; }
+.bunker-lista { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; overscroll-behavior: contain; }
+.bunker-carta { flex: 0 0 auto; width: clamp(92px, 12vw, 132px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 4px 5px; cursor: pointer;
+  font: inherit; color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.4); }
+.bunker-carta canvas { display: block; width: 100%; height: auto; aspect-ratio: 150 / 64; }
+.bunker-carta .nombre { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(10px, 1.7vh, 12px); font-weight: 700; }
+.bunker-carta small { font-size: clamp(9.5px, 1.6vh, 11px); color: #ffd27a; letter-spacing: .06em; }
+.bunker-carta small.precio { color: #8fe07a; font-weight: 700; }
+.bunker-carta.caro small.precio { color: #ff8a65; }
+.bunker-carta:hover { border-color: #7dffa0; }
+.bunker-carta.elegida { border: 2px solid #7dffa0; background: rgba(40,74,48,.75); }
+.bunker-carta:focus-visible { outline: 2px solid var(--luz); outline-offset: 1px; }
+.bunker-vacia { margin: 6px 0; opacity: .7; }
+/* Pantalla baja (teléfono apaisado): todo más chico para que entre sin desplazarse */
+@media (max-height: 500px) {
+  .bunker-medio { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); }
+  .bunker-detalle { padding: 4px 6px; gap: 6px; }
+  .bunker-accion { gap: 3px; }
+  .bunker-carta { width: 84px; padding: 2px; }
+  .bunker-pestanas { margin-bottom: 3px; }
+}
+.capa-bunker { z-index: 4; }
+#pantalla-juego:has(#bunker:not(.oculta)) #pausa { z-index: 6; }   /* si la partida se pausa sola (pestaña oculta), la pausa va encima */

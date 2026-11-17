@@ -59,6 +59,28 @@ y entrá a <http://127.0.0.1:8791/>.
     lados, cada bloque le sacó exactamente 5 al jugador; en cinco rondas salieron 14 congelados de 70 zombies.
     Los pinos se dibujan una vez por variante y tamaño, y cada fila de bosque en una tira de 2048 px que se repite;
     aun así, el cuadro de la nieve cuesta 1,6 veces el de la ciudad (medido sin placa de video).
+  - **Distancia y búnkeres** (`js/bunker.js`, pedido de Enzo el 16/11; los botiquines los sumó Leandro): en los
+    tres mapas, arriba de la pantalla se ve **cuántos metros** se recorrieron desde el punto de partida (1 m = 44
+    unidades, la medida de las estacas del entrenamiento) y a cuánto está el **próximo búnker** hacia donde se camina.
+    Cada **300 m**, para los dos lados, hay un **búnker subterráneo**: en el piso, una losa blanca con una reja encima
+    de la escalera que baja, lámparas verdes en las esquinas y una **luz verde** que sale del piso y sube hasta el
+    cielo (se ve desde lejos). Si el búnker cae en una montaña, se corre al trozo de al lado (de 400 búnkeres, 93 se
+    corren unos 27 m; ninguno queda arriba de una montaña). Parado encima aparece **«↓ ENTRAR AL BÚNKER»** (en el
+    celular, «toca ▼ ABAJO»); entrar es opcional y la partida queda quieta mientras se está adentro; al salir hay
+    1,5 s sin daño. Adentro, en una bóveda de concreto blanco con armero, lámpara y la puerta de la escalera
+    iluminada de verde, atiende el **comerciante**: un señor de unos 75 años con **parche en el ojo**, **barba blanca
+    más o menos larga** y **pelo corto y blanco**, con camisa gris y chaleco de cuero (es un personaje más de
+    `js/skins.js`, con la anatomía de todos, que no aparece entre los elegibles) y con el arma elegida en la mano.
+    El menú dice **MEJORAS** arriba, las **muertes y el dinero** arriba a la derecha y **nuestras armas** abajo; al
+    tocar una se ve **el arma grande** y a su derecha **MEJORAR** con el precio. Cada mejora sube el daño del arma un
+    **20 %** (cinco niveles, hasta el doble; se aplica en `Zombie.recibirDano`) y cuesta la mitad del precio del
+    arma la primera vez y medio precio más cada vez (Glock: $60, $100, $150, $200, $250). La otra pestaña,
+    **COMPRAR**, vende las armas comunes y las especiales que no se tienen, cada una con su precio (los de la
+    defensa ultra; Glock $100, AK-47 $650, Barrett $1300, minigun $3000, láser $3500), y **botiquines** ($150):
+    se llevan encima hasta 3 y se usan con **V** (configurable) o el botón **✚**; curan 50 y quitan el veneno. Las
+    especiales también se recargan ahí. El dinero sale de los zombies: $10 cada uno, $15 los corredores, $20 los
+    tóxicos y congelados, y $2 más por cada ronda. En el menú: ← → otra carta, Tab la otra pestaña, Enter la acción,
+    Esc o ↑ salen. Las misiones, la historia y los otros modos no tienen búnkeres.
 - **Misiones**: 17 misiones que se juegan dentro de la pelea infinita (matar zombies, conseguir
   armas, sobrevivir, y varias contrarreloj). El progreso queda guardado en el navegador.
 - **Defensa zombie ultra** (`js/defensa-ultra.js`): el tirador defiende su sector, a la izquierda, y los zombies llegan
@@ -1375,6 +1397,7 @@ js/skins.js       personajes elegibles: colores, capa, torso y cabeza de cada un
 js/zombie.js      zombie (verde, camiseta azul manchada, pantalón marrón roto)
 js/zombie-toxico.js  zombie tóxico de la cloaca, escupitajo de ácido y charco
 js/zombie-congelado.js  zombie congelado del bosque nevado y su bloque de hielo
+js/bunker.js            pelea infinita: distancia, búnkeres cada 300 m, comerciante, mejoras y botiquines
 js/armas-modelos-2.js  las 20 armas nuevas (fuego, cuerpo a cuerpo y legendarias)
 js/armas-modelos-3.js  rediseño realista de las armas de fuego (medidas reales, estrías, cuadrillé, rieles, miras)
 js/poderes.js     golpe cuerpo a cuerpo y poderes de las legendarias (rayo, onda, ola, armas que vuelven)

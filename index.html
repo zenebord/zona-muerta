@@ -120,6 +120,7 @@
       <tr><td><kbd data-tecla-de="recargar">S</kbd> / <span data-t="controles.clicDerecho">clic derecho</span></td><td data-t="controles.recargar"></td></tr>
       <tr><td><kbd data-tecla-de="mira">D</kbd></td><td data-t="controles.mira"></td></tr>
       <tr><td><kbd data-tecla-de="ataqueAereo">A</kbd></td><td data-t="controles.ataqueAereo"></td></tr>
+      <tr><td><kbd data-tecla-de="botiquin">V</kbd></td><td data-t="controles.botiquin"></td></tr>
       <tr><td><kbd data-tecla-de="armaAnterior">Q</kbd> / <kbd data-tecla-de="armaSiguiente">E</kbd> · <kbd data-tecla-de="armaAnterior" data-ranura="1">G</kbd> / <kbd data-tecla-de="armaSiguiente" data-ranura="1">H</kbd></td><td data-t="controles.cambiar"></td></tr>
       <tr><td><kbd data-tecla-de="menuPruebas">C</kbd></td><td data-t-html="controles.c"></td></tr>
       <tr><td><kbd data-tecla-de="grupo1">1</kbd> … <kbd data-tecla-de="grupo7">7</kbd></td><td data-t="controles.grupos"></td></tr>
@@ -145,11 +146,13 @@
         <button id="hud-aereo" class="hud-aereo oculta" type="button" data-t-aria="hud.aereo.aria" aria-label="Pedir ataque aéreo"></button>
       </div>
       <div class="hud-centro">
+        <div id="hud-distancia" class="hud-distancia"></div>
         <div id="hud-mision" class="hud-mision"></div>
       </div>
       <div class="hud-der">
         <div id="hud-ronda" class="hud-ronda">RONDA 1</div>
         <div id="hud-bajas">☠ 0</div>
+        <div id="hud-dinero" class="hud-dinero"></div>
         <div id="hud-tiempo">00:00</div>
         <div id="hud-dificultad" class="hud-dificultad"></div>
       </div>
@@ -213,6 +216,7 @@
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
         <button class="boton-tactil pildora solo-ultra" data-tecla="KeyB" data-t="tactil.tienda">TIENDA</button>
+        <button class="boton-tactil pildora solo-botiquin" data-tecla="KeyV" data-t-aria="tactil.botiquin" aria-label="Usar botiquín">✚</button>
         <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
       </div>
     </div>
@@ -240,6 +244,28 @@
       <p id="tienda-dinero" class="tienda-dinero"></p>
       <div id="tienda-contenido" class="tienda-contenido"></div>
       <button class="boton chico" type="button" data-comprar="cerrar" data-t="tienda.seguir">SEGUIR</button>
+    </div>
+    <!-- Búnker de la pelea infinita (js/bunker.js): el comerciante, mejoras, armas y botiquines (pausa la partida) -->
+    <div id="bunker" class="capa capa-bunker oculta" role="dialog" aria-labelledby="bunker-titulo">
+      <div class="bunker-cabeza">
+        <h2 id="bunker-titulo" data-t="bunker.titulo">MEJORAS</h2>
+        <div class="bunker-cuenta"><span id="bunker-bajas">☠ 0</span><span id="bunker-dinero" class="dinero">$ 0</span></div>
+      </div>
+      <div class="bunker-medio">
+        <figure class="bunker-escena"><canvas id="bunker-escena" width="480" height="300" aria-hidden="true"></canvas><figcaption id="bunker-dice"></figcaption></figure>
+        <div class="bunker-detalle">
+          <div class="bunker-vista"><canvas id="bunker-arma" width="640" height="300" aria-hidden="true"></canvas></div>
+          <div id="bunker-accion" class="bunker-accion" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="bunker-pie">
+        <div class="bunker-pestanas" role="tablist">
+          <button type="button" role="tab" data-bunker="pestana:propias" data-t="bunker.tusArmas">TUS ARMAS</button>
+          <button type="button" role="tab" data-bunker="pestana:venta" data-t="bunker.venta">COMPRAR</button>
+          <button type="button" class="boton chico bunker-salir" data-bunker="salir" data-t="bunker.salir">SALIR DEL BÚNKER</button>
+        </div>
+        <div id="bunker-lista" class="bunker-lista"></div>
+      </div>
     </div>
     <div id="menu-pruebas" class="capa oculta">
       <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
@@ -490,6 +516,7 @@
   <script src="js/poderes.js"></script>
   <script src="js/armas-especiales.js"></script>
   <script src="js/defensa-ultra.js"></script>
+  <script src="js/bunker.js"></script>
   <script src="js/escenario-historia.js"></script>
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>
