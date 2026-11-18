@@ -20,7 +20,7 @@ const BUNKER = {
   radioEntrar: 50,         // a cuánto del centro de la boca hay que estar parado para poder entrar
   mejoraMax: 5, mejoraDano: 0.2,
   botiquin: { precio: 150, cura: 50, maximo: 3 },
-  aereo: { precio: 400, maximo: 3, recarga: 60 },   // ataque aéreo: uno gratis cada 60 s y hasta 3 cargas extra compradas, que se usan sin esperar
+  aereo: { precio: 400, maximo: 3, recarga: 60 },   // ataque aéreo: uno gratis cada 60 s (el primero a los 60 s de empezar) y hasta 3 cargas extra compradas, que se usan sin esperar
   paga: { zombie: 10, corredor: 15, raro: 20, porRonda: 2 },   // raro: tóxico o congelado; porRonda: lo que suma cada ronda
 };
 // Precios: los de la tienda de la defensa ultra (js/defensa-ultra.js) y los de las armas que allá no se venden
@@ -224,7 +224,8 @@ function dibujarEscenaBunker(lienzo, armaId, ahora) {
 Object.assign(Juego.prototype, {
   prepararBunkers() {
     // Ataque aéreo (pedido de Enzo): como en las defensas, la A o el botón; uno cada 60 s sin costo y las cargas extra del comerciante
-    this.aereo = { listoEn: 0, activo: null, recarga: BUNKER.aereo.recarga, extra: 0 };
+    this.aereo = { listoEn: BUNKER.aereo.recarga, activo: null, recarga: BUNKER.aereo.recarga, extra: 0 };   // no se ofrece de entrada: el primero llega a los 60 s
+    this.jugador.aTierra = true;   // en el ataque aéreo se tira cuerpo a tierra (en la calle no hay parapeto donde agacharse)
     this.misiles = []; this.aviones = []; this.hud.aereo = document.getElementById('hud-aereo');
     this.hud.aereo.classList.remove('oculta');
     this.bunker = { origen: this.jugador.x, dinero: 0, botiquines: 0, abierto: false, sobre: null,

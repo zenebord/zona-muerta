@@ -74,6 +74,7 @@ Object.assign(Juego.prototype, {
     this.descansoHasta = Infinity; this.proximaCaja = Infinity; this.proximoZombie = Infinity;
     for (const id of ['ak47', 'remington700']) j.recoger(id);
     j.indiceArma = j.inventario.indexOf(ARMA_INICIAL); j.cancelarRecarga();
+    j.aTierra = true;   // en el ataque aéreo se tira cuerpo a tierra
     this.tut = { paso: -1, P: null, xAnterior: j.x };
     this.panelTutorial = document.getElementById('tutorial');
     this.pasoTutorial(0);

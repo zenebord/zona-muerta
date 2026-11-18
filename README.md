@@ -84,7 +84,7 @@ y entrá a <http://127.0.0.1:8791/>.
     se llevan encima hasta 3 y se usan con **V** (configurable) o el botón **✚**; curan 50 y quitan el veneno. Las
     especiales también se recargan ahí. **Ataque aéreo** (pedido de Enzo el 18/11): en la pelea infinita (no en las
     misiones) se pide con **A** o el botón de arriba a la izquierda, igual que en las defensas: los misiles limpian la
-    pantalla y se recarga **cada 60 s** (ya listo al empezar); en el búnker se compran **cargas extra** ($400, hasta
+    pantalla y se recarga **cada 60 s** (el primero no está de entrada: llega a los 60 s de empezar); el personaje se tira **cuerpo a tierra** mientras caen los misiles; en el búnker se compran **cargas extra** ($400, hasta
     3), que se gastan sin esperar cuando el gratuito está recargando (el botón muestra «LISTO · +2»). Probado: 5 de 5
     zombies a la vista caen, la espera es de 60 s y las cargas se compran y se gastan. **EQUIPABLES** (`js/equipables.js`, pedido de Enzo el 18/11), abajo de todo en la
     ventana del arma elegida, muestra tres objetos que quedan puestos en esa arma (y se dibujan sobre ella, en la
