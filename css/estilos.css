@@ -518,6 +518,8 @@ kbd {
 .fila-rango input[type=range] { width: 100%; accent-color: var(--arena); height: 22px; }
 .fila-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
 .fila-check input { width: 18px; height: 18px; accent-color: var(--arena); }
+.lista-sonidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; margin-top: 8px; }
+.panel-config .lista-sonidos .nota { grid-column: 1 / -1; margin: 0 0 2px; text-align: left; }
 .fila-doble { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .fila-opcion { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; font-size: 14px; flex-wrap: wrap; }
 .segmentos { display: inline-flex; flex-wrap: wrap; border: 1px solid rgba(201,169,110,.5); }
@@ -1042,3 +1044,32 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 }
 .capa-bunker { z-index: 4; }
 #pantalla-juego:has(#bunker:not(.oculta)) #pausa { z-index: 6; }   /* si la partida se pausa sola (pestaña oculta), la pausa va encima */
+
+/* ===== Tutorial (js/tutorial.js): el cuadrito del menú y el panel de pasos en la partida ===== */
+.boton-tutorial { position: absolute; top: 100px; right: 14px; z-index: 5; }
+@media (max-width: 760px), (max-height: 460px) { .boton-tutorial { top: 62px; right: 6px; font-size: 12px; padding: 7px 14px; } }
+.tutorial { display: none; }
+body.en-tutorial .tutorial:not(.oculta) {
+  display: flex; flex-direction: column; gap: 6px; position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 4;
+  width: min(600px, 92vw); padding: 10px 14px 12px; background: rgba(12,10,16,.88); border: 2px solid var(--luz); color: var(--texto);
+}
+.tutorial-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; letter-spacing: .2em; color: var(--luz); font-weight: 700; }
+.tutorial p { margin: 0; font-size: clamp(14px, 2.4vh, 18px); line-height: 1.4; }
+.tutorial-barra { height: 4px; background: rgba(255,255,255,.12); }
+.tutorial-barra span { display: block; height: 100%; width: 0; background: var(--luz); transition: width .2s linear; }
+.tutorial-botones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+.tutorial.final { border-color: #8fe07a; }
+body.en-tutorial #hud-ronda, body.en-tutorial #hud-bajas, body.en-tutorial #hud-tiempo { display: none; }
+body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px; width: min(480px, 70vw); padding: 6px 10px 8px; }
+@media (max-height: 460px) { body.en-tutorial .tutorial p { font-size: 12.5px; line-height: 1.3; } }
+
+/* ===== Equipables del búnker (js/equipables.js): tres filas con su botón, dentro de la ventana del arma ===== */
+.bunker-accion .equipable { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px dashed rgba(201,169,110,.25); }
+.bunker-accion .equipable.apagado { opacity: .55; }
+.bunker-accion .equip-texto { display: flex; flex-direction: column; min-width: 0; }
+.bunker-accion .equip-texto b { font-size: clamp(11px, 2vh, 14px); color: var(--luz); letter-spacing: .05em; }
+.bunker-accion .equip-texto small { font-size: clamp(9.5px, 1.5vh, 11.5px); line-height: 1.25; opacity: .8; }
+.bunker-accion .equipable .boton-bunker { flex: 0 0 auto; padding: 4px 10px; font-size: clamp(10px, 1.7vh, 13px); }
+.bunker-accion .equip-puesto { flex: 0 0 auto; color: #9dffb0; font-weight: 700; letter-spacing: .08em; font-size: clamp(10px, 1.7vh, 13px); }
+.bunker-accion .equip-novale { flex: 0 0 auto; max-width: 9em; text-align: right; font-size: clamp(9.5px, 1.5vh, 11.5px); opacity: .75; }
+.boton-equipables { margin-top: 2px; }

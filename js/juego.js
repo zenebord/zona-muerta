@@ -8,6 +8,8 @@ class Juego {
     this.torreta = !!opciones.torreta;    // torreta: fijo en una M2, olas por los dos lados, cada una peor
     this.entrenamiento = !!opciones.entrenamiento;   // entrenamiento: polígono de tiro con blancos en movimiento
     this.ultra = !!opciones.ultra;        // defensa ultra: 4 carriles, el sector a la izquierda (js/defensa-ultra.js)
+    EQUIPO_ARMAS.clear();                 // los equipables del búnker (js/equipables.js) son de cada partida
+    this.tutorial = !!opciones.tutorial;  // tutorial: un campo plano con pasos guiados de lo básico (js/tutorial.js)
     this.estrategia = !!opciones.estrategia;   // último bastión: defensa con estrategia sobre una grilla (js/estrategia.js)
     this.opcionesEstrategia = opciones.estrategia;   // { nivel, continuar } (js/bastion-niveles.js)
     // Mapa de la pelea infinita: la ciudad en ruinas, la cloaca (canal subterráneo con zombies tóxicos) o la nieve
@@ -16,7 +18,7 @@ class Juego {
     this.cloaca = this.mapa === 'cloaca';
     this.nieve = this.mapa === 'nieve';
     Mundo.nieve = this.nieve;   // pisadas que crujen (Jugador.superficie)
-    Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra;
+    Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra || this.tutorial;
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
     Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
     Mundo.interior = this.entrenamiento || this.cloaca;   // el polígono y la cloaca son lugares cerrados
@@ -46,9 +48,9 @@ class Juego {
       ronda: document.getElementById('hud-ronda'), dificultad: document.getElementById('hud-dificultad'),
       aviso: document.getElementById('aviso'), avisoRonda: document.getElementById('aviso-ronda'),
     };
-    document.getElementById('hud-aereo').classList.toggle('oculta', !(this.torreta || this.ultra));   // el ataque aéreo es de las defensas
+    document.getElementById('hud-aereo').classList.toggle('oculta', !(this.torreta || this.ultra || this.tutorial));   // el ataque aéreo es de las defensas (y del tutorial)
     this.textoModo = '';   // lo pone actualizarHud (cambia si se cambia el idioma en plena partida)
-    if (this.torreta || this.ultra) {
+    if (this.torreta || this.ultra || this.tutorial) {
       this.aereo = { listoEn: 0, activo: null, recarga: 20 };   // se puede pedir desde el arranque
       this.misiles = []; this.aviones = [];
       this.hud.aereo = document.getElementById('hud-aereo');
@@ -74,10 +76,11 @@ class Juego {
     if (opciones.historia) this.prepararHistoria(opciones.historia);
     if (this.estrategia) this.prepararBastion();
     // Pelea infinita (sin misión): distancia arriba y un búnker con un comerciante cada 300 m (js/bunker.js)
-    this.infinita = !mision && !opciones.historia && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !this.estrategia;
+    this.infinita = !mision && !opciones.historia && !this.tutorial && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !this.estrategia;
     document.body.classList.toggle('en-infinita', this.infinita); document.body.classList.remove('con-botiquin');
     document.getElementById('bunker').classList.add('oculta');   // por si se salió al menú con el búnker abierto
     if (this.infinita) this.prepararBunkers();
+    if (this.tutorial) this.prepararTutorial();
     if (this.pruebas || this.entrenamiento) {
       for (const id of ORDEN_INVENTARIO) this.jugador.recoger(id);
       for (const id of ARMAS_ESPECIALES) this.jugador.reserva[id] = 999;
@@ -207,6 +210,9 @@ class Juego {
       p.objetivo = vivo; this.proyectiles.push(p);
     };
     this.disparoId = (this.disparoId || 0) + 1;
+    const eq = this.jugador.montada ? {} : equipoDe(arma.id), silenciado = !!eq.silenciador;
+    // Bípode (js/equipables.js): sólo parado en el piso; desde una montaña o un lugar alto no ayuda
+    const conBipode = !!eq.bipode && alturaSuelo(this.jugador.x) >= SUELO_BASE - BIPODE.altoMax;
     if (this.entrenamiento) {
       this.ent.disparos++; if (this.ent.serieActual) this.ent.serieActual.disparos++;
       // Altura real de la boca al tirar parado, por arma: los blancos bajos se ubican con eso
@@ -240,17 +246,18 @@ class Juego {
       this.explosiones.push(new Fogonazo(cola, y, -direccion, 12, 'fuego'));
       for (let k = 0; k < 14; k++) this.particulas.push(new Particula(cola, y + (Math.random() - 0.5) * 6, -direccion * (2 + Math.random() * 4), (Math.random() - 0.6) * 1.6, k % 3 ? '#b1a89c' : '#ffcf6a', 0.5 + Math.random() * 0.6, 4 + Math.random() * 5, false));
     } else {
-      const desvio = arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0;
+      const desvio = (arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0) * (conBipode ? BIPODE.desvio : 1);   // el bípode cierra las ráfagas
       if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
       if (arma.categoria === 'rifle') this.sacudida = 3;
     }
     if (arma.categoria !== 'granada' && !arma.fuego) {
-      const tam = { pistola: 6, metralleta: 6.5, rifle: 9, escopeta: 10, ametralladora: 10, lanzagranadas: 8, laser: 6 }[arma.categoria] || 6;
+      const tam = ({ pistola: 6, metralleta: 6.5, rifle: 9, escopeta: 10, ametralladora: 10, lanzagranadas: 8, laser: 6 }[arma.categoria] || 6) * (silenciado ? 0.3 : 1);   // el silenciador casi no deja fogonazo
       this.explosiones.push(new Fogonazo(x, y, direccion, tam * (0.85 + Math.random() * 0.3), arma.categoria === 'laser' ? 'laser' : 'fuego'));
     }
     for (let k = antes; k < this.proyectiles.length; k++) {
       const p = this.proyectiles[k];
       p.desdeX = this.jugador.x; p.disparoId = this.disparoId;   // barrido desde el cuerpo
+      if (conBipode) { p.bipode = true; p.pisoTirador = alturaSuelo(this.jugador.x); }   // le pega de frente a los chiquitos (js/objetos.js)
       if (this.ultra) {   // la bala va por su carril, apuntada al pecho del zombie más cercano
         p.carril = this.jugador.carril; p.pisoY = this.jugador.y;
         if (!p.arma.explosivo && !p.objetivo) p.vy += this.apuntarUltra(p);
@@ -349,6 +356,7 @@ class Juego {
     const j = this.jugador;
     if (!j.muerto && j.vida < j.vidaMax) j.vida = Math.min(j.vidaMax, j.vida + 20);
     Audio_.rondaSuperada();
+    if (this.bunker) this.contarHorda();   // cada 3 hordas, los búnkeres se alejan 1 km (js/bunker.js)
     if (this.ultra) this.soltarCajaUltra(true);   // al terminar cada ola, siempre cae un arma
     if (this.torreta || this.ultra) this.avisoRonda(t('ronda.olaSuperada'), t('ronda.olaLlega', { n: this.ronda + 1, s: this.dificultad.descanso }));
     else this.avisoRonda(t('ronda.superada'), t('ronda.llega', { n: this.ronda + 1, s: this.dificultad.descanso }));
@@ -565,7 +573,7 @@ class Juego {
 
   aparecerZombies(dt) {
     const d = this.dificultad;
-    if (this.pruebas || this.entrenamiento) return;
+    if (this.pruebas || this.entrenamiento || this.tutorial) return;   // el tutorial pone sus zombies a mano (js/tutorial.js)
     if (this.aereo && this.aereo.activo) return;   // mientras caen los misiles no entra nadie: la pantalla queda limpia
     if (this.historia) return this.aparecerZombiesHistoria(dt);
     if (this.ultra && !this.enDescanso && this.porAparecer > 0) return this.aparecerOlaUltra(dt);
@@ -573,7 +581,9 @@ class Juego {
     if (this.enDescanso) { if (this.tiempoJugado >= this.descansoHasta) this.iniciarRonda(); return; }
     if (this.porAparecer <= 0) { if (this.zombiesVivos() === 0) this.terminarRonda(); return; }
     this.proximoZombie -= dt;
-    if (this.proximoZombie > 0 || this.zombiesVivos() >= d.maxVivos) return;
+    // Con silenciador en el arma de la mano, atrae a menos zombies: un 20 % menos de vivos a la vez (js/equipables.js)
+    const tope = this.silenciadorEnMano() ? Math.max(1, Math.round(d.maxVivos * FRACCION_SILENCIADOR)) : d.maxVivos;
+    if (this.proximoZombie > 0 || this.zombiesVivos() >= tope) return;
     this.proximoZombie = d.intervalo * (0.7 + Math.random() * 0.6);
     const grupo = Math.min(this.porAparecer, 1 + Math.floor(Math.random() * Math.min(3, 1 + this.ronda / 3)));
     const lado = Math.random() < 0.5 ? -1 : 1;
@@ -591,7 +601,7 @@ class Juego {
 
   aparecerCajas(dt) {
     if (this.ultra) return this.cajasUltra(dt);
-    if (this.pruebas || this.torreta || this.entrenamiento || this.historia) return;
+    if (this.pruebas || this.torreta || this.entrenamiento || this.historia || this.tutorial) return;
     this.proximaCaja -= dt;
     if (this.proximaCaja > 0) return;
     this.proximaCaja = (10 + Math.random() * 6) / AJUSTE.cajas;
@@ -635,6 +645,7 @@ class Juego {
     if (this.aereo) this.actualizarAereo(dt);
     if (this.ultra) for (const tt of this.torretas) tt.actualizar(dt, this);
     if (this.entrenamiento) this.actualizarEntrenamiento(dt);
+    if (this.tutorial) this.actualizarTutorial(dt);
     for (const e2 of this.escupitajos) e2.actualizar(dt, this);
     for (const c of this.charcos) c.actualizar(dt, this);
     if (this.cloaca && this.ahora >= this.proximaGota) { Audio_.gota(Math.random()); this.proximaGota = this.ahora + 400 + Math.random() * 1800; }
@@ -714,7 +725,7 @@ class Juego {
     const tiros = disparosParaMatar(this.bunker ? this.armaMejorada(arma) : arma, vidaActual);   // con la mejora del búnker
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
-    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
+    const modo = this.tutorial ? t('tutorial.modo') : this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
     if (modo !== this.textoModo) { this.textoModo = modo; h.dificultad.textContent = modo; }
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +

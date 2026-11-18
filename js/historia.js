@@ -71,6 +71,38 @@ const NIVELES_HISTORIA = [
     dormidos: [450, 1000, 1200, 1800, 2000, 2350, 2950, 3600, 3900, 4100, 4600, 5000, 5450, 6000, 6300, 6500, 6700] },
 ];
 const INICIO_HISTORIA = 600;   // x donde arranca cada nivel
+const AMP_MAX_SOGA = 1.45;      // cuánto se puede agrandar el balanceo de una soga impulsándose
+const DISTANCIA_BORDE_SOGA = 62; // al caer de una soga, a cuántos px del borde del vacío queda como mínimo
+
+/* Niveles más largos (pedido de Enzo: «los lugares, un poco más largos»): los tramos de piso y de techo se estiran
+ * FACTOR_LARGO_HISTORIA veces; los huecos, escalones, autos, andamios y escombros quedan como están (el mismo salto,
+ * la misma soga). Todo lo que tiene una posición (cajas, corazones, radios, zombies dormidos, escaleras, sogas, fuego)
+ * se corre con el tramo en el que estaba, y en lo que se agrega se suman unos zombies dormidos para que el
+ * tramo ensanchado no quede vacío. Los niveles crecen entre un 25 % y un 40 %. */
+const FACTOR_LARGO_HISTORIA = 1.6, TRAMOS_ESTIRABLES = new Set(['suelo', 'techo']), ZOMBIES_POR_PX_AGREGADO = 1 / 200;
+function ampliarNivel(def, f) {
+  const mapa = []; let acum = 0;
+  for (const [a, b, h0, h1, tipo] of def.terreno) {
+    const largo = Math.round((b - a) * (TRAMOS_ESTIRABLES.has(tipo) ? f : 1));
+    mapa.push({ a, b, na: acum, nb: acum + largo, h0, h1, tipo }); acum += largo;
+  }
+  const ultimo = mapa[mapa.length - 1];
+  const m = x => { for (const t of mapa) if (x >= t.a && x < t.b) return Math.round(t.na + (x - t.a) * (t.nb - t.na) / (t.b - t.a)); return Math.round(acum + x - ultimo.b); };
+  const agregados = [];
+  for (const t of mapa) {
+    const extra = (t.nb - t.na) - (t.b - t.a), n = Math.floor(extra * ZOMBIES_POR_PX_AGREGADO);
+    for (let k = 0; k < n; k++) agregados.push(Math.round(t.nb - (k + 0.5) * (extra / n) - 40));
+  }
+  def.terreno = mapa.map(t => [t.na, t.nb, t.h0, t.h1, t.tipo]);
+  def.largo = m(def.largo);
+  def.cajas = def.cajas.map(([dx, ...resto]) => [m(dx), ...resto]);
+  for (const k of ['corazones', 'radios']) def[k] = def[k].map(m);
+  def.dormidos = def.dormidos.map(m).concat(agregados).sort((p, q) => p - q);
+  if (def.escaleras) def.escaleras = def.escaleras.map(([dx, ...resto]) => [m(dx), ...resto]);
+  if (def.sogas) def.sogas = def.sogas.map(([dx, ...resto]) => [m(dx), ...resto]);
+  if (def.fuegos) def.fuegos = def.fuegos.map(([a, b]) => { const na = m(a); return [na, na + (b - a)]; });
+}
+NIVELES_HISTORIA.forEach(d => ampliarNivel(d, FACTOR_LARGO_HISTORIA));
 
 // Altura del piso (px hacia arriba) en cada x según los tramos del nivel: escalones de 12 px en las escaleras,
 // subida pareja en el ala (rampa), altura fija en lo demás
@@ -96,7 +128,7 @@ Object.assign(TEXTOS.es, {
   'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
   'hist.aviso.jefe': '¡JEFE FINAL!', 'hist.aviso.jefeBloquea': '¡DERROTA AL JEFE PARA SEGUIR!', 'hist.aviso.jefeVencido': '¡JEFE DERROTADO!', 'hist.aviso.onda': '¡LA ONDA! SALTA PARA ESQUIVARLA',
   'hist.jefe.avion': 'EL SAN BERNARDO DEL CENTRO CÍVICO', 'hist.jefe.ruta': 'EL TORO DE LA PAMPA', 'hist.jefe.ciudad': 'EL HINCHA DEL BOMBO', 'hist.jefe.barrio': 'EL COLOSO VERDE',
-  'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
+  'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': '← → PARA IMPULSARTE · SALTA PARA SOLTAR',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sur', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'Una noche de noviembre, un virus convirtió a millones de personas en zombies. Tú volvías a casa en el último vuelo que salió de la capital.',
@@ -138,7 +170,7 @@ Object.assign(TEXTOS.pt, {
   'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
   'hist.aviso.jefe': 'CHEFÃO FINAL!', 'hist.aviso.jefeBloquea': 'DERROTE O CHEFÃO PARA SEGUIR!', 'hist.aviso.jefeVencido': 'CHEFÃO DERROTADO!', 'hist.aviso.onda': 'A ONDA! PULE PARA DESVIAR',
   'hist.jefe.avion': 'O SÃO BERNARDO DO CENTRO CÍVICO', 'hist.jefe.ruta': 'O TOURO DOS PAMPAS', 'hist.jefe.ciudad': 'O TORCEDOR DO BUMBO', 'hist.jefe.barrio': 'O COLOSSO VERDE',
-  'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
+  'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': '← → PARA TE IMPULSIONAR · PULE PARA SOLTAR',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sul', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'Numa noite de novembro, um vírus transformou milhões de pessoas em zumbis. Você voltava para casa no último voo que saiu da capital.',
@@ -180,7 +212,7 @@ Object.assign(TEXTOS.en, {
   'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
   'hist.aviso.jefe': 'FINAL BOSS!', 'hist.aviso.jefeBloquea': 'DEFEAT THE BOSS TO GO ON!', 'hist.aviso.jefeVencido': 'BOSS DEFEATED!', 'hist.aviso.onda': 'SHOCKWAVE! JUMP TO DODGE IT',
   'hist.jefe.avion': 'THE CIVIC CENTER SAINT BERNARD', 'hist.jefe.ruta': 'THE BULL OF THE PAMPAS', 'hist.jefe.ciudad': 'THE BASS DRUM FAN', 'hist.jefe.barrio': 'THE GREEN COLOSSUS',
-  'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
+  'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': '← → TO SWING HARDER · JUMP TO LET GO',
   'menu.historia': 'STORY: THE WAY HOME',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'The south side', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'One November night, a virus turned millions of people into zombies. You were flying home on the last plane out of the capital.',
@@ -264,7 +296,7 @@ class RecogibleHistoria {
 Object.assign(Juego.prototype, {
   prepararHistoria(op) {
     const n = op.nivel, def = NIVELES_HISTORIA[n - 1], j = this.jugador;
-    this.historia = { n, def, inicio: INICIO_HISTORIA, meta: INICIO_HISTORIA + def.largo, corazones: 0, radios: 0, aereos: 0, armas: [], caidas: 0, disparos: 0, bajasTotal: (op.estado && op.estado.bajasTotal) || 0, tiempoTotal: (op.estado && op.estado.tiempoTotal) || 0 };
+    this.historia = { n, def, ampSoga: {}, inicio: INICIO_HISTORIA, meta: INICIO_HISTORIA + def.largo, corazones: 0, radios: 0, aereos: 0, armas: [], caidas: 0, disparos: 0, bajasTotal: (op.estado && op.estado.bajasTotal) || 0, tiempoTotal: (op.estado && op.estado.tiempoTotal) || 0 };
     Mundo.plano = true; Mundo.carriles = false; Mundo.interior = false;
     Mundo.perfil = def.terreno ? perfilTerreno(def.terreno, INICIO_HISTORIA) : null;
     j.aTierra = true;                                       // el ataque aéreo lo pasa cuerpo a tierra
@@ -337,7 +369,8 @@ Object.assign(Juego.prototype, {
 
   /* Movimiento del jugador en la historia: escaleras de mano, sogas que se balancean y precipicios */
   extremoSoga(s) {
-    const [dx, hPivote, largo] = s, P = 2.6, A = 0.78, w = 2 * Math.PI / P, f = this.tiempoJugado * w + dx * 0.01;
+    // A: amplitud del vaivén; impulsándose (← → en el sentido del balanceo) crece hasta AMP_MAX_SOGA veces la normal
+    const [dx, hPivote, largo] = s, P = 2.6, A = 0.78 * (this.historia.ampSoga[dx] || 1), w = 2 * Math.PI / P, f = this.tiempoJugado * w + dx * 0.01;
     const ang = A * Math.sin(f), dAng = A * w * Math.cos(f);
     const px = this.historia.inicio + dx, py = SUELO_BASE - hPivote;
     return { x: px + Math.sin(ang) * largo, y: py + Math.cos(ang) * largo, vx: Math.cos(ang) * largo * dAng / 60, vy: -Math.sin(ang) * largo * dAng / 60, px, py };
@@ -346,11 +379,19 @@ Object.assign(Juego.prototype, {
     const j = this.jugador, H = this.historia, d = H.def, neutral = { ...e, derecha: false, izquierda: false, saltarPulsado: false, abajo: false };
     if (j.protegido || j.muerto) { j.actualizar(dt, neutral, this); return; }
     // Colgado de una soga: sigue el extremo; saltando se suelta con el impulso del balanceo
+    // Las sogas vuelven solas a su vaivén de siempre cuando nadie las empuja
+    for (const k of Object.keys(H.ampSoga)) if (!j.soga || j.soga[0] !== +k) { const a = H.ampSoga[k]; H.ampSoga[k] = a + (1 - a) * Math.min(1, dt * 0.8); }
     if (j.soga) {
       j.actualizar(dt, neutral, this);
+      // Impulsarse: apretar hacia donde va el balanceo lo agranda de a poco (hasta 1,45×); hacia el otro lado, lo frena
+      const antes = this.extremoSoga(j.soga), k = j.soga[0], dirBalanceo = Math.sign(antes.vx);
+      if ((e.derecha || e.izquierda) && dirBalanceo) {
+        const empuja = (e.derecha ? 1 : -1) === dirBalanceo;
+        H.ampSoga[k] = limitar((H.ampSoga[k] || 1) + (empuja ? 0.55 : -0.4) * dt, 0.45, AMP_MAX_SOGA);
+      }
       const p = this.extremoSoga(j.soga);
       j.x = p.x; j.y = p.y + 70 * ESCALA_JUGADOR; j.vy = 0;   // la mano (a 70 del pie en el esqueleto) en el extremo j.enSuelo = false;
-      if (e.saltarPulsado) { j.impulso = p.vx * 1.15; j.vy = Math.min(-5, p.vy - 6); j.soga = null; j.sogaLibreHasta = this.ahora + 450; Audio_.recoger && Audio_.recoger(); }
+      if (e.saltarPulsado) { j.impulso = p.vx * 1.3 + Math.sign(p.vx) * 0.6; j.direccion = Math.sign(j.impulso) || j.direccion; j.vy = Math.min(-5.5, p.vy - 6.5); j.soga = null; j.sogaLibreHasta = this.ahora + 450; Audio_.recoger && Audio_.recoger(); }
       e.saltarPulsado = false; return;
     }
     // Trepando una escalera de mano: sube o baja sola hasta el otro extremo
@@ -367,6 +408,16 @@ Object.assign(Juego.prototype, {
       if (e.abajo && j.enSuelo && Math.abs(j.x - (lx + 22)) < 26 && Math.abs(j.y - arriba) < 10) { j.trepa = { x: lx - 10, y0: arriba, y1: base, f: 0, xFin: lx - 34 }; return j.actualizar(dt, neutral, this); }
     }
     j.actualizar(dt, e, this);
+    // Cayó de una soga: si quedó pegado al borde del vacío del que venía, se corre un poco hacia adentro del piso
+    if (j.aterrizoConImpulso && j.enSuelo) {
+      const sentido = Math.sign(j.aterrizoConImpulso); j.aterrizoConImpulso = 0;
+      for (let d = 0; d <= 70; d += 4) if (alturaSuelo(j.x - sentido * d) > SUELO_BASE + 100) { j.corrimiento = { sentido, falta: Math.max(0, DISTANCIA_BORDE_SOGA - d) }; break; }
+    }
+    if (j.corrimiento && j.enSuelo) {
+      const C = j.corrimiento, paso = Math.min(C.falta, 140 * dt), nx = j.x + C.sentido * paso;
+      if (paso > 0 && alturaSuelo(nx) < SUELO_BASE + 60 && j.y - alturaSuelo(nx) <= 14) { j.x = nx; C.falta -= paso; } else j.corrimiento = null;
+      if (C && C.falta <= 0.5) j.corrimiento = null;
+    }
     // En el aire, si cualquier parte del cuerpo (manos, pecho, cintura, rodillas) toca los tres cuartos de abajo de
     // una soga, se agarra y queda colgado de la punta. Antes había que pasar las manos a menos de 36 px de la punta:
     // desde un techo la punta cuelga a la altura de los pies, el salto pasa por encima y casi nunca se lograba.
@@ -374,7 +425,7 @@ Object.assign(Juego.prototype, {
       const p = this.extremoSoga(s);
       const toca = [70, 50, 30, 10].some(alto => {
         const cy = j.y - alto, u = (cy - p.py) / (p.y - p.py);
-        return u >= 0.25 && u <= 1.08 && Math.abs(j.x - (p.px + (p.x - p.px) * Math.min(1, u))) < 22;
+        return u >= 0.2 && u <= 1.12 && Math.abs(j.x - (p.px + (p.x - p.px) * Math.min(1, u))) < 32;   // más ancho: un error de unos píxeles ya no manda al vacío
       });
       if (toca) { j.soga = s; j.impulso = 0; j.vy = 0; this.aviso(t('hist.pista.soga'), 1400); break; }
     }

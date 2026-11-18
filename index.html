@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=b82338209f">
+  <link rel="stylesheet" href="css/estilos.css?v=86ebdebcbf">
 </head>
 <body>
 
@@ -12,6 +12,8 @@
   <section id="menu-principal" class="pantalla visible">
     <div class="humo"></div>
     <!-- Personaje: arriba a la derecha, con la vista previa del elegido -->
+    <!-- Tutorial: un cuadrito debajo del personaje, del tamaño de CAMPO DE PRUEBAS (js/tutorial.js) -->
+    <button class="boton chico boton-tutorial" type="button" data-accion="tutorial" data-t="tutorial.boton">TUTORIAL</button>
     <button class="boton-personaje" type="button" data-accion="personaje-abrir">
       <canvas id="vista-personaje" width="128" height="150" aria-hidden="true"></canvas>
       <span class="rotulo" data-t="personaje.titulo">PERSONAJE</span>
@@ -112,6 +114,7 @@
       <tr><td><kbd data-tecla-de="izquierda">←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
       <tr><td><kbd data-tecla-de="saltar">↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
       <tr><td><kbd data-tecla-de="abajo">↓</kbd></td><td data-t="controles.abajo"></td></tr>
+      <tr><td><kbd data-tecla-de="girar">W</kbd></td><td data-t="controles.girar"></td></tr>
       <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
       <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
       <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
@@ -212,6 +215,7 @@
       </div>
       <div class="extras-tactiles">
         <button class="boton-tactil pildora" data-tecla="ArrowDown" data-t-aria="tactil.abajo.aria" data-t="tactil.abajo">▼ ABAJO</button>
+        <button class="boton-tactil pildora" data-tecla="KeyW" data-t-aria="tactil.girar.aria" data-t="tactil.girar">⟲ GIRAR</button>
         <button class="boton-tactil pildora solo-mira" data-tecla="KeyD" data-t="tactil.mira">MIRA</button>
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
@@ -225,6 +229,13 @@
       <div class="icono-girar" aria-hidden="true"></div>
       <p data-t="girar">Gira el teléfono para jugar</p>
       <small data-t="girarNota">Si la pantalla no gira, activa la rotación automática.</small>
+    </div>
+    <!-- Tutorial: el paso en curso, con su texto y la barra de avance (js/tutorial.js) -->
+    <div id="tutorial" class="tutorial oculta" role="status" aria-live="polite">
+      <div class="tutorial-cabeza"><span id="tutorial-paso"></span><button id="tutorial-omitir" type="button" class="boton mini" data-accion="tutorial-saltar">OMITIR</button></div>
+      <p id="tutorial-texto"></p>
+      <div class="tutorial-barra"><span id="tutorial-avance"></span></div>
+      <div id="tutorial-botones" class="tutorial-botones oculta"></div>
     </div>
     <div id="selector-armas" class="selector-armas" aria-live="polite"></div>
     <div id="aviso" class="aviso"></div>
@@ -412,6 +423,14 @@
           <label class="fila-check"><input type="checkbox" data-config="silencio"><span data-t="config.silencio">Silenciar todo</span></label>
           <button class="boton mini" type="button" data-accion="config-probar" data-t="config.probar">Probar</button>
         </div>
+        <div class="lista-sonidos">
+          <p class="nota" data-t="config.sonidosNota">Apaga sólo el sonido que te moleste; los demás siguen igual.</p>
+          <label class="fila-check"><input type="checkbox" data-config="sonMusica"><span data-t="config.sonMusica">Música</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonPasos"><span data-t="config.sonPasos">Pasos</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonDisparos"><span data-t="config.sonDisparos">Disparos</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonImpactos"><span data-t="config.sonImpactos">Balas que pegan en zombies</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonZombies"><span data-t="config.sonZombies">Voces y golpes de zombies</span></label>
+        </div>
       </section>
       <section>
         <h3 data-t="config.idioma">IDIOMA</h3>
@@ -453,6 +472,9 @@
           <label class="fila-check"><input type="checkbox" data-config="vibracion"><span data-t="config.vibracion">Vibración al tocar</span></label>
           <button class="boton mini" type="button" id="boton-completa" data-accion="config-completa" data-t="config.completa">Pantalla completa</button>
         </div>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="raton"><span data-t="config.raton">Mouse para disparar, recargar y cambiar de arma</span></label>
+        </div>
       </section>
       <section id="config-teclas">
         <h3 data-t="config.teclas">TECLAS</h3>
@@ -476,15 +498,15 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=2343320b81"></script>
+  <script src="js/version.js?v=de14c5c378"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
   <script src="js/sonidos-armas.js?v=e377a1bd0a"></script>
-  <script src="js/config.js?v=3e8b9d330b"></script>
-  <script src="js/idioma.js?v=94620e694c"></script>
-  <script src="js/teclas.js?v=004f7bb741"></script>
-  <script src="js/audio.js?v=640ec87667"></script>
+  <script src="js/config.js?v=82f622ead4"></script>
+  <script src="js/idioma.js?v=34adb06853"></script>
+  <script src="js/teclas.js?v=89545aad19"></script>
+  <script src="js/audio.js?v=b1af55e5ff"></script>
   <script src="js/musica.js?v=50afd150ca"></script>
   <script src="js/armas.js?v=9bc6b2c059"></script>
   <script src="js/dificultad.js?v=cec7b59c76"></script>
@@ -504,22 +526,24 @@
   <script src="js/escenario-objetos.js?v=8c9ccc7cc9"></script>
   <script src="js/escenario-cloaca.js?v=b8f2e8e22f"></script>
   <script src="js/escenario-nieve.js?v=d0ce6c9a71"></script>
-  <script src="js/jugador.js?v=a0945c95b7"></script>
+  <script src="js/jugador.js?v=31f5ccba35"></script>
   <script src="js/anatomia.js?v=4cf570a5d0"></script>
-  <script src="js/jugador-dibujo.js?v=65cd9205a9"></script>
+  <script src="js/jugador-dibujo.js?v=25bb618144"></script>
   <script src="js/skins.js?v=92c4f293be"></script>
-  <script src="js/zombie.js?v=a8f807be2d"></script>
+  <script src="js/zombie.js?v=2c373f525c"></script>
   <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
   <script src="js/zombie-congelado.js?v=7245dc0443"></script>
-  <script src="js/objetos.js?v=2821aac3d0"></script>
-  <script src="js/juego.js?v=4bc27c4b52"></script>
+  <script src="js/objetos.js?v=4deda9a357"></script>
+  <script src="js/juego.js?v=cda8520f9a"></script>
   <script src="js/poderes.js?v=93de692929"></script>
   <script src="js/armas-especiales.js?v=2df0a2414c"></script>
   <script src="js/defensa-ultra.js?v=54c14cb81a"></script>
-  <script src="js/bunker.js?v=2473a80906"></script>
+  <script src="js/equipables.js?v=8b831b5efc"></script>
+  <script src="js/bunker.js?v=c85c6347fd"></script>
   <script src="js/escenario-historia.js?v=3224c7c117"></script>
   <script src="js/zombies-autoctonos.js?v=77b31590fb"></script>
-  <script src="js/historia.js?v=8bffdb3dff"></script>
+  <script src="js/historia.js?v=d758c09db1"></script>
+  <script src="js/tutorial.js?v=ff1350bbdb"></script>
   <script src="js/estrategia.js?v=c8017e56c6"></script>
   <script src="js/bastion-niveles.js?v=757b4669d9"></script>
   <script src="js/bastion-dibujo.js?v=a37973f14c"></script>
@@ -531,7 +555,7 @@
   <script src="js/bastion-v2-ui.js?v=94fc2356c3"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=a4038893a6"></script>
-  <script src="js/interfaz.js?v=c0f01b74c6"></script>
+  <script src="js/interfaz.js?v=ec1b28486c"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>

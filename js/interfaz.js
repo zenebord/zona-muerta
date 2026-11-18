@@ -77,10 +77,11 @@
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     document.body.classList.toggle('en-bastion', !!opciones.estrategia);
     document.body.classList.toggle('en-pruebas', !!opciones.pruebas);
+    document.body.classList.toggle('en-tutorial', !!opciones.tutorial);
     fichaVitrinaId = null;
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
-    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : opciones.mapa === 'nieve' ? t('aviso.nieve') : t('aviso.sobrevive'), 2500);
+    juego.aviso(opciones.tutorial ? t('tutorial.modo') : opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : opciones.mapa === 'nieve' ? t('aviso.nieve') : t('aviso.sobrevive'), 2500);
     if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? juego.nivelV2.aviso || 'b2.aviso' : 'bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
@@ -367,7 +368,7 @@
     cancelAnimationFrame(cuadro);
     Audio_.ambiente(0);
     Musica.detener(0.8);
-    juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');
+    juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto', 'en-tutorial');
     capaPruebas.classList.add('oculta');
     guiaB2Abierta = pausaPorGuia = false; BastionV2UI.cerrarGuia();
     mostrar('menu-principal');
@@ -443,6 +444,8 @@
       }
       case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
+      case 'tutorial':  iniciar(null, { tutorial: true }); break;
+      case 'tutorial-saltar': if (juego && juego.tutorial) juego.siguienteTutorial(); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;
       case 'poner-zombie': if (juego) juego.ponerZombiePrueba(); break;
@@ -546,6 +549,7 @@
       case 'ArrowUp':    if (!e.repeat) en.saltarPulsado = true; break;
       case 'ArrowDown':  en.abajo = true; if (!e.repeat) { en.abajoPulsado = true; juego.alternarMontar(); } break;   // mantenida: agacharse; junto a una M2: montarla
       case 'KeyF':       en.disparar = true; if (!e.repeat) en.dispararPulsado = true; break;
+      case 'KeyW':       if (!e.repeat && !juego.ultra) j.girar(); break;   // girar sin caminar (también en el aire)
       case 'KeyS':       if (!e.repeat) j.recargar(juego); break;
       case 'KeyD':       if (!e.repeat) j.alternarMira(juego); break;   // mira telescópica o de punto rojo: apunta sola al zombie más cercano
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
@@ -576,6 +580,8 @@
   // Rueda del mouse: arma anterior / siguiente (con un respiro para que un giro no salte varias)
   let ultimaRueda = 0;
   window.addEventListener('wheel', e => {
+    if (!Config.get('raton')) return;
+    if (e.target.closest && e.target.closest('#ficha-vitrina')) return;   // la rueda sobre la ficha del arma la desplaza: no cambia de arma
     if (!juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.estrategia || (juego.bunker && juego.bunker.abierto)) return;
     const ahora = performance.now();
     if (ahora - ultimaRueda < 120) return;
@@ -597,14 +603,14 @@
       if (pausado || juego.terminado || sobreControl(e) || e.target.closest('#panel-bastion')) return;
       const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'down', e.button); e.preventDefault(); return;
     }
-    if (e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
+    if (!Config.get('raton') || e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
     if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
     else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }
   });
   window.addEventListener('pointerup', e => {
     if (e.pointerType === 'mouse' && e.button === 0 && mouseDispara) { mouseDispara = false; if (juego) juego.entrada.disparar = false; }
   });
-  pantallaJuego.addEventListener('contextmenu', e => { if (juego && !sobreControl(e)) e.preventDefault(); });
+  pantallaJuego.addEventListener('contextmenu', e => { if (juego && Config.get('raton') && !sobreControl(e)) e.preventDefault(); });
 
   // Si la ventana pierde el foco, soltar todas las teclas para que no quede corriendo solo
   window.addEventListener('blur', () => {
@@ -749,9 +755,12 @@
     } catch { /* el navegador o el visor no lo permiten */ }
   }
   // Lo que cambia en la configuración se aplica enseguida
-  const aplicarSonido = () => Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
+  const aplicarSonido = () => {
+    Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
+    Audio_.apagar({ musica: !Config.get('sonMusica'), pasos: !Config.get('sonPasos'), disparos: !Config.get('sonDisparos'), impactos: !Config.get('sonImpactos'), zombies: !Config.get('sonZombies') });
+  };
   Config.alCambiar(clave => {
-    if (['general', 'efectos', 'musica', 'silencio'].includes(clave)) aplicarSonido();
+    if (['general', 'efectos', 'musica', 'silencio', 'sonMusica', 'sonPasos', 'sonDisparos', 'sonImpactos', 'sonZombies'].includes(clave)) aplicarSonido();
     if (clave === 'skin') renderizarArmasPrueba();   // el machete del cazador aparece o desaparece de la lista
     if (clave === 'calidad') { if (Config.get('calidad') === 'auto') { calidadAuto = 'alta'; Config.set('calidadAutoNivel', 'alta'); } ajustarResolucion(true); }   // elegir «auto» vuelve a medir desde alta
   });

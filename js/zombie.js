@@ -57,6 +57,9 @@ const GARRA = { cierre: [0, 0, 0, 0], nudillo: 0.6, abre: 1, pulgar: { suelto: 1
 // Muerte: segundos hasta quedar de rodillas, hasta desplomarse, lo que tarda en caer y cuándo termina de desvanecerse
 const MUERTE = { rodillas: 0.35, desploma: 1.0, caida: 0.45, fin: 4.45 };
 
+// Hasta dónde llega el arma como tope para los zombies de frente (historia): un fusil muy largo no los deja a más que esto
+const LARGO_MAX_ARMA_ZOMBIE = 84;
+
 class Zombie {
   constructor(x, corredor, dificultad) {
     this.x = x; this.y = alturaSuelo(x);
@@ -128,7 +131,19 @@ class Zombie {
     this.direccion = dx >= 0 ? 1 : -1;
     const distancia = Math.abs(dx);
     const dy = Math.abs(jugador.y - this.y);
-    const alcanza = distancia < 34 && dy < (Mundo.perfil ? 40 : 70) && !jugador.muerto && !this.vyCaida;   // con desniveles, no muerde desde abajo de una plataforma
+    // Modo historia (pedido de Enzo): el arma tiene cuerpo. Un zombie que viene de frente se frena en la boca del
+    // cañón y muerde desde ahí, así nunca queda adentro del arma ni se pierde el tiro; si el jugador se da vuelta
+    // y lo deja adentro del arma, el cañón lo va empujando hasta la boca. Por la espalda, todo igual que siempre
+    let tope = 34;
+    if (juego.historia && !jugador.muerto && !jugador.montada && !jugador.trepa && !jugador.soga && dx !== 0 && Math.sign(dx) === -jugador.direccion) {
+      if (juego.bocaAhora !== ahora) { juego.bocaAhora = ahora; juego.bocaLargo = Math.abs(jugador.puntoArma('boca').x - jugador.x); }   // una vez por cuadro, no por zombie
+      tope = Math.max(34, Math.min(LARGO_MAX_ARMA_ZOMBIE, juego.bocaLargo + 6));
+    }
+    const alcanza = distancia < tope && dy < (Mundo.perfil ? 40 : 70) && !jugador.muerto && !this.vyCaida;   // con desniveles, no muerde desde abajo de una plataforma
+    if (tope > 34 && distancia < tope - 3 && dy < 40 && !this.vyCaida && !this.trepa) {   // adentro del arma: el cañón lo empuja hacia afuera
+      const nx = this.x + this.direccion * -1 * Math.min(4, tope - distancia) * paso, sueloN = alturaSuelo(nx);
+      if (sueloN < SUELO_BASE + 100 && this.y - sueloN <= 14) this.x = nx;   // no lo tira a un precipicio ni lo mete en una pared
+    }
 
     if (alcanza) {
       this.estado = 'ataca';

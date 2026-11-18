@@ -525,6 +525,8 @@ kbd {
 .fila-rango input[type=range] { width: 100%; accent-color: var(--arena); height: 22px; }
 .fila-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
 .fila-check input { width: 18px; height: 18px; accent-color: var(--arena); }
+.lista-sonidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; margin-top: 8px; }
+.panel-config .lista-sonidos .nota { grid-column: 1 / -1; margin: 0 0 2px; text-align: left; }
 .fila-doble { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .fila-opcion { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; font-size: 14px; flex-wrap: wrap; }
 .segmentos { display: inline-flex; flex-wrap: wrap; border: 1px solid rgba(201,169,110,.5); }
@@ -1050,6 +1052,35 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 .capa-bunker { z-index: 4; }
 #pantalla-juego:has(#bunker:not(.oculta)) #pausa { z-index: 6; }   /* si la partida se pausa sola (pestaña oculta), la pausa va encima */
 
+/* ===== Tutorial (js/tutorial.js): el cuadrito del menú y el panel de pasos en la partida ===== */
+.boton-tutorial { position: absolute; top: 100px; right: 14px; z-index: 5; }
+@media (max-width: 760px), (max-height: 460px) { .boton-tutorial { top: 62px; right: 6px; font-size: 12px; padding: 7px 14px; } }
+.tutorial { display: none; }
+body.en-tutorial .tutorial:not(.oculta) {
+  display: flex; flex-direction: column; gap: 6px; position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 4;
+  width: min(600px, 92vw); padding: 10px 14px 12px; background: rgba(12,10,16,.88); border: 2px solid var(--luz); color: var(--texto);
+}
+.tutorial-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; letter-spacing: .2em; color: var(--luz); font-weight: 700; }
+.tutorial p { margin: 0; font-size: clamp(14px, 2.4vh, 18px); line-height: 1.4; }
+.tutorial-barra { height: 4px; background: rgba(255,255,255,.12); }
+.tutorial-barra span { display: block; height: 100%; width: 0; background: var(--luz); transition: width .2s linear; }
+.tutorial-botones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+.tutorial.final { border-color: #8fe07a; }
+body.en-tutorial #hud-ronda, body.en-tutorial #hud-bajas, body.en-tutorial #hud-tiempo { display: none; }
+body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px; width: min(480px, 70vw); padding: 6px 10px 8px; }
+@media (max-height: 460px) { body.en-tutorial .tutorial p { font-size: 12.5px; line-height: 1.3; } }
+
+/* ===== Equipables del búnker (js/equipables.js): tres filas con su botón, dentro de la ventana del arma ===== */
+.bunker-accion .equipable { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px dashed rgba(201,169,110,.25); }
+.bunker-accion .equipable.apagado { opacity: .55; }
+.bunker-accion .equip-texto { display: flex; flex-direction: column; min-width: 0; }
+.bunker-accion .equip-texto b { font-size: clamp(11px, 2vh, 14px); color: var(--luz); letter-spacing: .05em; }
+.bunker-accion .equip-texto small { font-size: clamp(9.5px, 1.5vh, 11.5px); line-height: 1.25; opacity: .8; }
+.bunker-accion .equipable .boton-bunker { flex: 0 0 auto; padding: 4px 10px; font-size: clamp(10px, 1.7vh, 13px); }
+.bunker-accion .equip-puesto { flex: 0 0 auto; color: #9dffb0; font-weight: 700; letter-spacing: .08em; font-size: clamp(10px, 1.7vh, 13px); }
+.bunker-accion .equip-novale { flex: 0 0 auto; max-width: 9em; text-align: right; font-size: clamp(9.5px, 1.5vh, 11.5px); opacity: .75; }
+.boton-equipables { margin-top: 2px; }
+
 </style>
 </head>
 <body>
@@ -1058,6 +1089,8 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
   <section id="menu-principal" class="pantalla visible">
     <div class="humo"></div>
     <!-- Personaje: arriba a la derecha, con la vista previa del elegido -->
+    <!-- Tutorial: un cuadrito debajo del personaje, del tamaño de CAMPO DE PRUEBAS (js/tutorial.js) -->
+    <button class="boton chico boton-tutorial" type="button" data-accion="tutorial" data-t="tutorial.boton">TUTORIAL</button>
     <button class="boton-personaje" type="button" data-accion="personaje-abrir">
       <canvas id="vista-personaje" width="128" height="150" aria-hidden="true"></canvas>
       <span class="rotulo" data-t="personaje.titulo">PERSONAJE</span>
@@ -1158,6 +1191,7 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
       <tr><td><kbd data-tecla-de="izquierda">←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
       <tr><td><kbd data-tecla-de="saltar">↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
       <tr><td><kbd data-tecla-de="abajo">↓</kbd></td><td data-t="controles.abajo"></td></tr>
+      <tr><td><kbd data-tecla-de="girar">W</kbd></td><td data-t="controles.girar"></td></tr>
       <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
       <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
       <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
@@ -1258,6 +1292,7 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
       </div>
       <div class="extras-tactiles">
         <button class="boton-tactil pildora" data-tecla="ArrowDown" data-t-aria="tactil.abajo.aria" data-t="tactil.abajo">▼ ABAJO</button>
+        <button class="boton-tactil pildora" data-tecla="KeyW" data-t-aria="tactil.girar.aria" data-t="tactil.girar">⟲ GIRAR</button>
         <button class="boton-tactil pildora solo-mira" data-tecla="KeyD" data-t="tactil.mira">MIRA</button>
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
@@ -1271,6 +1306,13 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
       <div class="icono-girar" aria-hidden="true"></div>
       <p data-t="girar">Gira el teléfono para jugar</p>
       <small data-t="girarNota">Si la pantalla no gira, activa la rotación automática.</small>
+    </div>
+    <!-- Tutorial: el paso en curso, con su texto y la barra de avance (js/tutorial.js) -->
+    <div id="tutorial" class="tutorial oculta" role="status" aria-live="polite">
+      <div class="tutorial-cabeza"><span id="tutorial-paso"></span><button id="tutorial-omitir" type="button" class="boton mini" data-accion="tutorial-saltar">OMITIR</button></div>
+      <p id="tutorial-texto"></p>
+      <div class="tutorial-barra"><span id="tutorial-avance"></span></div>
+      <div id="tutorial-botones" class="tutorial-botones oculta"></div>
     </div>
     <div id="selector-armas" class="selector-armas" aria-live="polite"></div>
     <div id="aviso" class="aviso"></div>
@@ -1458,6 +1500,14 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
           <label class="fila-check"><input type="checkbox" data-config="silencio"><span data-t="config.silencio">Silenciar todo</span></label>
           <button class="boton mini" type="button" data-accion="config-probar" data-t="config.probar">Probar</button>
         </div>
+        <div class="lista-sonidos">
+          <p class="nota" data-t="config.sonidosNota">Apaga sólo el sonido que te moleste; los demás siguen igual.</p>
+          <label class="fila-check"><input type="checkbox" data-config="sonMusica"><span data-t="config.sonMusica">Música</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonPasos"><span data-t="config.sonPasos">Pasos</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonDisparos"><span data-t="config.sonDisparos">Disparos</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonImpactos"><span data-t="config.sonImpactos">Balas que pegan en zombies</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonZombies"><span data-t="config.sonZombies">Voces y golpes de zombies</span></label>
+        </div>
       </section>
       <section>
         <h3 data-t="config.idioma">IDIOMA</h3>
@@ -1499,6 +1549,9 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
           <label class="fila-check"><input type="checkbox" data-config="vibracion"><span data-t="config.vibracion">Vibración al tocar</span></label>
           <button class="boton mini" type="button" id="boton-completa" data-accion="config-completa" data-t="config.completa">Pantalla completa</button>
         </div>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="raton"><span data-t="config.raton">Mouse para disparar, recargar y cambiar de arma</span></label>
+        </div>
       </section>
       <section id="config-teclas">
         <h3 data-t="config.teclas">TECLAS</h3>
@@ -1524,7 +1577,7 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261117-1805-4d9dbc5';
+const VERSION_JUEGO = '20261118-2038-e5c38bb';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1619,6 +1672,13 @@ const Config = (() => {
     calidad: 'auto',   // auto: empieza en alta y baja sola si no da abasto · alta: hasta 2× · normal: 1× · baja: 0,75× sin bisel
     tactil: 'auto',    // auto | si | no: botones en pantalla
     vibracion: true,   // vibración corta al tocar los botones en pantalla
+    raton: true,       // el mouse dispara (clic izquierdo), recarga (derecho) y cambia de arma (rueda)
+    // Sonidos que se pueden apagar de a uno sin tocar los demás (pedido de Enzo); todos suenan de entrada
+    sonMusica: true,   // la música de cada escenario
+    sonPasos: true,    // pisadas y aterrizajes del protagonista
+    sonDisparos: true, // el estampido de las armas (las recargas y los mecanismos siguen sonando)
+    sonImpactos: true, // la bala que pega en un zombie
+    sonZombies: true,  // gemidos, golpes y muertes de los zombies
     skin: 'sobreviviente',   // personaje elegido (js/skins.js)
     teclas: null,      // { acción: [códigos] } si se cambió alguna (js/teclas.js); null: las originales
     teclasNombres: {}, // código → cómo se ve esa tecla en el teclado de quien la eligió (la Ñ es 'Semicolon')
@@ -1673,7 +1733,7 @@ const TEXTOS = {
     'misiones.borrar': 'BORRAR PROGRESO', 'misiones.borrado': 'PROGRESO BORRADO', 'misiones.confirmar': 'CLIC DE NUEVO PARA BORRAR',
     'misiones.caceria': 'CACERÍA', 'misiones.busqueda': 'BÚSQUEDA', 'misiones.supervivencia': 'SUPERVIVENCIA', 'misiones.cumplida': '✔ CUMPLIDA',
     'controles.titulo': 'CONTROLES',
-    'controles.avanzar': 'Avanzar', 'controles.retroceder': 'Retroceder', 'controles.saltar': 'Saltar',
+    'controles.avanzar': 'Avanzar', 'controles.girar': 'Girar sin caminar: mira para el otro lado y, si sigues apretando la flecha, sigues avanzando (sirve en el aire y en la soga)', 'controles.retroceder': 'Retroceder', 'controles.saltar': 'Saltar',
     'controles.abajo': 'Mantener: agacharse con rodilla en tierra (el arma baja para los blancos bajos). Junto a la ametralladora fija: montarla / soltarla',
     'controles.entrenamiento': 'Entrenamiento', 'controles.entrenamiento.texto': 'Blancos en movimiento por series de 15: tirale cuando cruzan tu línea de tiro; los altos y los platos se alcanzan saltando y los bajos, agachado. <kbd>{k:menuPruebas}</kbd> elige arma',
     'controles.torreta': 'Defensa zombie', 'controles.torreta.texto': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> giran la M2, <kbd>{k:disparar}</kbd> dispara, <kbd>{k:recargar}</kbd> cambia la cinta, <kbd>{k:ataqueAereo}</kbd> pide un ataque aéreo (cada 20 s)',
@@ -1686,7 +1746,7 @@ const TEXTOS = {
     'controles.ayuda': 'Las armas se recogen al pasar sobre las cajas. Las ametralladoras fijas y las armas especiales (lanzagranadas, granadas y láser alienígena) solo están arriba de las montañas.',
     'hud.aereo.aria': 'Pedir ataque aéreo', 'tactil.aria': 'Controles táctiles', 'tactil.mover': 'Moverse: toca o desliza a la izquierda o a la derecha',
     'tactil.fuego': 'FUEGO', 'tactil.salto': 'SALTO', 'tactil.saltar': 'Saltar', 'tactil.recargar': 'RECARGAR', 'tactil.mira': 'MIRA', 'tactil.armaAnt': '◀ ARMA', 'tactil.armaSig': 'ARMA ▶',
-    'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma siguiente', 'tactil.abajo': '▼ ABAJO', 'tactil.abajo.aria': 'Agacharse o montar la M2',
+    'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma siguiente', 'tactil.girar': '⟲ GIRAR', 'tactil.girar.aria': 'Girar sin caminar', 'tactil.abajo': '▼ ABAJO', 'tactil.abajo.aria': 'Agacharse o montar la M2',
     'tactil.cajas': 'ARMAS', 'tactil.zombie': 'ZOMBIE', 'tactil.pausa': 'Pausa', 'girar': 'Gira el teléfono para jugar', 'girarNota': 'Si la pantalla no gira, activa la rotación automática.',
     'pausa.titulo': 'PAUSA', 'pausa.seguir': 'SEGUIR', 'pausa.salir': 'SALIR AL MENÚ',
     'pruebas.titulo': 'CAMPO DE PRUEBAS', 'pruebas.armas': 'ARMAS', 'pruebas.ayuda': 'Clic en un arma para ver su ficha y usarla · <kbd>{k:borrar}</kbd> borra todo lo generado · <kbd>{k:menuPruebas}</kbd> cierra',
@@ -1770,7 +1830,7 @@ const TEXTOS = {
     'teclas.mover': 'MOVIMIENTO', 'teclas.armas': 'ARMAS', 'teclas.modos': 'MODOS DE JUEGO', 'teclas.presiona': 'Presiona…',
     'teclas.ayudaEspera': v => `Presiona la tecla nueva para «${v.accion}» (Esc cancela)`, 'teclas.lista': v => `«${v.accion}» ahora va con ${v.tecla}`,
     'teclas.intercambio': v => `${v.tecla} era de «${v.otra}»: esa ahora va con ${v.nueva}`, 'teclas.prohibida': 'Esa tecla no se puede usar: Esc pausa y cierra, y la de Windows o Comando es del sistema', 'teclas.originales': 'Volvieron las teclas originales',
-    'accion.derecha': 'Avanzar', 'accion.izquierda': 'Retroceder', 'accion.saltar': 'Saltar', 'accion.abajo': 'Agacharse', 'accion.disparar': 'Disparar', 'accion.recargar': 'Recargar', 'accion.mira': 'Apuntar con la mira',
+    'accion.derecha': 'Avanzar', 'accion.izquierda': 'Retroceder', 'accion.saltar': 'Saltar', 'accion.abajo': 'Agacharse', 'accion.girar': 'Girar sin caminar', 'accion.disparar': 'Disparar', 'accion.recargar': 'Recargar', 'accion.mira': 'Apuntar con la mira',
     'accion.armaAnterior': 'Arma anterior', 'accion.armaSiguiente': 'Arma siguiente', 'accion.grupo': v => `Grupo ${v.n}: ${v.nombre}`, 'accion.ataqueAereo': 'Ataque aéreo (bombas)', 'accion.pausa': 'Pausa',
     'accion.tienda': 'Tienda (Defensa ultra)', 'accion.torreta': 'Torreta (Defensa ultra)', 'accion.menuPruebas': 'Menú de armas (campo de pruebas)', 'accion.zombie': 'Zombie de prueba', 'accion.camaraLenta': 'Cámara lenta', 'accion.borrar': 'Borrar lo generado',
     'tecla.derecha': v => `${v.tecla} der.`, 'tecla.espacio': 'Espacio', 'tecla.mayus': 'Bloq Mayús', 'tecla.supr': 'Supr', 'tecla.inicio': 'Inicio', 'tecla.fin': 'Fin', 'tecla.rePag': 'Re Pág', 'tecla.avPag': 'Av Pág',
@@ -1778,6 +1838,7 @@ const TEXTOS = {
     'config.descargarTitulo': 'Jugar sin Claude', 'menu.descargarNota': 'Un solo archivo para jugar sin pasar por Claude: va más fluido', 'config.descargar': 'Descargar el juego', 'config.descargarNota': 'Un solo archivo de unos 5 MB que se abre con el navegador: va más fluido. Lo que guardes ahí (progreso, configuración) queda aparte.',
     'config.descargando': 'Armando el archivo…', 'config.descargado': 'Listo: se guardó zona-muerta.html. Ábrelo con Chrome, Edge o Firefox.', 'config.descargaError': 'No se pudo descargar. Prueba de nuevo.', 'config.yaDescargado': 'Ya estás jugando con el archivo descargado.', 'config.armando': v => `Armando el archivo… ${v.p} %`, 'config.guardando': 'Guardando…', 'config.listo': '¡Listo!', 'config.reintentar': 'Reintentar',
     'aviso.calidadNormal': 'EL JUEGO IBA LENTO: BAJÉ LA CALIDAD GRÁFICA', 'aviso.calidadBaja': 'SIGUE LENTO: CALIDAD BAJA. TAMBIÉN PUEDES DESCARGAR EL JUEGO (CONFIGURACIÓN)',
+    'config.sonidosNota': 'Apaga sólo el sonido que te moleste; los demás siguen igual.', 'config.sonMusica': 'Música', 'config.sonPasos': 'Pasos', 'config.sonDisparos': 'Disparos', 'config.sonImpactos': 'Balas que pegan en zombies', 'config.sonZombies': 'Voces y golpes de zombies', 'config.raton': 'Mouse para disparar, recargar y cambiar de arma',
     'config.tactil': 'Botones en pantalla', 'config.auto': 'Automático', 'config.si': 'Siempre', 'config.no': 'Nunca', 'config.vibracion': 'Vibración al tocar',
     'config.completa': 'Pantalla completa', 'config.restablecer': 'RESTABLECER', 'config.cerrar': 'CERRAR', 'config.probar': 'Probar',
     'menu.bastion': 'ÚLTIMO BASTIÓN', 'controles.bastion': 'Último bastión', 'controles.bastion.texto': 'Elige abajo qué construir (o con <kbd>1</kbd> a <kbd>4</kbd>, <kbd>Q W E R</kbd> y <kbd>A S D F G</kbd>) y tócalo en el campo. Toca una unidad tuya para ver hasta dónde llega y venderla, repararla o moverla (<kbd>Z</kbd>, <kbd>X</kbd>, <kbd>C</kbd>). <kbd>Esc</kbd> suelta lo elegido, <kbd>Espacio</kbd> adelanta la oleada, <kbd>V</kbd> cambia la velocidad (1×, 2×, 5× o 10×) y <kbd>H</kbd> abre la guía de unidades y zombies. Cada nivel tiene su terreno: no todo se puede poner en cualquier lado.',
@@ -1852,7 +1913,7 @@ const TEXTOS = {
     'misiones.borrar': 'APAGAR PROGRESSO', 'misiones.borrado': 'PROGRESSO APAGADO', 'misiones.confirmar': 'CLIQUE DE NOVO PARA APAGAR',
     'misiones.caceria': 'CAÇADA', 'misiones.busqueda': 'BUSCA', 'misiones.supervivencia': 'SOBREVIVÊNCIA', 'misiones.cumplida': '✔ CUMPRIDA',
     'controles.titulo': 'CONTROLES',
-    'controles.avanzar': 'Avançar', 'controles.retroceder': 'Recuar', 'controles.saltar': 'Pular',
+    'controles.avanzar': 'Avançar', 'controles.girar': 'Virar sem andar: olha para o outro lado e, se continuar apertando a seta, segue andando (vale no ar e na corda)', 'controles.retroceder': 'Recuar', 'controles.saltar': 'Pular',
     'controles.abajo': 'Segurar: abaixar com um joelho no chão (a arma desce para os alvos baixos). Junto à metralhadora fixa: montá-la / soltá-la',
     'controles.entrenamiento': 'Treinamento', 'controles.entrenamiento.texto': 'Alvos em movimento em séries de 15: atire quando cruzarem sua linha de tiro; os altos e os pratos se alcançam pulando e os baixos, abaixado. <kbd>{k:menuPruebas}</kbd> escolhe a arma',
     'controles.torreta': 'Defesa zumbi', 'controles.torreta.texto': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> giram a M2, <kbd>{k:disparar}</kbd> atira, <kbd>{k:recargar}</kbd> troca a fita, <kbd>{k:ataqueAereo}</kbd> pede um ataque aéreo (a cada 20 s)',
@@ -1865,7 +1926,7 @@ const TEXTOS = {
     'controles.ayuda': 'As armas são pegas ao passar sobre as caixas. As metralhadoras fixas e as armas especiais (lança-granadas, granadas e laser alienígena) só ficam no alto das montanhas.',
     'hud.aereo.aria': 'Pedir ataque aéreo', 'tactil.aria': 'Controles de toque', 'tactil.mover': 'Mover: toque ou deslize para a esquerda ou para a direita',
     'tactil.fuego': 'FOGO', 'tactil.salto': 'PULO', 'tactil.saltar': 'Pular', 'tactil.recargar': 'RECARREGAR', 'tactil.mira': 'MIRA', 'tactil.armaAnt': '◀ ARMA', 'tactil.armaSig': 'ARMA ▶',
-    'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma seguinte', 'tactil.abajo': '▼ ABAIXAR', 'tactil.abajo.aria': 'Abaixar ou montar a M2',
+    'tactil.armaAnt.aria': 'Arma anterior', 'tactil.armaSig.aria': 'Arma seguinte', 'tactil.girar': '⟲ VIRAR', 'tactil.girar.aria': 'Virar sem andar', 'tactil.abajo': '▼ ABAIXAR', 'tactil.abajo.aria': 'Abaixar ou montar a M2',
     'tactil.cajas': 'ARMAS', 'tactil.zombie': 'ZUMBI', 'tactil.pausa': 'Pausa', 'girar': 'Gire o celular para jogar', 'girarNota': 'Se a tela não girar, ative a rotação automática.',
     'pausa.titulo': 'PAUSA', 'pausa.seguir': 'CONTINUAR', 'pausa.salir': 'SAIR PARA O MENU',
     'pruebas.titulo': 'CAMPO DE TESTES', 'pruebas.armas': 'ARMAS', 'pruebas.ayuda': 'Clique numa arma para ver a ficha e usá-la · <kbd>{k:borrar}</kbd> apaga tudo o que foi gerado · <kbd>{k:menuPruebas}</kbd> fecha',
@@ -1948,7 +2009,7 @@ const TEXTOS = {
     'teclas.mover': 'MOVIMENTO', 'teclas.armas': 'ARMAS', 'teclas.modos': 'MODOS DE JOGO', 'teclas.presiona': 'Aperte…',
     'teclas.ayudaEspera': v => `Aperte a nova tecla para «${v.accion}» (Esc cancela)`, 'teclas.lista': v => `«${v.accion}» agora é ${v.tecla}`,
     'teclas.intercambio': v => `${v.tecla} era de «${v.otra}»: essa agora é ${v.nueva}`, 'teclas.prohibida': 'Essa tecla não pode ser usada: Esc pausa e fecha, e a do Windows ou Command é do sistema', 'teclas.originales': 'As teclas originais voltaram',
-    'accion.derecha': 'Avançar', 'accion.izquierda': 'Recuar', 'accion.saltar': 'Pular', 'accion.abajo': 'Abaixar', 'accion.disparar': 'Atirar', 'accion.recargar': 'Recarregar', 'accion.mira': 'Mirar com a mira',
+    'accion.derecha': 'Avançar', 'accion.izquierda': 'Recuar', 'accion.saltar': 'Pular', 'accion.abajo': 'Abaixar', 'accion.girar': 'Virar sem andar', 'accion.disparar': 'Atirar', 'accion.recargar': 'Recarregar', 'accion.mira': 'Mirar com a mira',
     'accion.armaAnterior': 'Arma anterior', 'accion.armaSiguiente': 'Arma seguinte', 'accion.grupo': v => `Grupo ${v.n}: ${v.nombre}`, 'accion.ataqueAereo': 'Ataque aéreo (bombas)', 'accion.pausa': 'Pausa',
     'accion.tienda': 'Loja (Defesa ultra)', 'accion.torreta': 'Torre (Defesa ultra)', 'accion.menuPruebas': 'Menu de armas (campo de testes)', 'accion.zombie': 'Zumbi de teste', 'accion.camaraLenta': 'Câmera lenta', 'accion.borrar': 'Apagar o que foi gerado',
     'tecla.derecha': v => `${v.tecla} dir.`, 'tecla.espacio': 'Espaço', 'tecla.mayus': 'Caps Lock', 'tecla.supr': 'Delete', 'tecla.inicio': 'Home', 'tecla.fin': 'End', 'tecla.rePag': 'Page Up', 'tecla.avPag': 'Page Down',
@@ -1956,6 +2017,7 @@ const TEXTOS = {
     'config.descargarTitulo': 'Jogar sem o Claude', 'menu.descargarNota': 'Um único arquivo para jogar sem passar pelo Claude: roda mais liso', 'config.descargar': 'Baixar o jogo', 'config.descargarNota': 'Um único arquivo de uns 5 MB que se abre no navegador: roda mais liso. O que você salvar ali (progresso, configuração) fica separado.',
     'config.descargando': 'Montando o arquivo…', 'config.descargado': 'Pronto: zona-muerta.html foi salvo. Abra no Chrome, Edge ou Firefox.', 'config.descargaError': 'Não foi possível baixar. Tente de novo.', 'config.yaDescargado': 'Você já está jogando com o arquivo baixado.', 'config.armando': v => `Montando o arquivo… ${v.p} %`, 'config.guardando': 'Salvando…', 'config.listo': 'Pronto!', 'config.reintentar': 'Tentar de novo',
     'aviso.calidadNormal': 'O JOGO ESTAVA LENTO: BAIXEI A QUALIDADE GRÁFICA', 'aviso.calidadBaja': 'AINDA LENTO: QUALIDADE BAIXA. VOCÊ TAMBÉM PODE BAIXAR O JOGO (CONFIGURAÇÃO)',
+    'config.sonidosNota': 'Desligue só o som que incomoda; os outros continuam iguais.', 'config.sonMusica': 'Música', 'config.sonPasos': 'Passos', 'config.sonDisparos': 'Tiros', 'config.sonImpactos': 'Balas que acertam zumbis', 'config.sonZombies': 'Vozes e golpes de zumbis', 'config.raton': 'Mouse para atirar, recarregar e trocar de arma',
     'config.tactil': 'Botões na tela', 'config.auto': 'Automático', 'config.si': 'Sempre', 'config.no': 'Nunca', 'config.vibracion': 'Vibrar ao tocar',
     'config.completa': 'Tela cheia', 'config.restablecer': 'RESTAURAR', 'config.cerrar': 'FECHAR', 'config.probar': 'Testar',
     'menu.bastion': 'ÚLTIMO BASTIÃO', 'controles.bastion': 'Último bastião', 'controles.bastion.texto': 'Escolha embaixo o que construir (ou com <kbd>1</kbd> a <kbd>4</kbd>, <kbd>Q W E R</kbd> e <kbd>A S D F G</kbd>) e toque no campo. Toque em uma unidade sua para ver até onde ela alcança e vendê-la, consertá-la ou movê-la (<kbd>Z</kbd>, <kbd>X</kbd>, <kbd>C</kbd>). <kbd>Esc</kbd> solta o escolhido, <kbd>Espaço</kbd> adianta a onda, <kbd>V</kbd> muda a velocidade (1×, 2×, 5× ou 10×) e <kbd>H</kbd> abre o guia de unidades e zumbis. Cada fase tem seu terreno: nem tudo pode ser colocado em qualquer lugar.',
@@ -2030,7 +2092,7 @@ const TEXTOS = {
     'misiones.borrar': 'RESET PROGRESS', 'misiones.borrado': 'PROGRESS RESET', 'misiones.confirmar': 'CLICK AGAIN TO RESET',
     'misiones.caceria': 'HUNT', 'misiones.busqueda': 'SEARCH', 'misiones.supervivencia': 'SURVIVAL', 'misiones.cumplida': '✔ DONE',
     'controles.titulo': 'CONTROLS',
-    'controles.avanzar': 'Move forward', 'controles.retroceder': 'Move back', 'controles.saltar': 'Jump',
+    'controles.avanzar': 'Move forward', 'controles.girar': 'Turn around without moving: you face the other way and, if you keep the arrow pressed, you keep going (works in the air and on the rope)', 'controles.retroceder': 'Move back', 'controles.saltar': 'Jump',
     'controles.abajo': 'Hold: crouch on one knee (the gun drops for low targets). Next to the fixed machine gun: mount / dismount it',
     'controles.entrenamiento': 'Training', 'controles.entrenamiento.texto': 'Moving targets in series of 15: shoot when they cross your line of fire; high targets and clays are reached by jumping and low ones by crouching. <kbd>{k:menuPruebas}</kbd> picks a weapon',
     'controles.torreta': 'Zombie defense', 'controles.torreta.texto': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> turn the M2, <kbd>{k:disparar}</kbd> shoots, <kbd>{k:recargar}</kbd> changes the belt, <kbd>{k:ataqueAereo}</kbd> calls an air strike (every 20 s)',
@@ -2043,7 +2105,7 @@ const TEXTOS = {
     'controles.ayuda': 'Weapons are picked up by walking over crates. Fixed machine guns and special weapons (grenade launcher, grenades and alien laser) are only on top of the mountains.',
     'hud.aereo.aria': 'Call an air strike', 'tactil.aria': 'Touch controls', 'tactil.mover': 'Move: tap or slide left or right',
     'tactil.fuego': 'FIRE', 'tactil.salto': 'JUMP', 'tactil.saltar': 'Jump', 'tactil.recargar': 'RELOAD', 'tactil.mira': 'AIM', 'tactil.armaAnt': '◀ GUN', 'tactil.armaSig': 'GUN ▶',
-    'tactil.armaAnt.aria': 'Previous weapon', 'tactil.armaSig.aria': 'Next weapon', 'tactil.abajo': '▼ DOWN', 'tactil.abajo.aria': 'Crouch or mount the M2',
+    'tactil.armaAnt.aria': 'Previous weapon', 'tactil.armaSig.aria': 'Next weapon', 'tactil.girar': '⟲ TURN', 'tactil.girar.aria': 'Turn around without moving', 'tactil.abajo': '▼ DOWN', 'tactil.abajo.aria': 'Crouch or mount the M2',
     'tactil.cajas': 'WEAPONS', 'tactil.zombie': 'ZOMBIE', 'tactil.pausa': 'Pause', 'girar': 'Turn your phone sideways to play', 'girarNota': 'If the screen doesn’t turn, switch on auto-rotate.',
     'pausa.titulo': 'PAUSED', 'pausa.seguir': 'RESUME', 'pausa.salir': 'QUIT TO MENU',
     'pruebas.titulo': 'TEST FIELD', 'pruebas.armas': 'WEAPONS', 'pruebas.ayuda': 'Click a weapon to see its details and use it · <kbd>{k:borrar}</kbd> clears everything spawned · <kbd>{k:menuPruebas}</kbd> closes',
@@ -2126,7 +2188,7 @@ const TEXTOS = {
     'teclas.mover': 'MOVEMENT', 'teclas.armas': 'WEAPONS', 'teclas.modos': 'GAME MODES', 'teclas.presiona': 'Press…',
     'teclas.ayudaEspera': v => `Press the new key for “${v.accion}” (Esc cancels)`, 'teclas.lista': v => `“${v.accion}” is now ${v.tecla}`,
     'teclas.intercambio': v => `${v.tecla} was “${v.otra}”: that one is now ${v.nueva}`, 'teclas.prohibida': 'That key can’t be used: Esc pauses and closes, and the Windows or Command key belongs to the system', 'teclas.originales': 'The original keys are back',
-    'accion.derecha': 'Move forward', 'accion.izquierda': 'Move back', 'accion.saltar': 'Jump', 'accion.abajo': 'Crouch', 'accion.disparar': 'Shoot', 'accion.recargar': 'Reload', 'accion.mira': 'Aim with the sight',
+    'accion.derecha': 'Move forward', 'accion.izquierda': 'Move back', 'accion.saltar': 'Jump', 'accion.abajo': 'Crouch', 'accion.girar': 'Turn around without moving', 'accion.disparar': 'Shoot', 'accion.recargar': 'Reload', 'accion.mira': 'Aim with the sight',
     'accion.armaAnterior': 'Previous weapon', 'accion.armaSiguiente': 'Next weapon', 'accion.grupo': v => `Group ${v.n}: ${v.nombre}`, 'accion.ataqueAereo': 'Air strike (bombs)', 'accion.pausa': 'Pause',
     'accion.tienda': 'Shop (Defense ultra)', 'accion.torreta': 'Turret (Defense ultra)', 'accion.menuPruebas': 'Weapons menu (test field)', 'accion.zombie': 'Test zombie', 'accion.camaraLenta': 'Slow motion', 'accion.borrar': 'Clear what was spawned',
     'tecla.derecha': v => `Right ${v.tecla}`, 'tecla.espacio': 'Space', 'tecla.mayus': 'Caps Lock', 'tecla.supr': 'Delete', 'tecla.inicio': 'Home', 'tecla.fin': 'End', 'tecla.rePag': 'Page Up', 'tecla.avPag': 'Page Down',
@@ -2134,6 +2196,7 @@ const TEXTOS = {
     'config.descargarTitulo': 'Play without Claude', 'menu.descargarNota': 'A single file to play without going through Claude: runs smoother', 'config.descargar': 'Download the game', 'config.descargarNota': 'A single file of about 5 MB that opens in your browser: it runs smoother. What you save there (progress, settings) is kept separately.',
     'config.descargando': 'Building the file…', 'config.descargado': 'Done: zona-muerta.html was saved. Open it with Chrome, Edge or Firefox.', 'config.descargaError': 'Could not download. Try again.', 'config.yaDescargado': 'You are already playing the downloaded file.', 'config.armando': v => `Building the file… ${v.p} %`, 'config.guardando': 'Saving…', 'config.listo': 'Done!', 'config.reintentar': 'Try again',
     'aviso.calidadNormal': 'THE GAME WAS SLOW: GRAPHICS QUALITY LOWERED', 'aviso.calidadBaja': 'STILL SLOW: LOW QUALITY. YOU CAN ALSO DOWNLOAD THE GAME (SETTINGS)',
+    'config.sonidosNota': 'Turn off only the sound that bothers you; the rest stay as they are.', 'config.sonMusica': 'Music', 'config.sonPasos': 'Footsteps', 'config.sonDisparos': 'Gunshots', 'config.sonImpactos': 'Bullets hitting zombies', 'config.sonZombies': 'Zombie voices and blows', 'config.raton': 'Mouse to shoot, reload and switch weapons',
     'config.tactil': 'On-screen buttons', 'config.auto': 'Automatic', 'config.si': 'Always', 'config.no': 'Never', 'config.vibracion': 'Vibrate on tap',
     'config.completa': 'Full screen', 'config.restablecer': 'RESET', 'config.cerrar': 'CLOSE', 'config.probar': 'Test',
     'menu.bastion': 'LAST BASTION', 'controles.bastion': 'Last bastion', 'controles.bastion.texto': 'Pick what to build below (or with <kbd>1</kbd> to <kbd>4</kbd>, <kbd>Q W E R</kbd> and <kbd>A S D F G</kbd>) and tap it on the field. Tap one of your units to see how far it reaches and sell, repair or move it (<kbd>Z</kbd>, <kbd>X</kbd>, <kbd>C</kbd>). <kbd>Esc</kbd> drops the selection, <kbd>Space</kbd> brings the wave early, <kbd>V</kbd> changes the speed (1×, 2×, 5× or 10×) and <kbd>H</kbd> opens the guide to units and zombies. Each level has its own terrain: not everything can go everywhere.',
@@ -2287,6 +2350,7 @@ const ACCIONES_TECLADO = [
   { id: 'izquierda', teclas: ['ArrowLeft'] },
   { id: 'saltar', teclas: ['ArrowUp'] },
   { id: 'abajo', teclas: ['ArrowDown'] },
+  { id: 'girar', teclas: ['KeyW'] },
   { id: 'disparar', teclas: ['KeyF'] },
   { id: 'recargar', teclas: ['KeyS'] },
   { id: 'mira', teclas: ['KeyD'] },
@@ -2305,7 +2369,7 @@ const ACCIONES_TECLADO = [
 ];
 // Cómo se agrupan en la configuración
 const SECCIONES_TECLADO = [
-  ['mover', ['derecha', 'izquierda', 'saltar', 'abajo']],
+  ['mover', ['derecha', 'izquierda', 'saltar', 'abajo', 'girar']],
   ['armas', ['disparar', 'recargar', 'mira', 'armaAnterior', 'armaSiguiente', 'grupo1', 'grupo2', 'grupo3', 'grupo4', 'grupo5', 'grupo6', 'grupo7']],
   ['modos', ['ataqueAereo', 'pausa', 'tienda', 'botiquin', 'torreta', 'menuPruebas', 'zombie', 'camaraLenta', 'borrar']],
 ];
@@ -2463,12 +2527,14 @@ const Audio_ = (() => {
   // Volúmenes (los pone la configuración): general → limitador → parlantes; efectos y música por separado
   let general = null, busMusica = null;
   const vol = { general: 0.9, efectos: 0.85, musica: 0.6, silencio: false };
+  // Sonidos que la configuración apaga de a uno: música, pasos, disparos, impactos de bala en zombies y voces de zombies
+  const apagado = { musica: false, pasos: false, disparos: false, impactos: false, zombies: false };
   function aplicarVolumenes() {
     if (!ctx) return;
     const t = ctx.currentTime;
     general.gain.setTargetAtTime(vol.silencio ? 0 : vol.general, t, 0.05);
     maestro.gain.setTargetAtTime(0.85 * vol.efectos, t, 0.05);
-    busMusica.gain.setTargetAtTime(vol.musica, t, 0.05);
+    busMusica.gain.setTargetAtTime(apagado.musica ? 0 : vol.musica, t, 0.05);
   }
   // Eco de cada lugar: cuándo vuelve el rebote, cuántas veces y qué tan brillante
   const ECOS = { aire: [0.21, 0.3, 1400], galpon: [0.13, 0.36, 2300], cloaca: [0.17, 0.46, 1500] };
@@ -3154,11 +3220,19 @@ const Audio_ = (() => {
     sinSilencioAutomatico() { vigila = false; silenciar(false); },
     // Volúmenes de la configuración: { general, efectos, musica, silencio }
     volumenes(v) { Object.assign(vol, v); aplicarVolumenes(); },
+    // { musica, pasos, disparos, impactos, zombies }: true apaga ese sonido y sólo ése
+    apagar(a) { Object.assign(apagado, a); aplicarVolumenes(); },
     // Para la música: el contexto y el canal donde conectarse
     mezclaMusica() { asegurar(); return { ctx, bus: busMusica }; },
 
-    disparo(categoria, armaId) {
-      if (!asegurar()) return;
+    // silenciado: el silenciador del búnker (js/equipables.js): un «pff» seco y bajo, sin estampido ni eco
+    disparo(categoria, armaId, silenciado = false) {
+      if (!asegurar() || apagado.disparos) return;
+      if (silenciado) {
+        ruido({ dur: 0.07, vol: 0.2, filtro: 'lowpass', freq: 1500, freqFin: 500, q: 0.7, ataque: 0.002, rev: 0.02 });
+        golpe({ f: 150, dur: 0.05, vol: 0.14 }); metal({ f: 2300, dur: 0.02, vol: 0.05, rev: 0 });
+        return;
+      }
       if (armaId === 'minigun') { tiroMinigun(); return; }   // el rugido de la ráfaga lo pone Audio_.minigun
       if (tiroGrabado(armaId)) return;                       // arma real grabada (arriba); si no hay, el sintetizado
       const pesado = PESADAS.has(armaId) ? 1.35 : LIVIANAS.has(armaId) ? 0.85 : 1;
@@ -3321,6 +3395,7 @@ const Audio_ = (() => {
       if (ataca) { ruido({ dur: 0.12, vol: vol * 0.9, filtro: 'bandpass', freq: 700 * grave, freqFin: 300 * grave, q: 1.5, retraso: dur * 0.85, sat: 3, rev: 0.12 }); tono({ tipo: 'sawtooth', desde: 260 * grave, hasta: 140 * grave, dur: 0.12, vol: vol * 0.5, retraso: dur * 0.85, sat: 2 }); }
     },
     gemido(fuerte = false, distancia = 200) {
+      if (apagado.zombies) return;
       asegurar();
       const cerca = Math.max(0.15, 1 - distancia / 600);
       if (variante('zombie_gemido', 8, { vol: (fuerte ? 1 : 0.55) * cerca, vel: 0.88 + Math.random() * 0.2, rev: 0.25 + (1 - cerca) * 0.5 })) return;
@@ -3356,6 +3431,7 @@ const Audio_ = (() => {
     },
     // conCaida: false cuando el cuerpo sale despedido y el golpe contra el piso suena recién al caer
     zombieMuere(conCaida = true) {
+      if (apagado.zombies) return;
       asegurar();
       if (variante('zombie_muerte', 4, { vol: 0.85, vel: 0.9 + Math.random() * 0.15, rev: 0.2 })) {
         if (conCaida) { variante('cuerpo_cae', 2, { vol: 0.55, retraso: 0.32, rev: 0.1 }); golpe({ f: 95, dur: 0.12, vol: 0.28, retraso: 0.34 }); }   // el peso del cuerpo contra el piso
@@ -3364,21 +3440,28 @@ const Audio_ = (() => {
       this.gemidoSintetico(true); if (conCaida) golpe({ f: 110, dur: 0.12, vol: 0.3, retraso: 0.35 });
     },
     zombieGolpea() {
+      if (apagado.zombies) return;
       asegurar();
       variante('zombie_ataque', 6, { vol: 0.9, vel: 0.92 + Math.random() * 0.16, rev: 0.12 });
       golpe({ f: 120, dur: 0.07, vol: 0.32 }); ruido({ dur: 0.08, vol: 0.14, filtro: 'bandpass', freq: 900, q: 1.5 });   // manotazo
     },
     // Bala que entra en la carne (con un tope para que las escopetas no saturen)
+    // Un golpe seco de bala contra algo duro y sordo: el «tac» del impacto y un tope grave. Nada de chapoteo: la
+    // grabación anterior (impacto_carne) sonaba a esponja que se exprime y a varios les resultaba desagradable
     impactoCarne() {
+      if (apagado.impactos) return;
       asegurar();
       const ahora = ctx.currentTime;
       if (this._ultimoImpacto && ahora - this._ultimoImpacto < 0.035) return;
       this._ultimoImpacto = ahora;
-      if (!variante('impacto_carne', 5, { vol: 0.75, vel: 0.85 + Math.random() * 0.3, rev: 0.05 })) ruido({ dur: 0.06, vol: 0.2, filtro: 'bandpass', freq: 700, q: 1.2 });
-      golpe({ f: 160, dur: 0.04, vol: 0.18 });
+      const v = 0.85 + Math.random() * 0.3;
+      ruido({ dur: 0.02, vol: 0.2, filtro: 'highpass', freq: 2400 * v, ataque: 0.0008, rev: 0.03 });              // el «tac» del impacto
+      tono({ desde: 340 * v, hasta: 95, dur: 0.055, vol: 0.2, sat: 1.6, ataque: 0.001, rev: 0.02 });             // el cuerpo del golpe
+      golpe({ f: 130 * v, dur: 0.07, vol: 0.3 });                                                                  // el tope grave
     },
     // Pasos del protagonista: asfalto en la calle, arena en las montañas y en el campo
     paso(superficie = 'asfalto', fuerza = 1) {
+      if (apagado.pasos) return;
       asegurar();
       if (superficie === 'nieve') {   // nieve: la pisada en la arena, más aguda, y el crujido de la nieve que se aplasta
         variante('paso_arena', 6, { vol: 0.12 * fuerza, vel: 1.12 + Math.random() * 0.16, rev: 0.03 });
@@ -3388,6 +3471,7 @@ const Audio_ = (() => {
       variante(superficie === 'arena' ? 'paso_arena' : 'paso_asfalto', 6, { vol: 0.15 * fuerza, vel: 0.9 + Math.random() * 0.2, rev: 0.03 });
     },
     aterrizar(superficie = 'asfalto') {
+      if (apagado.pasos) return;
       asegurar();
       this.paso(superficie, 1.5); this.paso(superficie, 1.1);
       golpe({ f: 85, dur: 0.08, vol: 0.1 });
@@ -3439,6 +3523,7 @@ const Audio_ = (() => {
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {
       const v = Math.max(0, Math.min(1, vel || 0));
+      if (apagado.disparos) tirando = false;   // el rugido de la ráfaga es el estampido: sólo queda girar los cañones
       if (v < 0.002 && !tirando) { if (motor) apagarMotor(); return; }
       if (!asegurar()) return;
       if (!motor) crearMotor();
@@ -3515,7 +3600,7 @@ const Audio_ = (() => {
     // Ambiente de fondo: viento (nivel 0 lo apaga)
     ambiente(nivel) { asegurar(); if (nivel > 0) encenderViento(nivel); else { apagarViento(); apagarAgua(); } },
     // Gemido de algún zombie lejano que no está en pantalla
-    gemidoLejano() { asegurar(); variante('zombie_gemido', 8, { vol: 0.16, vel: 0.8 + Math.random() * 0.15, rev: 0.9 }); },
+    gemidoLejano() { if (apagado.zombies) return; asegurar(); variante('zombie_gemido', 8, { vol: 0.16, vel: 0.8 + Math.random() * 0.15, rev: 0.9 }); },
     // Sirena antiaérea a lo lejos: arranca una ronda
     sirena() {
       asegurar();
@@ -10542,6 +10627,7 @@ class AmbienteNieve {
 </script>
   <script>
 /* ===== Jugador: movimiento, inventario, disparo, acción manual y recarga por fases ===== */
+const MARGEN_SALTO_MS = 130;   // tolerancia al saltar al pisar el vacío o justo antes de aterrizar
 const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;   // el salto llega a unos 120 px de alto
 const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay que saltar
 const ORIGEN_ARMA = { x: 12, y: -47 };   // mano del gatillo, respecto de los pies
@@ -10614,7 +10700,8 @@ const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
 // mismo que con la telescópica; cambia la retícula (dibujarMiraPuntoRojo), y los perdigones, la granada y el cohete
 // también van derecho al zombie (js/juego.js: dispararArma)
 const MIRA_PUNTO_ROJO = new Set(['vector', 'p90', 'saiga', 'mgl', 'bazuca']);
-const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : null;
+// (y la que se compra en el búnker de la pelea infinita, js/equipables.js: la telescópica sólo en los rifles)
+const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : (typeof EQUIPO_ARMAS !== 'undefined' && EQUIPO_ARMAS.has(id) && EQUIPO_ARMAS.get(id).mira) || null;
 const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
@@ -10709,6 +10796,16 @@ class Jugador {
     this.lanzado = null;               // Égida o Gungnir en el aire: vuelven solas a la mano
     this.agachado = 0;                 // 0 parado … 1 rodilla en tierra (↓ mantenida)
     this.veneno = 0;                   // segundos de envenenamiento por ácido de los zombies tóxicos
+    this.dirPrevia = { d: false, i: false }; this.giroFijo = false;   // girar sin caminar (tecla de girar)
+    this.ultimoSuelo = 0; this.saltando = false; this.saltoPedidoEn = -1e9; this.aterrizoConImpulso = 0;   // margen al saltar
+  }
+
+  // Tecla de girar: queda mirando para el otro lado sin caminar; si sigue apretando una flecha, la mirada queda fija
+  // hasta que la suelta (así dispara hacia atrás mientras retrocede o salta). Vale también en el aire
+  girar() {
+    if (this.muerto || this.montada) return;
+    this.direccion = -this.direccion; this.girosHechos = (this.girosHechos || 0) + 1;
+    if (this.dirPrevia.d || this.dirPrevia.i) this.giroFijo = true;
   }
 
   // Ácido de un zombie tóxico: quema de a poco mientras dure (no se acumula, se renueva)
@@ -10749,13 +10846,24 @@ class Jugador {
       this.vx = 0;
       // Agachado (rodilla en tierra): no camina ni salta, pero puede girar para tirar al otro lado
       const agachandose = entrada.abajo && this.enSuelo;
-      if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; this.direccion = 1; }
-      if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; this.direccion = -1; }
+      // Girar sin caminar (tecla de girar): el jugador queda mirando para el otro lado aunque siga apretando la flecha
+      // (tirar hacia atrás mientras avanza o retrocede, también en el aire) hasta que suelta la flecha o aprieta otra vez
+      const apretoDir = (entrada.derecha && !this.dirPrevia.d) || (entrada.izquierda && !this.dirPrevia.i);
+      if (this.giroFijo && (apretoDir || (!entrada.derecha && !entrada.izquierda))) this.giroFijo = false;
+      this.dirPrevia = { d: !!entrada.derecha, i: !!entrada.izquierda };
+      if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; if (!this.giroFijo) this.direccion = 1; }
+      if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; if (!this.giroFijo) this.direccion = -1; }
       if (agachandose) this.vx = 0;
-      // Impulso al soltarse de una soga: lo lleva por el aire hasta que toca el piso (las flechas lo corrigen un poco)
-      if (this.impulso && !this.enSuelo) { this.vx = this.impulso + this.vx * 0.3; this.direccion = Math.sign(this.impulso) || this.direccion; }
+      // Impulso al soltarse de una soga: lo lleva por el aire hasta que toca el piso; las flechas lo corrigen y se puede girar
+      if (this.impulso && !this.enSuelo) this.vx = this.impulso + this.vx * 0.55;
       this.caminando = this.vx !== 0 && this.enSuelo;
-      if (entrada.saltarPulsado && this.enSuelo && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; }
+      // Margen de error al saltar (pedido de Enzo, con las sogas y los bordes): se puede saltar hasta 130 ms después de
+      // pisar el vacío, y un salto apretado un instante antes de tocar el piso sale al aterrizar
+      if (this.enSuelo) { this.ultimoSuelo = this.ahora; this.saltando = false; }
+      else if (entrada.saltarPulsado) this.saltoPedidoEn = this.ahora;
+      const puedeSaltar = this.enSuelo || (!this.saltando && this.vy >= 0 && this.ahora - this.ultimoSuelo < MARGEN_SALTO_MS);
+      const pidioSalto = entrada.saltarPulsado || (this.enSuelo && this.ahora - this.saltoPedidoEn < MARGEN_SALTO_MS);
+      if (pidioSalto && puedeSaltar && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; this.saltando = true; this.saltoPedidoEn = -1e9; }
       const nx = this.x + this.vx * paso;
       if (!(this.vx !== 0 && alturaSuelo(nx) < this.y - ESCALON_MAX)) this.x = nx;   // contra una pared alta: no avanza
       const suelo = alturaSuelo(this.x);
@@ -10765,7 +10873,7 @@ class Jugador {
       if (!this.enSuelo) {
         this.vy += GRAVEDAD * paso;
         this.y += this.vy * paso;
-        if (this.y >= suelo) { if (this.vy > 4) Audio_.aterrizar(this.superficie()); this.y = suelo; this.vy = 0; this.enSuelo = true; this.impulso = 0; }
+        if (this.y >= suelo) { if (this.vy > 4) Audio_.aterrizar(this.superficie()); this.y = suelo; this.vy = 0; this.enSuelo = true; this.aterrizoConImpulso = this.impulso; this.impulso = 0; }
       }
     }
     entrada.saltarPulsado = false;
@@ -10902,7 +11010,7 @@ class Jugador {
       this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id, peine: EN_BLOQUE.has(arma.id) && this.municion[arma.id] === 0 };
     }
     juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null, this.mira && !this.montada ? this.objetivoMira : null);
-    Audio_.disparo(arma.categoria, arma.id);
+    Audio_.disparo(arma.categoria, arma.id, !this.montada && !!equipoDe(arma.id).silenciador);
     if (accion) this.iniciarCiclo(juego, arma, accion, tipoCasquillo);
     return true;
   }
@@ -12347,7 +12455,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   };
   // El cargador que entra o sale va antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
   if (cargadorEnMano && !cargadorEnMano.encima) dibujarCargadorEnMano();
-  ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); ctx.restore();
+  ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); if (!this.montada) dibujarEquipables(ctx, arma.id, d); ctx.restore();
   if (e.peine) dibujarPeineEnArma(ctx, e.peine, arma.id);
   pintarMano(ctx, lejos, Clejos, 'adelante');
 
@@ -13188,6 +13296,9 @@ const GARRA = { cierre: [0, 0, 0, 0], nudillo: 0.6, abre: 1, pulgar: { suelto: 1
 // Muerte: segundos hasta quedar de rodillas, hasta desplomarse, lo que tarda en caer y cuándo termina de desvanecerse
 const MUERTE = { rodillas: 0.35, desploma: 1.0, caida: 0.45, fin: 4.45 };
 
+// Hasta dónde llega el arma como tope para los zombies de frente (historia): un fusil muy largo no los deja a más que esto
+const LARGO_MAX_ARMA_ZOMBIE = 84;
+
 class Zombie {
   constructor(x, corredor, dificultad) {
     this.x = x; this.y = alturaSuelo(x);
@@ -13259,7 +13370,19 @@ class Zombie {
     this.direccion = dx >= 0 ? 1 : -1;
     const distancia = Math.abs(dx);
     const dy = Math.abs(jugador.y - this.y);
-    const alcanza = distancia < 34 && dy < (Mundo.perfil ? 40 : 70) && !jugador.muerto && !this.vyCaida;   // con desniveles, no muerde desde abajo de una plataforma
+    // Modo historia (pedido de Enzo): el arma tiene cuerpo. Un zombie que viene de frente se frena en la boca del
+    // cañón y muerde desde ahí, así nunca queda adentro del arma ni se pierde el tiro; si el jugador se da vuelta
+    // y lo deja adentro del arma, el cañón lo va empujando hasta la boca. Por la espalda, todo igual que siempre
+    let tope = 34;
+    if (juego.historia && !jugador.muerto && !jugador.montada && !jugador.trepa && !jugador.soga && dx !== 0 && Math.sign(dx) === -jugador.direccion) {
+      if (juego.bocaAhora !== ahora) { juego.bocaAhora = ahora; juego.bocaLargo = Math.abs(jugador.puntoArma('boca').x - jugador.x); }   // una vez por cuadro, no por zombie
+      tope = Math.max(34, Math.min(LARGO_MAX_ARMA_ZOMBIE, juego.bocaLargo + 6));
+    }
+    const alcanza = distancia < tope && dy < (Mundo.perfil ? 40 : 70) && !jugador.muerto && !this.vyCaida;   // con desniveles, no muerde desde abajo de una plataforma
+    if (tope > 34 && distancia < tope - 3 && dy < 40 && !this.vyCaida && !this.trepa) {   // adentro del arma: el cañón lo empuja hacia afuera
+      const nx = this.x + this.direccion * -1 * Math.min(4, tope - distancia) * paso, sueloN = alturaSuelo(nx);
+      if (sueloN < SUELO_BASE + 100 && this.y - sueloN <= 14) this.x = nx;   // no lo tira a un precipicio ni lo mete en una pared
+    }
 
     if (alcanza) {
       this.estado = 'ataca';
@@ -14467,7 +14590,9 @@ class Proyectil {
       if (z.estado === 'muerto' || this.golpeados.has(z)) continue;
       if (this.carril !== undefined && z.carril !== this.carril) continue;   // defensa ultra: sólo su carril
       // En un carril cuenta el carril, no la altura: le pega igual a un zombie chiquito (ahí no hay cómo agacharse)
-      const caja = this.carril !== undefined ? { ...z.caja(), y: -1e4, h: 2e4 } : z.caja();
+      let caja = this.carril !== undefined ? { ...z.caja(), y: -1e4, h: 2e4 } : z.caja();
+      // Con bípode (js/equipables.js) la bala le pega de frente a un zombie chiquito del mismo piso, sin agacharse
+      if (this.bipode && z.escala < BIPODE.chicoMax && Math.abs(z.y - this.pisoTirador) < BIPODE.desnivelMax) caja = { ...caja, y: caja.y - BIPODE.subeCaja, h: caja.h + BIPODE.subeCaja };
       const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, caja);
       if (t !== null) cruces.push([t, z]);
     }
@@ -15067,6 +15192,8 @@ class Juego {
     this.torreta = !!opciones.torreta;    // torreta: fijo en una M2, olas por los dos lados, cada una peor
     this.entrenamiento = !!opciones.entrenamiento;   // entrenamiento: polígono de tiro con blancos en movimiento
     this.ultra = !!opciones.ultra;        // defensa ultra: 4 carriles, el sector a la izquierda (js/defensa-ultra.js)
+    EQUIPO_ARMAS.clear();                 // los equipables del búnker (js/equipables.js) son de cada partida
+    this.tutorial = !!opciones.tutorial;  // tutorial: un campo plano con pasos guiados de lo básico (js/tutorial.js)
     this.estrategia = !!opciones.estrategia;   // último bastión: defensa con estrategia sobre una grilla (js/estrategia.js)
     this.opcionesEstrategia = opciones.estrategia;   // { nivel, continuar } (js/bastion-niveles.js)
     // Mapa de la pelea infinita: la ciudad en ruinas, la cloaca (canal subterráneo con zombies tóxicos) o la nieve
@@ -15075,7 +15202,7 @@ class Juego {
     this.cloaca = this.mapa === 'cloaca';
     this.nieve = this.mapa === 'nieve';
     Mundo.nieve = this.nieve;   // pisadas que crujen (Jugador.superficie)
-    Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra;
+    Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra || this.tutorial;
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
     Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
     Mundo.interior = this.entrenamiento || this.cloaca;   // el polígono y la cloaca son lugares cerrados
@@ -15105,9 +15232,9 @@ class Juego {
       ronda: document.getElementById('hud-ronda'), dificultad: document.getElementById('hud-dificultad'),
       aviso: document.getElementById('aviso'), avisoRonda: document.getElementById('aviso-ronda'),
     };
-    document.getElementById('hud-aereo').classList.toggle('oculta', !(this.torreta || this.ultra));   // el ataque aéreo es de las defensas
+    document.getElementById('hud-aereo').classList.toggle('oculta', !(this.torreta || this.ultra || this.tutorial));   // el ataque aéreo es de las defensas (y del tutorial)
     this.textoModo = '';   // lo pone actualizarHud (cambia si se cambia el idioma en plena partida)
-    if (this.torreta || this.ultra) {
+    if (this.torreta || this.ultra || this.tutorial) {
       this.aereo = { listoEn: 0, activo: null, recarga: 20 };   // se puede pedir desde el arranque
       this.misiles = []; this.aviones = [];
       this.hud.aereo = document.getElementById('hud-aereo');
@@ -15133,10 +15260,11 @@ class Juego {
     if (opciones.historia) this.prepararHistoria(opciones.historia);
     if (this.estrategia) this.prepararBastion();
     // Pelea infinita (sin misión): distancia arriba y un búnker con un comerciante cada 300 m (js/bunker.js)
-    this.infinita = !mision && !opciones.historia && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !this.estrategia;
+    this.infinita = !mision && !opciones.historia && !this.tutorial && !this.pruebas && !this.torreta && !this.entrenamiento && !this.ultra && !this.estrategia;
     document.body.classList.toggle('en-infinita', this.infinita); document.body.classList.remove('con-botiquin');
     document.getElementById('bunker').classList.add('oculta');   // por si se salió al menú con el búnker abierto
     if (this.infinita) this.prepararBunkers();
+    if (this.tutorial) this.prepararTutorial();
     if (this.pruebas || this.entrenamiento) {
       for (const id of ORDEN_INVENTARIO) this.jugador.recoger(id);
       for (const id of ARMAS_ESPECIALES) this.jugador.reserva[id] = 999;
@@ -15266,6 +15394,9 @@ class Juego {
       p.objetivo = vivo; this.proyectiles.push(p);
     };
     this.disparoId = (this.disparoId || 0) + 1;
+    const eq = this.jugador.montada ? {} : equipoDe(arma.id), silenciado = !!eq.silenciador;
+    // Bípode (js/equipables.js): sólo parado en el piso; desde una montaña o un lugar alto no ayuda
+    const conBipode = !!eq.bipode && alturaSuelo(this.jugador.x) >= SUELO_BASE - BIPODE.altoMax;
     if (this.entrenamiento) {
       this.ent.disparos++; if (this.ent.serieActual) this.ent.serieActual.disparos++;
       // Altura real de la boca al tirar parado, por arma: los blancos bajos se ubican con eso
@@ -15299,17 +15430,18 @@ class Juego {
       this.explosiones.push(new Fogonazo(cola, y, -direccion, 12, 'fuego'));
       for (let k = 0; k < 14; k++) this.particulas.push(new Particula(cola, y + (Math.random() - 0.5) * 6, -direccion * (2 + Math.random() * 4), (Math.random() - 0.6) * 1.6, k % 3 ? '#b1a89c' : '#ffcf6a', 0.5 + Math.random() * 0.6, 4 + Math.random() * 5, false));
     } else {
-      const desvio = arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0;
+      const desvio = (arma.categoria === 'metralleta' ? (Math.random() - 0.5) * 1.2 : arma.categoria === 'ametralladora' ? (Math.random() - 0.5) * 0.8 : 0) * (conBipode ? BIPODE.desvio : 1);   // el bípode cierra las ráfagas
       if (vivo) alZombie(); else this.proyectiles.push(new Proyectil(arma, x, y, v * direccion, desvio));
       if (arma.categoria === 'rifle') this.sacudida = 3;
     }
     if (arma.categoria !== 'granada' && !arma.fuego) {
-      const tam = { pistola: 6, metralleta: 6.5, rifle: 9, escopeta: 10, ametralladora: 10, lanzagranadas: 8, laser: 6 }[arma.categoria] || 6;
+      const tam = ({ pistola: 6, metralleta: 6.5, rifle: 9, escopeta: 10, ametralladora: 10, lanzagranadas: 8, laser: 6 }[arma.categoria] || 6) * (silenciado ? 0.3 : 1);   // el silenciador casi no deja fogonazo
       this.explosiones.push(new Fogonazo(x, y, direccion, tam * (0.85 + Math.random() * 0.3), arma.categoria === 'laser' ? 'laser' : 'fuego'));
     }
     for (let k = antes; k < this.proyectiles.length; k++) {
       const p = this.proyectiles[k];
       p.desdeX = this.jugador.x; p.disparoId = this.disparoId;   // barrido desde el cuerpo
+      if (conBipode) { p.bipode = true; p.pisoTirador = alturaSuelo(this.jugador.x); }   // le pega de frente a los chiquitos (js/objetos.js)
       if (this.ultra) {   // la bala va por su carril, apuntada al pecho del zombie más cercano
         p.carril = this.jugador.carril; p.pisoY = this.jugador.y;
         if (!p.arma.explosivo && !p.objetivo) p.vy += this.apuntarUltra(p);
@@ -15408,6 +15540,7 @@ class Juego {
     const j = this.jugador;
     if (!j.muerto && j.vida < j.vidaMax) j.vida = Math.min(j.vidaMax, j.vida + 20);
     Audio_.rondaSuperada();
+    if (this.bunker) this.contarHorda();   // cada 3 hordas, los búnkeres se alejan 1 km (js/bunker.js)
     if (this.ultra) this.soltarCajaUltra(true);   // al terminar cada ola, siempre cae un arma
     if (this.torreta || this.ultra) this.avisoRonda(t('ronda.olaSuperada'), t('ronda.olaLlega', { n: this.ronda + 1, s: this.dificultad.descanso }));
     else this.avisoRonda(t('ronda.superada'), t('ronda.llega', { n: this.ronda + 1, s: this.dificultad.descanso }));
@@ -15624,7 +15757,7 @@ class Juego {
 
   aparecerZombies(dt) {
     const d = this.dificultad;
-    if (this.pruebas || this.entrenamiento) return;
+    if (this.pruebas || this.entrenamiento || this.tutorial) return;   // el tutorial pone sus zombies a mano (js/tutorial.js)
     if (this.aereo && this.aereo.activo) return;   // mientras caen los misiles no entra nadie: la pantalla queda limpia
     if (this.historia) return this.aparecerZombiesHistoria(dt);
     if (this.ultra && !this.enDescanso && this.porAparecer > 0) return this.aparecerOlaUltra(dt);
@@ -15632,7 +15765,9 @@ class Juego {
     if (this.enDescanso) { if (this.tiempoJugado >= this.descansoHasta) this.iniciarRonda(); return; }
     if (this.porAparecer <= 0) { if (this.zombiesVivos() === 0) this.terminarRonda(); return; }
     this.proximoZombie -= dt;
-    if (this.proximoZombie > 0 || this.zombiesVivos() >= d.maxVivos) return;
+    // Con silenciador en el arma de la mano, atrae a menos zombies: un 20 % menos de vivos a la vez (js/equipables.js)
+    const tope = this.silenciadorEnMano() ? Math.max(1, Math.round(d.maxVivos * FRACCION_SILENCIADOR)) : d.maxVivos;
+    if (this.proximoZombie > 0 || this.zombiesVivos() >= tope) return;
     this.proximoZombie = d.intervalo * (0.7 + Math.random() * 0.6);
     const grupo = Math.min(this.porAparecer, 1 + Math.floor(Math.random() * Math.min(3, 1 + this.ronda / 3)));
     const lado = Math.random() < 0.5 ? -1 : 1;
@@ -15650,7 +15785,7 @@ class Juego {
 
   aparecerCajas(dt) {
     if (this.ultra) return this.cajasUltra(dt);
-    if (this.pruebas || this.torreta || this.entrenamiento || this.historia) return;
+    if (this.pruebas || this.torreta || this.entrenamiento || this.historia || this.tutorial) return;
     this.proximaCaja -= dt;
     if (this.proximaCaja > 0) return;
     this.proximaCaja = (10 + Math.random() * 6) / AJUSTE.cajas;
@@ -15694,6 +15829,7 @@ class Juego {
     if (this.aereo) this.actualizarAereo(dt);
     if (this.ultra) for (const tt of this.torretas) tt.actualizar(dt, this);
     if (this.entrenamiento) this.actualizarEntrenamiento(dt);
+    if (this.tutorial) this.actualizarTutorial(dt);
     for (const e2 of this.escupitajos) e2.actualizar(dt, this);
     for (const c of this.charcos) c.actualizar(dt, this);
     if (this.cloaca && this.ahora >= this.proximaGota) { Audio_.gota(Math.random()); this.proximaGota = this.ahora + 400 + Math.random() * 1800; }
@@ -15773,7 +15909,7 @@ class Juego {
     const tiros = disparosParaMatar(this.bunker ? this.armaMejorada(arma) : arma, vidaActual);   // con la mejora del búnker
     const estado = j.recargando() ? `<span class="recargando">${t('hud.recargando')}</span>`
       : mun <= 0 ? `<span class="recargando">${t('hud.recargaS')}</span>` : '';
-    const modo = this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
+    const modo = this.tutorial ? t('tutorial.modo') : this.entrenamiento ? t('hud.entrenamiento') : this.pruebas ? t('hud.pruebasModo') : (this.historia ? t('hist.hud.modo') : this.ultra ? t('hud.ultra') : this.torreta ? t('hud.torreta') : this.cloaca ? t('hud.cloaca') : this.nieve ? t('hud.nieve') : '') + this.dificultad.nombre.toUpperCase();
     if (modo !== this.textoModo) { this.textoModo = modo; h.dificultad.textContent = modo; }
     if (arma.cuerpo && !j.montada) {
       h.arma.innerHTML = `${arma.nombre} <small>${t('hud.golpesPor', { n: tiros })}</small><br><span class="municion">${arma.legendaria ? '✦ ' + t('poder.' + arma.poder) : '⚔'}</span>` +
@@ -17015,8 +17151,157 @@ document.getElementById('tienda-ultra').addEventListener('click', e => {
 
 </script>
   <script>
+/* ===== Equipables de las armas (pedido de Enzo, 18/11): bípode, mira y silenciador =====
+ * En el búnker de la pelea infinita, abajo del todo en la ventana del arma elegida, el botón EQUIPABLES muestra tres
+ * objetos que se compran y quedan puestos en esa arma:
+ *   - BÍPODE: en cualquier arma menos las escopetas, las pistolas y las de cuerpo a cuerpo. Mejora muy poco la
+ *     puntería: la bala le pega de frente a un zombie chiquito sin que el tirador se agache (la caja del golpe de los
+ *     chiquitos sube unos píxeles) y las ráfagas se abren la mitad. Sólo vale parado en el piso: desde una montaña o un
+ *     lugar alto no ayuda, y sólo con los zombies chiquitos (más bajos que la boca del arma).
+ *   - MIRA: funciona igual que las que ya existen (tecla D: apunta sola al zombie más cercano y la bala no falla).
+ *     Los rifles sólo pueden llevar la telescópica; todas las otras armas, sólo la de punto rojo.
+ *   - SILENCIADOR: el disparo suena apagado y casi no hay fogonazo, y atrae a menos zombies: con él en el arma que
+ *     tienes en la mano, los zombies vivos a la vez son un 20 % menos (cuatro donde iban cinco de cada diez).
+ * EQUIPO_ARMAS: id del arma → { bipode, mira ('telescopica' | 'puntoRojo'), silenciador }; se vacía en cada partida.
+ */
+const EQUIPO_ARMAS = new Map();
+const equipoDe = id => EQUIPO_ARMAS.get(id) || {};
+const FRACCION_SILENCIADOR = 0.8;   // zombies vivos a la vez con silenciador: 4 donde iban 5
+const BIPODE = { subeCaja: 40, chicoMax: 0.85, desnivelMax: 24, altoMax: 20, desvio: 0.5 };   // px; escala del «chiquito»; px sobre el piso para decir «lugar alto»
+const EQUIPABLES = {
+  bipode: { nombre: 'equip.bipode', desc: 'equip.bipode.desc', precio: () => 200 },
+  mira: { nombre: id => 'equip.mira.' + (ARMAS[id].categoria === 'rifle' ? 'tele' : 'punto'), desc: id => 'equip.mira.' + (ARMAS[id].categoria === 'rifle' ? 'tele' : 'punto') + '.desc', precio: id => ARMAS[id].categoria === 'rifle' ? 350 : 250 },
+  silenciador: { nombre: 'equip.silenciador', desc: 'equip.silenciador.desc', precio: () => 300 },
+};
+const miraPropia = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : null;   // la que el arma ya trae
+const esDeFuego = a => !!a && !a.cuerpo && a.categoria !== 'granada';
+
+// ¿Va este equipable en esta arma? { ok, puesto, razon, nombre, desc, precio }
+function infoEquipable(tipo, id) {
+  const a = ARMAS[id], E = EQUIPABLES[tipo], eq = equipoDe(id), r = { ok: false, puesto: !!eq[tipo], razon: '' };
+  const por = x => typeof x === 'function' ? x(id) : x;
+  r.nombre = por(E.nombre); r.desc = por(E.desc); r.precio = E.precio(id);
+  if (r.puesto) { r.ok = true; return r; }
+  if (!esDeFuego(a)) r.razon = 'equip.noVa.cuerpo';
+  else if (tipo === 'bipode' && (a.categoria === 'escopeta' || a.categoria === 'pistola')) r.razon = 'equip.noVa.bipode';
+  else if (tipo === 'mira' && miraPropia(id)) r.razon = 'equip.noVa.yaMira';
+  else r.ok = true;
+  return r;
+}
+
+/* ---------- Dibujo: sobre el arma, con los puntos de anclaje que ya tiene (boca, mano delantera, expulsión) ---------- */
+function dibujarEquipables(ctx, id, d) {
+  const eq = EQUIPO_ARMAS.get(id); if (!eq || !d || !d.boca) return;
+  const b = d.boca;
+  if (eq.silenciador) {   // el cilindro oscuro que sale de la boca, con sus anillos
+    parte(ctx, b.x - 1, b.y - 2.3, 17, 4.6, '#222327');
+    ctx.fillStyle = tinta('#3b3d44'); for (const k of [3, 7, 11]) ctx.fillRect(b.x - 1 + k, b.y - 2.3, 0.9, 4.6);
+    ctx.fillStyle = tinta('#111214'); ctx.fillRect(b.x + 15.2, b.y - 1, 0.8, 2);
+  }
+  if (eq.bipode) {   // las patas plegadas hacia adelante, bajo el guardamanos
+    const m = d.manoDelantera || { x: b.x * 0.55, y: b.y + 4 }, ax = Math.min(m.x + 3, b.x - 8), ay = Math.max(m.y - 1, b.y + 3);
+    parte(ctx, ax - 1.2, ay - 2, 3, 3, '#33363c');
+    parte(ctx, ax, ay + 0.2, 9, 1.2, '#2a2c31'); parte(ctx, ax + 1, ay + 1.6, 8, 1.1, '#2a2c31');
+  }
+  if (eq.mira) {
+    const e = d.expulsion || { x: 8, y: b.y - 2 };
+    if (eq.mira === 'telescopica') {   // tubo con las dos campanas, sobre dos anillos de montaje apoyados en la parte de arriba del arma
+      const x = Math.max(0, e.x - 11), top = parteSuperior(id, d, x + 1, x + 21);
+      parte(ctx, x + 2, top - 3.2, 2.2, 3.4, '#222327'); parte(ctx, x + 15, top - 3.2, 2.2, 3.4, '#222327');
+      parte(ctx, x, top - 6.6, 20, 3.4, '#1f2023'); parte(ctx, x - 1.4, top - 7.4, 2.6, 5, '#2b2d33'); parte(ctx, x + 18.8, top - 7.6, 2.8, 5.4, '#2b2d33');
+      ctx.fillStyle = tinta('#7fb7ff'); ctx.fillRect(x + 21, top - 6.6, 0.7, 3.4);
+    } else {            // punto rojo: caja chica con la lente al frente, sobre su base
+      const x = Math.max(0, e.x - 4), top = parteSuperior(id, d, x, x + 6);
+      parte(ctx, x, top - 1, 6.4, 1.2, '#222327'); parte(ctx, x + 0.3, top - 4.2, 5.6, 3.4, '#25272b');
+      ctx.fillStyle = tinta('rgba(255,70,60,0.85)'); ctx.fillRect(x + 5, top - 3.8, 0.7, 2.6); ctx.fillStyle = tinta('#ff5a4a'); ctx.fillRect(x + 2.6, top - 2.7, 0.9, 0.9);
+    }
+  }
+}
+
+// Dónde queda la parte de arriba del dibujo del arma entre x0 y x1 (unidades del dibujo, y hacia arriba negativa): se
+// mide una vez dibujando el arma aparte, así la mira apoya sobre cada una sin flotar ni hundirse
+const partesSuperiores = new Map();
+function parteSuperior(id, d, x0, x1) {
+  const clave = id + ':' + Math.round(x0) + ':' + Math.round(x1);
+  if (partesSuperiores.has(clave)) return partesSuperiores.get(clave);
+  const PX = 3, ORIGEN_X = 40, ORIGEN_Y = 90, W = 300 * PX, H = 130 * PX;
+  const lienzo = document.createElement('canvas'); lienzo.width = W; lienzo.height = H;
+  const o = lienzo.getContext('2d', { willReadFrequently: true }), silueta = Pincel.silueta; Pincel.silueta = null;
+  o.setTransform(PX, 0, 0, PX, ORIGEN_X * PX, ORIGEN_Y * PX);
+  try { d.dibujar(o, { corredera: 0, sinCargador: false, abierto: 0, bombeo: 0, palanca: 0, mirar: 0, tapa: 0 }); } finally { Pincel.silueta = silueta; }
+  const datos = o.getImageData(0, 0, W, H).data, xa = Math.max(0, Math.floor((ORIGEN_X + x0) * PX)), xb = Math.min(W, Math.ceil((ORIGEN_X + x1) * PX));
+  let alto = null;
+  for (let y = 0; y < H && alto === null; y++) for (let x = xa; x < xb; x++) if (datos[(y * W + x) * 4 + 3] > 20) { alto = y / PX - ORIGEN_Y; break; }
+  const r = alto === null ? (d.boca ? d.boca.y - 3 : -8) : alto;
+  partesSuperiores.set(clave, r);
+  return r;
+}
+
+/* ---------- La ventana del búnker ---------- */
+Object.assign(Juego.prototype, {
+  silenciadorEnMano() { const j = this.jugador; return !j.montada && !!equipoDe(j.arma().id).silenciador; },
+  // El panel de equipables del arma elegida (reemplaza el contenido de la ventana de la derecha)
+  htmlEquipables(id) {
+    const B = this.bunker, a = ARMAS[id];
+    const filas = ['bipode', 'mira', 'silenciador'].map(tipo => {
+      const i = infoEquipable(tipo, id);
+      let accion;
+      if (i.puesto) accion = `<span class="equip-puesto">✓ ${t('equip.puesto')}</span>`;
+      else if (!i.ok) accion = `<span class="equip-novale">${t(i.razon)}</span>`;
+      else { const falta = i.precio - B.dinero; accion = `<button type="button" class="boton-bunker secundario" data-bunker="equipo:${tipo}"${falta > 0 ? ' disabled' : ''}><span>${t('bunker.comprar1')}</span><b>${falta > 0 ? t('bunker.faltan', { n: falta }) : '$' + i.precio}</b></button>`; }
+      return `<div class="equipable${i.ok ? '' : ' apagado'}"><div class="equip-texto"><b>${t(i.nombre)}</b><small>${t(i.desc)}</small></div>${accion}</div>`;
+    }).join('');
+    return `<h3>${a.nombre}</h3><p class="estrellas">${t('equip.titulo')}</p>${filas}<button type="button" class="boton-bunker secundario" data-bunker="equipables-volver"><span>${t('equip.volver')}</span></button>`;
+  },
+  botonEquipables() { return `<button type="button" class="boton-bunker secundario boton-equipables" data-bunker="equipables"><span>${t('equip.boton')}</span><b>▸</b></button>`; },
+  comprarEquipo(tipo, armaId, cobrar) {
+    const i = EQUIPABLES[tipo] && ARMAS[armaId] ? infoEquipable(tipo, armaId) : null;
+    if (!i || !i.ok || i.puesto || !cobrar(i.precio)) return false;
+    const eq = Object.assign({}, equipoDe(armaId));
+    eq[tipo] = tipo === 'mira' ? (ARMAS[armaId].categoria === 'rifle' ? 'telescopica' : 'puntoRojo') : true;
+    EQUIPO_ARMAS.set(armaId, eq);
+    this.bunker.dice = t('bunker.dijoEquipo');
+    Audio_.sacarArma(ARMAS[armaId]);
+    return true;
+  },
+});
+
+const TEXTOS_EQUIPABLES = {
+  es: {
+    'equip.boton': 'EQUIPABLES', 'equip.volver': 'VOLVER', 'equip.titulo': 'BÍPODE · MIRA · SILENCIADOR', 'equip.puesto': 'PUESTO',
+    'equip.bipode': 'Bípode', 'equip.bipode.desc': 'Afina un poco la puntería: le pegas de frente a los zombies chiquitos sin agacharte. No ayuda desde una montaña ni desde un lugar alto.',
+    'equip.mira.tele': 'Mira telescópica', 'equip.mira.tele.desc': 'Como la de los rifles: con la tecla de la mira apunta sola al zombie más cercano y la bala no falla.',
+    'equip.mira.punto': 'Mira de punto rojo', 'equip.mira.punto.desc': 'Como la de las metralletas: con la tecla de la mira apunta sola al zombie más cercano y la bala no falla.',
+    'equip.silenciador': 'Silenciador', 'equip.silenciador.desc': 'Apaga el disparo y atrae a menos zombies: caen 4 a la vez donde iban 5 (un 20 % menos).',
+    'equip.noVa.bipode': 'No va en escopetas ni pistolas', 'equip.noVa.cuerpo': 'No va en esta arma', 'equip.noVa.yaMira': 'Esta arma ya trae su mira',
+    'bunker.dijoEquipo': 'Listo, ya te lo dejé puesto.',
+  },
+  pt: {
+    'equip.boton': 'EQUIPÁVEIS', 'equip.volver': 'VOLTAR', 'equip.titulo': 'BIPÉ · MIRA · SILENCIADOR', 'equip.puesto': 'INSTALADO',
+    'equip.bipode': 'Bipé', 'equip.bipode.desc': 'Melhora um pouco a pontaria: você acerta os zumbis pequenos de frente sem se abaixar. Não ajuda de uma montanha nem de um lugar alto.',
+    'equip.mira.tele': 'Luneta', 'equip.mira.tele.desc': 'Como a dos rifles: com a tecla da mira, ela vai sozinha no zumbi mais próximo e a bala não erra.',
+    'equip.mira.punto': 'Mira de ponto vermelho', 'equip.mira.punto.desc': 'Como a das submetralhadoras: com a tecla da mira, ela vai sozinha no zumbi mais próximo e a bala não erra.',
+    'equip.silenciador': 'Silenciador', 'equip.silenciador.desc': 'Abafa o tiro e atrai menos zumbis: vêm 4 ao mesmo tempo em vez de 5 (20 % a menos).',
+    'equip.noVa.bipode': 'Não serve em escopetas nem pistolas', 'equip.noVa.cuerpo': 'Não serve nesta arma', 'equip.noVa.yaMira': 'Esta arma já tem sua mira',
+    'bunker.dijoEquipo': 'Pronto, já deixei instalado.',
+  },
+  en: {
+    'equip.boton': 'ATTACHMENTS', 'equip.volver': 'BACK', 'equip.titulo': 'BIPOD · SIGHT · SUPPRESSOR', 'equip.puesto': 'FITTED',
+    'equip.bipode': 'Bipod', 'equip.bipode.desc': 'Steadies your aim a little: you hit small zombies head-on without crouching. It doesn\'t help from a mountain or any high spot.',
+    'equip.mira.tele': 'Telescopic sight', 'equip.mira.tele.desc': 'Like the rifles\': with the sight key it locks onto the nearest zombie and the bullet never misses.',
+    'equip.mira.punto': 'Red dot sight', 'equip.mira.punto.desc': 'Like the SMGs\': with the sight key it locks onto the nearest zombie and the bullet never misses.',
+    'equip.silenciador': 'Suppressor', 'equip.silenciador.desc': 'Muffles the shot and draws fewer zombies: 4 at a time instead of 5 (20% fewer).',
+    'equip.noVa.bipode': 'Doesn\'t fit shotguns or pistols', 'equip.noVa.cuerpo': 'Doesn\'t fit this weapon', 'equip.noVa.yaMira': 'This weapon already has its sight',
+    'bunker.dijoEquipo': 'Done, it\'s all fitted.',
+  },
+};
+for (const idioma of Object.keys(TEXTOS_EQUIPABLES)) Object.assign(TEXTOS[idioma], TEXTOS_EQUIPABLES[idioma]);
+
+</script>
+  <script>
 /* ===== Búnkeres de la pelea infinita (pedido de Enzo, 16/11, y los botiquines que sumó Leandro) =====
- * Arriba de la pantalla, la distancia recorrida desde el punto de partida. Cada 300 m (para los dos lados) hay un
+ * Arriba de la pantalla, la distancia recorrida desde el punto de partida. El primero está a 300 m (para los dos lados) y
+ * después la distancia entre búnkeres crece 1 km cada 3 hordas superadas (con un 5 % de que, aun así, no cambie). Hay un
  * búnker subterráneo: en el piso, la boca de concreto blanco con la escalera que baja, y una luz verde que sale del piso
  * y se ve de lejos. Parado encima aparece «↓ ENTRAR AL BÚNKER»; con ↓ se entra (la partida queda quieta mientras tanto).
  * Adentro atiende un comerciante: un señor de unos 75 años con un parche en el ojo, barba blanca más o menos larga y el
@@ -17027,7 +17312,10 @@ document.getElementById('tienda-ultra').addEventListener('click', e => {
  * aplica en Zombie.recibirDano (js/zombie.js) con `juego.mejoras`. No hay búnkeres en las misiones ni en los otros modos.
  */
 const BUNKER = {
-  cada: 300,               // metros entre búnkeres
+  cada: 300,               // metros entre búnkeres al empezar
+  hordasPorSalto: 3,       // cada tantas hordas (rondas) superadas, los búnkeres que faltan van más lejos...
+  saltoM: 1000,            // ...tantos metros más (1 km)
+  probSinSalto: 0.05,      // pero una de cada veinte veces, aunque pasen las 3 hordas, la distancia no cambia
   pxPorMetro: 44,          // la medida de las estacas del entrenamiento (js/juego.js)
   boca: 104,               // ancho del hueco de la escalera, en unidades del mundo
   radioEntrar: 50,         // a cuánto del centro de la boca hay que estar parado para poder entrar
@@ -17097,7 +17385,7 @@ function dibujarArmaCentrada(lienzo, id, margen = 8, PX = 3) {
   const o = aparte.getContext('2d');
   const silueta = Pincel.silueta; Pincel.silueta = null;
   o.setTransform(k, 0, 0, k, W / 2, H / 2); if (a.cuerpo) o.rotate(Math.PI / 2);   // las de cuerpo a cuerpo, acostadas
-  d.dibujar(o, estado);
+  d.dibujar(o, estado); dibujarEquipables(o, id, d);
   const datos = o.getImageData(0, 0, W, H).data;
   let x0 = W, y0 = H, x1 = 0, y1 = 0;
   for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (datos[(y * W + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
@@ -17106,7 +17394,7 @@ function dibujarArmaCentrada(lienzo, id, margen = 8, PX = 3) {
     const ox = (lienzo.width - w * esc) / 2, oy = (lienzo.height - h * esc) / 2;
     c.setTransform(k * esc, 0, 0, k * esc, ox + (W / 2 - (x0 - 2)) * esc, oy + (H / 2 - (y0 - 2)) * esc);
     if (a.cuerpo) c.rotate(Math.PI / 2);
-    d.dibujar(c, estado);
+    d.dibujar(c, estado); dibujarEquipables(c, id, d);
     c.setTransform(1, 0, 0, 1, 0, 0);
   }
   Pincel.silueta = silueta;
@@ -17114,8 +17402,9 @@ function dibujarArmaCentrada(lienzo, id, margen = 8, PX = 3) {
 // Las miniaturas de las cartas se dibujan una vez por arma y después se copian
 const miniaturasBunker = new Map();
 function miniaturaArma(id) {
-  if (!miniaturasBunker.has(id)) { const m = document.createElement('canvas'); m.width = 300; m.height = 128; dibujarArmaCentrada(m, id, 6, 2); miniaturasBunker.set(id, m); }
-  return miniaturasBunker.get(id);
+  const clave = id + JSON.stringify(equipoDe(id));   // con lo que lleva puesto (js/equipables.js)
+  if (!miniaturasBunker.has(clave)) { const m = document.createElement('canvas'); m.width = 300; m.height = 128; dibujarArmaCentrada(m, id, 6, 2); miniaturasBunker.set(clave, m); }
+  return miniaturasBunker.get(clave);
 }
 // Botiquín: valija blanca con la cruz verde de primeros auxilios y la manija
 function dibujarBotiquin(ctx, x, y, w) {
@@ -17221,44 +17510,55 @@ function dibujarEscenaBunker(lienzo, armaId, ahora) {
 /* ---------- La partida: posición de los búnkeres, entrar y salir, dinero, botiquines, mejoras ---------- */
 Object.assign(Juego.prototype, {
   prepararBunkers() {
-    this.bunker = { origen: this.jugador.x, posiciones: new Map(), dinero: 0, botiquines: 0, abierto: false, sobre: null,
-      pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8 };   // avisoEn: después del «¡SOBREVIVE!» del arranque
+    this.bunker = { origen: this.jugador.x, dinero: 0, botiquines: 0, abierto: false, sobre: null,
+      pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8,   // avisoEn: después del «¡SOBREVIVE!» del arranque
+      lados: { 1: [], '-1': [] }, hordas: 0, saltos: 0 };   // lados: los búnkeres generados a cada lado, en orden; saltos: cuántas veces creció la distancia
     this.mejoras = {};   // id del arma → nivel (lo lee Zombie.recibirDano)
   },
-  // x del búnker número k (k ≠ 0; los negativos, a la izquierda del punto de partida). Nunca en una montaña: si cae en
-  // una, pasa al trozo de al lado, que nunca es montaña (js/terreno.js: no hay dos seguidas)
-  xBunker(k) {
-    const B = this.bunker;
-    if (!B.posiciones.has(k)) {
-      let x = B.origen + k * BUNKER.cada * BUNKER.pxPorMetro;
-      const i = indiceTrozo(x);
-      if (esMontana(i)) x = (i + Math.sign(k)) * TAMANO_TROZO + TAMANO_TROZO / 2;
-      B.posiciones.set(k, x);
-    }
-    return B.posiciones.get(k);
+  // Distancia entre un búnker y el siguiente, en metros: 300 al empezar y 1 km más cada 3 hordas superadas (salvo el 5 % de
+  // las veces que no cambia: contarHorda). Cada búnker queda fijo con la distancia que había cuando se generó
+  separacionM() { return BUNKER.cada + BUNKER.saltoM * this.bunker.saltos; },
+  // Un búnker nunca sobre una montaña: si cae en una, pasa al trozo de al lado, que nunca es montaña (js/terreno.js: no hay dos seguidas)
+  generarBunker(lado) {
+    const B = this.bunker, lista = B.lados[lado], ultimo = lista.length ? lista[lista.length - 1] : B.origen;
+    let x = ultimo + lado * (lista.length ? this.separacionM() : BUNKER.cada) * BUNKER.pxPorMetro;
+    const i = indiceTrozo(x);
+    if (esMontana(i)) x = (i + lado) * TAMANO_TROZO + TAMANO_TROZO / 2;
+    lista.push(x);
   },
-  bunkersEntre(x0, x1) {
-    const B = this.bunker, paso = BUNKER.cada * BUNKER.pxPorMetro, lista = [];
-    for (let k = Math.floor((x0 - B.origen) / paso) - 1; k <= Math.ceil((x1 - B.origen) / paso) + 1; k++) {
-      if (k === 0) continue;
-      const x = this.xBunker(k);
-      if (x >= x0 && x <= x1) lista.push(x);
+  // A cada lado hay siempre generado uno más allá de lo que el jugador ve: cuando se acerca a el último (a 3 pantallas) o
+  // lo pasa, se genera el siguiente, con la distancia de ese momento
+  asegurarBunkers() {
+    const B = this.bunker, jx = this.jugador.x;
+    for (const lado of [1, -1]) {
+      const lista = B.lados[lado];
+      if (!lista.length) this.generarBunker(lado);
+      while ((jx - lista[lista.length - 1]) * lado > -ANCHO * 3) this.generarBunker(lado);
     }
-    return lista;
+  },
+  todosBunkers() { const B = this.bunker; return B.lados[1].concat(B.lados[-1]); },
+  bunkersEntre(x0, x1) { this.asegurarBunkers(); return this.todosBunkers().filter(x => x >= x0 && x <= x1); },
+  // Cada vez que se supera una horda; cada 3, la distancia entre búnkeres sube 1 km (con un 5 % de que se quede igual)
+  contarHorda() {
+    const B = this.bunker; if (!B) return;
+    B.hordas++;
+    if (B.hordas % BUNKER.hordasPorSalto !== 0) return;
+    if (Math.random() < BUNKER.probSinSalto) return;   // esta vez no cambia
+    B.saltos++;
+    this.aviso(t('bunker.separacion', { km: (this.separacionM() / 1000).toLocaleString(Idioma.actual(), { maximumFractionDigits: 1 }) }), 4200);
   },
   metrosRecorridos() { return Math.round(Math.abs(this.jugador.x - this.bunker.origen) / BUNKER.pxPorMetro); },
   // El próximo hacia donde va el jugador (o el que tiene debajo)
   proximoBunker() {
-    const j = this.jugador, B = this.bunker, paso = BUNKER.cada * BUNKER.pxPorMetro, dir = this.avance || j.direccion || 1;
-    const k0 = Math.round((j.x - B.origen) / paso);
+    this.asegurarBunkers();
+    const j = this.jugador, dir = this.avance || j.direccion || 1;
     let mejor = null;
-    for (let k = k0 - 2; k <= k0 + 2; k++) {
-      if (k === 0) continue;
-      const dx = this.xBunker(k) - j.x;
+    for (const x of this.todosBunkers()) {
+      const dx = x - j.x;
       if (Math.abs(dx) <= BUNKER.radioEntrar) return { metros: 0, dir: 0 };
-      if (Math.sign(dx) === dir && (!mejor || Math.abs(dx) < Math.abs(mejor))) mejor = dx;
+      if (Math.sign(dx) === dir && (mejor === null || Math.abs(dx) < Math.abs(mejor))) mejor = dx;
     }
-    return mejor === null ? { metros: BUNKER.cada, dir } : { metros: Math.round(Math.abs(mejor) / BUNKER.pxPorMetro), dir };
+    return mejor === null ? { metros: this.separacionM(), dir } : { metros: Math.round(Math.abs(mejor) / BUNKER.pxPorMetro), dir };
   },
   // ¿Está parado sobre la boca de un búnker? Devuelve su x o null
   bunkerDebajo() {
@@ -17291,7 +17591,7 @@ Object.assign(Juego.prototype, {
   salirBunker() {
     const B = this.bunker;
     if (!B || !B.abierto) return;
-    B.abierto = false;
+    B.abierto = false; B.equipables = false;
     document.getElementById('bunker').classList.add('oculta');
     Object.assign(this.entrada, { derecha: false, izquierda: false, abajo: false, disparar: false, dispararPulsado: false, saltarPulsado: false, abajoPulsado: false });
     this.jugador.invulnerableHasta = this.ahora + 1500;   // un respiro al subir: los zombies quedaron donde estaban
@@ -17445,6 +17745,7 @@ Object.assign(Juego.prototype, {
     } else {
       dibujarArmaCentrada(lienzo, id, 14, 4);
       const a = ARMAS[id], golpes = a.cuerpo ? 'bunker.golpes' : 'bunker.tiros';
+      if (B.pestana === 'propias' && B.equipables) { acc.innerHTML = this.htmlEquipables(id); document.getElementById('bunker-dice').textContent = B.dice ? '— ' + B.dice : ''; return; }   // bípode, mira y silenciador (js/equipables.js)
       if (B.pestana === 'propias') {
         const n = this.mejoras[id] || 0, antes = this.armaMejorada(a), despues = Object.assign({}, a, { dano: a.dano * multiplicadorMejora(n + 1) });
         html = `<h3>${a.nombre}</h3><p class="estrellas">${'★'.repeat(n)}${'☆'.repeat(BUNKER.mejoraMax - n)} ${t('bunker.nivel', { n, max: BUNKER.mejoraMax })}</p>`;
@@ -17453,6 +17754,7 @@ Object.assign(Juego.prototype, {
           (a.fuego || a.explosivo ? '' : `<p>${t(golpes, { a: tiros(antes), b: tiros(despues) })}</p>`) +
           boton('mejorar:' + id, t('bunker.mejorar'), precioMejora(id, n));
         if (a.reservaInicial !== undefined) html += boton('municion:' + id, t('bunker.municion', { n: a.reservaInicial, tienes: (j.municion[id] || 0) + (j.reserva[id] || 0) }), precioMunicionBunker(id), ' secundario');
+        html += this.botonEquipables();   // abajo de todo
       } else {
         html = `<h3>${a.nombre}</h3><p>${t('bunker.danoVenta', { d: a.dano })}${a.fuego || a.explosivo ? '' : ' · ' + t(golpes + 'Venta', { n: tiros(a) })}</p>` +
           (FICHAS[id] ? `<p class="bunker-desc">${enIdioma(FICHAS[id][3])}</p>` : '') +
@@ -17468,8 +17770,11 @@ Object.assign(Juego.prototype, {
     const [que, id] = accion.split(':');
     const cobrar = precio => { if (B.dinero < precio) { B.dice = t('bunker.sinDinero'); this.pintarDetalleBunker(); return false; } B.dinero -= precio; return true; };
     if (que === 'salir') return this.salirBunker();
-    if (que === 'pestana') { B.pestana = id; B.elegido = null; }
-    else if (que === 'elegir') { B.elegido = id; }
+    if (que === 'pestana') { B.pestana = id; B.elegido = null; B.equipables = false; }
+    else if (que === 'elegir') { B.elegido = id; B.equipables = false; }
+    else if (que === 'equipables') { B.equipables = true; }
+    else if (que === 'equipables-volver') { B.equipables = false; }
+    else if (que === 'equipo') { if (!this.comprarEquipo(id, B.elegido, cobrar)) return; }
     else if (que === 'mejorar') {
       const n = this.mejoras[id] || 0;
       if (n >= BUNKER.mejoraMax || !j.inventario.includes(id) || !cobrar(precioMejora(id, n))) return;
@@ -17554,6 +17859,7 @@ Object.assign(TEXTOS.es, {
   'aviso.botiquin': v => `+${v.n} DE VIDA`, 'aviso.sinBotiquin': 'NO TIENES BOTIQUINES', 'aviso.vidaLlena': 'TU VIDA ESTÁ LLENA',
   'accion.botiquin': 'Usar botiquín (Pelea infinita)', 'controles.botiquin': 'Usar un botiquín (se compran en los búnkeres de la pelea infinita)',
   'tactil.botiquin': 'Usar botiquín',
+  'bunker.separacion': v => `AHORA LOS BÚNKERES QUEDAN A ${v.km} km UNO DEL OTRO`,
 });
 Object.assign(TEXTOS.pt, {
   'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
@@ -17576,6 +17882,7 @@ Object.assign(TEXTOS.pt, {
   'aviso.botiquin': v => `+${v.n} DE VIDA`, 'aviso.sinBotiquin': 'VOCÊ NÃO TEM KITS MÉDICOS', 'aviso.vidaLlena': 'SUA VIDA ESTÁ CHEIA',
   'accion.botiquin': 'Usar kit médico (Luta infinita)', 'controles.botiquin': 'Usar um kit médico (compram-se nos bunkers da luta infinita)',
   'tactil.botiquin': 'Usar kit médico',
+  'bunker.separacion': v => `AGORA OS BUNKERS FICAM A ${v.km} km UM DO OUTRO`,
 });
 Object.assign(TEXTOS.en, {
   'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
@@ -17598,6 +17905,7 @@ Object.assign(TEXTOS.en, {
   'aviso.botiquin': v => `+${v.n} HEALTH`, 'aviso.sinBotiquin': 'YOU HAVE NO MEDKITS', 'aviso.vidaLlena': 'YOUR HEALTH IS FULL',
   'accion.botiquin': 'Use medkit (Endless fight)', 'controles.botiquin': 'Use a medkit (bought in the bunkers of the endless fight)',
   'tactil.botiquin': 'Use medkit',
+  'bunker.separacion': v => `NOW THE BUNKERS ARE ${v.km} km APART`,
 });
 
 </script>
@@ -19035,6 +19343,38 @@ const NIVELES_HISTORIA = [
     dormidos: [450, 1000, 1200, 1800, 2000, 2350, 2950, 3600, 3900, 4100, 4600, 5000, 5450, 6000, 6300, 6500, 6700] },
 ];
 const INICIO_HISTORIA = 600;   // x donde arranca cada nivel
+const AMP_MAX_SOGA = 1.45;      // cuánto se puede agrandar el balanceo de una soga impulsándose
+const DISTANCIA_BORDE_SOGA = 62; // al caer de una soga, a cuántos px del borde del vacío queda como mínimo
+
+/* Niveles más largos (pedido de Enzo: «los lugares, un poco más largos»): los tramos de piso y de techo se estiran
+ * FACTOR_LARGO_HISTORIA veces; los huecos, escalones, autos, andamios y escombros quedan como están (el mismo salto,
+ * la misma soga). Todo lo que tiene una posición (cajas, corazones, radios, zombies dormidos, escaleras, sogas, fuego)
+ * se corre con el tramo en el que estaba, y en lo que se agrega se suman unos zombies dormidos para que el
+ * tramo ensanchado no quede vacío. Los niveles crecen entre un 25 % y un 40 %. */
+const FACTOR_LARGO_HISTORIA = 1.6, TRAMOS_ESTIRABLES = new Set(['suelo', 'techo']), ZOMBIES_POR_PX_AGREGADO = 1 / 200;
+function ampliarNivel(def, f) {
+  const mapa = []; let acum = 0;
+  for (const [a, b, h0, h1, tipo] of def.terreno) {
+    const largo = Math.round((b - a) * (TRAMOS_ESTIRABLES.has(tipo) ? f : 1));
+    mapa.push({ a, b, na: acum, nb: acum + largo, h0, h1, tipo }); acum += largo;
+  }
+  const ultimo = mapa[mapa.length - 1];
+  const m = x => { for (const t of mapa) if (x >= t.a && x < t.b) return Math.round(t.na + (x - t.a) * (t.nb - t.na) / (t.b - t.a)); return Math.round(acum + x - ultimo.b); };
+  const agregados = [];
+  for (const t of mapa) {
+    const extra = (t.nb - t.na) - (t.b - t.a), n = Math.floor(extra * ZOMBIES_POR_PX_AGREGADO);
+    for (let k = 0; k < n; k++) agregados.push(Math.round(t.nb - (k + 0.5) * (extra / n) - 40));
+  }
+  def.terreno = mapa.map(t => [t.na, t.nb, t.h0, t.h1, t.tipo]);
+  def.largo = m(def.largo);
+  def.cajas = def.cajas.map(([dx, ...resto]) => [m(dx), ...resto]);
+  for (const k of ['corazones', 'radios']) def[k] = def[k].map(m);
+  def.dormidos = def.dormidos.map(m).concat(agregados).sort((p, q) => p - q);
+  if (def.escaleras) def.escaleras = def.escaleras.map(([dx, ...resto]) => [m(dx), ...resto]);
+  if (def.sogas) def.sogas = def.sogas.map(([dx, ...resto]) => [m(dx), ...resto]);
+  if (def.fuegos) def.fuegos = def.fuegos.map(([a, b]) => { const na = m(a); return [na, na + (b - a)]; });
+}
+NIVELES_HISTORIA.forEach(d => ampliarNivel(d, FACTOR_LARGO_HISTORIA));
 
 // Altura del piso (px hacia arriba) en cada x según los tramos del nivel: escalones de 12 px en las escaleras,
 // subida pareja en el ala (rampa), altura fija en lo demás
@@ -19060,7 +19400,7 @@ Object.assign(TEXTOS.es, {
   'hist.aviso.caida': '¡CAÍSTE! −25 DE VIDA', 'hist.aviso.horda': '¡UNA HORDA! AGUANTA, YA FALTA POCO', 'hist.aviso.fuego': '¡TE QUEMAS!',
   'hist.aviso.jefe': '¡JEFE FINAL!', 'hist.aviso.jefeBloquea': '¡DERROTA AL JEFE PARA SEGUIR!', 'hist.aviso.jefeVencido': '¡JEFE DERROTADO!', 'hist.aviso.onda': '¡LA ONDA! SALTA PARA ESQUIVARLA',
   'hist.jefe.avion': 'EL SAN BERNARDO DEL CENTRO CÍVICO', 'hist.jefe.ruta': 'EL TORO DE LA PAMPA', 'hist.jefe.ciudad': 'EL HINCHA DEL BOMBO', 'hist.jefe.barrio': 'EL COLOSO VERDE',
-  'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': 'SALTA PARA SOLTAR LA SOGA',
+  'hist.pista.escalera': '↑ PARA TREPAR', 'hist.pista.bajar': '↓ PARA BAJAR', 'hist.pista.soga': '← → PARA IMPULSARTE · SALTA PARA SOLTAR',
   'menu.historia': 'HISTORIA: CAMINO A CASA',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sur', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'Una noche de noviembre, un virus convirtió a millones de personas en zombies. Tú volvías a casa en el último vuelo que salió de la capital.',
@@ -19102,7 +19442,7 @@ Object.assign(TEXTOS.pt, {
   'hist.aviso.caida': 'VOCÊ CAIU! −25 DE VIDA', 'hist.aviso.horda': 'UMA HORDA! AGUENTE, FALTA POUCO', 'hist.aviso.fuego': 'VOCÊ ESTÁ QUEIMANDO!',
   'hist.aviso.jefe': 'CHEFÃO FINAL!', 'hist.aviso.jefeBloquea': 'DERROTE O CHEFÃO PARA SEGUIR!', 'hist.aviso.jefeVencido': 'CHEFÃO DERROTADO!', 'hist.aviso.onda': 'A ONDA! PULE PARA DESVIAR',
   'hist.jefe.avion': 'O SÃO BERNARDO DO CENTRO CÍVICO', 'hist.jefe.ruta': 'O TOURO DOS PAMPAS', 'hist.jefe.ciudad': 'O TORCEDOR DO BUMBO', 'hist.jefe.barrio': 'O COLOSSO VERDE',
-  'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': 'PULE PARA SOLTAR A CORDA',
+  'hist.pista.escalera': '↑ PARA SUBIR', 'hist.pista.bajar': '↓ PARA DESCER', 'hist.pista.soga': '← → PARA TE IMPULSIONAR · PULE PARA SOLTAR',
   'menu.historia': 'HISTÓRIA: CAMINHO DE CASA',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'Zona sul', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'Numa noite de novembro, um vírus transformou milhões de pessoas em zumbis. Você voltava para casa no último voo que saiu da capital.',
@@ -19144,7 +19484,7 @@ Object.assign(TEXTOS.en, {
   'hist.aviso.caida': 'YOU FELL! −25 HEALTH', 'hist.aviso.horda': 'A HORDE! HOLD ON, ALMOST THERE', 'hist.aviso.fuego': 'YOU ARE BURNING!',
   'hist.aviso.jefe': 'FINAL BOSS!', 'hist.aviso.jefeBloquea': 'DEFEAT THE BOSS TO GO ON!', 'hist.aviso.jefeVencido': 'BOSS DEFEATED!', 'hist.aviso.onda': 'SHOCKWAVE! JUMP TO DODGE IT',
   'hist.jefe.avion': 'THE CIVIC CENTER SAINT BERNARD', 'hist.jefe.ruta': 'THE BULL OF THE PAMPAS', 'hist.jefe.ciudad': 'THE BASS DRUM FAN', 'hist.jefe.barrio': 'THE GREEN COLOSSUS',
-  'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': 'JUMP TO LET GO OF THE ROPE',
+  'hist.pista.escalera': '↑ TO CLIMB', 'hist.pista.bajar': '↓ TO CLIMB DOWN', 'hist.pista.soga': '← → TO SWING HARDER · JUMP TO LET GO',
   'menu.historia': 'STORY: THE WAY HOME',
   'hist.nivel1': 'Bariloche', 'hist.nivel2': 'La Pampa', 'hist.nivel3': 'The south side', 'hist.nivel4': 'Padua, Merlo',
   'hist.intro1': 'One November night, a virus turned millions of people into zombies. You were flying home on the last plane out of the capital.',
@@ -19228,7 +19568,7 @@ class RecogibleHistoria {
 Object.assign(Juego.prototype, {
   prepararHistoria(op) {
     const n = op.nivel, def = NIVELES_HISTORIA[n - 1], j = this.jugador;
-    this.historia = { n, def, inicio: INICIO_HISTORIA, meta: INICIO_HISTORIA + def.largo, corazones: 0, radios: 0, aereos: 0, armas: [], caidas: 0, disparos: 0, bajasTotal: (op.estado && op.estado.bajasTotal) || 0, tiempoTotal: (op.estado && op.estado.tiempoTotal) || 0 };
+    this.historia = { n, def, ampSoga: {}, inicio: INICIO_HISTORIA, meta: INICIO_HISTORIA + def.largo, corazones: 0, radios: 0, aereos: 0, armas: [], caidas: 0, disparos: 0, bajasTotal: (op.estado && op.estado.bajasTotal) || 0, tiempoTotal: (op.estado && op.estado.tiempoTotal) || 0 };
     Mundo.plano = true; Mundo.carriles = false; Mundo.interior = false;
     Mundo.perfil = def.terreno ? perfilTerreno(def.terreno, INICIO_HISTORIA) : null;
     j.aTierra = true;                                       // el ataque aéreo lo pasa cuerpo a tierra
@@ -19301,7 +19641,8 @@ Object.assign(Juego.prototype, {
 
   /* Movimiento del jugador en la historia: escaleras de mano, sogas que se balancean y precipicios */
   extremoSoga(s) {
-    const [dx, hPivote, largo] = s, P = 2.6, A = 0.78, w = 2 * Math.PI / P, f = this.tiempoJugado * w + dx * 0.01;
+    // A: amplitud del vaivén; impulsándose (← → en el sentido del balanceo) crece hasta AMP_MAX_SOGA veces la normal
+    const [dx, hPivote, largo] = s, P = 2.6, A = 0.78 * (this.historia.ampSoga[dx] || 1), w = 2 * Math.PI / P, f = this.tiempoJugado * w + dx * 0.01;
     const ang = A * Math.sin(f), dAng = A * w * Math.cos(f);
     const px = this.historia.inicio + dx, py = SUELO_BASE - hPivote;
     return { x: px + Math.sin(ang) * largo, y: py + Math.cos(ang) * largo, vx: Math.cos(ang) * largo * dAng / 60, vy: -Math.sin(ang) * largo * dAng / 60, px, py };
@@ -19310,11 +19651,19 @@ Object.assign(Juego.prototype, {
     const j = this.jugador, H = this.historia, d = H.def, neutral = { ...e, derecha: false, izquierda: false, saltarPulsado: false, abajo: false };
     if (j.protegido || j.muerto) { j.actualizar(dt, neutral, this); return; }
     // Colgado de una soga: sigue el extremo; saltando se suelta con el impulso del balanceo
+    // Las sogas vuelven solas a su vaivén de siempre cuando nadie las empuja
+    for (const k of Object.keys(H.ampSoga)) if (!j.soga || j.soga[0] !== +k) { const a = H.ampSoga[k]; H.ampSoga[k] = a + (1 - a) * Math.min(1, dt * 0.8); }
     if (j.soga) {
       j.actualizar(dt, neutral, this);
+      // Impulsarse: apretar hacia donde va el balanceo lo agranda de a poco (hasta 1,45×); hacia el otro lado, lo frena
+      const antes = this.extremoSoga(j.soga), k = j.soga[0], dirBalanceo = Math.sign(antes.vx);
+      if ((e.derecha || e.izquierda) && dirBalanceo) {
+        const empuja = (e.derecha ? 1 : -1) === dirBalanceo;
+        H.ampSoga[k] = limitar((H.ampSoga[k] || 1) + (empuja ? 0.55 : -0.4) * dt, 0.45, AMP_MAX_SOGA);
+      }
       const p = this.extremoSoga(j.soga);
       j.x = p.x; j.y = p.y + 70 * ESCALA_JUGADOR; j.vy = 0;   // la mano (a 70 del pie en el esqueleto) en el extremo j.enSuelo = false;
-      if (e.saltarPulsado) { j.impulso = p.vx * 1.15; j.vy = Math.min(-5, p.vy - 6); j.soga = null; j.sogaLibreHasta = this.ahora + 450; Audio_.recoger && Audio_.recoger(); }
+      if (e.saltarPulsado) { j.impulso = p.vx * 1.3 + Math.sign(p.vx) * 0.6; j.direccion = Math.sign(j.impulso) || j.direccion; j.vy = Math.min(-5.5, p.vy - 6.5); j.soga = null; j.sogaLibreHasta = this.ahora + 450; Audio_.recoger && Audio_.recoger(); }
       e.saltarPulsado = false; return;
     }
     // Trepando una escalera de mano: sube o baja sola hasta el otro extremo
@@ -19331,6 +19680,16 @@ Object.assign(Juego.prototype, {
       if (e.abajo && j.enSuelo && Math.abs(j.x - (lx + 22)) < 26 && Math.abs(j.y - arriba) < 10) { j.trepa = { x: lx - 10, y0: arriba, y1: base, f: 0, xFin: lx - 34 }; return j.actualizar(dt, neutral, this); }
     }
     j.actualizar(dt, e, this);
+    // Cayó de una soga: si quedó pegado al borde del vacío del que venía, se corre un poco hacia adentro del piso
+    if (j.aterrizoConImpulso && j.enSuelo) {
+      const sentido = Math.sign(j.aterrizoConImpulso); j.aterrizoConImpulso = 0;
+      for (let d = 0; d <= 70; d += 4) if (alturaSuelo(j.x - sentido * d) > SUELO_BASE + 100) { j.corrimiento = { sentido, falta: Math.max(0, DISTANCIA_BORDE_SOGA - d) }; break; }
+    }
+    if (j.corrimiento && j.enSuelo) {
+      const C = j.corrimiento, paso = Math.min(C.falta, 140 * dt), nx = j.x + C.sentido * paso;
+      if (paso > 0 && alturaSuelo(nx) < SUELO_BASE + 60 && j.y - alturaSuelo(nx) <= 14) { j.x = nx; C.falta -= paso; } else j.corrimiento = null;
+      if (C && C.falta <= 0.5) j.corrimiento = null;
+    }
     // En el aire, si cualquier parte del cuerpo (manos, pecho, cintura, rodillas) toca los tres cuartos de abajo de
     // una soga, se agarra y queda colgado de la punta. Antes había que pasar las manos a menos de 36 px de la punta:
     // desde un techo la punta cuelga a la altura de los pies, el salto pasa por encima y casi nunca se lograba.
@@ -19338,7 +19697,7 @@ Object.assign(Juego.prototype, {
       const p = this.extremoSoga(s);
       const toca = [70, 50, 30, 10].some(alto => {
         const cy = j.y - alto, u = (cy - p.py) / (p.y - p.py);
-        return u >= 0.25 && u <= 1.08 && Math.abs(j.x - (p.px + (p.x - p.px) * Math.min(1, u))) < 22;
+        return u >= 0.2 && u <= 1.12 && Math.abs(j.x - (p.px + (p.x - p.px) * Math.min(1, u))) < 32;   // más ancho: un error de unos píxeles ya no manda al vacío
       });
       if (toca) { j.soga = s; j.impulso = 0; j.vy = 0; this.aviso(t('hist.pista.soga'), 1400); break; }
     }
@@ -19668,6 +20027,151 @@ const Historia = (() => {
 
   return { abrir, nivelSuperado, activa: () => activa, nombre: n => t('hist.nivel' + n) };
 })();
+
+</script>
+  <script>
+/* ===== Tutorial (pedido de Enzo) =====
+ * Un nivel corto (unos 2 minutos) en un campo plano donde se enseña, paso a paso, lo básico: caminar, saltar, agacharse,
+ * girar sin caminar, disparar, recargar, cambiar de arma, apuntar con la mira, el ataque aéreo (las «bombas») y, fuera del
+ * juego, la pausa y recargar la página (F5), que mucha gente no sabe. Cada paso se da por hecho cuando el jugador lo
+ * hace; todos se pueden omitir. El jugador no puede morir y los zombies vienen de a uno y lentos.
+ * Las teclas de cada texto son las que tiene configuradas ({k:acción}); en el celular se nombran los botones en pantalla.
+ */
+const PASOS_TUTORIAL = [
+  { id: 'mover', listo: (J, P) => P.recorrido >= 260 },
+  { id: 'saltar', listo: J => !J.jugador.enSuelo && Math.abs(J.jugador.vx) > 1 },
+  { id: 'agacharse', listo: J => J.jugador.agachado > 0.9 },
+  { id: 'girar', listo: (J, P) => (J.jugador.girosHechos || 0) > P.giros },
+  { id: 'disparar', alEmpezar: J => J.ponerZombiesTutorial(1), listo: (J, P) => J.bajas > P.bajas },
+  { id: 'recargar', alEmpezar: J => J.ponerZombiesTutorial(1, true), listo: (J, P) => J.jugador.recargando() || J.jugador.municionActual() > P.municion },
+  { id: 'cambiar', listo: (J, P) => J.jugador.indiceArma !== P.arma },
+  { id: 'mira', alEmpezar: J => { J.equiparTutorial('remington700'); J.ponerZombiesTutorial(1); }, listo: J => J.jugador.mira },
+  { id: 'aereo', alEmpezar: J => { J.jugador.mira && J.jugador.alternarMira(J); J.ponerZombiesTutorial(4); }, listo: (J, P) => { if (J.aereo.activo) P.visto = true; return P.visto && !J.aereo.activo; } },
+  { id: 'pausa', info: 6 },
+  { id: 'pagina', boton: true },
+  { id: 'fin', fin: true },
+];
+const CLAVE_TUTORIAL_HECHO = 'zonaMuerta.tutorialHecho';
+
+Object.assign(TEXTOS.es, {
+  'tutorial.modo': 'TUTORIAL', 'tutorial.paso': v => `PASO ${v.n} DE ${v.total}`, 'tutorial.omitir': 'OMITIR', 'tutorial.entendido': 'ENTENDIDO', 'tutorial.menu': 'VOLVER AL MENÚ', 'tutorial.repetir': 'REPETIR', 'tutorial.boton': 'TUTORIAL',
+  'tutorial.mover': 'Camina con {k:izquierda} y {k:derecha}.', 'tutorial.mover.t': 'Camina con los botones ◀ y ▶.',
+  'tutorial.saltar': 'Salta con {k:saltar}. Si mantienes una flecha mientras saltas, vas saltando hacia adelante o hacia atrás.', 'tutorial.saltar.t': 'Salta con el botón ▲ SALTO. Si mantienes ◀ o ▶ mientras saltas, saltas hacia adelante o hacia atrás.',
+  'tutorial.agacharse': 'Agáchate con {k:abajo} (mantenla apretada). Agachado le pegas de frente a los zombies chiquitos.', 'tutorial.agacharse.t': 'Agáchate con el botón ▼ ABAJO (mantenlo apretado). Agachado le pegas de frente a los zombies chiquitos.',
+  'tutorial.girar': 'Gira sin caminar con {k:girar}: miras para el otro lado y puedes disparar hacia atrás. Funciona también en el aire.', 'tutorial.girar.t': 'Gira sin caminar con el botón ⟲ GIRAR: miras para el otro lado y puedes disparar hacia atrás.',
+  'tutorial.disparar': 'Un zombie viene hacia ti. Dispara con {k:disparar} (o clic izquierdo) hasta derribarlo.', 'tutorial.disparar.t': 'Un zombie viene hacia ti. Dispara con el botón FUEGO hasta derribarlo.',
+  'tutorial.recargar': 'Se gastaron balas del cargador: recarga con {k:recargar} (o clic derecho). Hazlo antes de quedarte sin balas.', 'tutorial.recargar.t': 'Recarga con el botón RECARGAR. Hazlo antes de quedarte sin balas.',
+  'tutorial.cambiar': 'Cambia de arma con {k:armaAnterior} y {k:armaSiguiente}, o con la rueda del mouse.', 'tutorial.cambiar.t': 'Cambia de arma con ◀ ARMA y ARMA ▶.',
+  'tutorial.mira': 'Ahora tienes un rifle con mira. Apunta con {k:mira}: la mira se pone sola en el zombie más cercano y la bala no falla. Con la misma tecla la sueltas.', 'tutorial.mira.t': 'Ahora tienes un rifle con mira. Toca MIRA: se pone sola en el zombie más cercano y la bala no falla.',
+  'tutorial.aereo': 'Pide un ataque aéreo con {k:ataqueAereo}: los misiles limpian la pantalla de zombies. En la historia necesitas encontrar radios; en las defensas se recarga solo.', 'tutorial.aereo.t': 'Pide un ataque aéreo tocando el botón ATAQUE AÉREO: los misiles limpian la pantalla de zombies. En la historia necesitas encontrar radios.',
+  'tutorial.pausa': 'Pausa la partida con {k:pausa} o Esc. Ahí puedes cambiar el sonido, las teclas y todo lo de la configuración.', 'tutorial.pausa.t': 'Pausa la partida con el botón ❚❚. Ahí puedes cambiar el sonido y todo lo de la configuración.',
+  'tutorial.pagina': 'Si el juego se traba o va lento, recarga la página: F5 o Ctrl+R en la computadora, el botón ⟳ del navegador, o desliza hacia abajo en el celular. La configuración y las misiones superadas se conservan; la partida en curso, no.', 'tutorial.pagina.t': 'Si el juego se traba o va lento, recarga la página: el botón ⟳ del navegador o desliza hacia abajo. La configuración y las misiones superadas se conservan; la partida en curso, no.',
+  'tutorial.fin': '¡Listo! Ya sabes lo básico. Elige un modo en el menú y a sobrevivir.', 'tutorial.fin.t': '¡Listo! Ya sabes lo básico. Elige un modo en el menú y a sobrevivir.',
+});
+Object.assign(TEXTOS.pt, {
+  'tutorial.modo': 'TUTORIAL', 'tutorial.paso': v => `PASSO ${v.n} DE ${v.total}`, 'tutorial.omitir': 'PULAR', 'tutorial.entendido': 'ENTENDI', 'tutorial.menu': 'VOLTAR AO MENU', 'tutorial.repetir': 'REPETIR', 'tutorial.boton': 'TUTORIAL',
+  'tutorial.mover': 'Ande com {k:izquierda} e {k:derecha}.', 'tutorial.mover.t': 'Ande com os botões ◀ e ▶.',
+  'tutorial.saltar': 'Pule com {k:saltar}. Se mantiver uma seta apertada enquanto pula, você pula para frente ou para trás.', 'tutorial.saltar.t': 'Pule com o botão ▲. Se mantiver ◀ ou ▶ enquanto pula, você pula para frente ou para trás.',
+  'tutorial.agacharse': 'Abaixe-se com {k:abajo} (mantenha apertada). Abaixado, você acerta os zumbis pequenos de frente.', 'tutorial.agacharse.t': 'Abaixe-se com o botão ▼ (mantenha apertado). Abaixado, você acerta os zumbis pequenos de frente.',
+  'tutorial.girar': 'Vire sem andar com {k:girar}: você olha para o outro lado e pode atirar para trás. Vale também no ar.', 'tutorial.girar.t': 'Vire sem andar com o botão ⟲ VIRAR: você olha para o outro lado e pode atirar para trás.',
+  'tutorial.disparar': 'Um zumbi vem na sua direção. Atire com {k:disparar} (ou clique esquerdo) até derrubá-lo.', 'tutorial.disparar.t': 'Um zumbi vem na sua direção. Atire com o botão FOGO até derrubá-lo.',
+  'tutorial.recargar': 'Gastou balas do carregador: recarregue com {k:recargar} (ou clique direito). Faça isso antes de ficar sem balas.', 'tutorial.recargar.t': 'Recarregue com o botão RECARREGAR. Faça isso antes de ficar sem balas.',
+  'tutorial.cambiar': 'Troque de arma com {k:armaAnterior} e {k:armaSiguiente}, ou com a roda do mouse.', 'tutorial.cambiar.t': 'Troque de arma com ◀ ARMA e ARMA ▶.',
+  'tutorial.mira': 'Agora você tem um rifle com mira. Mire com {k:mira}: a mira vai sozinha no zumbi mais próximo e a bala não erra. Com a mesma tecla você solta.', 'tutorial.mira.t': 'Agora você tem um rifle com mira. Toque em MIRA: ela vai sozinha no zumbi mais próximo e a bala não erra.',
+  'tutorial.aereo': 'Peça um ataque aéreo com {k:ataqueAereo}: os mísseis limpam a tela de zumbis. Na história você precisa achar rádios; nas defesas ele recarrega sozinho.', 'tutorial.aereo.t': 'Peça um ataque aéreo tocando no botão ATAQUE AÉREO: os mísseis limpam a tela de zumbis. Na história você precisa achar rádios.',
+  'tutorial.pausa': 'Pause a partida com {k:pausa} ou Esc. Ali você muda o som, as teclas e tudo da configuração.', 'tutorial.pausa.t': 'Pause a partida com o botão ❚❚. Ali você muda o som e tudo da configuração.',
+  'tutorial.pagina': 'Se o jogo travar ou ficar lento, recarregue a página: F5 ou Ctrl+R no computador, o botão ⟳ do navegador, ou deslize para baixo no celular. A configuração e as missões concluídas ficam; a partida em andamento, não.', 'tutorial.pagina.t': 'Se o jogo travar ou ficar lento, recarregue a página: o botão ⟳ do navegador ou deslize para baixo. A configuração e as missões concluídas ficam; a partida em andamento, não.',
+  'tutorial.fin': 'Pronto! Você já sabe o básico. Escolha um modo no menu e sobreviva.', 'tutorial.fin.t': 'Pronto! Você já sabe o básico. Escolha um modo no menu e sobreviva.',
+});
+Object.assign(TEXTOS.en, {
+  'tutorial.modo': 'TUTORIAL', 'tutorial.paso': v => `STEP ${v.n} OF ${v.total}`, 'tutorial.omitir': 'SKIP', 'tutorial.entendido': 'GOT IT', 'tutorial.menu': 'BACK TO MENU', 'tutorial.repetir': 'REPEAT', 'tutorial.boton': 'TUTORIAL',
+  'tutorial.mover': 'Walk with {k:izquierda} and {k:derecha}.', 'tutorial.mover.t': 'Walk with the ◀ and ▶ buttons.',
+  'tutorial.saltar': 'Jump with {k:saltar}. If you hold an arrow while you jump, you leap forward or backward.', 'tutorial.saltar.t': 'Jump with the ▲ button. If you hold ◀ or ▶ while you jump, you leap forward or backward.',
+  'tutorial.agacharse': 'Crouch with {k:abajo} (hold it down). Crouched, you hit small zombies head-on.', 'tutorial.agacharse.t': 'Crouch with the ▼ button (hold it down). Crouched, you hit small zombies head-on.',
+  'tutorial.girar': 'Turn around without walking with {k:girar}: you face the other way and can shoot backward. It works in the air too.', 'tutorial.girar.t': 'Turn around without walking with the ⟲ TURN button: you face the other way and can shoot backward.',
+  'tutorial.disparar': 'A zombie is coming. Shoot with {k:disparar} (or left click) until it goes down.', 'tutorial.disparar.t': 'A zombie is coming. Shoot with the FIRE button until it goes down.',
+  'tutorial.recargar': 'You used up some rounds: reload with {k:recargar} (or right click). Do it before you run dry.', 'tutorial.recargar.t': 'Reload with the RELOAD button. Do it before you run dry.',
+  'tutorial.cambiar': 'Switch weapons with {k:armaAnterior} and {k:armaSiguiente}, or with the mouse wheel.', 'tutorial.cambiar.t': 'Switch weapons with ◀ ARMA and ARMA ▶.',
+  'tutorial.mira': 'You now have a scoped rifle. Aim with {k:mira}: the scope locks onto the nearest zombie and the bullet never misses. The same key lets go.', 'tutorial.mira.t': 'You now have a scoped rifle. Tap SIGHT: it locks onto the nearest zombie and the bullet never misses.',
+  'tutorial.aereo': 'Call in an air strike with {k:ataqueAereo}: the missiles clear every zombie off the screen. In the story you have to find radios; in the defense modes it recharges by itself.', 'tutorial.aereo.t': 'Call in an air strike by tapping the AIR STRIKE button: the missiles clear every zombie off the screen. In the story you have to find radios.',
+  'tutorial.pausa': 'Pause the game with {k:pausa} or Esc. There you can change the sound, the keys and everything in the settings.', 'tutorial.pausa.t': 'Pause the game with the ❚❚ button. There you can change the sound and everything in the settings.',
+  'tutorial.pagina': 'If the game freezes or runs slowly, reload the page: F5 or Ctrl+R on a computer, the browser’s ⟳ button, or pull down on a phone. Your settings and completed missions are kept; the game in progress is not.', 'tutorial.pagina.t': 'If the game freezes or runs slowly, reload the page: the browser’s ⟳ button or pull down. Your settings and completed missions are kept; the game in progress is not.',
+  'tutorial.fin': 'All set! You know the basics. Pick a mode in the menu and survive.', 'tutorial.fin.t': 'All set! You know the basics. Pick a mode in the menu and survive.',
+});
+
+Object.assign(Juego.prototype, {
+  // Al armar la partida: el campo plano sin rondas, tres armas (la última con mira) y el primer paso
+  prepararTutorial() {
+    const j = this.jugador;
+    this.descansoHasta = Infinity; this.proximaCaja = Infinity; this.proximoZombie = Infinity;
+    for (const id of ['ak47', 'remington700']) j.recoger(id);
+    j.indiceArma = j.inventario.indexOf(ARMA_INICIAL); j.cancelarRecarga();
+    this.tut = { paso: -1, P: null, xAnterior: j.x };
+    this.panelTutorial = document.getElementById('tutorial');
+    this.pasoTutorial(0);
+  },
+  tactilTutorial() { return document.body.classList.contains('tactil'); },
+  textoTutorial(id) { return t('tutorial.' + id + (this.tactilTutorial() ? '.t' : '')); },
+  equiparTutorial(armaId) {
+    const j = this.jugador; if (!j.inventario.includes(armaId)) j.recoger(armaId);
+    j.indiceArma = j.inventario.indexOf(armaId); j.cancelarRecarga(); j.ultimoDisparo = -1e9; Audio_.sacarArma(ARMAS[armaId]);
+  },
+  // Zombies lentos que llegan de a uno desde el frente (los que el jugador va derribando); gastado: deja el cargador sin llenar
+  ponerZombiesTutorial(n, gastar = false) {
+    const j = this.jugador;
+    for (let k = 0; k < n; k++) {
+      const x = j.x + j.direccion * (ANCHO / 2 + 40 + k * 130), z = new Zombie(x, false, this.dificultad);
+      z.vida = z.vidaMax = 24; z.velocidad = 0.38; z.y = alturaSuelo(x);
+      this.zombies.push(z);
+    }
+    if (gastar && j.municionActual() >= j.arma().cargador) j.municion[j.arma().id] = Math.max(1, j.arma().cargador - 2);
+  },
+  // Empieza el paso n: su texto, su botón (si lo tiene) y lo que necesite en la cancha
+  pasoTutorial(n) {
+    const T = this.tut, j = this.jugador; T.paso = n;
+    const paso = PASOS_TUTORIAL[n];
+    T.P = { desde: this.tiempoJugado, recorrido: 0, giros: j.girosHechos || 0, bajas: this.bajas, municion: j.municionActual(), arma: j.indiceArma, visto: false };
+    if (paso.alEmpezar) paso.alEmpezar(this);
+    this.dibujarPanelTutorial();
+    if (paso.fin) { try { localStorage.setItem(CLAVE_TUTORIAL_HECHO, '1'); } catch { /* sin almacenamiento */ } Audio_.mision(); }
+    else if (n > 0) Audio_.recoger();
+  },
+  dibujarPanelTutorial() {
+    const T = this.tut, paso = PASOS_TUTORIAL[T.paso], el = this.panelTutorial; if (!el) return;
+    const total = PASOS_TUTORIAL.length - 1;
+    el.classList.remove('oculta'); el.classList.toggle('final', !!paso.fin);
+    document.getElementById('tutorial-paso').textContent = paso.fin ? '✓' : t('tutorial.paso', { n: T.paso + 1, total });
+    document.getElementById('tutorial-texto').textContent = this.textoTutorial(paso.id);
+    const botones = document.getElementById('tutorial-botones');
+    botones.innerHTML = paso.fin
+      ? `<button type="button" class="boton chico" data-accion="al-menu">${t('tutorial.menu')}</button><button type="button" class="boton chico" data-accion="tutorial">${t('tutorial.repetir')}</button>`
+      : paso.boton ? `<button type="button" class="boton chico" data-accion="tutorial-saltar">${t('tutorial.entendido')}</button>` : '';
+    botones.classList.toggle('oculta', !botones.innerHTML);
+    document.getElementById('tutorial-omitir').classList.toggle('oculta', !!paso.fin || !!paso.boton);
+    document.getElementById('tutorial-omitir').textContent = t('tutorial.omitir');
+    this.tutorialTextoDe = paso.id + (this.tactilTutorial() ? 't' : '');
+  },
+  siguienteTutorial() { if (this.tut && this.tut.paso < PASOS_TUTORIAL.length - 1) this.pasoTutorial(this.tut.paso + 1); },
+  actualizarTutorial(dt) {
+    const T = this.tut, j = this.jugador; if (!T) return;
+    j.invulnerableHasta = this.ahora + 60000;   // aquí nadie se muere
+    T.P.recorrido += Math.abs(j.x - T.xAnterior); T.xAnterior = j.x;
+    const paso = PASOS_TUTORIAL[T.paso];
+    // Cambió el idioma, una tecla o el tipo de pantalla: el texto se vuelve a escribir
+    if (this.tutorialTextoDe !== paso.id + (this.tactilTutorial() ? 't' : '') || document.getElementById('tutorial-texto').textContent !== this.textoTutorial(paso.id)) this.dibujarPanelTutorial();
+    const avance = document.getElementById('tutorial-avance');
+    if (paso.fin || paso.boton) { avance.style.width = '100%'; return; }
+    if (paso.info) {
+      const f = Math.min(1, (this.tiempoJugado - T.P.desde) / paso.info); avance.style.width = (f * 100) + '%';
+      if (f >= 1) this.siguienteTutorial();
+      return;
+    }
+    // Pasos con zombies: que nunca falte uno a la vista para practicar
+    if (['disparar', 'recargar', 'mira'].includes(paso.id) && !this.zombies.some(z => z.estado !== 'muerto')) this.ponerZombiesTutorial(1);
+    avance.style.width = '0%';
+    if (paso.listo(this, T.P)) this.siguienteTutorial();
+  },
+});
 
 </script>
   <script>
@@ -25923,10 +26427,11 @@ const Asistente = (() => {
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     document.body.classList.toggle('en-bastion', !!opciones.estrategia);
     document.body.classList.toggle('en-pruebas', !!opciones.pruebas);
+    document.body.classList.toggle('en-tutorial', !!opciones.tutorial);
     fichaVitrinaId = null;
     tituloPruebas();
     const tactil = document.body.classList.contains('tactil');
-    juego.aviso(opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : opciones.mapa === 'nieve' ? t('aviso.nieve') : t('aviso.sobrevive'), 2500);
+    juego.aviso(opciones.tutorial ? t('tutorial.modo') : opciones.historia ? t('hist.aviso.inicio', { nombre: Historia.nombre(opciones.historia.nivel) }) : opciones.entrenamiento ? t(tactil ? 'aviso.entrenamientoTactil' : 'aviso.entrenamiento') : opciones.ultra ? t(tactil ? 'aviso.ultraTactil' : 'aviso.ultra') : opciones.torreta ? t(tactil ? 'aviso.torretaTactil' : 'aviso.torreta') : opciones.pruebas ? t(tactil ? 'aviso.pruebasTactil' : 'aviso.pruebas') : misionActual ? t('aviso.mision', { nombre: misionActual.nombre.toUpperCase() }) : opciones.mapa === 'cloaca' ? t('aviso.cloaca') : opciones.mapa === 'nieve' ? t('aviso.nieve') : t('aviso.sobrevive'), 2500);
     if (opciones.estrategia) juego.aviso(t(opciones.estrategia.v2 ? juego.nivelV2.aviso || 'b2.aviso' : 'bastion.aviso'), 7000);
     // Música del escenario: la ciudad (pelea, misiones, torreta) o la cloaca; el galpón y el campo, sin música
     Musica.tocar(opciones.entrenamiento || opciones.pruebas ? null : opciones.historia ? 'retroAccion' : juego.cloaca ? 'cloaca' : 'ciudad');   // la historia, con música de 8 bits
@@ -26213,7 +26718,7 @@ const Asistente = (() => {
     cancelAnimationFrame(cuadro);
     Audio_.ambiente(0);
     Musica.detener(0.8);
-    juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto');
+    juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto', 'en-tutorial');
     capaPruebas.classList.add('oculta');
     guiaB2Abierta = pausaPorGuia = false; BastionV2UI.cerrarGuia();
     mostrar('menu-principal');
@@ -26289,6 +26794,8 @@ const Asistente = (() => {
       }
       case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
+      case 'tutorial':  iniciar(null, { tutorial: true }); break;
+      case 'tutorial-saltar': if (juego && juego.tutorial) juego.siguienteTutorial(); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;
       case 'poner-zombie': if (juego) juego.ponerZombiePrueba(); break;
@@ -26392,6 +26899,7 @@ const Asistente = (() => {
       case 'ArrowUp':    if (!e.repeat) en.saltarPulsado = true; break;
       case 'ArrowDown':  en.abajo = true; if (!e.repeat) { en.abajoPulsado = true; juego.alternarMontar(); } break;   // mantenida: agacharse; junto a una M2: montarla
       case 'KeyF':       en.disparar = true; if (!e.repeat) en.dispararPulsado = true; break;
+      case 'KeyW':       if (!e.repeat && !juego.ultra) j.girar(); break;   // girar sin caminar (también en el aire)
       case 'KeyS':       if (!e.repeat) j.recargar(juego); break;
       case 'KeyD':       if (!e.repeat) j.alternarMira(juego); break;   // mira telescópica o de punto rojo: apunta sola al zombie más cercano
       case 'KeyA':       if (!e.repeat) juego.pedirAtaqueAereo(); break;
@@ -26422,6 +26930,8 @@ const Asistente = (() => {
   // Rueda del mouse: arma anterior / siguiente (con un respiro para que un giro no salte varias)
   let ultimaRueda = 0;
   window.addEventListener('wheel', e => {
+    if (!Config.get('raton')) return;
+    if (e.target.closest && e.target.closest('#ficha-vitrina')) return;   // la rueda sobre la ficha del arma la desplaza: no cambia de arma
     if (!juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.estrategia || (juego.bunker && juego.bunker.abierto)) return;
     const ahora = performance.now();
     if (ahora - ultimaRueda < 120) return;
@@ -26443,14 +26953,14 @@ const Asistente = (() => {
       if (pausado || juego.terminado || sobreControl(e) || e.target.closest('#panel-bastion')) return;
       const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'down', e.button); e.preventDefault(); return;
     }
-    if (e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
+    if (!Config.get('raton') || e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
     if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
     else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }
   });
   window.addEventListener('pointerup', e => {
     if (e.pointerType === 'mouse' && e.button === 0 && mouseDispara) { mouseDispara = false; if (juego) juego.entrada.disparar = false; }
   });
-  pantallaJuego.addEventListener('contextmenu', e => { if (juego && !sobreControl(e)) e.preventDefault(); });
+  pantallaJuego.addEventListener('contextmenu', e => { if (juego && Config.get('raton') && !sobreControl(e)) e.preventDefault(); });
 
   // Si la ventana pierde el foco, soltar todas las teclas para que no quede corriendo solo
   window.addEventListener('blur', () => {
@@ -26595,9 +27105,12 @@ const Asistente = (() => {
     } catch { /* el navegador o el visor no lo permiten */ }
   }
   // Lo que cambia en la configuración se aplica enseguida
-  const aplicarSonido = () => Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
+  const aplicarSonido = () => {
+    Audio_.volumenes({ general: Config.get('general'), efectos: Config.get('efectos'), musica: Config.get('musica'), silencio: Config.get('silencio') });
+    Audio_.apagar({ musica: !Config.get('sonMusica'), pasos: !Config.get('sonPasos'), disparos: !Config.get('sonDisparos'), impactos: !Config.get('sonImpactos'), zombies: !Config.get('sonZombies') });
+  };
   Config.alCambiar(clave => {
-    if (['general', 'efectos', 'musica', 'silencio'].includes(clave)) aplicarSonido();
+    if (['general', 'efectos', 'musica', 'silencio', 'sonMusica', 'sonPasos', 'sonDisparos', 'sonImpactos', 'sonZombies'].includes(clave)) aplicarSonido();
     if (clave === 'skin') renderizarArmasPrueba();   // el machete del cazador aparece o desaparece de la lista
     if (clave === 'calidad') { if (Config.get('calidad') === 'auto') { calidadAuto = 'alta'; Config.set('calidadAutoNivel', 'alta'); } ajustarResolucion(true); }   // elegir «auto» vuelve a medir desde alta
   });

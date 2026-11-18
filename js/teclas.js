@@ -13,6 +13,7 @@ const ACCIONES_TECLADO = [
   { id: 'izquierda', teclas: ['ArrowLeft'] },
   { id: 'saltar', teclas: ['ArrowUp'] },
   { id: 'abajo', teclas: ['ArrowDown'] },
+  { id: 'girar', teclas: ['KeyW'] },
   { id: 'disparar', teclas: ['KeyF'] },
   { id: 'recargar', teclas: ['KeyS'] },
   { id: 'mira', teclas: ['KeyD'] },
@@ -31,7 +32,7 @@ const ACCIONES_TECLADO = [
 ];
 // Cómo se agrupan en la configuración
 const SECCIONES_TECLADO = [
-  ['mover', ['derecha', 'izquierda', 'saltar', 'abajo']],
+  ['mover', ['derecha', 'izquierda', 'saltar', 'abajo', 'girar']],
   ['armas', ['disparar', 'recargar', 'mira', 'armaAnterior', 'armaSiguiente', 'grupo1', 'grupo2', 'grupo3', 'grupo4', 'grupo5', 'grupo6', 'grupo7']],
   ['modos', ['ataqueAereo', 'pausa', 'tienda', 'botiquin', 'torreta', 'menuPruebas', 'zombie', 'camaraLenta', 'borrar']],
 ];

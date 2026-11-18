@@ -1,5 +1,6 @@
 /* ===== Búnkeres de la pelea infinita (pedido de Enzo, 16/11, y los botiquines que sumó Leandro) =====
- * Arriba de la pantalla, la distancia recorrida desde el punto de partida. Cada 300 m (para los dos lados) hay un
+ * Arriba de la pantalla, la distancia recorrida desde el punto de partida. El primero está a 300 m (para los dos lados) y
+ * después la distancia entre búnkeres crece 1 km cada 3 hordas superadas (con un 5 % de que, aun así, no cambie). Hay un
  * búnker subterráneo: en el piso, la boca de concreto blanco con la escalera que baja, y una luz verde que sale del piso
  * y se ve de lejos. Parado encima aparece «↓ ENTRAR AL BÚNKER»; con ↓ se entra (la partida queda quieta mientras tanto).
  * Adentro atiende un comerciante: un señor de unos 75 años con un parche en el ojo, barba blanca más o menos larga y el
@@ -10,7 +11,10 @@
  * aplica en Zombie.recibirDano (js/zombie.js) con `juego.mejoras`. No hay búnkeres en las misiones ni en los otros modos.
  */
 const BUNKER = {
-  cada: 300,               // metros entre búnkeres
+  cada: 300,               // metros entre búnkeres al empezar
+  hordasPorSalto: 3,       // cada tantas hordas (rondas) superadas, los búnkeres que faltan van más lejos...
+  saltoM: 1000,            // ...tantos metros más (1 km)
+  probSinSalto: 0.05,      // pero una de cada veinte veces, aunque pasen las 3 hordas, la distancia no cambia
   pxPorMetro: 44,          // la medida de las estacas del entrenamiento (js/juego.js)
   boca: 104,               // ancho del hueco de la escalera, en unidades del mundo
   radioEntrar: 50,         // a cuánto del centro de la boca hay que estar parado para poder entrar
@@ -80,7 +84,7 @@ function dibujarArmaCentrada(lienzo, id, margen = 8, PX = 3) {
   const o = aparte.getContext('2d');
   const silueta = Pincel.silueta; Pincel.silueta = null;
   o.setTransform(k, 0, 0, k, W / 2, H / 2); if (a.cuerpo) o.rotate(Math.PI / 2);   // las de cuerpo a cuerpo, acostadas
-  d.dibujar(o, estado);
+  d.dibujar(o, estado); dibujarEquipables(o, id, d);
   const datos = o.getImageData(0, 0, W, H).data;
   let x0 = W, y0 = H, x1 = 0, y1 = 0;
   for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (datos[(y * W + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
@@ -89,7 +93,7 @@ function dibujarArmaCentrada(lienzo, id, margen = 8, PX = 3) {
     const ox = (lienzo.width - w * esc) / 2, oy = (lienzo.height - h * esc) / 2;
     c.setTransform(k * esc, 0, 0, k * esc, ox + (W / 2 - (x0 - 2)) * esc, oy + (H / 2 - (y0 - 2)) * esc);
     if (a.cuerpo) c.rotate(Math.PI / 2);
-    d.dibujar(c, estado);
+    d.dibujar(c, estado); dibujarEquipables(c, id, d);
     c.setTransform(1, 0, 0, 1, 0, 0);
   }
   Pincel.silueta = silueta;
@@ -97,8 +101,9 @@ function dibujarArmaCentrada(lienzo, id, margen = 8, PX = 3) {
 // Las miniaturas de las cartas se dibujan una vez por arma y después se copian
 const miniaturasBunker = new Map();
 function miniaturaArma(id) {
-  if (!miniaturasBunker.has(id)) { const m = document.createElement('canvas'); m.width = 300; m.height = 128; dibujarArmaCentrada(m, id, 6, 2); miniaturasBunker.set(id, m); }
-  return miniaturasBunker.get(id);
+  const clave = id + JSON.stringify(equipoDe(id));   // con lo que lleva puesto (js/equipables.js)
+  if (!miniaturasBunker.has(clave)) { const m = document.createElement('canvas'); m.width = 300; m.height = 128; dibujarArmaCentrada(m, id, 6, 2); miniaturasBunker.set(clave, m); }
+  return miniaturasBunker.get(clave);
 }
 // Botiquín: valija blanca con la cruz verde de primeros auxilios y la manija
 function dibujarBotiquin(ctx, x, y, w) {
@@ -204,44 +209,55 @@ function dibujarEscenaBunker(lienzo, armaId, ahora) {
 /* ---------- La partida: posición de los búnkeres, entrar y salir, dinero, botiquines, mejoras ---------- */
 Object.assign(Juego.prototype, {
   prepararBunkers() {
-    this.bunker = { origen: this.jugador.x, posiciones: new Map(), dinero: 0, botiquines: 0, abierto: false, sobre: null,
-      pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8 };   // avisoEn: después del «¡SOBREVIVE!» del arranque
+    this.bunker = { origen: this.jugador.x, dinero: 0, botiquines: 0, abierto: false, sobre: null,
+      pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8,   // avisoEn: después del «¡SOBREVIVE!» del arranque
+      lados: { 1: [], '-1': [] }, hordas: 0, saltos: 0 };   // lados: los búnkeres generados a cada lado, en orden; saltos: cuántas veces creció la distancia
     this.mejoras = {};   // id del arma → nivel (lo lee Zombie.recibirDano)
   },
-  // x del búnker número k (k ≠ 0; los negativos, a la izquierda del punto de partida). Nunca en una montaña: si cae en
-  // una, pasa al trozo de al lado, que nunca es montaña (js/terreno.js: no hay dos seguidas)
-  xBunker(k) {
-    const B = this.bunker;
-    if (!B.posiciones.has(k)) {
-      let x = B.origen + k * BUNKER.cada * BUNKER.pxPorMetro;
-      const i = indiceTrozo(x);
-      if (esMontana(i)) x = (i + Math.sign(k)) * TAMANO_TROZO + TAMANO_TROZO / 2;
-      B.posiciones.set(k, x);
-    }
-    return B.posiciones.get(k);
+  // Distancia entre un búnker y el siguiente, en metros: 300 al empezar y 1 km más cada 3 hordas superadas (salvo el 5 % de
+  // las veces que no cambia: contarHorda). Cada búnker queda fijo con la distancia que había cuando se generó
+  separacionM() { return BUNKER.cada + BUNKER.saltoM * this.bunker.saltos; },
+  // Un búnker nunca sobre una montaña: si cae en una, pasa al trozo de al lado, que nunca es montaña (js/terreno.js: no hay dos seguidas)
+  generarBunker(lado) {
+    const B = this.bunker, lista = B.lados[lado], ultimo = lista.length ? lista[lista.length - 1] : B.origen;
+    let x = ultimo + lado * (lista.length ? this.separacionM() : BUNKER.cada) * BUNKER.pxPorMetro;
+    const i = indiceTrozo(x);
+    if (esMontana(i)) x = (i + lado) * TAMANO_TROZO + TAMANO_TROZO / 2;
+    lista.push(x);
   },
-  bunkersEntre(x0, x1) {
-    const B = this.bunker, paso = BUNKER.cada * BUNKER.pxPorMetro, lista = [];
-    for (let k = Math.floor((x0 - B.origen) / paso) - 1; k <= Math.ceil((x1 - B.origen) / paso) + 1; k++) {
-      if (k === 0) continue;
-      const x = this.xBunker(k);
-      if (x >= x0 && x <= x1) lista.push(x);
+  // A cada lado hay siempre generado uno más allá de lo que el jugador ve: cuando se acerca a el último (a 3 pantallas) o
+  // lo pasa, se genera el siguiente, con la distancia de ese momento
+  asegurarBunkers() {
+    const B = this.bunker, jx = this.jugador.x;
+    for (const lado of [1, -1]) {
+      const lista = B.lados[lado];
+      if (!lista.length) this.generarBunker(lado);
+      while ((jx - lista[lista.length - 1]) * lado > -ANCHO * 3) this.generarBunker(lado);
     }
-    return lista;
+  },
+  todosBunkers() { const B = this.bunker; return B.lados[1].concat(B.lados[-1]); },
+  bunkersEntre(x0, x1) { this.asegurarBunkers(); return this.todosBunkers().filter(x => x >= x0 && x <= x1); },
+  // Cada vez que se supera una horda; cada 3, la distancia entre búnkeres sube 1 km (con un 5 % de que se quede igual)
+  contarHorda() {
+    const B = this.bunker; if (!B) return;
+    B.hordas++;
+    if (B.hordas % BUNKER.hordasPorSalto !== 0) return;
+    if (Math.random() < BUNKER.probSinSalto) return;   // esta vez no cambia
+    B.saltos++;
+    this.aviso(t('bunker.separacion', { km: (this.separacionM() / 1000).toLocaleString(Idioma.actual(), { maximumFractionDigits: 1 }) }), 4200);
   },
   metrosRecorridos() { return Math.round(Math.abs(this.jugador.x - this.bunker.origen) / BUNKER.pxPorMetro); },
   // El próximo hacia donde va el jugador (o el que tiene debajo)
   proximoBunker() {
-    const j = this.jugador, B = this.bunker, paso = BUNKER.cada * BUNKER.pxPorMetro, dir = this.avance || j.direccion || 1;
-    const k0 = Math.round((j.x - B.origen) / paso);
+    this.asegurarBunkers();
+    const j = this.jugador, dir = this.avance || j.direccion || 1;
     let mejor = null;
-    for (let k = k0 - 2; k <= k0 + 2; k++) {
-      if (k === 0) continue;
-      const dx = this.xBunker(k) - j.x;
+    for (const x of this.todosBunkers()) {
+      const dx = x - j.x;
       if (Math.abs(dx) <= BUNKER.radioEntrar) return { metros: 0, dir: 0 };
-      if (Math.sign(dx) === dir && (!mejor || Math.abs(dx) < Math.abs(mejor))) mejor = dx;
+      if (Math.sign(dx) === dir && (mejor === null || Math.abs(dx) < Math.abs(mejor))) mejor = dx;
     }
-    return mejor === null ? { metros: BUNKER.cada, dir } : { metros: Math.round(Math.abs(mejor) / BUNKER.pxPorMetro), dir };
+    return mejor === null ? { metros: this.separacionM(), dir } : { metros: Math.round(Math.abs(mejor) / BUNKER.pxPorMetro), dir };
   },
   // ¿Está parado sobre la boca de un búnker? Devuelve su x o null
   bunkerDebajo() {
@@ -274,7 +290,7 @@ Object.assign(Juego.prototype, {
   salirBunker() {
     const B = this.bunker;
     if (!B || !B.abierto) return;
-    B.abierto = false;
+    B.abierto = false; B.equipables = false;
     document.getElementById('bunker').classList.add('oculta');
     Object.assign(this.entrada, { derecha: false, izquierda: false, abajo: false, disparar: false, dispararPulsado: false, saltarPulsado: false, abajoPulsado: false });
     this.jugador.invulnerableHasta = this.ahora + 1500;   // un respiro al subir: los zombies quedaron donde estaban
@@ -428,6 +444,7 @@ Object.assign(Juego.prototype, {
     } else {
       dibujarArmaCentrada(lienzo, id, 14, 4);
       const a = ARMAS[id], golpes = a.cuerpo ? 'bunker.golpes' : 'bunker.tiros';
+      if (B.pestana === 'propias' && B.equipables) { acc.innerHTML = this.htmlEquipables(id); document.getElementById('bunker-dice').textContent = B.dice ? '— ' + B.dice : ''; return; }   // bípode, mira y silenciador (js/equipables.js)
       if (B.pestana === 'propias') {
         const n = this.mejoras[id] || 0, antes = this.armaMejorada(a), despues = Object.assign({}, a, { dano: a.dano * multiplicadorMejora(n + 1) });
         html = `<h3>${a.nombre}</h3><p class="estrellas">${'★'.repeat(n)}${'☆'.repeat(BUNKER.mejoraMax - n)} ${t('bunker.nivel', { n, max: BUNKER.mejoraMax })}</p>`;
@@ -436,6 +453,7 @@ Object.assign(Juego.prototype, {
           (a.fuego || a.explosivo ? '' : `<p>${t(golpes, { a: tiros(antes), b: tiros(despues) })}</p>`) +
           boton('mejorar:' + id, t('bunker.mejorar'), precioMejora(id, n));
         if (a.reservaInicial !== undefined) html += boton('municion:' + id, t('bunker.municion', { n: a.reservaInicial, tienes: (j.municion[id] || 0) + (j.reserva[id] || 0) }), precioMunicionBunker(id), ' secundario');
+        html += this.botonEquipables();   // abajo de todo
       } else {
         html = `<h3>${a.nombre}</h3><p>${t('bunker.danoVenta', { d: a.dano })}${a.fuego || a.explosivo ? '' : ' · ' + t(golpes + 'Venta', { n: tiros(a) })}</p>` +
           (FICHAS[id] ? `<p class="bunker-desc">${enIdioma(FICHAS[id][3])}</p>` : '') +
@@ -451,8 +469,11 @@ Object.assign(Juego.prototype, {
     const [que, id] = accion.split(':');
     const cobrar = precio => { if (B.dinero < precio) { B.dice = t('bunker.sinDinero'); this.pintarDetalleBunker(); return false; } B.dinero -= precio; return true; };
     if (que === 'salir') return this.salirBunker();
-    if (que === 'pestana') { B.pestana = id; B.elegido = null; }
-    else if (que === 'elegir') { B.elegido = id; }
+    if (que === 'pestana') { B.pestana = id; B.elegido = null; B.equipables = false; }
+    else if (que === 'elegir') { B.elegido = id; B.equipables = false; }
+    else if (que === 'equipables') { B.equipables = true; }
+    else if (que === 'equipables-volver') { B.equipables = false; }
+    else if (que === 'equipo') { if (!this.comprarEquipo(id, B.elegido, cobrar)) return; }
     else if (que === 'mejorar') {
       const n = this.mejoras[id] || 0;
       if (n >= BUNKER.mejoraMax || !j.inventario.includes(id) || !cobrar(precioMejora(id, n))) return;
@@ -537,6 +558,7 @@ Object.assign(TEXTOS.es, {
   'aviso.botiquin': v => `+${v.n} DE VIDA`, 'aviso.sinBotiquin': 'NO TIENES BOTIQUINES', 'aviso.vidaLlena': 'TU VIDA ESTÁ LLENA',
   'accion.botiquin': 'Usar botiquín (Pelea infinita)', 'controles.botiquin': 'Usar un botiquín (se compran en los búnkeres de la pelea infinita)',
   'tactil.botiquin': 'Usar botiquín',
+  'bunker.separacion': v => `AHORA LOS BÚNKERES QUEDAN A ${v.km} km UNO DEL OTRO`,
 });
 Object.assign(TEXTOS.pt, {
   'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
@@ -559,6 +581,7 @@ Object.assign(TEXTOS.pt, {
   'aviso.botiquin': v => `+${v.n} DE VIDA`, 'aviso.sinBotiquin': 'VOCÊ NÃO TEM KITS MÉDICOS', 'aviso.vidaLlena': 'SUA VIDA ESTÁ CHEIA',
   'accion.botiquin': 'Usar kit médico (Luta infinita)', 'controles.botiquin': 'Usar um kit médico (compram-se nos bunkers da luta infinita)',
   'tactil.botiquin': 'Usar kit médico',
+  'bunker.separacion': v => `AGORA OS BUNKERS FICAM A ${v.km} km UM DO OUTRO`,
 });
 Object.assign(TEXTOS.en, {
   'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
@@ -581,4 +604,5 @@ Object.assign(TEXTOS.en, {
   'aviso.botiquin': v => `+${v.n} HEALTH`, 'aviso.sinBotiquin': 'YOU HAVE NO MEDKITS', 'aviso.vidaLlena': 'YOUR HEALTH IS FULL',
   'accion.botiquin': 'Use medkit (Endless fight)', 'controles.botiquin': 'Use a medkit (bought in the bunkers of the endless fight)',
   'tactil.botiquin': 'Use medkit',
+  'bunker.separacion': v => `NOW THE BUNKERS ARE ${v.km} km APART`,
 });

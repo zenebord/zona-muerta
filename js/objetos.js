@@ -58,7 +58,9 @@ class Proyectil {
       if (z.estado === 'muerto' || this.golpeados.has(z)) continue;
       if (this.carril !== undefined && z.carril !== this.carril) continue;   // defensa ultra: sólo su carril
       // En un carril cuenta el carril, no la altura: le pega igual a un zombie chiquito (ahí no hay cómo agacharse)
-      const caja = this.carril !== undefined ? { ...z.caja(), y: -1e4, h: 2e4 } : z.caja();
+      let caja = this.carril !== undefined ? { ...z.caja(), y: -1e4, h: 2e4 } : z.caja();
+      // Con bípode (js/equipables.js) la bala le pega de frente a un zombie chiquito del mismo piso, sin agacharse
+      if (this.bipode && z.escala < BIPODE.chicoMax && Math.abs(z.y - this.pisoTirador) < BIPODE.desnivelMax) caja = { ...caja, y: caja.y - BIPODE.subeCaja, h: caja.h + BIPODE.subeCaja };
       const t = cruceSegmentoCaja(antesX, antesY, this.x, this.y, caja);
       if (t !== null) cruces.push([t, z]);
     }
