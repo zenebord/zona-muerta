@@ -1577,7 +1577,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261118-2038-e5c38bb';
+const VERSION_JUEGO = '20261118-2048-bead8d8';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1834,7 +1834,7 @@ const TEXTOS = {
     'accion.armaAnterior': 'Arma anterior', 'accion.armaSiguiente': 'Arma siguiente', 'accion.grupo': v => `Grupo ${v.n}: ${v.nombre}`, 'accion.ataqueAereo': 'Ataque aéreo (bombas)', 'accion.pausa': 'Pausa',
     'accion.tienda': 'Tienda (Defensa ultra)', 'accion.torreta': 'Torreta (Defensa ultra)', 'accion.menuPruebas': 'Menú de armas (campo de pruebas)', 'accion.zombie': 'Zombie de prueba', 'accion.camaraLenta': 'Cámara lenta', 'accion.borrar': 'Borrar lo generado',
     'tecla.derecha': v => `${v.tecla} der.`, 'tecla.espacio': 'Espacio', 'tecla.mayus': 'Bloq Mayús', 'tecla.supr': 'Supr', 'tecla.inicio': 'Inicio', 'tecla.fin': 'Fin', 'tecla.rePag': 'Re Pág', 'tecla.avPag': 'Av Pág',
-    'controles.ataqueAereo': 'Ataque aéreo: las bombas (en Defensa zombie y Defensa ultra, cada 20 s)', 'controles.cambiarTeclas': 'CAMBIAR TECLAS', 'config.calidad': 'Calidad gráfica', 'config.alta': 'Alta', 'config.normal': 'Normal', 'config.baja': 'Baja (equipos lentos)',
+    'controles.ataqueAereo': 'Ataque aéreo: las bombas (en Defensa zombie y Defensa ultra, cada 20 s; en la Pelea infinita, cada 60 s y con cargas extra del búnker)', 'controles.cambiarTeclas': 'CAMBIAR TECLAS', 'config.calidad': 'Calidad gráfica', 'config.alta': 'Alta', 'config.normal': 'Normal', 'config.baja': 'Baja (equipos lentos)',
     'config.descargarTitulo': 'Jugar sin Claude', 'menu.descargarNota': 'Un solo archivo para jugar sin pasar por Claude: va más fluido', 'config.descargar': 'Descargar el juego', 'config.descargarNota': 'Un solo archivo de unos 5 MB que se abre con el navegador: va más fluido. Lo que guardes ahí (progreso, configuración) queda aparte.',
     'config.descargando': 'Armando el archivo…', 'config.descargado': 'Listo: se guardó zona-muerta.html. Ábrelo con Chrome, Edge o Firefox.', 'config.descargaError': 'No se pudo descargar. Prueba de nuevo.', 'config.yaDescargado': 'Ya estás jugando con el archivo descargado.', 'config.armando': v => `Armando el archivo… ${v.p} %`, 'config.guardando': 'Guardando…', 'config.listo': '¡Listo!', 'config.reintentar': 'Reintentar',
     'aviso.calidadNormal': 'EL JUEGO IBA LENTO: BAJÉ LA CALIDAD GRÁFICA', 'aviso.calidadBaja': 'SIGUE LENTO: CALIDAD BAJA. TAMBIÉN PUEDES DESCARGAR EL JUEGO (CONFIGURACIÓN)',
@@ -2013,7 +2013,7 @@ const TEXTOS = {
     'accion.armaAnterior': 'Arma anterior', 'accion.armaSiguiente': 'Arma seguinte', 'accion.grupo': v => `Grupo ${v.n}: ${v.nombre}`, 'accion.ataqueAereo': 'Ataque aéreo (bombas)', 'accion.pausa': 'Pausa',
     'accion.tienda': 'Loja (Defesa ultra)', 'accion.torreta': 'Torre (Defesa ultra)', 'accion.menuPruebas': 'Menu de armas (campo de testes)', 'accion.zombie': 'Zumbi de teste', 'accion.camaraLenta': 'Câmera lenta', 'accion.borrar': 'Apagar o que foi gerado',
     'tecla.derecha': v => `${v.tecla} dir.`, 'tecla.espacio': 'Espaço', 'tecla.mayus': 'Caps Lock', 'tecla.supr': 'Delete', 'tecla.inicio': 'Home', 'tecla.fin': 'End', 'tecla.rePag': 'Page Up', 'tecla.avPag': 'Page Down',
-    'controles.ataqueAereo': 'Ataque aéreo: as bombas (na Defesa zumbi e na Defesa ultra, a cada 20 s)', 'controles.cambiarTeclas': 'MUDAR TECLAS', 'config.calidad': 'Qualidade gráfica', 'config.alta': 'Alta', 'config.normal': 'Normal', 'config.baja': 'Baixa (aparelhos lentos)',
+    'controles.ataqueAereo': 'Ataque aéreo: as bombas (na Defesa zumbi e na Defesa ultra, a cada 20 s; na Luta infinita, a cada 60 s e com cargas extras do bunker)', 'controles.cambiarTeclas': 'MUDAR TECLAS', 'config.calidad': 'Qualidade gráfica', 'config.alta': 'Alta', 'config.normal': 'Normal', 'config.baja': 'Baixa (aparelhos lentos)',
     'config.descargarTitulo': 'Jogar sem o Claude', 'menu.descargarNota': 'Um único arquivo para jogar sem passar pelo Claude: roda mais liso', 'config.descargar': 'Baixar o jogo', 'config.descargarNota': 'Um único arquivo de uns 5 MB que se abre no navegador: roda mais liso. O que você salvar ali (progresso, configuração) fica separado.',
     'config.descargando': 'Montando o arquivo…', 'config.descargado': 'Pronto: zona-muerta.html foi salvo. Abra no Chrome, Edge ou Firefox.', 'config.descargaError': 'Não foi possível baixar. Tente de novo.', 'config.yaDescargado': 'Você já está jogando com o arquivo baixado.', 'config.armando': v => `Montando o arquivo… ${v.p} %`, 'config.guardando': 'Salvando…', 'config.listo': 'Pronto!', 'config.reintentar': 'Tentar de novo',
     'aviso.calidadNormal': 'O JOGO ESTAVA LENTO: BAIXEI A QUALIDADE GRÁFICA', 'aviso.calidadBaja': 'AINDA LENTO: QUALIDADE BAIXA. VOCÊ TAMBÉM PODE BAIXAR O JOGO (CONFIGURAÇÃO)',
@@ -2192,7 +2192,7 @@ const TEXTOS = {
     'accion.armaAnterior': 'Previous weapon', 'accion.armaSiguiente': 'Next weapon', 'accion.grupo': v => `Group ${v.n}: ${v.nombre}`, 'accion.ataqueAereo': 'Air strike (bombs)', 'accion.pausa': 'Pause',
     'accion.tienda': 'Shop (Defense ultra)', 'accion.torreta': 'Turret (Defense ultra)', 'accion.menuPruebas': 'Weapons menu (test field)', 'accion.zombie': 'Test zombie', 'accion.camaraLenta': 'Slow motion', 'accion.borrar': 'Clear what was spawned',
     'tecla.derecha': v => `Right ${v.tecla}`, 'tecla.espacio': 'Space', 'tecla.mayus': 'Caps Lock', 'tecla.supr': 'Delete', 'tecla.inicio': 'Home', 'tecla.fin': 'End', 'tecla.rePag': 'Page Up', 'tecla.avPag': 'Page Down',
-    'controles.ataqueAereo': 'Air strike: the bombs (in Zombie defense and Defense ultra, every 20 s)', 'controles.cambiarTeclas': 'CHANGE KEYS', 'config.calidad': 'Graphics quality', 'config.alta': 'High', 'config.normal': 'Normal', 'config.baja': 'Low (slow devices)',
+    'controles.ataqueAereo': 'Air strike: the bombs (in Zombie defense and Defense ultra, every 20 s; in the Endless fight, every 60 s plus extra charges from the bunker)', 'controles.cambiarTeclas': 'CHANGE KEYS', 'config.calidad': 'Graphics quality', 'config.alta': 'High', 'config.normal': 'Normal', 'config.baja': 'Low (slow devices)',
     'config.descargarTitulo': 'Play without Claude', 'menu.descargarNota': 'A single file to play without going through Claude: runs smoother', 'config.descargar': 'Download the game', 'config.descargarNota': 'A single file of about 5 MB that opens in your browser: it runs smoother. What you save there (progress, settings) is kept separately.',
     'config.descargando': 'Building the file…', 'config.descargado': 'Done: zona-muerta.html was saved. Open it with Chrome, Edge or Firefox.', 'config.descargaError': 'Could not download. Try again.', 'config.yaDescargado': 'You are already playing the downloaded file.', 'config.armando': v => `Building the file… ${v.p} %`, 'config.guardando': 'Saving…', 'config.listo': 'Done!', 'config.reintentar': 'Try again',
     'aviso.calidadNormal': 'THE GAME WAS SLOW: GRAPHICS QUALITY LOWERED', 'aviso.calidadBaja': 'STILL SLOW: LOW QUALITY. YOU CAN ALSO DOWNLOAD THE GAME (SETTINGS)',
@@ -15557,8 +15557,11 @@ class Juego {
       if (a.cargas <= 0) { this.aviso(t('hist.aviso.sinRadio'), 1800); return; }
       a.cargas--; this.historia.aereos++;
     } else {
-      if (this.tiempoJugado < a.listoEn) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
-      a.listoEn = this.tiempoJugado + a.recarga;
+      // En la pelea infinita hay cargas extra compradas en el búnker (js/bunker.js): se gastan si el gratuito está en espera
+      const lista = this.tiempoJugado >= a.listoEn;
+      if (!lista && a.extra > 0) a.extra--;
+      else if (!lista) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
+      else a.listoEn = this.tiempoJugado + a.recarga;
     }
     a.activo = { t: 0, duracion: 3.4 };
     this.jugador.protegido = true;
@@ -15611,12 +15614,12 @@ class Juego {
       el.innerHTML = `<span class="nombre">${t('aereo.nombre')}</span><span class="estado">${texto}</span><span class="barra" style="width:${a.cargas > 0 ? 100 : 0}%"></span>`;
       return;
     }
-    const estado = a.activo ? 'en-curso' : falta <= 0 ? 'listo' : 'recargando';
-    if (el.dataset.estado !== estado || estado === 'recargando') {
-      el.dataset.estado = estado;
+    const extra = a.extra || 0, estado = a.activo ? 'en-curso' : falta <= 0 || extra > 0 ? 'listo' : 'recargando';
+    if (el.dataset.estado !== estado + extra || estado === 'recargando') {
+      el.dataset.estado = estado + extra;
       el.classList.toggle('listo', estado === 'listo'); el.classList.toggle('en-curso', estado === 'en-curso');
       const tecla = t(document.body.classList.contains('tactil') ? 'aereo.tocar' : 'aereo.tecla');
-      const texto = estado === 'listo' ? t('aereo.listo', { tecla }) : estado === 'en-curso' ? t('aereo.curso') : t('aereo.recargando', { s: Math.ceil(falta) });
+      const texto = estado === 'listo' ? t('aereo.listo', { tecla }) + (extra ? ` · +${extra}` : '') : estado === 'en-curso' ? t('aereo.curso') : t('aereo.recargando', { s: Math.ceil(falta) });
       const avance = estado === 'recargando' ? Math.round((1 - falta / a.recarga) * 100) : 100;
       el.innerHTML = `<span class="nombre">${t('aereo.nombre')}</span><span class="estado">${texto}</span><span class="barra" style="width:${avance}%"></span>`;
     }
@@ -17321,6 +17324,7 @@ const BUNKER = {
   radioEntrar: 50,         // a cuánto del centro de la boca hay que estar parado para poder entrar
   mejoraMax: 5, mejoraDano: 0.2,
   botiquin: { precio: 150, cura: 50, maximo: 3 },
+  aereo: { precio: 400, maximo: 3, recarga: 60 },   // ataque aéreo: uno gratis cada 60 s y hasta 3 cargas extra compradas, que se usan sin esperar
   paga: { zombie: 10, corredor: 15, raro: 20, porRonda: 2 },   // raro: tóxico o congelado; porRonda: lo que suma cada ronda
 };
 // Precios: los de la tienda de la defensa ultra (js/defensa-ultra.js) y los de las armas que allá no se venden
@@ -17421,6 +17425,19 @@ function dibujarBotiquin(ctx, x, y, w) {
   ctx.restore();
 }
 
+// Misil (el ataque aéreo que vende el comerciante): cuerpo gris con la punta roja, aletas y la llama
+function dibujarMisil(ctx, x, y, w) {
+  const h = w * 0.16;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.35);
+  ctx.fillStyle = '#ff9a2e'; ctx.beginPath(); ctx.moveTo(-w * 0.5, 0); ctx.lineTo(-w * 0.62, -h * 0.5); ctx.lineTo(-w * 0.75, 0); ctx.lineTo(-w * 0.62, h * 0.5); ctx.closePath(); ctx.fill();   // llama
+  ctx.fillStyle = '#6f7479'; ctx.beginPath(); ctx.moveTo(-w * 0.32, -h * 0.5); ctx.lineTo(-w * 0.42, -h * 1.5); ctx.lineTo(-w * 0.22, -h * 0.5); ctx.fill(); ctx.beginPath(); ctx.moveTo(-w * 0.32, h * 0.5); ctx.lineTo(-w * 0.42, h * 1.5); ctx.lineTo(-w * 0.22, h * 0.5); ctx.fill();   // aletas
+  const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, '#d7dbdc'); g.addColorStop(1, '#8a9094');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(-w * 0.5, -h / 2, w * 0.78, h, h * 0.3); ctx.fill();
+  ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(w * 0.28, -h / 2); ctx.quadraticCurveTo(w * 0.52, 0, w * 0.28, h / 2); ctx.closePath(); ctx.fill();   // punta
+  ctx.fillStyle = '#2f3437'; ctx.fillRect(-w * 0.1, -h / 2, w * 0.05, h); ctx.fillRect(w * 0.06, -h / 2, w * 0.05, h);
+  ctx.restore();
+}
+
 /* ---------- La escena de adentro: búnker blanco con bóveda, el comerciante detrás del mostrador ---------- */
 let comercianteBunker = null;
 function dibujarEscenaBunker(lienzo, armaId, ahora) {
@@ -17510,6 +17527,10 @@ function dibujarEscenaBunker(lienzo, armaId, ahora) {
 /* ---------- La partida: posición de los búnkeres, entrar y salir, dinero, botiquines, mejoras ---------- */
 Object.assign(Juego.prototype, {
   prepararBunkers() {
+    // Ataque aéreo (pedido de Enzo): como en las defensas, la A o el botón; uno cada 60 s sin costo y las cargas extra del comerciante
+    this.aereo = { listoEn: 0, activo: null, recarga: BUNKER.aereo.recarga, extra: 0 };
+    this.misiles = []; this.aviones = []; this.hud.aereo = document.getElementById('hud-aereo');
+    this.hud.aereo.classList.remove('oculta');
     this.bunker = { origen: this.jugador.x, dinero: 0, botiquines: 0, abierto: false, sobre: null,
       pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8,   // avisoEn: después del «¡SOBREVIVE!» del arranque
       lados: { 1: [], '-1': [] }, hordas: 0, saltos: 0 };   // lados: los búnkeres generados a cada lado, en orden; saltos: cuántas veces creció la distancia
@@ -17698,7 +17719,7 @@ Object.assign(Juego.prototype, {
   cartasBunker() {
     const j = this.jugador;
     if (this.bunker.pestana === 'propias') return j.inventario.filter(id => ARMAS[id] && DIBUJO_ARMAS[id]);
-    return ['botiquin', ...ARMAS_BUNKER.filter(id => !j.inventario.includes(id) && DIBUJO_ARMAS[id])];
+    return ['botiquin', 'aereo', ...ARMAS_BUNKER.filter(id => !j.inventario.includes(id) && DIBUJO_ARMAS[id])];
   },
   pintarBunker() {
     const B = this.bunker, j = this.jugador, cartas = this.cartasBunker();
@@ -17709,6 +17730,11 @@ Object.assign(Juego.prototype, {
     // Cartas de abajo: miniatura, nombre y nivel (las propias) o precio (las de la venta)
     const lista = document.getElementById('bunker-lista'), desplazado = lista.scrollLeft;
     lista.innerHTML = cartas.map(id => {
+      if (id === 'aereo') {
+        const caro = BUNKER.aereo.precio > B.dinero;
+        return `<button type="button" class="bunker-carta${id === B.elegido ? ' elegida' : ''}${caro ? ' caro' : ''}" data-bunker="elegir:aereo"><canvas width="150" height="64" aria-hidden="true"></canvas>` +
+          `<span class="nombre">${t('bunker.aereo')}</span><small class="precio">$${BUNKER.aereo.precio} · ✈ +${this.aereo.extra}/${BUNKER.aereo.maximo}</small></button>`;
+      }
       if (id === 'botiquin') {
         const caro = BUNKER.botiquin.precio > B.dinero;
         return `<button type="button" class="bunker-carta${id === B.elegido ? ' elegida' : ''}${caro ? ' caro' : ''}" data-bunker="elegir:botiquin"><canvas width="150" height="64" aria-hidden="true"></canvas>` +
@@ -17723,6 +17749,7 @@ Object.assign(Juego.prototype, {
     lista.querySelectorAll('.bunker-carta').forEach((b, i) => {
       const cv = b.querySelector('canvas'), id = cartas[i], c = cv.getContext('2d');
       if (id === 'botiquin') dibujarBotiquin(c, cv.width / 2, cv.height / 2 + 4, 62);
+      else if (id === 'aereo') dibujarMisil(c, cv.width / 2 + 8, cv.height / 2, 110);
       else c.drawImage(miniaturaArma(id), 0, 0, cv.width, cv.height);
     });
     this.pintarDetalleBunker();
@@ -17736,7 +17763,14 @@ Object.assign(Juego.prototype, {
     const vida = this.dificultad.vidaZombie, tiros = arma => disparosParaMatar(arma, vida);
     let html = '';
     if (!id) { lienzo.getContext('2d').clearRect(0, 0, lienzo.width, lienzo.height); acc.innerHTML = `<p>${t('bunker.nadaMas')}</p>`; return; }
-    if (id === 'botiquin') {
+    if (id === 'aereo') {
+      const c = lienzo.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, lienzo.width, lienzo.height);
+      dibujarMisil(c, lienzo.width / 2 + 20, lienzo.height / 2, lienzo.height * 2.1);
+      const A = this.aereo, key = document.body.classList.contains('tactil') ? t('aereo.tocar') : Teclas.nombre('ataqueAereo');
+      html = `<h3>${t('bunker.aereo')}</h3><p>${t('bunker.aereoTexto', { s: BUNKER.aereo.recarga, tecla: key })}</p>` +
+        `<p class="estrellas">${'✈ '.repeat(A.extra)}${'· '.repeat(BUNKER.aereo.maximo - A.extra)}${t('bunker.llevas', { n: A.extra, max: BUNKER.aereo.maximo })}</p>` +
+        (A.extra >= BUNKER.aereo.maximo ? `<p class="aviso-bunker">${t('bunker.aereoLleno', { max: BUNKER.aereo.maximo })}</p>` : boton('aereo', t('bunker.comprar1'), BUNKER.aereo.precio));
+    } else if (id === 'botiquin') {
       const c = lienzo.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, lienzo.width, lienzo.height);
       dibujarBotiquin(c, lienzo.width / 2, lienzo.height / 2 + 10, lienzo.height * 0.95);
       html = `<h3>${t('bunker.botiquin')}</h3><p>${t('bunker.botiquinTexto', { cura: BUNKER.botiquin.cura, tecla: document.body.classList.contains('tactil') ? '✚' : Teclas.nombre('botiquin') })}</p>` +
@@ -17792,6 +17826,11 @@ Object.assign(Juego.prototype, {
       j.reserva[id] = (j.reserva[id] || 0) + ARMAS[id].reservaInicial;
       B.dice = t('bunker.dijoMunicion');
       Audio_.municion();
+    } else if (que === 'aereo') {
+      if (this.aereo.extra >= BUNKER.aereo.maximo || !cobrar(BUNKER.aereo.precio)) return;
+      this.aereo.extra++;
+      B.dice = t('bunker.dijoAereo');
+      Audio_.municion();
     } else if (que === 'botiquin') {
       if (B.botiquines >= BUNKER.botiquin.maximo || !cobrar(BUNKER.botiquin.precio)) return;
       B.botiquines++;
@@ -17827,7 +17866,7 @@ Object.assign(Juego.prototype, {
     const B = this.bunker;
     if (performance.now() < B.proximoDibujo) return;
     B.proximoDibujo = performance.now() + 50;
-    const id = B.elegido && B.elegido !== 'botiquin' ? B.elegido : null;
+    const id = B.elegido && B.elegido !== 'botiquin' && B.elegido !== 'aereo' ? B.elegido : null;
     dibujarEscenaBunker(document.getElementById('bunker-escena'), id, this.ahora + performance.now());
   },
 });
@@ -17860,6 +17899,8 @@ Object.assign(TEXTOS.es, {
   'accion.botiquin': 'Usar botiquín (Pelea infinita)', 'controles.botiquin': 'Usar un botiquín (se compran en los búnkeres de la pelea infinita)',
   'tactil.botiquin': 'Usar botiquín',
   'bunker.separacion': v => `AHORA LOS BÚNKERES QUEDAN A ${v.km} km UNO DEL OTRO`,
+  'bunker.aereo': 'Ataque aéreo', 'bunker.aereoTexto': v => `Una carga extra de ataque aéreo: se usa con ${v.tecla} aunque el gratuito (uno cada ${v.s} s) esté en espera. Limpia la pantalla de zombies.`,
+  'bunker.aereoLleno': v => `YA LLEVAS ${v.max} CARGAS: NO ENTRAN MÁS`, 'bunker.dijoAereo': 'Cuando lo pidas por radio, el cielo se encarga.',
 });
 Object.assign(TEXTOS.pt, {
   'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
@@ -17883,6 +17924,8 @@ Object.assign(TEXTOS.pt, {
   'accion.botiquin': 'Usar kit médico (Luta infinita)', 'controles.botiquin': 'Usar um kit médico (compram-se nos bunkers da luta infinita)',
   'tactil.botiquin': 'Usar kit médico',
   'bunker.separacion': v => `AGORA OS BUNKERS FICAM A ${v.km} km UM DO OUTRO`,
+  'bunker.aereo': 'Ataque aéreo', 'bunker.aereoTexto': v => `Uma carga extra de ataque aéreo: usa-se com ${v.tecla} mesmo com o gratuito (um a cada ${v.s} s) em espera. Limpa a tela de zumbis.`,
+  'bunker.aereoLleno': v => `VOCÊ JÁ LEVA ${v.max} CARGAS: NÃO CABEM MAIS`, 'bunker.dijoAereo': 'Quando pedir pelo rádio, o céu cuida do resto.',
 });
 Object.assign(TEXTOS.en, {
   'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
@@ -17906,6 +17949,8 @@ Object.assign(TEXTOS.en, {
   'accion.botiquin': 'Use medkit (Endless fight)', 'controles.botiquin': 'Use a medkit (bought in the bunkers of the endless fight)',
   'tactil.botiquin': 'Use medkit',
   'bunker.separacion': v => `NOW THE BUNKERS ARE ${v.km} km APART`,
+  'bunker.aereo': 'Air strike', 'bunker.aereoTexto': v => `One extra air strike charge: use it with ${v.tecla} even while the free one (one every ${v.s} s) is recharging. It clears the screen of zombies.`,
+  'bunker.aereoLleno': v => `YOU ALREADY CARRY ${v.max} CHARGES: NO ROOM FOR MORE`, 'bunker.dijoAereo': 'Radio it in and the sky will do the rest.',
 });
 
 </script>
@@ -20063,7 +20108,7 @@ Object.assign(TEXTOS.es, {
   'tutorial.recargar': 'Se gastaron balas del cargador: recarga con {k:recargar} (o clic derecho). Hazlo antes de quedarte sin balas.', 'tutorial.recargar.t': 'Recarga con el botón RECARGAR. Hazlo antes de quedarte sin balas.',
   'tutorial.cambiar': 'Cambia de arma con {k:armaAnterior} y {k:armaSiguiente}, o con la rueda del mouse.', 'tutorial.cambiar.t': 'Cambia de arma con ◀ ARMA y ARMA ▶.',
   'tutorial.mira': 'Ahora tienes un rifle con mira. Apunta con {k:mira}: la mira se pone sola en el zombie más cercano y la bala no falla. Con la misma tecla la sueltas.', 'tutorial.mira.t': 'Ahora tienes un rifle con mira. Toca MIRA: se pone sola en el zombie más cercano y la bala no falla.',
-  'tutorial.aereo': 'Pide un ataque aéreo con {k:ataqueAereo}: los misiles limpian la pantalla de zombies. En la historia necesitas encontrar radios; en las defensas se recarga solo.', 'tutorial.aereo.t': 'Pide un ataque aéreo tocando el botón ATAQUE AÉREO: los misiles limpian la pantalla de zombies. En la historia necesitas encontrar radios.',
+  'tutorial.aereo': 'Pide un ataque aéreo con {k:ataqueAereo}: los misiles limpian la pantalla de zombies. En la historia necesitas encontrar radios; en las defensas y en la pelea infinita se recarga solo.', 'tutorial.aereo.t': 'Pide un ataque aéreo tocando el botón ATAQUE AÉREO: los misiles limpian la pantalla de zombies. En la historia necesitas encontrar radios.',
   'tutorial.pausa': 'Pausa la partida con {k:pausa} o Esc. Ahí puedes cambiar el sonido, las teclas y todo lo de la configuración.', 'tutorial.pausa.t': 'Pausa la partida con el botón ❚❚. Ahí puedes cambiar el sonido y todo lo de la configuración.',
   'tutorial.pagina': 'Si el juego se traba o va lento, recarga la página: F5 o Ctrl+R en la computadora, el botón ⟳ del navegador, o desliza hacia abajo en el celular. La configuración y las misiones superadas se conservan; la partida en curso, no.', 'tutorial.pagina.t': 'Si el juego se traba o va lento, recarga la página: el botón ⟳ del navegador o desliza hacia abajo. La configuración y las misiones superadas se conservan; la partida en curso, no.',
   'tutorial.fin': '¡Listo! Ya sabes lo básico. Elige un modo en el menú y a sobrevivir.', 'tutorial.fin.t': '¡Listo! Ya sabes lo básico. Elige un modo en el menú y a sobrevivir.',
