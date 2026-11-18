@@ -373,8 +373,11 @@ class Juego {
       if (a.cargas <= 0) { this.aviso(t('hist.aviso.sinRadio'), 1800); return; }
       a.cargas--; this.historia.aereos++;
     } else {
-      if (this.tiempoJugado < a.listoEn) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
-      a.listoEn = this.tiempoJugado + a.recarga;
+      // En la pelea infinita hay cargas extra compradas en el búnker (js/bunker.js): se gastan si el gratuito está en espera
+      const lista = this.tiempoJugado >= a.listoEn;
+      if (!lista && a.extra > 0) a.extra--;
+      else if (!lista) { this.aviso(t('aviso.aereoEn', { s: Math.ceil(a.listoEn - this.tiempoJugado) }), 1200); return; }
+      else a.listoEn = this.tiempoJugado + a.recarga;
     }
     a.activo = { t: 0, duracion: 3.4 };
     this.jugador.protegido = true;
@@ -427,12 +430,12 @@ class Juego {
       el.innerHTML = `<span class="nombre">${t('aereo.nombre')}</span><span class="estado">${texto}</span><span class="barra" style="width:${a.cargas > 0 ? 100 : 0}%"></span>`;
       return;
     }
-    const estado = a.activo ? 'en-curso' : falta <= 0 ? 'listo' : 'recargando';
-    if (el.dataset.estado !== estado || estado === 'recargando') {
-      el.dataset.estado = estado;
+    const extra = a.extra || 0, estado = a.activo ? 'en-curso' : falta <= 0 || extra > 0 ? 'listo' : 'recargando';
+    if (el.dataset.estado !== estado + extra || estado === 'recargando') {
+      el.dataset.estado = estado + extra;
       el.classList.toggle('listo', estado === 'listo'); el.classList.toggle('en-curso', estado === 'en-curso');
       const tecla = t(document.body.classList.contains('tactil') ? 'aereo.tocar' : 'aereo.tecla');
-      const texto = estado === 'listo' ? t('aereo.listo', { tecla }) : estado === 'en-curso' ? t('aereo.curso') : t('aereo.recargando', { s: Math.ceil(falta) });
+      const texto = estado === 'listo' ? t('aereo.listo', { tecla }) + (extra ? ` · +${extra}` : '') : estado === 'en-curso' ? t('aereo.curso') : t('aereo.recargando', { s: Math.ceil(falta) });
       const avance = estado === 'recargando' ? Math.round((1 - falta / a.recarga) * 100) : 100;
       el.innerHTML = `<span class="nombre">${t('aereo.nombre')}</span><span class="estado">${texto}</span><span class="barra" style="width:${avance}%"></span>`;
     }

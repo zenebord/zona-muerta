@@ -20,6 +20,7 @@ const BUNKER = {
   radioEntrar: 50,         // a cuánto del centro de la boca hay que estar parado para poder entrar
   mejoraMax: 5, mejoraDano: 0.2,
   botiquin: { precio: 150, cura: 50, maximo: 3 },
+  aereo: { precio: 400, maximo: 3, recarga: 60 },   // ataque aéreo: uno gratis cada 60 s y hasta 3 cargas extra compradas, que se usan sin esperar
   paga: { zombie: 10, corredor: 15, raro: 20, porRonda: 2 },   // raro: tóxico o congelado; porRonda: lo que suma cada ronda
 };
 // Precios: los de la tienda de la defensa ultra (js/defensa-ultra.js) y los de las armas que allá no se venden
@@ -120,6 +121,19 @@ function dibujarBotiquin(ctx, x, y, w) {
   ctx.restore();
 }
 
+// Misil (el ataque aéreo que vende el comerciante): cuerpo gris con la punta roja, aletas y la llama
+function dibujarMisil(ctx, x, y, w) {
+  const h = w * 0.16;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.35);
+  ctx.fillStyle = '#ff9a2e'; ctx.beginPath(); ctx.moveTo(-w * 0.5, 0); ctx.lineTo(-w * 0.62, -h * 0.5); ctx.lineTo(-w * 0.75, 0); ctx.lineTo(-w * 0.62, h * 0.5); ctx.closePath(); ctx.fill();   // llama
+  ctx.fillStyle = '#6f7479'; ctx.beginPath(); ctx.moveTo(-w * 0.32, -h * 0.5); ctx.lineTo(-w * 0.42, -h * 1.5); ctx.lineTo(-w * 0.22, -h * 0.5); ctx.fill(); ctx.beginPath(); ctx.moveTo(-w * 0.32, h * 0.5); ctx.lineTo(-w * 0.42, h * 1.5); ctx.lineTo(-w * 0.22, h * 0.5); ctx.fill();   // aletas
+  const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, '#d7dbdc'); g.addColorStop(1, '#8a9094');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(-w * 0.5, -h / 2, w * 0.78, h, h * 0.3); ctx.fill();
+  ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(w * 0.28, -h / 2); ctx.quadraticCurveTo(w * 0.52, 0, w * 0.28, h / 2); ctx.closePath(); ctx.fill();   // punta
+  ctx.fillStyle = '#2f3437'; ctx.fillRect(-w * 0.1, -h / 2, w * 0.05, h); ctx.fillRect(w * 0.06, -h / 2, w * 0.05, h);
+  ctx.restore();
+}
+
 /* ---------- La escena de adentro: búnker blanco con bóveda, el comerciante detrás del mostrador ---------- */
 let comercianteBunker = null;
 function dibujarEscenaBunker(lienzo, armaId, ahora) {
@@ -209,6 +223,10 @@ function dibujarEscenaBunker(lienzo, armaId, ahora) {
 /* ---------- La partida: posición de los búnkeres, entrar y salir, dinero, botiquines, mejoras ---------- */
 Object.assign(Juego.prototype, {
   prepararBunkers() {
+    // Ataque aéreo (pedido de Enzo): como en las defensas, la A o el botón; uno cada 60 s sin costo y las cargas extra del comerciante
+    this.aereo = { listoEn: 0, activo: null, recarga: BUNKER.aereo.recarga, extra: 0 };
+    this.misiles = []; this.aviones = []; this.hud.aereo = document.getElementById('hud-aereo');
+    this.hud.aereo.classList.remove('oculta');
     this.bunker = { origen: this.jugador.x, dinero: 0, botiquines: 0, abierto: false, sobre: null,
       pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8,   // avisoEn: después del «¡SOBREVIVE!» del arranque
       lados: { 1: [], '-1': [] }, hordas: 0, saltos: 0 };   // lados: los búnkeres generados a cada lado, en orden; saltos: cuántas veces creció la distancia
@@ -397,7 +415,7 @@ Object.assign(Juego.prototype, {
   cartasBunker() {
     const j = this.jugador;
     if (this.bunker.pestana === 'propias') return j.inventario.filter(id => ARMAS[id] && DIBUJO_ARMAS[id]);
-    return ['botiquin', ...ARMAS_BUNKER.filter(id => !j.inventario.includes(id) && DIBUJO_ARMAS[id])];
+    return ['botiquin', 'aereo', ...ARMAS_BUNKER.filter(id => !j.inventario.includes(id) && DIBUJO_ARMAS[id])];
   },
   pintarBunker() {
     const B = this.bunker, j = this.jugador, cartas = this.cartasBunker();
@@ -408,6 +426,11 @@ Object.assign(Juego.prototype, {
     // Cartas de abajo: miniatura, nombre y nivel (las propias) o precio (las de la venta)
     const lista = document.getElementById('bunker-lista'), desplazado = lista.scrollLeft;
     lista.innerHTML = cartas.map(id => {
+      if (id === 'aereo') {
+        const caro = BUNKER.aereo.precio > B.dinero;
+        return `<button type="button" class="bunker-carta${id === B.elegido ? ' elegida' : ''}${caro ? ' caro' : ''}" data-bunker="elegir:aereo"><canvas width="150" height="64" aria-hidden="true"></canvas>` +
+          `<span class="nombre">${t('bunker.aereo')}</span><small class="precio">$${BUNKER.aereo.precio} · ✈ +${this.aereo.extra}/${BUNKER.aereo.maximo}</small></button>`;
+      }
       if (id === 'botiquin') {
         const caro = BUNKER.botiquin.precio > B.dinero;
         return `<button type="button" class="bunker-carta${id === B.elegido ? ' elegida' : ''}${caro ? ' caro' : ''}" data-bunker="elegir:botiquin"><canvas width="150" height="64" aria-hidden="true"></canvas>` +
@@ -422,6 +445,7 @@ Object.assign(Juego.prototype, {
     lista.querySelectorAll('.bunker-carta').forEach((b, i) => {
       const cv = b.querySelector('canvas'), id = cartas[i], c = cv.getContext('2d');
       if (id === 'botiquin') dibujarBotiquin(c, cv.width / 2, cv.height / 2 + 4, 62);
+      else if (id === 'aereo') dibujarMisil(c, cv.width / 2 + 8, cv.height / 2, 110);
       else c.drawImage(miniaturaArma(id), 0, 0, cv.width, cv.height);
     });
     this.pintarDetalleBunker();
@@ -435,7 +459,14 @@ Object.assign(Juego.prototype, {
     const vida = this.dificultad.vidaZombie, tiros = arma => disparosParaMatar(arma, vida);
     let html = '';
     if (!id) { lienzo.getContext('2d').clearRect(0, 0, lienzo.width, lienzo.height); acc.innerHTML = `<p>${t('bunker.nadaMas')}</p>`; return; }
-    if (id === 'botiquin') {
+    if (id === 'aereo') {
+      const c = lienzo.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, lienzo.width, lienzo.height);
+      dibujarMisil(c, lienzo.width / 2 + 20, lienzo.height / 2, lienzo.height * 2.1);
+      const A = this.aereo, key = document.body.classList.contains('tactil') ? t('aereo.tocar') : Teclas.nombre('ataqueAereo');
+      html = `<h3>${t('bunker.aereo')}</h3><p>${t('bunker.aereoTexto', { s: BUNKER.aereo.recarga, tecla: key })}</p>` +
+        `<p class="estrellas">${'✈ '.repeat(A.extra)}${'· '.repeat(BUNKER.aereo.maximo - A.extra)}${t('bunker.llevas', { n: A.extra, max: BUNKER.aereo.maximo })}</p>` +
+        (A.extra >= BUNKER.aereo.maximo ? `<p class="aviso-bunker">${t('bunker.aereoLleno', { max: BUNKER.aereo.maximo })}</p>` : boton('aereo', t('bunker.comprar1'), BUNKER.aereo.precio));
+    } else if (id === 'botiquin') {
       const c = lienzo.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, lienzo.width, lienzo.height);
       dibujarBotiquin(c, lienzo.width / 2, lienzo.height / 2 + 10, lienzo.height * 0.95);
       html = `<h3>${t('bunker.botiquin')}</h3><p>${t('bunker.botiquinTexto', { cura: BUNKER.botiquin.cura, tecla: document.body.classList.contains('tactil') ? '✚' : Teclas.nombre('botiquin') })}</p>` +
@@ -491,6 +522,11 @@ Object.assign(Juego.prototype, {
       j.reserva[id] = (j.reserva[id] || 0) + ARMAS[id].reservaInicial;
       B.dice = t('bunker.dijoMunicion');
       Audio_.municion();
+    } else if (que === 'aereo') {
+      if (this.aereo.extra >= BUNKER.aereo.maximo || !cobrar(BUNKER.aereo.precio)) return;
+      this.aereo.extra++;
+      B.dice = t('bunker.dijoAereo');
+      Audio_.municion();
     } else if (que === 'botiquin') {
       if (B.botiquines >= BUNKER.botiquin.maximo || !cobrar(BUNKER.botiquin.precio)) return;
       B.botiquines++;
@@ -526,7 +562,7 @@ Object.assign(Juego.prototype, {
     const B = this.bunker;
     if (performance.now() < B.proximoDibujo) return;
     B.proximoDibujo = performance.now() + 50;
-    const id = B.elegido && B.elegido !== 'botiquin' ? B.elegido : null;
+    const id = B.elegido && B.elegido !== 'botiquin' && B.elegido !== 'aereo' ? B.elegido : null;
     dibujarEscenaBunker(document.getElementById('bunker-escena'), id, this.ahora + performance.now());
   },
 });
@@ -559,6 +595,8 @@ Object.assign(TEXTOS.es, {
   'accion.botiquin': 'Usar botiquín (Pelea infinita)', 'controles.botiquin': 'Usar un botiquín (se compran en los búnkeres de la pelea infinita)',
   'tactil.botiquin': 'Usar botiquín',
   'bunker.separacion': v => `AHORA LOS BÚNKERES QUEDAN A ${v.km} km UNO DEL OTRO`,
+  'bunker.aereo': 'Ataque aéreo', 'bunker.aereoTexto': v => `Una carga extra de ataque aéreo: se usa con ${v.tecla} aunque el gratuito (uno cada ${v.s} s) esté en espera. Limpia la pantalla de zombies.`,
+  'bunker.aereoLleno': v => `YA LLEVAS ${v.max} CARGAS: NO ENTRAN MÁS`, 'bunker.dijoAereo': 'Cuando lo pidas por radio, el cielo se encarga.',
 });
 Object.assign(TEXTOS.pt, {
   'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
@@ -582,6 +620,8 @@ Object.assign(TEXTOS.pt, {
   'accion.botiquin': 'Usar kit médico (Luta infinita)', 'controles.botiquin': 'Usar um kit médico (compram-se nos bunkers da luta infinita)',
   'tactil.botiquin': 'Usar kit médico',
   'bunker.separacion': v => `AGORA OS BUNKERS FICAM A ${v.km} km UM DO OUTRO`,
+  'bunker.aereo': 'Ataque aéreo', 'bunker.aereoTexto': v => `Uma carga extra de ataque aéreo: usa-se com ${v.tecla} mesmo com o gratuito (um a cada ${v.s} s) em espera. Limpa a tela de zumbis.`,
+  'bunker.aereoLleno': v => `VOCÊ JÁ LEVA ${v.max} CARGAS: NÃO CABEM MAIS`, 'bunker.dijoAereo': 'Quando pedir pelo rádio, o céu cuida do resto.',
 });
 Object.assign(TEXTOS.en, {
   'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
@@ -605,4 +645,6 @@ Object.assign(TEXTOS.en, {
   'accion.botiquin': 'Use medkit (Endless fight)', 'controles.botiquin': 'Use a medkit (bought in the bunkers of the endless fight)',
   'tactil.botiquin': 'Use medkit',
   'bunker.separacion': v => `NOW THE BUNKERS ARE ${v.km} km APART`,
+  'bunker.aereo': 'Air strike', 'bunker.aereoTexto': v => `One extra air strike charge: use it with ${v.tecla} even while the free one (one every ${v.s} s) is recharging. It clears the screen of zombies.`,
+  'bunker.aereoLleno': v => `YOU ALREADY CARRY ${v.max} CHARGES: NO ROOM FOR MORE`, 'bunker.dijoAereo': 'Radio it in and the sky will do the rest.',
 });

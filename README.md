@@ -82,7 +82,11 @@ y entrá a <http://127.0.0.1:8791/>.
     **COMPRAR**, vende las armas comunes y las especiales que no se tienen, cada una con su precio (los de la
     defensa ultra; Glock $100, AK-47 $650, Barrett $1300, minigun $3000, láser $3500), y **botiquines** ($150):
     se llevan encima hasta 3 y se usan con **V** (configurable) o el botón **✚**; curan 50 y quitan el veneno. Las
-    especiales también se recargan ahí. **EQUIPABLES** (`js/equipables.js`, pedido de Enzo el 18/11), abajo de todo en la
+    especiales también se recargan ahí. **Ataque aéreo** (pedido de Enzo el 18/11): en la pelea infinita (no en las
+    misiones) se pide con **A** o el botón de arriba a la izquierda, igual que en las defensas: los misiles limpian la
+    pantalla y se recarga **cada 60 s** (ya listo al empezar); en el búnker se compran **cargas extra** ($400, hasta
+    3), que se gastan sin esperar cuando el gratuito está recargando (el botón muestra «LISTO · +2»). Probado: 5 de 5
+    zombies a la vista caen, la espera es de 60 s y las cargas se compran y se gastan. **EQUIPABLES** (`js/equipables.js`, pedido de Enzo el 18/11), abajo de todo en la
     ventana del arma elegida, muestra tres objetos que quedan puestos en esa arma (y se dibujan sobre ella, en la
     mano y en el menú): **bípode** ($200; en todas menos escopetas, pistolas y cuerpo a cuerpo; mejora muy poco la
     puntería: le pega de frente a los zombies chiquitos —escala menor a 0,85— del mismo piso sin agacharse, y cierra
