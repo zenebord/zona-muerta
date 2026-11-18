@@ -62,7 +62,11 @@ y entrá a <http://127.0.0.1:8791/>.
   - **Distancia y búnkeres** (`js/bunker.js`, pedido de Enzo el 16/11; los botiquines los sumó Leandro): en los
     tres mapas, arriba de la pantalla se ve **cuántos metros** se recorrieron desde el punto de partida (1 m = 44
     unidades, la medida de las estacas del entrenamiento) y a cuánto está el **próximo búnker** hacia donde se camina.
-    Cada **300 m**, para los dos lados, hay un **búnker subterráneo**: en el piso, una losa blanca con una reja encima
+    El primero está a **300 m**, para los dos lados, y después **la distancia entre búnkeres crece 1 km cada 3 hordas
+    (rondas) superadas** (300 m, 1,3 km, 2,3 km…; pedido de Enzo el 18/11), salvo el **5 %** de las veces en que, aunque
+    pasen las 3 hordas, no cambia (probado: 5,1 % de 20 000; un aviso lo dice cuando crece). Cada búnker queda fijo con la
+    distancia que había cuando se generó, y se genera el siguiente cuando el jugador se acerca a 3 pantallas del último.
+    Cada uno es un **búnker subterráneo**: en el piso, una losa blanca con una reja encima
     de la escalera que baja, lámparas verdes en las esquinas y una **luz verde** que sale del piso y sube hasta el
     cielo (se ve desde lejos). Si el búnker cae en una montaña, se corre al trozo de al lado (de 400 búnkeres, 93 se
     corren unos 27 m; ninguno queda arriba de una montaña). Parado encima aparece **«↓ ENTRAR AL BÚNKER»** (en el
@@ -78,7 +82,16 @@ y entrá a <http://127.0.0.1:8791/>.
     **COMPRAR**, vende las armas comunes y las especiales que no se tienen, cada una con su precio (los de la
     defensa ultra; Glock $100, AK-47 $650, Barrett $1300, minigun $3000, láser $3500), y **botiquines** ($150):
     se llevan encima hasta 3 y se usan con **V** (configurable) o el botón **✚**; curan 50 y quitan el veneno. Las
-    especiales también se recargan ahí. El dinero sale de los zombies: $10 cada uno, $15 los corredores, $20 los
+    especiales también se recargan ahí. **EQUIPABLES** (`js/equipables.js`, pedido de Enzo el 18/11), abajo de todo en la
+    ventana del arma elegida, muestra tres objetos que quedan puestos en esa arma (y se dibujan sobre ella, en la
+    mano y en el menú): **bípode** ($200; en todas menos escopetas, pistolas y cuerpo a cuerpo; mejora muy poco la
+    puntería: le pega de frente a los zombies chiquitos —escala menor a 0,85— del mismo piso sin agacharse, y cierra
+    las ráfagas a la mitad; parado en el piso, no vale desde una montaña ni un lugar alto; medido: 0 de 8 tiros contra
+    un corredor chico sin bípode y 8 de 8 con él, y 0 de 8 en la montaña); **mira** ($350 la telescópica, sólo en los
+    **rifles**; $250 la de punto rojo en las demás; funciona igual que las que ya existen: tecla D, apunta sola y no
+    falla; no se vende en las que ya traen una); y **silenciador** ($300; disparo apagado y fogonazo mínimo, y con él
+    en el arma de la mano los zombies vivos a la vez bajan un 20 %: con el tope de 30 de dificultad media, 24).
+    El dinero sale de los zombies: $10 cada uno, $15 los corredores, $20 los
     tóxicos y congelados, y $2 más por cada ronda. En el menú: ← → otra carta, Tab la otra pestaña, Enter la acción,
     Esc o ↑ salen. Las misiones, la historia y los otros modos no tienen búnkeres.
 - **Misiones**: 17 misiones que se juegan dentro de la pelea infinita (matar zombies, conseguir
@@ -829,9 +842,22 @@ La dificultad sube con cada nivel: más zombies dormidos (14, 12, 15 y 17), zomb
 corredores (0 %, 15 %, 25 % y 35 %) y hordas más grandes al final. Mecánicas de plataformas:
 - **Escaleras de mano**: al pie, ↑ (o saltar) trepa sola hasta arriba; arriba, ↓ baja.
 - **Sogas**: se balancean solas; te agarras si cualquier parte del cuerpo toca los tres cuartos de abajo de la
-  soga (quedas colgado de la punta), y saltando otra vez te sueltas con el impulso del balanceo (hay que soltarse
-  cuando va hacia adelante). En el nivel 4, los dos huecos de dos sogas tienen un apoyo en el medio: un andamio
+  soga (quedas colgado de la punta; el agarre tolera ±32 px) y **te puedes impulsar**: apretar ← o → hacia donde va el
+  balanceo lo agranda hasta 1,45 veces (apretar al revés lo frena; sin empujar vuelve solo a lo de siempre); saltando
+  otra vez te sueltas con el impulso del balanceo (hay que soltarse cuando va hacia adelante), ahora con más
+  empuje y con control en el aire (las flechas corrigen y se puede girar). Si caes pegado al borde del vacío del que
+  venías, un corrimiento te deja al menos a 62 px (antes, a 6 px: de ahí un paso de más era una caída). En el nivel 4, los dos huecos de dos sogas tienen un apoyo en el medio: un andamio
   entre los techos y un montón de escombros en la zanja.
+- **El arma tiene cuerpo** (pedido de Enzo): un zombie que viene de frente se frena en la **boca del cañón** (a lo
+  más 84 px) y muerde desde ahí, así nunca queda adentro del arma; si el jugador se da vuelta y lo deja adentro,
+  el cañón lo empuja hasta la boca. Por la espalda, igual que antes; el tiro sigue saliendo desde el cuerpo.
+- **Girar sin caminar** (tecla **W**, o ⟲ GIRAR en el celular): el jugador mira para el otro lado, también en el aire;
+  si sigue apretando una flecha la mirada queda fija hasta que la suelta (disparar hacia atrás mientras retrocede o salta).
+- **Margen al saltar**: se puede saltar hasta 130 ms después de pisar el vacío y un salto apretado hasta 130 ms
+  antes de aterrizar sale al tocar el piso (se midió: salta con 7 cuadros de retraso, no con 10).
+- **Niveles más largos**: los tramos de piso y de techo se estiran 1,6 veces y todo lo que tiene posición
+  (cajas, corazones, radios, dormidos, escaleras, sogas, fuego) se corre con su tramo; los huecos, escalones y
+  autos quedan iguales. Largo en px: 4600→5878, 5600→7826, 6400→9238 y 7000→10180 (+28 % a +45 %).
 - **Precipicios** (río, canal, hueco entre edificios): caer quita 25 de vida y te devuelve al último lugar firme.
 - **Fuego en el piso**: quema mientras lo pisas. Los zombies no se tiran a los precipicios: esperan en el borde.
 
@@ -888,7 +914,19 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
 - **Configuración**: el **engranaje** de arriba a la izquierda (en todas las pantallas; en partida pausa el
   juego) abre un panel con volumen general, efectos y música, silenciar todo y un botón para probar el
   sonido; idioma; dificultad; calidad gráfica (alta: hasta 2× de resolución; normal: 1×, para celulares
-  lentos); botones en pantalla (automático, siempre o nunca); vibración al tocar y pantalla completa.
+  lentos); botones en pantalla (automático, siempre o nunca); vibración al tocar, pantalla completa y **usar el
+  mouse** para disparar, recargar y cambiar de arma (viene activado). Cinco casillas apagan **de a un sonido** sin
+  tocar los demás: música, pasos, disparos, balas que pegan en zombies y voces y golpes de zombies (medido: cada
+  una deja en 0 los sonidos de su categoría y el resto sigue igual). La bala que entra en un zombie ya no suena a
+  esponja exprimida (la grabación `impacto_carne`, que quedó sin usar): ahora es un golpe seco de bala contra algo
+  duro, hecho con ruido, un tono corto y un golpe grave. En el campo de pruebas, la rueda del mouse sobre la
+  ficha del arma la desplaza y no cambia de arma.
+- **Tutorial** (`js/tutorial.js`, pedido de Enzo): un cuadrito TUTORIAL arriba a la derecha del menú, debajo del
+  personaje, abre un campo plano con 11 pasos guiados (caminar, saltar con una flecha apretada, agacharse, girar,
+  disparar a un zombie lento, recargar, cambiar de arma, la mira del Remington 700, el ataque aéreo con A, la pausa y
+  recargar la página con F5) más la pantalla final; cada uno se da por hecho cuando se hace y se puede omitir. Nadie
+  muere ahí. Los textos usan las teclas que tenga puestas cada uno (y los botones, en el celular) y están en los tres
+  idiomas. Recorrido simulado de punta a punta: 15 s de juego.
   Todo queda guardado en el navegador. `Esc` lo cierra.
 - **Idiomas**: español, portugués (Brasil) e inglés. Al principio se elige según el idioma del navegador.
   Se traducen menús, HUD, avisos, misiones, dificultades, controles y los carteles del escenario.
@@ -938,6 +976,8 @@ alrededor de un minuto).
 
 En celulares y tablets aparecen botones en pantalla: flechas a la izquierda, fuego (se puede mantener), salto y
 recarga a la derecha, y abajo cambio de arma, M2, cajas (en el campo de pruebas) y pausa. Se detectan solos.
+
+Además de las flechas y F/S/D/A: **W** gira sin caminar (también en el aire).
 
 **Las teclas se cambian** en Configuración → Teclas (también desde CONTROLES → CAMBIAR TECLAS): cada acción tiene un
 botón con su tecla; se toca y se presiona la nueva, que puede ser cualquier letra, número, flecha, Control, Alt o
@@ -1413,7 +1453,9 @@ js/skins.js       personajes elegibles: colores, capa, torso y cabeza de cada un
 js/zombie.js      zombie (verde, camiseta azul manchada, pantalón marrón roto)
 js/zombie-toxico.js  zombie tóxico de la cloaca, escupitajo de ácido y charco
 js/zombie-congelado.js  zombie congelado del bosque nevado y su bloque de hielo
-js/bunker.js            pelea infinita: distancia, búnkeres cada 300 m, comerciante, mejoras y botiquines
+js/bunker.js            pelea infinita: distancia, búnkeres cada vez más lejos, comerciante, mejoras y botiquines
+js/equipables.js        bípode, mira y silenciador que se compran en el búnker (dibujo, efectos y ventana)
+js/tutorial.js          tutorial guiado de lo básico
 js/armas-modelos-2.js  las 20 armas nuevas (fuego, cuerpo a cuerpo y legendarias)
 js/armas-modelos-3.js  rediseño realista de las armas de fuego (medidas reales, estrías, cuadrillé, rieles, miras)
 js/poderes.js     golpe cuerpo a cuerpo y poderes de las legendarias (rayo, onda, ola, armas que vuelven)

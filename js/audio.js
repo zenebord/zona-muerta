@@ -12,12 +12,14 @@ const Audio_ = (() => {
   // Volúmenes (los pone la configuración): general → limitador → parlantes; efectos y música por separado
   let general = null, busMusica = null;
   const vol = { general: 0.9, efectos: 0.85, musica: 0.6, silencio: false };
+  // Sonidos que la configuración apaga de a uno: música, pasos, disparos, impactos de bala en zombies y voces de zombies
+  const apagado = { musica: false, pasos: false, disparos: false, impactos: false, zombies: false };
   function aplicarVolumenes() {
     if (!ctx) return;
     const t = ctx.currentTime;
     general.gain.setTargetAtTime(vol.silencio ? 0 : vol.general, t, 0.05);
     maestro.gain.setTargetAtTime(0.85 * vol.efectos, t, 0.05);
-    busMusica.gain.setTargetAtTime(vol.musica, t, 0.05);
+    busMusica.gain.setTargetAtTime(apagado.musica ? 0 : vol.musica, t, 0.05);
   }
   // Eco de cada lugar: cuándo vuelve el rebote, cuántas veces y qué tan brillante
   const ECOS = { aire: [0.21, 0.3, 1400], galpon: [0.13, 0.36, 2300], cloaca: [0.17, 0.46, 1500] };
@@ -703,11 +705,19 @@ const Audio_ = (() => {
     sinSilencioAutomatico() { vigila = false; silenciar(false); },
     // Volúmenes de la configuración: { general, efectos, musica, silencio }
     volumenes(v) { Object.assign(vol, v); aplicarVolumenes(); },
+    // { musica, pasos, disparos, impactos, zombies }: true apaga ese sonido y sólo ése
+    apagar(a) { Object.assign(apagado, a); aplicarVolumenes(); },
     // Para la música: el contexto y el canal donde conectarse
     mezclaMusica() { asegurar(); return { ctx, bus: busMusica }; },
 
-    disparo(categoria, armaId) {
-      if (!asegurar()) return;
+    // silenciado: el silenciador del búnker (js/equipables.js): un «pff» seco y bajo, sin estampido ni eco
+    disparo(categoria, armaId, silenciado = false) {
+      if (!asegurar() || apagado.disparos) return;
+      if (silenciado) {
+        ruido({ dur: 0.07, vol: 0.2, filtro: 'lowpass', freq: 1500, freqFin: 500, q: 0.7, ataque: 0.002, rev: 0.02 });
+        golpe({ f: 150, dur: 0.05, vol: 0.14 }); metal({ f: 2300, dur: 0.02, vol: 0.05, rev: 0 });
+        return;
+      }
       if (armaId === 'minigun') { tiroMinigun(); return; }   // el rugido de la ráfaga lo pone Audio_.minigun
       if (tiroGrabado(armaId)) return;                       // arma real grabada (arriba); si no hay, el sintetizado
       const pesado = PESADAS.has(armaId) ? 1.35 : LIVIANAS.has(armaId) ? 0.85 : 1;
@@ -870,6 +880,7 @@ const Audio_ = (() => {
       if (ataca) { ruido({ dur: 0.12, vol: vol * 0.9, filtro: 'bandpass', freq: 700 * grave, freqFin: 300 * grave, q: 1.5, retraso: dur * 0.85, sat: 3, rev: 0.12 }); tono({ tipo: 'sawtooth', desde: 260 * grave, hasta: 140 * grave, dur: 0.12, vol: vol * 0.5, retraso: dur * 0.85, sat: 2 }); }
     },
     gemido(fuerte = false, distancia = 200) {
+      if (apagado.zombies) return;
       asegurar();
       const cerca = Math.max(0.15, 1 - distancia / 600);
       if (variante('zombie_gemido', 8, { vol: (fuerte ? 1 : 0.55) * cerca, vel: 0.88 + Math.random() * 0.2, rev: 0.25 + (1 - cerca) * 0.5 })) return;
@@ -905,6 +916,7 @@ const Audio_ = (() => {
     },
     // conCaida: false cuando el cuerpo sale despedido y el golpe contra el piso suena recién al caer
     zombieMuere(conCaida = true) {
+      if (apagado.zombies) return;
       asegurar();
       if (variante('zombie_muerte', 4, { vol: 0.85, vel: 0.9 + Math.random() * 0.15, rev: 0.2 })) {
         if (conCaida) { variante('cuerpo_cae', 2, { vol: 0.55, retraso: 0.32, rev: 0.1 }); golpe({ f: 95, dur: 0.12, vol: 0.28, retraso: 0.34 }); }   // el peso del cuerpo contra el piso
@@ -913,21 +925,28 @@ const Audio_ = (() => {
       this.gemidoSintetico(true); if (conCaida) golpe({ f: 110, dur: 0.12, vol: 0.3, retraso: 0.35 });
     },
     zombieGolpea() {
+      if (apagado.zombies) return;
       asegurar();
       variante('zombie_ataque', 6, { vol: 0.9, vel: 0.92 + Math.random() * 0.16, rev: 0.12 });
       golpe({ f: 120, dur: 0.07, vol: 0.32 }); ruido({ dur: 0.08, vol: 0.14, filtro: 'bandpass', freq: 900, q: 1.5 });   // manotazo
     },
     // Bala que entra en la carne (con un tope para que las escopetas no saturen)
+    // Un golpe seco de bala contra algo duro y sordo: el «tac» del impacto y un tope grave. Nada de chapoteo: la
+    // grabación anterior (impacto_carne) sonaba a esponja que se exprime y a varios les resultaba desagradable
     impactoCarne() {
+      if (apagado.impactos) return;
       asegurar();
       const ahora = ctx.currentTime;
       if (this._ultimoImpacto && ahora - this._ultimoImpacto < 0.035) return;
       this._ultimoImpacto = ahora;
-      if (!variante('impacto_carne', 5, { vol: 0.75, vel: 0.85 + Math.random() * 0.3, rev: 0.05 })) ruido({ dur: 0.06, vol: 0.2, filtro: 'bandpass', freq: 700, q: 1.2 });
-      golpe({ f: 160, dur: 0.04, vol: 0.18 });
+      const v = 0.85 + Math.random() * 0.3;
+      ruido({ dur: 0.02, vol: 0.2, filtro: 'highpass', freq: 2400 * v, ataque: 0.0008, rev: 0.03 });              // el «tac» del impacto
+      tono({ desde: 340 * v, hasta: 95, dur: 0.055, vol: 0.2, sat: 1.6, ataque: 0.001, rev: 0.02 });             // el cuerpo del golpe
+      golpe({ f: 130 * v, dur: 0.07, vol: 0.3 });                                                                  // el tope grave
     },
     // Pasos del protagonista: asfalto en la calle, arena en las montañas y en el campo
     paso(superficie = 'asfalto', fuerza = 1) {
+      if (apagado.pasos) return;
       asegurar();
       if (superficie === 'nieve') {   // nieve: la pisada en la arena, más aguda, y el crujido de la nieve que se aplasta
         variante('paso_arena', 6, { vol: 0.12 * fuerza, vel: 1.12 + Math.random() * 0.16, rev: 0.03 });
@@ -937,6 +956,7 @@ const Audio_ = (() => {
       variante(superficie === 'arena' ? 'paso_arena' : 'paso_asfalto', 6, { vol: 0.15 * fuerza, vel: 0.9 + Math.random() * 0.2, rev: 0.03 });
     },
     aterrizar(superficie = 'asfalto') {
+      if (apagado.pasos) return;
       asegurar();
       this.paso(superficie, 1.5); this.paso(superficie, 1.1);
       golpe({ f: 85, dur: 0.08, vol: 0.1 });
@@ -988,6 +1008,7 @@ const Audio_ = (() => {
     // El motor sube de tono al arrancar y baja al frenar; si dejan de llegar llamadas se apaga solo.
     minigun(vel, tirando = false) {
       const v = Math.max(0, Math.min(1, vel || 0));
+      if (apagado.disparos) tirando = false;   // el rugido de la ráfaga es el estampido: sólo queda girar los cañones
       if (v < 0.002 && !tirando) { if (motor) apagarMotor(); return; }
       if (!asegurar()) return;
       if (!motor) crearMotor();
@@ -1064,7 +1085,7 @@ const Audio_ = (() => {
     // Ambiente de fondo: viento (nivel 0 lo apaga)
     ambiente(nivel) { asegurar(); if (nivel > 0) encenderViento(nivel); else { apagarViento(); apagarAgua(); } },
     // Gemido de algún zombie lejano que no está en pantalla
-    gemidoLejano() { asegurar(); variante('zombie_gemido', 8, { vol: 0.16, vel: 0.8 + Math.random() * 0.15, rev: 0.9 }); },
+    gemidoLejano() { if (apagado.zombies) return; asegurar(); variante('zombie_gemido', 8, { vol: 0.16, vel: 0.8 + Math.random() * 0.15, rev: 0.9 }); },
     // Sirena antiaérea a lo lejos: arranca una ronda
     sirena() {
       asegurar();

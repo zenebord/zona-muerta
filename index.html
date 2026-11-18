@@ -12,6 +12,8 @@
   <section id="menu-principal" class="pantalla visible">
     <div class="humo"></div>
     <!-- Personaje: arriba a la derecha, con la vista previa del elegido -->
+    <!-- Tutorial: un cuadrito debajo del personaje, del tamaño de CAMPO DE PRUEBAS (js/tutorial.js) -->
+    <button class="boton chico boton-tutorial" type="button" data-accion="tutorial" data-t="tutorial.boton">TUTORIAL</button>
     <button class="boton-personaje" type="button" data-accion="personaje-abrir">
       <canvas id="vista-personaje" width="128" height="150" aria-hidden="true"></canvas>
       <span class="rotulo" data-t="personaje.titulo">PERSONAJE</span>
@@ -112,6 +114,7 @@
       <tr><td><kbd data-tecla-de="izquierda">←</kbd></td><td data-t="controles.retroceder">Retroceder</td></tr>
       <tr><td><kbd data-tecla-de="saltar">↑</kbd></td><td data-t="controles.saltar">Saltar</td></tr>
       <tr><td><kbd data-tecla-de="abajo">↓</kbd></td><td data-t="controles.abajo"></td></tr>
+      <tr><td><kbd data-tecla-de="girar">W</kbd></td><td data-t="controles.girar"></td></tr>
       <tr><td data-t="controles.entrenamiento"></td><td data-t-html="controles.entrenamiento.texto"></td></tr>
       <tr><td data-t="controles.torreta"></td><td data-t-html="controles.torreta.texto"></td></tr>
       <tr><td data-t="controles.ultra"></td><td data-t-html="controles.ultra.texto"></td></tr>
@@ -212,6 +215,7 @@
       </div>
       <div class="extras-tactiles">
         <button class="boton-tactil pildora" data-tecla="ArrowDown" data-t-aria="tactil.abajo.aria" data-t="tactil.abajo">▼ ABAJO</button>
+        <button class="boton-tactil pildora" data-tecla="KeyW" data-t-aria="tactil.girar.aria" data-t="tactil.girar">⟲ GIRAR</button>
         <button class="boton-tactil pildora solo-mira" data-tecla="KeyD" data-t="tactil.mira">MIRA</button>
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
@@ -225,6 +229,13 @@
       <div class="icono-girar" aria-hidden="true"></div>
       <p data-t="girar">Gira el teléfono para jugar</p>
       <small data-t="girarNota">Si la pantalla no gira, activa la rotación automática.</small>
+    </div>
+    <!-- Tutorial: el paso en curso, con su texto y la barra de avance (js/tutorial.js) -->
+    <div id="tutorial" class="tutorial oculta" role="status" aria-live="polite">
+      <div class="tutorial-cabeza"><span id="tutorial-paso"></span><button id="tutorial-omitir" type="button" class="boton mini" data-accion="tutorial-saltar">OMITIR</button></div>
+      <p id="tutorial-texto"></p>
+      <div class="tutorial-barra"><span id="tutorial-avance"></span></div>
+      <div id="tutorial-botones" class="tutorial-botones oculta"></div>
     </div>
     <div id="selector-armas" class="selector-armas" aria-live="polite"></div>
     <div id="aviso" class="aviso"></div>
@@ -412,6 +423,14 @@
           <label class="fila-check"><input type="checkbox" data-config="silencio"><span data-t="config.silencio">Silenciar todo</span></label>
           <button class="boton mini" type="button" data-accion="config-probar" data-t="config.probar">Probar</button>
         </div>
+        <div class="lista-sonidos">
+          <p class="nota" data-t="config.sonidosNota">Apaga sólo el sonido que te moleste; los demás siguen igual.</p>
+          <label class="fila-check"><input type="checkbox" data-config="sonMusica"><span data-t="config.sonMusica">Música</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonPasos"><span data-t="config.sonPasos">Pasos</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonDisparos"><span data-t="config.sonDisparos">Disparos</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonImpactos"><span data-t="config.sonImpactos">Balas que pegan en zombies</span></label>
+          <label class="fila-check"><input type="checkbox" data-config="sonZombies"><span data-t="config.sonZombies">Voces y golpes de zombies</span></label>
+        </div>
       </section>
       <section>
         <h3 data-t="config.idioma">IDIOMA</h3>
@@ -452,6 +471,9 @@
         <div class="fila-doble">
           <label class="fila-check"><input type="checkbox" data-config="vibracion"><span data-t="config.vibracion">Vibración al tocar</span></label>
           <button class="boton mini" type="button" id="boton-completa" data-accion="config-completa" data-t="config.completa">Pantalla completa</button>
+        </div>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="raton"><span data-t="config.raton">Mouse para disparar, recargar y cambiar de arma</span></label>
         </div>
       </section>
       <section id="config-teclas">
@@ -516,10 +538,12 @@
   <script src="js/poderes.js"></script>
   <script src="js/armas-especiales.js"></script>
   <script src="js/defensa-ultra.js"></script>
+  <script src="js/equipables.js"></script>
   <script src="js/bunker.js"></script>
   <script src="js/escenario-historia.js"></script>
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>
+  <script src="js/tutorial.js"></script>
   <script src="js/estrategia.js"></script>
   <script src="js/bastion-niveles.js"></script>
   <script src="js/bastion-dibujo.js"></script>

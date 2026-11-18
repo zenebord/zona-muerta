@@ -1,4 +1,5 @@
 /* ===== Jugador: movimiento, inventario, disparo, acción manual y recarga por fases ===== */
+const MARGEN_SALTO_MS = 130;   // tolerancia al saltar al pisar el vacío o justo antes de aterrizar
 const VELOCIDAD_JUGADOR = 3.6, GRAVEDAD = 0.55, SALTO = -11.5;   // el salto llega a unos 120 px de alto
 const ESCALON_MAX = 14;   // lo más alto que se sube caminando; más alto, hay que saltar
 const ORIGEN_ARMA = { x: 12, y: -47 };   // mano del gatillo, respecto de los pies
@@ -71,7 +72,8 @@ const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
 // mismo que con la telescópica; cambia la retícula (dibujarMiraPuntoRojo), y los perdigones, la granada y el cohete
 // también van derecho al zombie (js/juego.js: dispararArma)
 const MIRA_PUNTO_ROJO = new Set(['vector', 'p90', 'saiga', 'mgl', 'bazuca']);
-const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : null;
+// (y la que se compra en el búnker de la pelea infinita, js/equipables.js: la telescópica sólo en los rifles)
+const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : (typeof EQUIPO_ARMAS !== 'undefined' && EQUIPO_ARMAS.has(id) && EQUIPO_ARMAS.get(id).mira) || null;
 const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
@@ -166,6 +168,16 @@ class Jugador {
     this.lanzado = null;               // Égida o Gungnir en el aire: vuelven solas a la mano
     this.agachado = 0;                 // 0 parado … 1 rodilla en tierra (↓ mantenida)
     this.veneno = 0;                   // segundos de envenenamiento por ácido de los zombies tóxicos
+    this.dirPrevia = { d: false, i: false }; this.giroFijo = false;   // girar sin caminar (tecla de girar)
+    this.ultimoSuelo = 0; this.saltando = false; this.saltoPedidoEn = -1e9; this.aterrizoConImpulso = 0;   // margen al saltar
+  }
+
+  // Tecla de girar: queda mirando para el otro lado sin caminar; si sigue apretando una flecha, la mirada queda fija
+  // hasta que la suelta (así dispara hacia atrás mientras retrocede o salta). Vale también en el aire
+  girar() {
+    if (this.muerto || this.montada) return;
+    this.direccion = -this.direccion; this.girosHechos = (this.girosHechos || 0) + 1;
+    if (this.dirPrevia.d || this.dirPrevia.i) this.giroFijo = true;
   }
 
   // Ácido de un zombie tóxico: quema de a poco mientras dure (no se acumula, se renueva)
@@ -206,13 +218,24 @@ class Jugador {
       this.vx = 0;
       // Agachado (rodilla en tierra): no camina ni salta, pero puede girar para tirar al otro lado
       const agachandose = entrada.abajo && this.enSuelo;
-      if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; this.direccion = 1; }
-      if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; this.direccion = -1; }
+      // Girar sin caminar (tecla de girar): el jugador queda mirando para el otro lado aunque siga apretando la flecha
+      // (tirar hacia atrás mientras avanza o retrocede, también en el aire) hasta que suelta la flecha o aprieta otra vez
+      const apretoDir = (entrada.derecha && !this.dirPrevia.d) || (entrada.izquierda && !this.dirPrevia.i);
+      if (this.giroFijo && (apretoDir || (!entrada.derecha && !entrada.izquierda))) this.giroFijo = false;
+      this.dirPrevia = { d: !!entrada.derecha, i: !!entrada.izquierda };
+      if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; if (!this.giroFijo) this.direccion = 1; }
+      if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; if (!this.giroFijo) this.direccion = -1; }
       if (agachandose) this.vx = 0;
-      // Impulso al soltarse de una soga: lo lleva por el aire hasta que toca el piso (las flechas lo corrigen un poco)
-      if (this.impulso && !this.enSuelo) { this.vx = this.impulso + this.vx * 0.3; this.direccion = Math.sign(this.impulso) || this.direccion; }
+      // Impulso al soltarse de una soga: lo lleva por el aire hasta que toca el piso; las flechas lo corrigen y se puede girar
+      if (this.impulso && !this.enSuelo) this.vx = this.impulso + this.vx * 0.55;
       this.caminando = this.vx !== 0 && this.enSuelo;
-      if (entrada.saltarPulsado && this.enSuelo && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; }
+      // Margen de error al saltar (pedido de Enzo, con las sogas y los bordes): se puede saltar hasta 130 ms después de
+      // pisar el vacío, y un salto apretado un instante antes de tocar el piso sale al aterrizar
+      if (this.enSuelo) { this.ultimoSuelo = this.ahora; this.saltando = false; }
+      else if (entrada.saltarPulsado) this.saltoPedidoEn = this.ahora;
+      const puedeSaltar = this.enSuelo || (!this.saltando && this.vy >= 0 && this.ahora - this.ultimoSuelo < MARGEN_SALTO_MS);
+      const pidioSalto = entrada.saltarPulsado || (this.enSuelo && this.ahora - this.saltoPedidoEn < MARGEN_SALTO_MS);
+      if (pidioSalto && puedeSaltar && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; this.saltando = true; this.saltoPedidoEn = -1e9; }
       const nx = this.x + this.vx * paso;
       if (!(this.vx !== 0 && alturaSuelo(nx) < this.y - ESCALON_MAX)) this.x = nx;   // contra una pared alta: no avanza
       const suelo = alturaSuelo(this.x);
@@ -222,7 +245,7 @@ class Jugador {
       if (!this.enSuelo) {
         this.vy += GRAVEDAD * paso;
         this.y += this.vy * paso;
-        if (this.y >= suelo) { if (this.vy > 4) Audio_.aterrizar(this.superficie()); this.y = suelo; this.vy = 0; this.enSuelo = true; this.impulso = 0; }
+        if (this.y >= suelo) { if (this.vy > 4) Audio_.aterrizar(this.superficie()); this.y = suelo; this.vy = 0; this.enSuelo = true; this.aterrizoConImpulso = this.impulso; this.impulso = 0; }
       }
     }
     entrada.saltarPulsado = false;
@@ -359,7 +382,7 @@ class Jugador {
       this.vainaPendiente = { en: ahora + retraso, tipo: tipoCasquillo, arma: arma.id, peine: EN_BLOQUE.has(arma.id) && this.municion[arma.id] === 0 };
     }
     juego.dispararArma(arma, boca.x, boca.y, this.direccion, this.montada ? { x: expulsion.x, y: expulsion.y, tipo: tipoCasquillo } : null, this.mira && !this.montada ? this.objetivoMira : null);
-    Audio_.disparo(arma.categoria, arma.id);
+    Audio_.disparo(arma.categoria, arma.id, !this.montada && !!equipoDe(arma.id).silenciador);
     if (accion) this.iniciarCiclo(juego, arma, accion, tipoCasquillo);
     return true;
   }

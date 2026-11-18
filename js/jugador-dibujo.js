@@ -517,7 +517,7 @@ Jugador.prototype.cuerpo = function (ctx, parpadeo) {
   };
   // El cargador que entra o sale va antes que el arma, así el pozo o la empuñadura tapan lo que todavía está adentro
   if (cargadorEnMano && !cargadorEnMano.encima) dibujarCargadorEnMano();
-  ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); ctx.restore();
+  ctx.save(); ctx.translate(e.origen.x, e.origen.y); ctx.rotate(e.incl); d.dibujar(ctx, e); if (!this.montada) dibujarEquipables(ctx, arma.id, d); ctx.restore();
   if (e.peine) dibujarPeineEnArma(ctx, e.peine, arma.id);
   pintarMano(ctx, lejos, Clejos, 'adelante');
 

@@ -20,6 +20,13 @@ const Config = (() => {
     calidad: 'auto',   // auto: empieza en alta y baja sola si no da abasto · alta: hasta 2× · normal: 1× · baja: 0,75× sin bisel
     tactil: 'auto',    // auto | si | no: botones en pantalla
     vibracion: true,   // vibración corta al tocar los botones en pantalla
+    raton: true,       // el mouse dispara (clic izquierdo), recarga (derecho) y cambia de arma (rueda)
+    // Sonidos que se pueden apagar de a uno sin tocar los demás (pedido de Enzo); todos suenan de entrada
+    sonMusica: true,   // la música de cada escenario
+    sonPasos: true,    // pisadas y aterrizajes del protagonista
+    sonDisparos: true, // el estampido de las armas (las recargas y los mecanismos siguen sonando)
+    sonImpactos: true, // la bala que pega en un zombie
+    sonZombies: true,  // gemidos, golpes y muertes de los zombies
     skin: 'sobreviviente',   // personaje elegido (js/skins.js)
     teclas: null,      // { acción: [códigos] } si se cambió alguna (js/teclas.js); null: las originales
     teclasNombres: {}, // código → cómo se ve esa tecla en el teclado de quien la eligió (la Ñ es 'Semicolon')
