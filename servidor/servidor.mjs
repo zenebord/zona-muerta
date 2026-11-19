@@ -189,7 +189,7 @@ function crearPedido(cuerpo, quien) {
   const d = leerPedidos();
   if (d.pedidos.length >= TOPE_PEDIDOS_TOTAL) throw Object.assign(new Error('lleno'), { estado: 507 });
   const pedido = { numero: d.siguiente, titulo, seccion: SECCIONES.includes(cuerpo.seccion) ? cuerpo.seccion : 'Otra cosa',
-    prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', fecha: new Date().toISOString() };
+    prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', creador: 'usuario', fecha: new Date().toISOString() };   // creador: quien lo abre y, por eso, quien lo confirma («claude» si lo abre el desarrollo)
   pedido.clave = crypto.randomBytes(12).toString('hex');   // sólo se le entrega a quien lo crea: con ella puede borrarlo
   d.siguiente++; d.pedidos.push(pedido); guardarPedidos(d); nuevosHoy.set(quien, { dia: hoy, n: n + 1 });
   registrar('pedido', '#' + pedido.numero, pedido.seccion, pedido.prioridad);

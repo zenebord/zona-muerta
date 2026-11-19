@@ -2,6 +2,7 @@
  *   node servidor/pedidos.mjs                      lista todos
  *   node servidor/pedidos.mjs estado 3 cerrado     abierto | en curso | listo | esperando | cerrado
  *   node servidor/pedidos.mjs ver 3                el texto completo de uno
+  *   node servidor/pedidos.mjs crear "título" "Sección" media "texto"   abre un pedido como Claude (la confirmación es de Claude)
  *   node servidor/pedidos.mjs nota 3 "texto"       responde en el pedido (queda como nota del desarrollo)
  *   node servidor/pedidos.mjs borrar 3             lo borra para siempre (el número no se vuelve a usar)
  * Lee y escribe servidor/datos/pedidos.json (el mismo archivo que usa el servidor: los cambios se ven al instante). */
@@ -14,7 +15,7 @@ const leer = () => { try { return JSON.parse(fs.readFileSync(ARCHIVO, 'utf8')); 
 const [, , orden = 'lista', a, ...resto] = process.argv, d = leer();
 if (orden === 'lista') {
   if (!d.pedidos.length) console.log('No hay pedidos.');
-  for (const p of d.pedidos) console.log(`#${p.numero} [${p.estado}] (${p.prioridad}) ${p.seccion} — ${p.titulo}`);
+  for (const p of d.pedidos) console.log(`#${p.numero} [${p.estado}] (${p.prioridad}) ${p.seccion} — ${p.titulo}${p.creador === 'claude' ? '  · abierto por Claude' : ''}`);
 } else if (orden === 'ver') {
   const p = d.pedidos.find(x => x.numero === Number(a));
   if (!p) { console.error('No existe ese pedido.'); process.exit(1); }
@@ -25,6 +26,13 @@ if (orden === 'lista') {
   if (!p || !ESTADOS.includes(estado)) { console.error(`Uso: estado <número> <${ESTADOS.join('|')}>`); process.exit(1); }
   p.estado = estado; fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
   console.log(`#${p.numero} → ${estado}`);
+} else if (orden === 'crear') {
+  const [seccion = 'Otra cosa', prioridad = 'media', ...texto] = resto, titulo = a;
+  if (!titulo) { console.error('Uso: crear "título" "Sección" <alta|media|baja> "texto"'); process.exit(1); }
+  const p = { numero: d.siguiente || d.pedidos.length + 1, titulo: titulo.slice(0, 100), seccion, prioridad: ['alta', 'media', 'baja'].includes(prioridad) ? prioridad : 'media', texto: texto.join(' ').slice(0, 2000), estado: 'abierto', creador: 'claude', fecha: new Date().toISOString() };
+  d.siguiente = p.numero + 1; d.pedidos.push(p);
+  fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
+  console.log(`#${p.numero} creado por Claude: ${p.titulo}`);
 } else if (orden === 'nota') {
   const p = d.pedidos.find(x => x.numero === Number(a)), texto = resto.join(' ').trim();
   if (!p || !texto) { console.error('Uso: nota <número> "texto"'); process.exit(1); }
@@ -37,4 +45,4 @@ if (orden === 'lista') {
   const [p] = d.pedidos.splice(i, 1);   // d.siguiente no cambia: los números no se reutilizan
   fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
   console.log(`#${p.numero} borrado: ${p.titulo}`);
-} else { console.error('Órdenes: lista | ver <n> | estado <n> <estado> | nota <n> "texto" | borrar <n>'); process.exit(1); }
+} else { console.error('Órdenes: lista | ver <n> | estado <n> <estado> | crear "título" "Sección" <prioridad> "texto" | nota <n> "texto" | borrar <n>'); process.exit(1); }

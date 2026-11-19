@@ -23,7 +23,7 @@ Object.assign(TEXTOS.es, {
   'pedidos.abiertos': 'ABIERTOS', 'pedidos.cerrados': 'CERRADOS', 'pedidos.todos': 'TODOS', 'pedidos.todasSecciones': 'Todas las secciones',
   'pedidos.nuevo': 'NUEVO PEDIDO', 'pedidos.actualizar': 'ACTUALIZAR', 'pedidos.cargando': 'Cargando los pedidos…', 'pedidos.vacio': 'No hay pedidos con ese filtro.',
   'pedidos.error': 'No se pudieron cargar los pedidos. Prueba de nuevo.', 'pedidos.local': 'Los pedidos que crees aquí se guardan en este dispositivo.',
-  'pedidos.e.abierto': 'Abierto', 'pedidos.e.en curso': 'En curso', 'pedidos.e.listo': 'Listo', 'pedidos.e.esperando': 'Esperando confirmación', 'pedidos.e.cerrado': 'Cerrado',
+  'pedidos.e.abierto': 'Abierto', 'pedidos.e.en curso': 'En curso', 'pedidos.e.listo': 'Listo', 'pedidos.e.esperando': 'Esperando confirmación', 'pedidos.e.esperandoClaude': 'Esperando confirmación de Claude', 'pedidos.e.cerrado': 'Cerrado',
   'pedidos.p.alta': 'Prioridad alta', 'pedidos.p.media': 'Prioridad media', 'pedidos.p.baja': 'Prioridad baja', 'pedidos.sinTexto': '(sin descripción)',
   'pedidos.formTitulo': 'NUEVO PEDIDO', 'pedidos.seccion': 'Sección del juego', 'pedidos.prioridad': '¿Qué tan importante es?',
   'pedidos.prioAlta': 'Alta: el juego falla o no se puede jugar bien', 'pedidos.prioMedia': 'Media: lo quiero pronto', 'pedidos.prioBaja': 'Baja: sería lindo tenerlo algún día',
@@ -43,7 +43,7 @@ Object.assign(TEXTOS.pt, {
   'pedidos.abiertos': 'ABERTOS', 'pedidos.cerrados': 'FECHADOS', 'pedidos.todos': 'TODOS', 'pedidos.todasSecciones': 'Todas as seções',
   'pedidos.nuevo': 'NOVO PEDIDO', 'pedidos.actualizar': 'ATUALIZAR', 'pedidos.cargando': 'Carregando os pedidos…', 'pedidos.vacio': 'Não há pedidos com esse filtro.',
   'pedidos.error': 'Não foi possível carregar os pedidos. Tente de novo.', 'pedidos.local': 'Os pedidos que você criar aqui ficam salvos neste dispositivo.',
-  'pedidos.e.abierto': 'Aberto', 'pedidos.e.en curso': 'Em andamento', 'pedidos.e.listo': 'Pronto', 'pedidos.e.esperando': 'Aguardando confirmação', 'pedidos.e.cerrado': 'Fechado',
+  'pedidos.e.abierto': 'Aberto', 'pedidos.e.en curso': 'Em andamento', 'pedidos.e.listo': 'Pronto', 'pedidos.e.esperando': 'Aguardando confirmação', 'pedidos.e.esperandoClaude': 'Aguardando confirmação do Claude', 'pedidos.e.cerrado': 'Fechado',
   'pedidos.p.alta': 'Prioridade alta', 'pedidos.p.media': 'Prioridade média', 'pedidos.p.baja': 'Prioridade baixa', 'pedidos.sinTexto': '(sem descrição)',
   'pedidos.formTitulo': 'NOVO PEDIDO', 'pedidos.seccion': 'Seção do jogo', 'pedidos.prioridad': 'Qual a importância?',
   'pedidos.prioAlta': 'Alta: o jogo falha ou não dá para jogar bem', 'pedidos.prioMedia': 'Média: quero logo', 'pedidos.prioBaja': 'Baixa: seria legal ter algum dia',
@@ -63,7 +63,7 @@ Object.assign(TEXTOS.en, {
   'pedidos.abiertos': 'OPEN', 'pedidos.cerrados': 'CLOSED', 'pedidos.todos': 'ALL', 'pedidos.todasSecciones': 'All sections',
   'pedidos.nuevo': 'NEW REQUEST', 'pedidos.actualizar': 'REFRESH', 'pedidos.cargando': 'Loading requests…', 'pedidos.vacio': 'No requests match that filter.',
   'pedidos.error': 'Could not load the requests. Try again.', 'pedidos.local': 'Requests you create here are saved on this device.',
-  'pedidos.e.abierto': 'Open', 'pedidos.e.en curso': 'In progress', 'pedidos.e.listo': 'Done', 'pedidos.e.esperando': 'Awaiting confirmation', 'pedidos.e.cerrado': 'Closed',
+  'pedidos.e.abierto': 'Open', 'pedidos.e.en curso': 'In progress', 'pedidos.e.listo': 'Done', 'pedidos.e.esperando': 'Awaiting confirmation', 'pedidos.e.esperandoClaude': 'Awaiting confirmation from Claude', 'pedidos.e.cerrado': 'Closed',
   'pedidos.p.alta': 'High priority', 'pedidos.p.media': 'Medium priority', 'pedidos.p.baja': 'Low priority', 'pedidos.sinTexto': '(no description)',
   'pedidos.formTitulo': 'NEW REQUEST', 'pedidos.seccion': 'Game section', 'pedidos.prioridad': 'How important is it?',
   'pedidos.prioAlta': 'High: the game breaks or can\'t be played well', 'pedidos.prioMedia': 'Medium: I want it soon', 'pedidos.prioBaja': 'Low: it would be nice someday',
@@ -131,6 +131,8 @@ const PedidosUI = (() => {
   }
 
   const esAbierto = p => p.estado !== 'cerrado';
+  // La confirmación la da quien abrió el pedido: si lo abrió Claude (el desarrollo), espera la confirmación de Claude
+  const textoEstado = p => t('pedidos.e.' + (p.estado === 'esperando' && p.creador === 'claude' ? 'esperandoClaude' : p.estado));
   function pintar() {
     const cont = $('pedidos-lista'); cont.replaceChildren();
     $('pedidos-local').hidden = conServidor();
@@ -145,7 +147,7 @@ const PedidosUI = (() => {
       const fila1 = hijo(cab, 'span', 'pedido-fila');
       hijo(fila1, 'span', 'pedido-num', '#' + p.numero);
       hijo(fila1, 'span', 'pedido-tit', p.titulo);
-      hijo(fila1, 'span', 'pedido-estado e-' + String(p.estado).replace(' ', '-'), t('pedidos.e.' + p.estado));
+      hijo(fila1, 'span', 'pedido-estado e-' + String(p.estado).replace(' ', '-'), textoEstado(p));
       const etiquetas = hijo(cab, 'span', 'pedido-etiquetas');
       const sec = hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion); sec.style.color = color; sec.style.borderColor = color; sec.style.background = color + '22';
       hijo(etiquetas, 'span', 'pedido-etiqueta prio-' + p.prioridad, t('pedidos.p.' + p.prioridad));
@@ -223,7 +225,7 @@ const PedidosUI = (() => {
     const sin = async (accion, texto) => { try { await responder(p, accion, texto); abiertos.add(p.numero); mantenerVisible(p); pintar(); gracias(); } catch { aviso.textContent = t('pedidos.errorResponder'); redactar.hidden = false; } };
     if (jefe || (!conServidor() && esLocal(p))) {   // el dueño (y, sin servidor, quien lo creó en este navegador): cambia el estado
       const f = hijo(izq, 'label', 'pedido-estado-fila'); hijo(f, 'span', '', t('pedidos.cambiarEstado'));
-      const sel = hijo(f, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
+      const sel = hijo(f, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + (e === 'esperando' && p.creador === 'claude' ? 'esperandoClaude' : e)), e)); sel.value = p.estado;
       sel.addEventListener('change', () => cambiarEstado(p, sel.value));
     }
     if (jefe) boton('', t('pedidos.responder'), () => abrirRedactar('nota', t('pedidos.escribe'), true));
