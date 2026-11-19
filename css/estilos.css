@@ -1150,3 +1150,18 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-foto { display: block; max-width: 220px; max-height: 160px; object-fit: contain; border: 1px solid rgba(201,169,110,.4); background: #000; cursor: zoom-in; }
 .pedido-foto[hidden] { display: none; }
 .pedido-foto.grande { max-width: 100%; max-height: 70vh; cursor: zoom-out; }
+
+/* Las caras de quienes abren pedidos (js/pedidos-caras.js) */
+.cara { display: inline-block; flex: none; width: 18px; height: 18px; border-radius: 50%; overflow: hidden; vertical-align: middle; }
+.cara svg { display: block; width: 100%; height: 100%; }
+.cara.grande { width: 64px; height: 64px; }
+.pedido-etiqueta.quien { display: inline-flex; align-items: center; gap: 5px; padding-left: 2px; }
+.pedido-nota b { display: flex; align-items: center; gap: 6px; }
+.pedido-nota b .cara { width: 20px; height: 20px; }
+.pedidos-quien-campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--arena); }
+.pedidos-quien { display: flex; gap: 10px; }
+.quien-opcion { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 110px; padding: 8px 12px; font: inherit; font-weight: 700; color: var(--texto); cursor: pointer;
+  background: rgba(0,0,0,.35); border: 2px solid rgba(201,169,110,.35); }
+.quien-opcion:hover, .quien-opcion:focus-visible { border-color: var(--color); outline: none; }
+.quien-opcion.elegida { border-color: var(--color); background: color-mix(in srgb, var(--color) 20%, rgba(0,0,0,.35)); }
+.quien-opcion:not(.elegida) .cara { opacity: .55; filter: grayscale(.4); }

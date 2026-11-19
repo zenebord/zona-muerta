@@ -117,7 +117,7 @@
     </div>
     <div id="pedidos-form" class="pedidos-caja pedidos-formulario" hidden>
       <h3 data-t="pedidos.formTitulo">NUEVO PEDIDO</h3>
-      <label><span data-t="pedidos.quien">¿Quién eres?</span><select id="pedidos-f-quien"></select></label>
+      <div class="pedidos-quien-campo"><span data-t="pedidos.quien">¿Quién eres?</span><div id="pedidos-f-quien" class="pedidos-quien" role="radiogroup" aria-label="¿Quién eres?"></div></div>
       <label><span data-t="pedidos.seccion">Sección del juego</span><select id="pedidos-f-seccion"></select></label>
       <label><span data-t="pedidos.prioridad">¿Qué tan importante es?</span><select id="pedidos-f-prioridad"></select></label>
       <label><span data-t="pedidos.titulo.campo">Título corto</span><input id="pedidos-f-titulo" type="text" maxlength="100" autocomplete="off"></label>
@@ -592,6 +592,7 @@
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>
   <script src="js/tutorial.js"></script>
+  <script src="js/pedidos-caras.js"></script>
   <script src="js/pedidos.js"></script>
   <script src="js/estrategia.js"></script>
   <script src="js/bastion-niveles.js"></script>

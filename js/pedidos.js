@@ -149,6 +149,8 @@ const PedidosUI = (() => {
   // La confirmación la da quien abrió el pedido: si lo abrió Claude (el desarrollo), espera la confirmación de Claude
   const CREADORES = ['tio-lea', 'francisco', 'claude'];   // quienes abren pedidos (el servidor deja elegir sólo a los dos primeros desde la pantalla)
   const nombreDe = c => CREADORES.includes(c) ? t('pedidos.c.' + c) : '';
+  // La cara de la persona (js/pedidos-caras.js): un círculo con su ilustración; grande para las tarjetas del formulario
+  const cara = (c, grande = false) => { const e = document.createElement('span'); e.className = 'cara' + (grande ? ' grande' : ''); e.innerHTML = CARA.svg(c); return e; };
   const textoEstado = p => p.estado === 'esperando' && nombreDe(p.creador) ? t('pedidos.e.esperandoDe', { quien: nombreDe(p.creador) }) : t('pedidos.e.' + p.estado);
   function pintar() {
     const cont = $('pedidos-lista'); cont.replaceChildren();
@@ -168,7 +170,7 @@ const PedidosUI = (() => {
       const etiquetas = hijo(cab, 'span', 'pedido-etiquetas');
       const sec = hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion); sec.style.color = color; sec.style.borderColor = color; sec.style.background = color + '22';
       hijo(etiquetas, 'span', 'pedido-etiqueta prio-' + p.prioridad, t('pedidos.p.' + p.prioridad));
-      if (nombreDe(p.creador)) { const q = hijo(etiquetas, 'span', 'pedido-etiqueta quien', t('pedidos.abiertoPor', { quien: nombreDe(p.creador) })); q.style.background = PEDIDOS.personas[p.creador]; q.style.borderColor = PEDIDOS.personas[p.creador]; }
+      if (nombreDe(p.creador)) { const q = hijo(etiquetas, 'span', 'pedido-etiqueta quien'); q.append(cara(p.creador), t('pedidos.abiertoPor', { quien: nombreDe(p.creador) })); q.style.background = PEDIDOS.personas[p.creador]; q.style.borderColor = PEDIDOS.personas[p.creador]; }
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
@@ -214,7 +216,8 @@ const PedidosUI = (() => {
       for (const n of p.notas) {
         const nota = hijo(lista, 'div', 'pedido-nota ' + (n.de === 'desarrollo' ? 'desarrollo' : 'pedido'));
         const quien = n.de === 'desarrollo' ? t('pedidos.desarrollo') : (mio && !jefe ? t('pedidos.yo') : (nombreDe(p.creador) || t('pedidos.quienPidio')));
-        const autor = hijo(nota, 'b', '', `${quien} · ${t('pedidos.n.' + n.tipo)} · ${new Date(n.fecha).toLocaleDateString(Idioma.actual())}`);
+        const autor = hijo(nota, 'b'); if (n.de !== 'desarrollo' && CREADORES.includes(p.creador)) autor.append(cara(p.creador));
+        autor.append(`${quien} · ${t('pedidos.n.' + n.tipo)} · ${new Date(n.fecha).toLocaleDateString(Idioma.actual())}`);
         if (n.de !== 'desarrollo' && PEDIDOS.personas[p.creador]) { nota.style.borderLeftColor = PEDIDOS.personas[p.creador]; autor.style.color = PEDIDOS.personas[p.creador]; }   // la nota de quien abrió el pedido, con su color
         if (n.texto) hijo(nota, 'span', '', n.texto);
       }
@@ -271,11 +274,22 @@ const PedidosUI = (() => {
     if (!izq.childElementCount && !barra.querySelector('.pedido-borrar')) { barra.remove(); redactar.remove(); }   // un pedido ajeno: sólo se lee
   }
 
+  function elegirQuien(c) {
+    const q = $('pedidos-f-quien'); q.dataset.valor = c;
+    q.querySelectorAll('.quien-opcion').forEach(b => { const si = b.dataset.valor === c; b.classList.toggle('elegida', si); b.setAttribute('aria-checked', String(si)); });
+  }
   function armarFormulario() {
-    const sel = $('pedidos-f-seccion'), prio = $('pedidos-f-prioridad'), quien = $('pedidos-f-quien');
+    const sel = $('pedidos-f-seccion'), prio = $('pedidos-f-prioridad');
     if (!sel.options.length) for (const s of PEDIDOS.secciones) sel.add(new Option(s, s));
-    quien.replaceChildren(new Option(t('pedidos.elige'), '')); for (const c of ['tio-lea', 'francisco']) quien.add(new Option(t('pedidos.c.' + c), c));
-    try { quien.value = localStorage.getItem(PEDIDOS.yo) || ''; } catch { /* sin almacenamiento */ }   // la última persona que eligió en este dispositivo
+    // ¿Quién eres?: una tarjeta con la cara de cada uno (Tío Lea y Francisco; Claude abre los suyos desde la terminal)
+    const quien = $('pedidos-f-quien'); quien.replaceChildren(); quien.dataset.valor = '';
+    for (const c of ['tio-lea', 'francisco']) {
+      const b = hijo(quien, 'button', 'quien-opcion'); b.type = 'button'; b.dataset.valor = c; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
+      b.append(cara(c, true), hijo(b, 'span', 'quien-nombre', t('pedidos.c.' + c))); b.style.setProperty('--color', PEDIDOS.personas[c]);
+      b.addEventListener('click', () => elegirQuien(c));
+    }
+    let ultimo = ''; try { ultimo = localStorage.getItem(PEDIDOS.yo) || ''; } catch { /* sin almacenamiento */ }   // la última persona que eligió en este dispositivo
+    if (['tio-lea', 'francisco'].includes(ultimo)) elegirQuien(ultimo);
     prio.replaceChildren(); [['alta', 'pedidos.prioAlta'], ['media', 'pedidos.prioMedia'], ['baja', 'pedidos.prioBaja']].forEach(([v, k]) => { const o = new Option(t(k), v); o.selected = v === 'media'; prio.add(o); });
     $('pedidos-f-titulo').placeholder = t('pedidos.titulo.ejemplo');
     $('pedidos-f-titulo').value = $('pedidos-f-texto').value = $('pedidos-f-aviso').textContent = '';
@@ -299,10 +313,10 @@ const PedidosUI = (() => {
   }
   async function crear() {
     const titulo = $('pedidos-f-titulo').value.trim(), aviso = $('pedidos-f-aviso');
-    if (!$('pedidos-f-quien').value) { aviso.textContent = t('pedidos.faltaQuien'); return; }
+    if (!$('pedidos-f-quien').dataset.valor) { aviso.textContent = t('pedidos.faltaQuien'); return; }
     if (!titulo) { aviso.textContent = t('pedidos.faltaTitulo'); return; }
-    try { localStorage.setItem(PEDIDOS.yo, $('pedidos-f-quien').value); } catch { /* ídem */ }
-    const pedido = { foto: fotoElegida || undefined, creador: $('pedidos-f-quien').value, titulo: titulo.slice(0, 100), texto: $('pedidos-f-texto').value.trim().slice(0, 2000), seccion: $('pedidos-f-seccion').value, prioridad: $('pedidos-f-prioridad').value };
+    try { localStorage.setItem(PEDIDOS.yo, $('pedidos-f-quien').dataset.valor); } catch { /* ídem */ }
+    const pedido = { foto: fotoElegida || undefined, creador: $('pedidos-f-quien').dataset.valor, titulo: titulo.slice(0, 100), texto: $('pedidos-f-texto').value.trim().slice(0, 2000), seccion: $('pedidos-f-seccion').value, prioridad: $('pedidos-f-prioridad').value };
     const boton = $('pedidos-crear'); boton.disabled = true;
     try {
       let numero;
