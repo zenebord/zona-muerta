@@ -1112,6 +1112,9 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-etiqueta { font-size: 11px; padding: 1px 7px; border: 1px solid; border-radius: 10px; }
 .pedido-detalle { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(201,169,110,.25); }
 .pedido-cuerpo { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; user-select: text; }
-.pedido-borrar { align-self: flex-start; }
+/* Barra de acciones de un pedido: estado a la izquierda, BORRAR a la derecha, todo del mismo alto y centrado */
+.pedido-acciones { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px; padding-top: 10px; border-top: 1px dashed rgba(201,169,110,.25); }
+.pedido-acciones:empty { display: none; }
 .pedido-estado-fila { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--arena); }
-.pedido-estado-fila select { font: inherit; font-size: 13px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 4px 6px; }
+.pedido-estado-fila select { box-sizing: border-box; height: 36px; min-width: 9em; font: inherit; font-size: 13px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 0 8px; cursor: pointer; }
+.pedido-acciones .pedido-borrar { box-sizing: border-box; height: 36px; margin-left: auto; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; }

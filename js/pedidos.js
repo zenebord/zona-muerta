@@ -122,13 +122,14 @@ const PedidosUI = (() => {
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
+      const acciones = hijo(det, 'div', 'pedido-acciones');   // una sola barra: el estado a la izquierda y BORRAR a la derecha
       if (dueno || !conServidor()) {   // el estado lo cambia el dueño (en este navegador, quien lo creó)
-        const fila = hijo(det, 'label', 'pedido-estado-fila'); hijo(fila, 'span', '', t('pedidos.cambiarEstado'));
+        const fila = hijo(acciones, 'label', 'pedido-estado-fila'); hijo(fila, 'span', '', t('pedidos.cambiarEstado'));
         const sel = hijo(fila, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
         sel.addEventListener('change', () => cambiarEstado(p, sel.value));
       }
       if (puedeBorrar(p)) {   // BORRAR: dos toques seguidos (el primero pide confirmar)
-        const b = hijo(det, 'button', 'boton mini peligro pedido-borrar', t('pedidos.borrar')); b.type = 'button';
+        const b = hijo(acciones, 'button', 'boton mini peligro pedido-borrar', t('pedidos.borrar')); b.type = 'button';
         b.addEventListener('click', () => {
           if (b.dataset.seguro === '1') { b.disabled = true; borrar(p); return; }
           b.dataset.seguro = '1'; b.textContent = t('pedidos.seguro');
