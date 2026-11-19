@@ -7,7 +7,8 @@
    "prioridad": "media",
    "texto": "Medido en el 2D: la boca del Barrett queda a unos 5 px por encima de la caja de un zombie normal parado, y falla 8 de 8 tiros sin la mira (D). Es anterior a los cambios del 18/11.\n\nFalta decidir: si el Barrett debe pegarle a un zombie parado sin mira, o si se espera que el jugador se agache o use la mira.",
    "estado": "abierto",
-   "fecha": "2026-11-19T01:50:32.240345Z"
+   "fecha": "2026-11-19T01:50:32.240345Z",
+   "creador": "claude"
   },
   {
    "numero": 2,
@@ -16,7 +17,8 @@
    "prioridad": "media",
    "texto": "Implementado como separación entre búnkeres: 300 m al empezar y +1 km cada 3 hordas superadas (300 m, 1,3 km, 2,3 km…), con un 5 % de que no cambie.\n\nFalta confirmar con quien lo pidió: si era esa la distancia y si el paso de 1 km es el que quería (BUNKER.saltoM en js/bunker.js).",
    "estado": "esperando",
-   "fecha": "2026-11-19T01:50:32.240345Z"
+   "fecha": "2026-11-19T01:50:32.240345Z",
+   "creador": "claude"
   },
   {
    "numero": 3,
@@ -25,7 +27,8 @@
    "prioridad": "media",
    "texto": "El pedido decía que se pudieran «dar vueltas en el aire». El salto con una flecha apretada y el giro en el aire ya funcionaban, así que se agregó la tecla W (girar sin caminar, también en el aire).\n\nFalta confirmar con quien lo pidió: si era eso o algo distinto (por ejemplo una voltereta visual).",
    "estado": "esperando",
-   "fecha": "2026-11-19T01:50:32.240345Z"
+   "fecha": "2026-11-19T01:50:32.240345Z",
+   "creador": "claude"
   }
  ]
 }

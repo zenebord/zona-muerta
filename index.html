@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=5fd4716e4b">
+  <link rel="stylesheet" href="css/estilos.css?v=16e4d42972">
 </head>
 <body>
 
@@ -117,10 +117,20 @@
     </div>
     <div id="pedidos-form" class="pedidos-caja pedidos-formulario" hidden>
       <h3 data-t="pedidos.formTitulo">NUEVO PEDIDO</h3>
+      <div class="pedidos-quien-campo"><span data-t="pedidos.quien">¿Quién eres?</span><div id="pedidos-f-quien" class="pedidos-quien" role="radiogroup" aria-label="¿Quién eres?"></div></div>
       <label><span data-t="pedidos.seccion">Sección del juego</span><select id="pedidos-f-seccion"></select></label>
       <label><span data-t="pedidos.prioridad">¿Qué tan importante es?</span><select id="pedidos-f-prioridad"></select></label>
       <label><span data-t="pedidos.titulo.campo">Título corto</span><input id="pedidos-f-titulo" type="text" maxlength="100" autocomplete="off"></label>
-      <label><span data-t="pedidos.texto">Qué quieres que cambie o qué falla</span><textarea id="pedidos-f-texto" rows="5" maxlength="2000"></textarea></label>
+      <label><span data-t="pedidos.texto">Explica en detalle lo que quieres cambiar/agregar o el problema que encontraste</span><textarea id="pedidos-f-texto" rows="5" maxlength="2000"></textarea></label>
+      <div class="pedidos-foto-campo">
+        <span data-t="pedidos.foto">Foto (opcional)</span>
+        <div class="pedidos-foto-fila">
+          <button id="pedidos-f-foto-boton" class="boton mini" type="button" data-t="pedidos.agregarFoto">AGREGAR FOTO</button>
+          <button id="pedidos-f-foto-quitar" class="boton mini" type="button" data-t="pedidos.quitarFoto" hidden>QUITAR</button>
+          <input id="pedidos-f-foto" type="file" accept="image/*" hidden>
+        </div>
+        <img id="pedidos-f-foto-vista" class="pedido-foto" alt="" hidden>
+      </div>
       <p id="pedidos-f-aviso" class="pedidos-aviso" role="status"></p>
       <div class="fila-botones">
         <button id="pedidos-cancelar" class="boton chico" type="button" data-t="pedidos.cancelar">CANCELAR</button>
@@ -536,7 +546,7 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=9c01bb846d"></script>
+  <script src="js/version.js?v=d378fd8dfa"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
@@ -582,7 +592,8 @@
   <script src="js/zombies-autoctonos.js?v=77b31590fb"></script>
   <script src="js/historia.js?v=d758c09db1"></script>
   <script src="js/tutorial.js?v=9b37592b9d"></script>
-  <script src="js/pedidos.js?v=0f12b65ba4"></script>
+  <script src="js/pedidos-caras.js?v=df713c5a4a"></script>
+  <script src="js/pedidos.js?v=28971b7c54"></script>
   <script src="js/estrategia.js?v=c8017e56c6"></script>
   <script src="js/bastion-niveles.js?v=757b4669d9"></script>
   <script src="js/bastion-dibujo.js?v=a37973f14c"></script>
