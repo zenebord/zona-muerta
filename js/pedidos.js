@@ -12,9 +12,12 @@ const PEDIDOS = {
   colores: { 'Pelea infinita': '#5aa9ff', 'Camino a casa': '#5fd38d', 'Misiones': '#b58cff', 'Defensa zombie': '#ff7a6b', 'Defensa zombie ultra': '#ff9a4d', 'Último bastión': '#a3c45a',
     'Entrenamiento': '#6fd3d9', 'Campo de pruebas': '#e0b04a', 'Tutorial': '#ffd23a', 'VR': '#ff7ac8', 'Menú y configuración': '#a9a9d9', 'Armas': '#c98b5a',
     'Sonido y música': '#4dc3b0', 'Gráficos': '#f08aa5', 'Zombies': '#8fcf4a', 'Controles y celular': '#7a8cff', 'Otra cosa': '#9a9a9a' },
+  // Un color para cada persona que abre pedidos: su etiqueta «Abierto por…» (fondo lleno, para no confundirla con las de sección) y sus notas
+  personas: { 'tio-lea': '#4fd1e8', 'francisco': '#b6e35a', 'claude': '#d97757' },
   estados: ['abierto', 'en curso', 'listo', 'esperando', 'cerrado'],   // «esperando» = hecho, falta que quien lo pidió confirme; «cerrado» = confirmado; los otros son «abiertos»
   publicados: 'pedidos.json',   // copia de los pedidos que se publica con el juego (sin servidor, sólo se leen)
   clave: 'zonaMuerta.pedidos',
+  yo: 'zonaMuerta.pedidosYo',   // quién eligió ser la última vez en este dispositivo
   claves: 'zonaMuerta.pedidosClaves',   // número → clave con la que su creador lo puede borrar del servidor
 };
 
@@ -23,7 +26,7 @@ Object.assign(TEXTOS.es, {
   'pedidos.abiertos': 'ABIERTOS', 'pedidos.cerrados': 'CERRADOS', 'pedidos.todos': 'TODOS', 'pedidos.todasSecciones': 'Todas las secciones',
   'pedidos.nuevo': 'NUEVO PEDIDO', 'pedidos.actualizar': 'ACTUALIZAR', 'pedidos.cargando': 'Cargando los pedidos…', 'pedidos.vacio': 'No hay pedidos con ese filtro.',
   'pedidos.error': 'No se pudieron cargar los pedidos. Prueba de nuevo.', 'pedidos.local': 'Los pedidos que crees aquí se guardan en este dispositivo.',
-  'pedidos.e.abierto': 'Abierto', 'pedidos.e.en curso': 'En curso', 'pedidos.e.listo': 'Listo', 'pedidos.e.esperando': 'Esperando confirmación', 'pedidos.e.esperandoClaude': 'Esperando confirmación de Claude', 'pedidos.e.cerrado': 'Cerrado',
+  'pedidos.e.abierto': 'Abierto', 'pedidos.e.en curso': 'En curso', 'pedidos.e.listo': 'Listo', 'pedidos.e.esperando': 'Esperando confirmación', 'pedidos.e.cerrado': 'Cerrado',
   'pedidos.p.alta': 'Prioridad alta', 'pedidos.p.media': 'Prioridad media', 'pedidos.p.baja': 'Prioridad baja', 'pedidos.sinTexto': '(sin descripción)',
   'pedidos.formTitulo': 'NUEVO PEDIDO', 'pedidos.seccion': 'Sección del juego', 'pedidos.prioridad': '¿Qué tan importante es?',
   'pedidos.prioAlta': 'Alta: el juego falla o no se puede jugar bien', 'pedidos.prioMedia': 'Media: lo quiero pronto', 'pedidos.prioBaja': 'Baja: sería lindo tenerlo algún día',
@@ -31,6 +34,8 @@ Object.assign(TEXTOS.es, {
   'pedidos.crear': 'CREAR', 'pedidos.cancelar': 'CANCELAR', 'pedidos.faltaTitulo': 'Escribe un título corto.', 'pedidos.creado': v => `¡Listo! Tu pedido es el #${v.n}.`,
   'pedidos.errorCrear': 'No se pudo crear el pedido. Prueba de nuevo.', 'pedidos.tope': 'Hiciste muchos pedidos hoy. Vuelve mañana.',
   'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'No se pudo cambiar el estado.',
+  'pedidos.quien': '¿Quién eres?', 'pedidos.elige': 'Elige…', 'pedidos.faltaQuien': 'Elige quién eres.', 'pedidos.abiertoPor': v => `Abierto por ${v.quien}`, 'pedidos.e.esperandoDe': v => `Esperando confirmación de ${v.quien}`,
+  'pedidos.c.tio-lea': 'Tío Lea', 'pedidos.c.francisco': 'Francisco', 'pedidos.c.claude': 'Claude',
   'pedidos.borrar': 'BORRAR', 'pedidos.seguro': '¿SEGURO? TOCA OTRA VEZ', 'pedidos.borrado': v => `Pedido #${v.n} borrado.`, 'pedidos.errorBorrar': 'No se pudo borrar el pedido.',
   'pedidos.yo': 'Tú', 'pedidos.quienPidio': 'Quien lo pidió', 'pedidos.desarrollo': 'Desarrollo',
   'pedidos.n.confirmo': 'confirmó que quedó bien', 'pedidos.n.rechazo': 'dijo que todavía no', 'pedidos.n.reabrio': 'reabrió el pedido', 'pedidos.n.nota': 'escribió',
@@ -43,7 +48,7 @@ Object.assign(TEXTOS.pt, {
   'pedidos.abiertos': 'ABERTOS', 'pedidos.cerrados': 'FECHADOS', 'pedidos.todos': 'TODOS', 'pedidos.todasSecciones': 'Todas as seções',
   'pedidos.nuevo': 'NOVO PEDIDO', 'pedidos.actualizar': 'ATUALIZAR', 'pedidos.cargando': 'Carregando os pedidos…', 'pedidos.vacio': 'Não há pedidos com esse filtro.',
   'pedidos.error': 'Não foi possível carregar os pedidos. Tente de novo.', 'pedidos.local': 'Os pedidos que você criar aqui ficam salvos neste dispositivo.',
-  'pedidos.e.abierto': 'Aberto', 'pedidos.e.en curso': 'Em andamento', 'pedidos.e.listo': 'Pronto', 'pedidos.e.esperando': 'Aguardando confirmação', 'pedidos.e.esperandoClaude': 'Aguardando confirmação do Claude', 'pedidos.e.cerrado': 'Fechado',
+  'pedidos.e.abierto': 'Aberto', 'pedidos.e.en curso': 'Em andamento', 'pedidos.e.listo': 'Pronto', 'pedidos.e.esperando': 'Aguardando confirmação', 'pedidos.e.cerrado': 'Fechado',
   'pedidos.p.alta': 'Prioridade alta', 'pedidos.p.media': 'Prioridade média', 'pedidos.p.baja': 'Prioridade baixa', 'pedidos.sinTexto': '(sem descrição)',
   'pedidos.formTitulo': 'NOVO PEDIDO', 'pedidos.seccion': 'Seção do jogo', 'pedidos.prioridad': 'Qual a importância?',
   'pedidos.prioAlta': 'Alta: o jogo falha ou não dá para jogar bem', 'pedidos.prioMedia': 'Média: quero logo', 'pedidos.prioBaja': 'Baixa: seria legal ter algum dia',
@@ -51,6 +56,8 @@ Object.assign(TEXTOS.pt, {
   'pedidos.crear': 'CRIAR', 'pedidos.cancelar': 'CANCELAR', 'pedidos.faltaTitulo': 'Escreva um título curto.', 'pedidos.creado': v => `Pronto! Seu pedido é o #${v.n}.`,
   'pedidos.errorCrear': 'Não foi possível criar o pedido. Tente de novo.', 'pedidos.tope': 'Você fez muitos pedidos hoje. Volte amanhã.',
   'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'Não foi possível mudar o estado.',
+  'pedidos.quien': 'Quem é você?', 'pedidos.elige': 'Escolha…', 'pedidos.faltaQuien': 'Escolha quem você é.', 'pedidos.abiertoPor': v => `Aberto por ${v.quien}`, 'pedidos.e.esperandoDe': v => `Aguardando confirmação de ${v.quien}`,
+  'pedidos.c.tio-lea': 'Tio Lea', 'pedidos.c.francisco': 'Francisco', 'pedidos.c.claude': 'Claude',
   'pedidos.borrar': 'APAGAR', 'pedidos.seguro': 'TEM CERTEZA? TOQUE DE NOVO', 'pedidos.borrado': v => `Pedido #${v.n} apagado.`, 'pedidos.errorBorrar': 'Não foi possível apagar o pedido.',
   'pedidos.yo': 'Você', 'pedidos.quienPidio': 'Quem pediu', 'pedidos.desarrollo': 'Desenvolvimento',
   'pedidos.n.confirmo': 'confirmou que ficou bom', 'pedidos.n.rechazo': 'disse que ainda não', 'pedidos.n.reabrio': 'reabriu o pedido', 'pedidos.n.nota': 'escreveu',
@@ -63,7 +70,7 @@ Object.assign(TEXTOS.en, {
   'pedidos.abiertos': 'OPEN', 'pedidos.cerrados': 'CLOSED', 'pedidos.todos': 'ALL', 'pedidos.todasSecciones': 'All sections',
   'pedidos.nuevo': 'NEW REQUEST', 'pedidos.actualizar': 'REFRESH', 'pedidos.cargando': 'Loading requests…', 'pedidos.vacio': 'No requests match that filter.',
   'pedidos.error': 'Could not load the requests. Try again.', 'pedidos.local': 'Requests you create here are saved on this device.',
-  'pedidos.e.abierto': 'Open', 'pedidos.e.en curso': 'In progress', 'pedidos.e.listo': 'Done', 'pedidos.e.esperando': 'Awaiting confirmation', 'pedidos.e.esperandoClaude': 'Awaiting confirmation from Claude', 'pedidos.e.cerrado': 'Closed',
+  'pedidos.e.abierto': 'Open', 'pedidos.e.en curso': 'In progress', 'pedidos.e.listo': 'Done', 'pedidos.e.esperando': 'Awaiting confirmation', 'pedidos.e.cerrado': 'Closed',
   'pedidos.p.alta': 'High priority', 'pedidos.p.media': 'Medium priority', 'pedidos.p.baja': 'Low priority', 'pedidos.sinTexto': '(no description)',
   'pedidos.formTitulo': 'NEW REQUEST', 'pedidos.seccion': 'Game section', 'pedidos.prioridad': 'How important is it?',
   'pedidos.prioAlta': 'High: the game breaks or can\'t be played well', 'pedidos.prioMedia': 'Medium: I want it soon', 'pedidos.prioBaja': 'Low: it would be nice someday',
@@ -71,6 +78,8 @@ Object.assign(TEXTOS.en, {
   'pedidos.crear': 'CREATE', 'pedidos.cancelar': 'CANCEL', 'pedidos.faltaTitulo': 'Write a short title.', 'pedidos.creado': v => `Done! Your request is #${v.n}.`,
   'pedidos.errorCrear': 'Could not create the request. Try again.', 'pedidos.tope': 'You made a lot of requests today. Come back tomorrow.',
   'pedidos.cambiarEstado': 'Status', 'pedidos.errorEstado': 'Could not change the status.',
+  'pedidos.quien': 'Who are you?', 'pedidos.elige': 'Choose…', 'pedidos.faltaQuien': 'Choose who you are.', 'pedidos.abiertoPor': v => `Opened by ${v.quien}`, 'pedidos.e.esperandoDe': v => `Awaiting confirmation from ${v.quien}`,
+  'pedidos.c.tio-lea': 'Uncle Lea', 'pedidos.c.francisco': 'Francisco', 'pedidos.c.claude': 'Claude',
   'pedidos.borrar': 'DELETE', 'pedidos.seguro': 'SURE? TAP AGAIN', 'pedidos.borrado': v => `Request #${v.n} deleted.`, 'pedidos.errorBorrar': 'Could not delete the request.',
   'pedidos.yo': 'You', 'pedidos.quienPidio': 'Requester', 'pedidos.desarrollo': 'Development',
   'pedidos.n.confirmo': 'confirmed it\'s good', 'pedidos.n.rechazo': 'said not yet', 'pedidos.n.reabrio': 'reopened the request', 'pedidos.n.nota': 'wrote',
@@ -132,7 +141,9 @@ const PedidosUI = (() => {
 
   const esAbierto = p => p.estado !== 'cerrado';
   // La confirmación la da quien abrió el pedido: si lo abrió Claude (el desarrollo), espera la confirmación de Claude
-  const textoEstado = p => t('pedidos.e.' + (p.estado === 'esperando' && p.creador === 'claude' ? 'esperandoClaude' : p.estado));
+  const CREADORES = ['tio-lea', 'francisco', 'claude'];   // quienes abren pedidos (el servidor deja elegir sólo a los dos primeros desde la pantalla)
+  const nombreDe = c => CREADORES.includes(c) ? t('pedidos.c.' + c) : '';
+  const textoEstado = p => p.estado === 'esperando' && nombreDe(p.creador) ? t('pedidos.e.esperandoDe', { quien: nombreDe(p.creador) }) : t('pedidos.e.' + p.estado);
   function pintar() {
     const cont = $('pedidos-lista'); cont.replaceChildren();
     $('pedidos-local').hidden = conServidor();
@@ -151,6 +162,7 @@ const PedidosUI = (() => {
       const etiquetas = hijo(cab, 'span', 'pedido-etiquetas');
       const sec = hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion); sec.style.color = color; sec.style.borderColor = color; sec.style.background = color + '22';
       hijo(etiquetas, 'span', 'pedido-etiqueta prio-' + p.prioridad, t('pedidos.p.' + p.prioridad));
+      if (nombreDe(p.creador)) { const q = hijo(etiquetas, 'span', 'pedido-etiqueta quien', t('pedidos.abiertoPor', { quien: nombreDe(p.creador) })); q.style.background = PEDIDOS.personas[p.creador]; q.style.borderColor = PEDIDOS.personas[p.creador]; }
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
@@ -191,8 +203,9 @@ const PedidosUI = (() => {
       const lista = hijo(det, 'div', 'pedido-notas');
       for (const n of p.notas) {
         const nota = hijo(lista, 'div', 'pedido-nota ' + (n.de === 'desarrollo' ? 'desarrollo' : 'pedido'));
-        const quien = n.de === 'desarrollo' ? t('pedidos.desarrollo') : (mio && !jefe ? t('pedidos.yo') : t('pedidos.quienPidio'));
-        hijo(nota, 'b', '', `${quien} · ${t('pedidos.n.' + n.tipo)} · ${new Date(n.fecha).toLocaleDateString(Idioma.actual())}`);
+        const quien = n.de === 'desarrollo' ? t('pedidos.desarrollo') : (mio && !jefe ? t('pedidos.yo') : (nombreDe(p.creador) || t('pedidos.quienPidio')));
+        const autor = hijo(nota, 'b', '', `${quien} · ${t('pedidos.n.' + n.tipo)} · ${new Date(n.fecha).toLocaleDateString(Idioma.actual())}`);
+        if (n.de !== 'desarrollo' && PEDIDOS.personas[p.creador]) { nota.style.borderLeftColor = PEDIDOS.personas[p.creador]; autor.style.color = PEDIDOS.personas[p.creador]; }   // la nota de quien abrió el pedido, con su color
         if (n.texto) hijo(nota, 'span', '', n.texto);
       }
     }
@@ -225,7 +238,7 @@ const PedidosUI = (() => {
     const sin = async (accion, texto) => { try { await responder(p, accion, texto); abiertos.add(p.numero); mantenerVisible(p); pintar(); gracias(); } catch { aviso.textContent = t('pedidos.errorResponder'); redactar.hidden = false; } };
     if (jefe || (!conServidor() && esLocal(p))) {   // el dueño (y, sin servidor, quien lo creó en este navegador): cambia el estado
       const f = hijo(izq, 'label', 'pedido-estado-fila'); hijo(f, 'span', '', t('pedidos.cambiarEstado'));
-      const sel = hijo(f, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + (e === 'esperando' && p.creador === 'claude' ? 'esperandoClaude' : e)), e)); sel.value = p.estado;
+      const sel = hijo(f, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(e === 'esperando' ? textoEstado({ estado: 'esperando', creador: p.creador }) : t('pedidos.e.' + e), e)); sel.value = p.estado;
       sel.addEventListener('change', () => cambiarEstado(p, sel.value));
     }
     if (jefe) boton('', t('pedidos.responder'), () => abrirRedactar('nota', t('pedidos.escribe'), true));
@@ -249,16 +262,20 @@ const PedidosUI = (() => {
   }
 
   function armarFormulario() {
-    const sel = $('pedidos-f-seccion'), prio = $('pedidos-f-prioridad');
+    const sel = $('pedidos-f-seccion'), prio = $('pedidos-f-prioridad'), quien = $('pedidos-f-quien');
     if (!sel.options.length) for (const s of PEDIDOS.secciones) sel.add(new Option(s, s));
+    quien.replaceChildren(new Option(t('pedidos.elige'), '')); for (const c of ['tio-lea', 'francisco']) quien.add(new Option(t('pedidos.c.' + c), c));
+    try { quien.value = localStorage.getItem(PEDIDOS.yo) || ''; } catch { /* sin almacenamiento */ }   // la última persona que eligió en este dispositivo
     prio.replaceChildren(); [['alta', 'pedidos.prioAlta'], ['media', 'pedidos.prioMedia'], ['baja', 'pedidos.prioBaja']].forEach(([v, k]) => { const o = new Option(t(k), v); o.selected = v === 'media'; prio.add(o); });
     $('pedidos-f-titulo').placeholder = t('pedidos.titulo.ejemplo');
     $('pedidos-f-titulo').value = $('pedidos-f-texto').value = $('pedidos-f-aviso').textContent = '';
   }
   async function crear() {
     const titulo = $('pedidos-f-titulo').value.trim(), aviso = $('pedidos-f-aviso');
+    if (!$('pedidos-f-quien').value) { aviso.textContent = t('pedidos.faltaQuien'); return; }
     if (!titulo) { aviso.textContent = t('pedidos.faltaTitulo'); return; }
-    const pedido = { titulo: titulo.slice(0, 100), texto: $('pedidos-f-texto').value.trim().slice(0, 2000), seccion: $('pedidos-f-seccion').value, prioridad: $('pedidos-f-prioridad').value };
+    try { localStorage.setItem(PEDIDOS.yo, $('pedidos-f-quien').value); } catch { /* ídem */ }
+    const pedido = { creador: $('pedidos-f-quien').value, titulo: titulo.slice(0, 100), texto: $('pedidos-f-texto').value.trim().slice(0, 2000), seccion: $('pedidos-f-seccion').value, prioridad: $('pedidos-f-prioridad').value };
     const boton = $('pedidos-crear'); boton.disabled = true;
     try {
       let numero;

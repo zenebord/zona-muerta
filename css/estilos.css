@@ -1140,3 +1140,4 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-redactar[hidden] { display: none; }
 .pedido-redactar textarea { font: inherit; font-size: 14px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 8px; resize: vertical; user-select: text; }
 .pedido-redactar-botones { display: flex; gap: 8px; justify-content: flex-end; }
+.pedido-etiqueta.quien { color: #15110f; font-weight: 700; }   /* el fondo y el borde los pone js/pedidos.js según la persona */

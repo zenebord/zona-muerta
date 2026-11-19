@@ -3,6 +3,7 @@
  *   node servidor/pedidos.mjs estado 3 cerrado     abierto | en curso | listo | esperando | cerrado
  *   node servidor/pedidos.mjs ver 3                el texto completo de uno
   *   node servidor/pedidos.mjs crear "título" "Sección" media "texto"   abre un pedido como Claude (la confirmación es de Claude)
+ *     (variable COMO=tio-lea|francisco|claude para abrirlo a nombre de otro)
  *   node servidor/pedidos.mjs nota 3 "texto"       responde en el pedido (queda como nota del desarrollo)
  *   node servidor/pedidos.mjs borrar 3             lo borra para siempre (el número no se vuelve a usar)
  * Lee y escribe servidor/datos/pedidos.json (el mismo archivo que usa el servidor: los cambios se ven al instante). */
@@ -15,7 +16,7 @@ const leer = () => { try { return JSON.parse(fs.readFileSync(ARCHIVO, 'utf8')); 
 const [, , orden = 'lista', a, ...resto] = process.argv, d = leer();
 if (orden === 'lista') {
   if (!d.pedidos.length) console.log('No hay pedidos.');
-  for (const p of d.pedidos) console.log(`#${p.numero} [${p.estado}] (${p.prioridad}) ${p.seccion} — ${p.titulo}${p.creador === 'claude' ? '  · abierto por Claude' : ''}`);
+  for (const p of d.pedidos) console.log(`#${p.numero} [${p.estado}] (${p.prioridad}) ${p.seccion} — ${p.titulo}${p.creador ? '  · abierto por ' + ({ 'tio-lea': 'Tío Lea', francisco: 'Francisco', claude: 'Claude' }[p.creador] || p.creador) : ''}`);
 } else if (orden === 'ver') {
   const p = d.pedidos.find(x => x.numero === Number(a));
   if (!p) { console.error('No existe ese pedido.'); process.exit(1); }
@@ -29,10 +30,10 @@ if (orden === 'lista') {
 } else if (orden === 'crear') {
   const [seccion = 'Otra cosa', prioridad = 'media', ...texto] = resto, titulo = a;
   if (!titulo) { console.error('Uso: crear "título" "Sección" <alta|media|baja> "texto"'); process.exit(1); }
-  const p = { numero: d.siguiente || d.pedidos.length + 1, titulo: titulo.slice(0, 100), seccion, prioridad: ['alta', 'media', 'baja'].includes(prioridad) ? prioridad : 'media', texto: texto.join(' ').slice(0, 2000), estado: 'abierto', creador: 'claude', fecha: new Date().toISOString() };
+  const p = { numero: d.siguiente || d.pedidos.length + 1, titulo: titulo.slice(0, 100), seccion, prioridad: ['alta', 'media', 'baja'].includes(prioridad) ? prioridad : 'media', texto: texto.join(' ').slice(0, 2000), estado: 'abierto', creador: ['tio-lea', 'francisco', 'claude'].includes(process.env.COMO) ? process.env.COMO : 'claude', fecha: new Date().toISOString() };
   d.siguiente = p.numero + 1; d.pedidos.push(p);
   fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
-  console.log(`#${p.numero} creado por Claude: ${p.titulo}`);
+  console.log(`#${p.numero} creado por ${p.creador}: ${p.titulo}`);
 } else if (orden === 'nota') {
   const p = d.pedidos.find(x => x.numero === Number(a)), texto = resto.join(' ').trim();
   if (!p || !texto) { console.error('Uso: nota <número> "texto"'); process.exit(1); }

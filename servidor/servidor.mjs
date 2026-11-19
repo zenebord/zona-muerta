@@ -171,6 +171,7 @@ async function preguntarAClaude(cuerpo) {
 const ARCHIVO_PEDIDOS = path.join(DIR_DATOS, 'pedidos.json');
 const SECCIONES = ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'];
 const PRIORIDADES = ['alta', 'media', 'baja'];
+const CREADORES = ['tio-lea', 'francisco', 'claude'];   // quienes abren pedidos; desde la pantalla sólo Tío Lea y Francisco (Claude abre los suyos con servidor/pedidos.mjs)
 const ESTADOS_PEDIDO = ['abierto', 'en curso', 'listo', 'esperando', 'cerrado'];   // «esperando»: hecho y publicado, falta que quien lo pidió confirme; «cerrado»: confirmado
 const TOPE_PEDIDOS_NUEVOS_DIA = Number(process.env.TOPE_PEDIDOS_NUEVOS_DIA || 20), TOPE_PEDIDOS_TOTAL = 1000;
 const nuevosHoy = new Map();   // persona → { dia, n }
@@ -183,13 +184,14 @@ const recortar = (x, max) => (typeof x === 'string' ? x : '').replace(/\r/g, '')
 function crearPedido(cuerpo, quien) {
   const titulo = recortar(cuerpo.titulo, 100);
   if (!titulo) throw Object.assign(new Error('falta el título'), { estado: 400 });
+  if (!['tio-lea', 'francisco'].includes(cuerpo.creador)) throw Object.assign(new Error('falta quién eres'), { estado: 400 });
   const hoy = new Date().toISOString().slice(0, 10), c = nuevosHoy.get(quien);
   const n = c && c.dia === hoy ? c.n : 0;
   if (n >= TOPE_PEDIDOS_NUEVOS_DIA) throw Object.assign(new Error('tope'), { estado: 429 });
   const d = leerPedidos();
   if (d.pedidos.length >= TOPE_PEDIDOS_TOTAL) throw Object.assign(new Error('lleno'), { estado: 507 });
   const pedido = { numero: d.siguiente, titulo, seccion: SECCIONES.includes(cuerpo.seccion) ? cuerpo.seccion : 'Otra cosa',
-    prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', creador: 'usuario', fecha: new Date().toISOString() };   // creador: quien lo abre y, por eso, quien lo confirma («claude» si lo abre el desarrollo)
+    prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', creador: cuerpo.creador, fecha: new Date().toISOString() };   // creador: quien lo abre y, por eso, quien lo confirma
   pedido.clave = crypto.randomBytes(12).toString('hex');   // sólo se le entrega a quien lo crea: con ella puede borrarlo
   d.siguiente++; d.pedidos.push(pedido); guardarPedidos(d); nuevosHoy.set(quien, { dia: hoy, n: n + 1 });
   registrar('pedido', '#' + pedido.numero, pedido.seccion, pedido.prioridad);
