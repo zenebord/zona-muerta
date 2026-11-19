@@ -925,6 +925,13 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
   esponja exprimida (la grabación `impacto_carne`, que quedó sin usar): ahora es un golpe seco de bala contra algo
   duro, hecho con ruido, un tono corto y un golpe grave. En el campo de pruebas, la rueda del mouse sobre la
   ficha del arma la desplaza y no cambia de arma.
+- **Pedidos** (`js/pedidos.js`): un gestor de tickets sencillo dentro del juego (botón PEDIDOS del menú, debajo de
+  TUTORIAL). Lista los issues del repositorio público `zenebord/zona-muerta-pedidos`, que GitHub deja leer sin
+  iniciar sesión: número, estado, etiquetas y texto, con filtro por estado (abiertos, cerrados, todos) y por sección
+  del juego. NUEVO PEDIDO es un formulario (sección, prioridad, título y qué se pide) que abre GitHub con el ticket
+  ya escrito; ahí se toca «Submit new issue». **Crear** un ticket necesita una cuenta de GitHub (no hay forma sin una
+  clave guardada en un servidor; el juego no guarda ninguna); **verlos**, no. Todo lo que llega de GitHub se muestra
+  como texto, nunca como HTML. Probado contra el repo real: lista los 3 tickets, filtra y arma el enlace de creación.
 - **Tutorial** (`js/tutorial.js`, pedido de Enzo): un cuadrito TUTORIAL arriba a la derecha del menú, debajo del
   personaje, abre un campo plano con 11 pasos guiados (caminar, saltar con una flecha apretada, agacharse, girar,
   disparar a un zombie lento, recargar, cambiar de arma, la mira del Remington 700, el ataque aéreo con A, la pausa y

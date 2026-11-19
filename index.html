@@ -14,6 +14,8 @@
     <!-- Personaje: arriba a la derecha, con la vista previa del elegido -->
     <!-- Tutorial: un cuadrito debajo del personaje, del tamaño de CAMPO DE PRUEBAS (js/tutorial.js) -->
     <button class="boton chico boton-tutorial" type="button" data-accion="tutorial" data-t="tutorial.boton">TUTORIAL</button>
+    <!-- Pedidos: los tickets de mejoras y errores, con su estado (js/pedidos.js) -->
+    <button class="boton chico boton-pedidos" type="button" data-accion="pedidos" data-t="pedidos.titulo">PEDIDOS</button>
     <button class="boton-personaje" type="button" data-accion="personaje-abrir">
       <canvas id="vista-personaje" width="128" height="150" aria-hidden="true"></canvas>
       <span class="rotulo" data-t="personaje.titulo">PERSONAJE</span>
@@ -95,7 +97,43 @@
     </div>
   </section>
 
-  <!-- ===== PANEL DE MISIONES ===== -->
+  <!-- ===== PEDIDOS: gestor sencillo de tickets (js/pedidos.js) ===== -->
+  <section id="panel-pedidos" class="pantalla">
+    <h2 data-t="pedidos.titulo">PEDIDOS</h2>
+    <div id="pedidos-vista" class="pedidos-caja">
+      <p class="ayuda" data-t="pedidos.ayuda">Los pedidos de mejoras y errores del juego, como tickets.</p>
+      <div class="pedidos-filtros">
+        <div id="pedidos-estados" class="segmentos">
+          <button type="button" class="elegida" data-estado="open" data-t="pedidos.abiertos">ABIERTOS</button>
+          <button type="button" data-estado="closed" data-t="pedidos.cerrados">CERRADOS</button>
+          <button type="button" data-estado="all" data-t="pedidos.todos">TODOS</button>
+        </div>
+        <select id="pedidos-seccion" aria-label="Sección"></select>
+      </div>
+      <p id="pedidos-estado" class="pedidos-aviso" role="status"></p>
+      <div id="pedidos-lista" class="pedidos-lista"></div>
+    </div>
+    <div id="pedidos-form" class="pedidos-caja pedidos-formulario" hidden>
+      <h3 data-t="pedidos.formTitulo">NUEVO PEDIDO</h3>
+      <label><span data-t="pedidos.seccion">Sección del juego</span><select id="pedidos-f-seccion"></select></label>
+      <label><span data-t="pedidos.prioridad">¿Qué tan importante es?</span><select id="pedidos-f-prioridad"></select></label>
+      <label><span data-t="pedidos.titulo.campo">Título corto</span><input id="pedidos-f-titulo" type="text" maxlength="100" autocomplete="off"></label>
+      <label><span data-t="pedidos.texto">Qué quieres que cambie o qué falla</span><textarea id="pedidos-f-texto" rows="5" maxlength="2000"></textarea></label>
+      <p id="pedidos-f-aviso" class="pedidos-aviso" role="status"></p>
+      <p class="nota"><span data-t="pedidos.nota">Se abre GitHub con el pedido ya escrito.</span> <a href="https://github.com/zenebord/zona-muerta-pedidos/blob/main/GUIA.md" target="_blank" rel="noopener noreferrer" data-t="pedidos.guia">Guía rápida</a></p>
+      <div class="fila-botones">
+        <button id="pedidos-cancelar" class="boton chico" type="button" data-t="pedidos.cancelar">CANCELAR</button>
+        <button id="pedidos-crear" class="boton chico boton-usar" type="button" data-t="pedidos.crear">CREAR EN GITHUB</button>
+      </div>
+    </div>
+    <div class="fila-botones">
+      <button id="pedidos-nuevo" class="boton chico boton-usar" type="button" data-t="pedidos.nuevo">NUEVO PEDIDO</button>
+      <button id="pedidos-actualizar" class="boton chico" type="button" data-t="pedidos.actualizar">ACTUALIZAR</button>
+      <button class="boton chico" data-accion="volver" data-t="boton.volver">VOLVER</button>
+    </div>
+  </section>
+
+  <!-- ===== PANEL DE MISIONES =====
   <section id="panel-misiones" class="pantalla">
     <h2 data-t="misiones.titulo">MISIONES</h2>
     <p class="ayuda" data-t="misiones.ayuda">Todas las misiones se juegan dentro de la pelea infinita. Elige una y a sobrevivir.</p>
@@ -544,6 +582,7 @@
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>
   <script src="js/tutorial.js"></script>
+  <script src="js/pedidos.js"></script>
   <script src="js/estrategia.js"></script>
   <script src="js/bastion-niveles.js"></script>
   <script src="js/bastion-dibujo.js"></script>

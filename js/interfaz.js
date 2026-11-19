@@ -445,6 +445,7 @@
       case 'bastion-siguiente': { const L = BastionV2.niveles(), sig = L[L.indexOf(juego.nivelBastion.id) + 1]; if (sig) iniciar(null, { estrategia: { nivel: sig, v2: true } }); break; }
       case 'entrenamiento': iniciar(null, { entrenamiento: true }); break;
       case 'tutorial':  iniciar(null, { tutorial: true }); break;
+      case 'pedidos':   mostrar('panel-pedidos'); PedidosUI.abrir(); break;   // los tickets de mejoras y errores (js/pedidos.js)
       case 'tutorial-saltar': if (juego && juego.tutorial) juego.siguienteTutorial(); break;
       case 'poner-m2':  if (juego) juego.ponerAmetralladora(); break;
       case 'quitar-m2': if (juego) juego.quitarAmetralladora(); break;
