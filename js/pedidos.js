@@ -99,12 +99,14 @@ const PedidosUI = (() => {
       await cargar(); $('pedidos-estado').textContent = t('pedidos.borrado', { n: p.numero }); $('pedidos-estado').classList.add('bien');
     } catch { $('pedidos-estado').textContent = t('pedidos.errorBorrar'); $('pedidos-estado').classList.remove('bien'); }
   }
-  async function cargar() {
+  // silencioso: el refresco automático (no borra la lista ni muestra «Cargando»; si falla, deja lo que había)
+  async function cargar(silencioso = false) {
     if (cargando) return;
-    cargando = true; $('pedidos-estado').textContent = t('pedidos.cargando'); $('pedidos-lista').replaceChildren();
-    try { lista = await traer(); $('pedidos-estado').textContent = ''; }
-    catch { lista = null; $('pedidos-estado').textContent = t('pedidos.error'); }
-    cargando = false; pintar();
+    cargando = true;
+    if (!silencioso) { $('pedidos-estado').textContent = t('pedidos.cargando'); $('pedidos-lista').replaceChildren(); }
+    try { lista = await traer(); if (!silencioso) $('pedidos-estado').textContent = ''; }
+    catch { if (!silencioso) { lista = null; $('pedidos-estado').textContent = t('pedidos.error'); } }
+    cargando = false; if (!silencioso || lista) pintar();
   }
 
   const esAbierto = p => p.estado !== 'cerrado';
@@ -189,7 +191,8 @@ const PedidosUI = (() => {
     $('pedidos-nuevo').addEventListener('click', () => verFormulario(true));
     $('pedidos-cancelar').addEventListener('click', () => verFormulario(false));
     $('pedidos-crear').addEventListener('click', crear);
-    $('pedidos-actualizar').addEventListener('click', cargar);
+    // La lista se renueva sola cada 20 s mientras se ve (con servidor: pueden llegar pedidos o cambiar estados)
+    setInterval(() => { if (conServidor() && $('panel-pedidos').classList.contains('visible') && $('pedidos-form').hidden && !document.hidden) cargar(true); }, 20000);
     Idioma.alCambiar(() => { sec.options[0].textContent = t('pedidos.todasSecciones'); if (lista) pintar(); });
   }
   if (document.getElementById('panel-pedidos')) iniciar();

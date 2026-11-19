@@ -927,7 +927,7 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
   ficha del arma la desplaza y no cambia de arma.
 - **Pedidos** (`js/pedidos.js`, `servidor/pedidos.mjs`): un gestor de tickets sencillo dentro del juego (botón PEDIDOS
   del menú, debajo de TUTORIAL). La lista muestra el número, el título, el estado (abierto, en curso, listo o cerrado), la
-  sección del juego y la prioridad de cada pedido, con su texto al tocarlo, y se filtra por estado y por sección. NUEVO
+  sección del juego y la prioridad de cada pedido, con su texto al tocarlo, y se filtra por estado y por sección; se actualiza sola cada 20 segundos (no hay botón de actualizar). NUEVO
   PEDIDO es un formulario (sección, prioridad, título y qué se pide) y el botón **CREAR** lo guarda, sin salir del juego.
   **Dónde se guarda:** si el juego corre en el servidor de construcción, en su base de datos sencilla,
   `servidor/datos/pedidos.json` (un archivo JSON que se puede abrir y editar a mano; tope de 20 pedidos nuevos por
