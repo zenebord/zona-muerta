@@ -8,6 +8,10 @@
  */
 const PEDIDOS = {
   secciones: ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'],
+  // Un color para cada sección: se ve en su etiqueta y en la raya de la izquierda de cada pedido
+  colores: { 'Pelea infinita': '#5aa9ff', 'Camino a casa': '#5fd38d', 'Misiones': '#b58cff', 'Defensa zombie': '#ff7a6b', 'Defensa zombie ultra': '#ff9a4d', 'Último bastión': '#a3c45a',
+    'Entrenamiento': '#6fd3d9', 'Campo de pruebas': '#e0b04a', 'Tutorial': '#ffd23a', 'VR': '#ff7ac8', 'Menú y configuración': '#a9a9d9', 'Armas': '#c98b5a',
+    'Sonido y música': '#4dc3b0', 'Gráficos': '#f08aa5', 'Zombies': '#8fcf4a', 'Controles y celular': '#7a8cff', 'Otra cosa': '#9a9a9a' },
   estados: ['abierto', 'en curso', 'listo', 'cerrado'],   // «cerrado» = ya está en el juego; los otros tres son «abiertos»
   clave: 'zonaMuerta.pedidos',
   claves: 'zonaMuerta.pedidosClaves',   // número → clave con la que su creador lo puede borrar del servidor
@@ -111,7 +115,8 @@ const PedidosUI = (() => {
     const visibles = lista.filter(p => (estado === 'todos' || (estado === 'abiertos') === esAbierto(p)) && (!seccion || p.seccion === seccion));
     $('pedidos-estado').textContent = visibles.length ? '' : t('pedidos.vacio');
     for (const p of visibles) {
-      const caja = hijo(cont, 'div', 'pedido' + (esAbierto(p) ? '' : ' cerrado'));
+      const color = PEDIDOS.colores[p.seccion] || '#9a9a9a';
+      const caja = hijo(cont, 'div', 'pedido' + (esAbierto(p) ? '' : ' cerrado')); caja.style.borderLeft = `4px solid ${color}`;
       const cab = hijo(caja, 'button', 'pedido-cab'); cab.type = 'button'; cab.setAttribute('aria-expanded', 'false');
       // Todo el encabezado del pedido (título, estado, etiquetas y fecha) es un solo botón: se toca en cualquier parte
       const fila1 = hijo(cab, 'span', 'pedido-fila');
@@ -119,7 +124,7 @@ const PedidosUI = (() => {
       hijo(fila1, 'span', 'pedido-tit', p.titulo);
       hijo(fila1, 'span', 'pedido-estado e-' + String(p.estado).replace(' ', '-'), t('pedidos.e.' + p.estado));
       const etiquetas = hijo(cab, 'span', 'pedido-etiquetas');
-      hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion);
+      const sec = hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion); sec.style.color = color; sec.style.borderColor = color; sec.style.background = color + '22';
       hijo(etiquetas, 'span', 'pedido-etiqueta prio-' + p.prioridad, t('pedidos.p.' + p.prioridad));
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
