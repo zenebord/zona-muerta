@@ -12,6 +12,7 @@ import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { execFile } from 'node:child_process';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -188,9 +189,20 @@ function crearPedido(cuerpo, quien) {
   if (d.pedidos.length >= TOPE_PEDIDOS_TOTAL) throw Object.assign(new Error('lleno'), { estado: 507 });
   const pedido = { numero: d.siguiente, titulo, seccion: SECCIONES.includes(cuerpo.seccion) ? cuerpo.seccion : 'Otra cosa',
     prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', fecha: new Date().toISOString() };
+  pedido.clave = crypto.randomBytes(12).toString('hex');   // sólo se le entrega a quien lo crea: con ella puede borrarlo
   d.siguiente++; d.pedidos.push(pedido); guardarPedidos(d); nuevosHoy.set(quien, { dia: hoy, n: n + 1 });
   registrar('pedido', '#' + pedido.numero, pedido.seccion, pedido.prioridad);
   return pedido;
+}
+const sinClave = ({ clave, ...resto }) => resto;   // la clave de borrado nunca sale en las listas
+// Borra un pedido: lo puede borrar quien lo creó (con su clave) o el dueño, desde la Mac donde corre el servidor
+function borrarPedido(numero, clave, esDueno) {
+  const d = leerPedidos(), i = d.pedidos.findIndex(p => p.numero === numero);
+  if (i < 0) throw Object.assign(new Error('no existe'), { estado: 404 });
+  const p = d.pedidos[i];
+  const claveValida = typeof clave === 'string' && p.clave && clave.length === p.clave.length && crypto.timingSafeEqual(Buffer.from(clave), Buffer.from(p.clave));
+  if (!esDueno && !claveValida) throw Object.assign(new Error('no permitido'), { estado: 403 });
+  d.pedidos.splice(i, 1); guardarPedidos(d); registrar('pedido borrado', '#' + numero);
 }
 
 /* ---------- HTTP ---------- */
@@ -208,6 +220,8 @@ const responder = (res, estado, datos, tipo = 'application/json; charset=utf-8')
 };
 // Detrás del túnel, la IP real viene en cf-connecting-ip (sólo se le cree si la conexión es local)
 const persona = req => (['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) && req.headers['cf-connecting-ip']) || req.socket.remoteAddress;
+// El dueño: quien entra por la Mac donde corre el servidor (127.0.0.1 directo, no a través del túnel)
+const esDueno = req => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) && !req.headers['cf-connecting-ip'];
 
 const servidor = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://local');
@@ -226,8 +240,12 @@ const servidor = http.createServer(async (req, res) => {
       return responder(res, 200, { ok: true });
     }
     if (url.pathname === '/api/pedidos') {
-      if (req.method === 'GET') return responder(res, 200, { pedidos: leerPedidos().pedidos.slice().reverse() });
-      if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 20_000), persona(req)) });
+      if (req.method === 'GET') return responder(res, 200, { dueno: esDueno(req), pedidos: leerPedidos().pedidos.slice().reverse().map(sinClave) });
+      if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 20_000), persona(req)) });   // con su clave, una sola vez
+    }
+    if ((m = /^\/api\/pedidos\/(\d+)$/.exec(url.pathname)) && req.method === 'DELETE') {
+      borrarPedido(Number(m[1]), (await leerCuerpo(req, 2_000)).clave, esDueno(req));
+      return responder(res, 200, { ok: true });
     }
     if (url.pathname === '/api/ia' && req.method === 'POST') {
       if (!ia) return responder(res, 503, { error: 'sin_clave' });

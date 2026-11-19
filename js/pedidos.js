@@ -10,6 +10,7 @@ const PEDIDOS = {
   secciones: ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'],
   estados: ['abierto', 'en curso', 'listo', 'cerrado'],   // «cerrado» = ya está en el juego; los otros tres son «abiertos»
   clave: 'zonaMuerta.pedidos',
+  claves: 'zonaMuerta.pedidosClaves',   // número → clave con la que su creador lo puede borrar del servidor
 };
 
 Object.assign(TEXTOS.es, {
@@ -24,6 +25,7 @@ Object.assign(TEXTOS.es, {
   'pedidos.titulo.campo': 'Título corto', 'pedidos.titulo.ejemplo': 'Ej.: Que el comerciante venda granadas', 'pedidos.texto': 'Qué quieres que cambie o qué falla',
   'pedidos.crear': 'CREAR', 'pedidos.cancelar': 'CANCELAR', 'pedidos.faltaTitulo': 'Escribe un título corto.', 'pedidos.creado': v => `¡Listo! Tu pedido es el #${v.n}.`,
   'pedidos.errorCrear': 'No se pudo crear el pedido. Prueba de nuevo.', 'pedidos.tope': 'Hiciste muchos pedidos hoy. Vuelve mañana.',
+  'pedidos.borrar': 'BORRAR', 'pedidos.seguro': '¿SEGURO? TOCA OTRA VEZ', 'pedidos.borrado': v => `Pedido #${v.n} borrado.`, 'pedidos.errorBorrar': 'No se pudo borrar el pedido.',
 });
 Object.assign(TEXTOS.pt, {
   'pedidos.titulo': 'PEDIDOS', 'pedidos.ayuda': 'Peça melhorias ou avise de erros do jogo. Cada pedido é um ticket: tem seu número, seu estado e sua prioridade.',
@@ -37,6 +39,7 @@ Object.assign(TEXTOS.pt, {
   'pedidos.titulo.campo': 'Título curto', 'pedidos.titulo.ejemplo': 'Ex.: Que o comerciante venda granadas', 'pedidos.texto': 'O que você quer que mude ou o que falha',
   'pedidos.crear': 'CRIAR', 'pedidos.cancelar': 'CANCELAR', 'pedidos.faltaTitulo': 'Escreva um título curto.', 'pedidos.creado': v => `Pronto! Seu pedido é o #${v.n}.`,
   'pedidos.errorCrear': 'Não foi possível criar o pedido. Tente de novo.', 'pedidos.tope': 'Você fez muitos pedidos hoje. Volte amanhã.',
+  'pedidos.borrar': 'APAGAR', 'pedidos.seguro': 'TEM CERTEZA? TOQUE DE NOVO', 'pedidos.borrado': v => `Pedido #${v.n} apagado.`, 'pedidos.errorBorrar': 'Não foi possível apagar o pedido.',
 });
 Object.assign(TEXTOS.en, {
   'pedidos.titulo': 'REQUESTS', 'pedidos.ayuda': 'Ask for improvements or report bugs. Each request is a ticket: it has its number, status and priority.',
@@ -50,10 +53,11 @@ Object.assign(TEXTOS.en, {
   'pedidos.titulo.campo': 'Short title', 'pedidos.titulo.ejemplo': 'E.g.: Let the merchant sell grenades', 'pedidos.texto': 'What do you want changed, or what is broken',
   'pedidos.crear': 'CREATE', 'pedidos.cancelar': 'CANCEL', 'pedidos.faltaTitulo': 'Write a short title.', 'pedidos.creado': v => `Done! Your request is #${v.n}.`,
   'pedidos.errorCrear': 'Could not create the request. Try again.', 'pedidos.tope': 'You made a lot of requests today. Come back tomorrow.',
+  'pedidos.borrar': 'DELETE', 'pedidos.seguro': 'SURE? TAP AGAIN', 'pedidos.borrado': v => `Request #${v.n} deleted.`, 'pedidos.errorBorrar': 'Could not delete the request.',
 });
 
 const PedidosUI = (() => {
-  let lista = null, cargando = false, estado = 'abiertos', seccion = '';
+  let lista = null, cargando = false, estado = 'abiertos', seccion = '', dueno = false;
   const $ = id => document.getElementById(id);
   const conServidor = () => !!window.SERVIDOR_JUEGO;
   const hijo = (padre, tag, clase, s) => { const e = document.createElement(tag); if (clase) e.className = clase; if (s !== undefined) e.textContent = s; padre.appendChild(e); return e; };
@@ -62,9 +66,23 @@ const PedidosUI = (() => {
   const leerLocal = () => { try { const d = JSON.parse(localStorage.getItem(PEDIDOS.clave) || '{}'); return { siguiente: d.siguiente || 1, pedidos: Array.isArray(d.pedidos) ? d.pedidos : [] }; } catch { return { siguiente: 1, pedidos: [] }; } };
   const guardarLocal = d => { try { localStorage.setItem(PEDIDOS.clave, JSON.stringify(d)); return true; } catch { return false; } };
 
+  // Las claves de borrado de los pedidos que se crearon desde este navegador (sólo con servidor)
+  const leerClaves = () => { try { return JSON.parse(localStorage.getItem(PEDIDOS.claves) || '{}'); } catch { return {}; } };
+  const guardarClave = (numero, clave) => { try { const c = leerClaves(); c[numero] = clave; localStorage.setItem(PEDIDOS.claves, JSON.stringify(c)); } catch { /* sin almacenamiento */ } };
+  const puedeBorrar = p => !conServidor() || dueno || !!leerClaves()[p.numero];
   async function traer() {
-    if (conServidor()) { const r = await fetch('/api/pedidos', { cache: 'no-store' }); if (!r.ok) throw new Error('http ' + r.status); return (await r.json()).pedidos; }
-    return leerLocal().pedidos.slice().reverse();
+    if (conServidor()) { const r = await fetch('/api/pedidos', { cache: 'no-store' }); if (!r.ok) throw new Error('http ' + r.status); const d = await r.json(); dueno = !!d.dueno; return d.pedidos; }
+    dueno = false; return leerLocal().pedidos.slice().reverse();
+  }
+  async function borrar(p) {
+    try {
+      if (conServidor()) {
+        const r = await fetch('/api/pedidos/' + p.numero, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clave: leerClaves()[p.numero] || '' }) });
+        if (!r.ok) throw new Error('http ' + r.status);
+        const c = leerClaves(); delete c[p.numero]; try { localStorage.setItem(PEDIDOS.claves, JSON.stringify(c)); } catch { /* ídem */ }
+      } else { const d = leerLocal(); d.pedidos = d.pedidos.filter(x => x.numero !== p.numero); guardarLocal(d); }
+      await cargar(); $('pedidos-estado').textContent = t('pedidos.borrado', { n: p.numero }); $('pedidos-estado').classList.add('bien');
+    } catch { $('pedidos-estado').textContent = t('pedidos.errorBorrar'); $('pedidos-estado').classList.remove('bien'); }
   }
   async function cargar() {
     if (cargando) return;
@@ -93,6 +111,14 @@ const PedidosUI = (() => {
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = true;
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
+      if (puedeBorrar(p)) {   // BORRAR: dos toques seguidos (el primero pide confirmar)
+        const b = hijo(det, 'button', 'boton mini peligro pedido-borrar', t('pedidos.borrar')); b.type = 'button';
+        b.addEventListener('click', () => {
+          if (b.dataset.seguro === '1') { b.disabled = true; borrar(p); return; }
+          b.dataset.seguro = '1'; b.textContent = t('pedidos.seguro');
+          setTimeout(() => { if (b.isConnected && !b.disabled) { b.dataset.seguro = ''; b.textContent = t('pedidos.borrar'); } }, 3000);
+        });
+      }
       cab.addEventListener('click', () => { det.hidden = !det.hidden; cab.setAttribute('aria-expanded', String(!det.hidden)); });
     }
   }
@@ -115,7 +141,7 @@ const PedidosUI = (() => {
         const r = await fetch('/api/pedidos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pedido) });
         if (r.status === 429) { aviso.textContent = t('pedidos.tope'); return; }
         if (!r.ok) throw new Error('http ' + r.status);
-        numero = (await r.json()).pedido.numero;
+        const creado = (await r.json()).pedido; numero = creado.numero; if (creado.clave) guardarClave(numero, creado.clave);
       } else {
         const d = leerLocal(); numero = d.siguiente++;
         d.pedidos.push({ numero, ...pedido, estado: 'abierto', fecha: new Date().toISOString() });

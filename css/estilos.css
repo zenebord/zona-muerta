@@ -1112,3 +1112,4 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-etiqueta { font-size: 11px; padding: 1px 7px; border: 1px solid; border-radius: 10px; }
 .pedido-detalle { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(201,169,110,.25); }
 .pedido-cuerpo { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; user-select: text; }
+.pedido-borrar { align-self: flex-start; }

@@ -933,7 +933,7 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
   `servidor/datos/pedidos.json` (un archivo JSON que se puede abrir y editar a mano; tope de 20 pedidos nuevos por
   persona y por día, 1000 en total, y no se guarda ningún dato de quien lo pide); si no (la web publicada o el
   artefacto), en el propio navegador y sólo los ve quien los creó en ese dispositivo. Para administrarlos:
-  `node servidor/pedidos.mjs` (lista), `… ver 3`, `… estado 3 cerrado` y `… borrar 3` (los números no se reutilizan); los cambios se ven al instante. Todo lo
+  `node servidor/pedidos.mjs` (lista), `… ver 3`, `… estado 3 cerrado` y `… borrar 3` (los números no se reutilizan); **desde la pantalla**, cada pedido desplegado tiene BORRAR (con confirmación de dos toques) para quien lo creó (el servidor le entrega una clave al crearlo y la guarda su navegador) y para el dueño, que es quien entra desde la Mac del servidor, no por el túnel; los cambios se ven al instante. Todo lo
   guardado se muestra como texto, nunca como HTML.
 - **Tutorial** (`js/tutorial.js`, pedido de Enzo): un cuadrito TUTORIAL arriba a la derecha del menú, debajo del
   personaje, abre un campo plano con 11 pasos guiados (caminar, saltar con una flecha apretada, agacharse, girar,
