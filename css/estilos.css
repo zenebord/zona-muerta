@@ -1097,10 +1097,18 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-num { color: var(--arena); font-weight: 700; flex: none; }
 .pedido-tit { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
 .pedido-estado { flex: none; font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border: 1px solid; }
-.pedido-estado.open { color: #8fe07a; border-color: #8fe07a; }
-.pedido-estado.closed { color: #b39cff; border-color: #b39cff; }
+.pedido-estado.e-abierto { color: #8fe07a; border-color: #8fe07a; }
+.pedido-estado.e-en-curso { color: #ffd27a; border-color: #ffd27a; }
+.pedido-estado.e-listo { color: #7fd0ff; border-color: #7fd0ff; }
+.pedido-estado.e-cerrado { color: #b39cff; border-color: #b39cff; }
+.pedido-etiqueta.seccion { color: var(--arena); border-color: rgba(201,169,110,.6); }
+.pedido-etiqueta.prio-alta { color: #ff8a7a; border-color: #ff8a7a; }
+.pedido-etiqueta.prio-media { color: #ffd27a; border-color: #ffd27a; }
+.pedido-etiqueta.prio-baja { color: #9dffb0; border-color: #9dffb0; }
+.pedido-fecha { font-size: 11px; opacity: .6; align-self: center; margin-left: auto; }
+.pedidos-aviso.bien { color: #9dffb0; font-weight: 700; }
+.pedidos-aviso.suave { color: var(--texto); opacity: .6; }
 .pedido-etiquetas { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 10px 8px; }
 .pedido-etiqueta { font-size: 11px; padding: 1px 7px; border: 1px solid; border-radius: 10px; }
 .pedido-detalle { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(201,169,110,.25); }
 .pedido-cuerpo { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; user-select: text; }
-.pedido-enlace { color: var(--luz); font-size: 13px; }

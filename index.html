@@ -104,12 +104,13 @@
       <p class="ayuda" data-t="pedidos.ayuda">Los pedidos de mejoras y errores del juego, como tickets.</p>
       <div class="pedidos-filtros">
         <div id="pedidos-estados" class="segmentos">
-          <button type="button" class="elegida" data-estado="open" data-t="pedidos.abiertos">ABIERTOS</button>
-          <button type="button" data-estado="closed" data-t="pedidos.cerrados">CERRADOS</button>
-          <button type="button" data-estado="all" data-t="pedidos.todos">TODOS</button>
+          <button type="button" class="elegida" data-estado="abiertos" data-t="pedidos.abiertos">ABIERTOS</button>
+          <button type="button" data-estado="cerrados" data-t="pedidos.cerrados">CERRADOS</button>
+          <button type="button" data-estado="todos" data-t="pedidos.todos">TODOS</button>
         </div>
         <select id="pedidos-seccion" aria-label="Sección"></select>
       </div>
+      <p id="pedidos-local" class="pedidos-aviso suave" data-t="pedidos.local" hidden>Los pedidos se guardan en este dispositivo.</p>
       <p id="pedidos-estado" class="pedidos-aviso" role="status"></p>
       <div id="pedidos-lista" class="pedidos-lista"></div>
     </div>
@@ -120,10 +121,9 @@
       <label><span data-t="pedidos.titulo.campo">Título corto</span><input id="pedidos-f-titulo" type="text" maxlength="100" autocomplete="off"></label>
       <label><span data-t="pedidos.texto">Qué quieres que cambie o qué falla</span><textarea id="pedidos-f-texto" rows="5" maxlength="2000"></textarea></label>
       <p id="pedidos-f-aviso" class="pedidos-aviso" role="status"></p>
-      <p class="nota"><span data-t="pedidos.nota">Se abre GitHub con el pedido ya escrito.</span> <a href="https://github.com/zenebord/zona-muerta-pedidos/blob/main/GUIA.md" target="_blank" rel="noopener noreferrer" data-t="pedidos.guia">Guía rápida</a></p>
       <div class="fila-botones">
         <button id="pedidos-cancelar" class="boton chico" type="button" data-t="pedidos.cancelar">CANCELAR</button>
-        <button id="pedidos-crear" class="boton chico boton-usar" type="button" data-t="pedidos.crear">CREAR EN GITHUB</button>
+        <button id="pedidos-crear" class="boton chico boton-usar" type="button" data-t="pedidos.crear">CREAR</button>
       </div>
     </div>
     <div class="fila-botones">

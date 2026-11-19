@@ -162,6 +162,37 @@ async function preguntarAClaude(cuerpo) {
   return { content: respuesta.content, stop_reason: respuesta.stop_reason, stop_details: respuesta.stop_details ?? null };
 }
 
+/* ---------- Pedidos: una base de datos sencilla en un archivo (servidor/datos/pedidos.json) ----------
+ * Los tickets de mejoras y errores que se crean desde la sección PEDIDOS del juego (js/pedidos.js). Un solo archivo JSON,
+ * { siguiente, pedidos: [{ numero, titulo, seccion, prioridad, texto, estado, fecha }] }: se lee y se escribe entero en
+ * cada pedido (son pocos) y se puede abrir o editar a mano; los cambios se ven al instante. No se guarda ningún dato de
+ * quien lo pide (ni la IP: sólo se cuenta en memoria para el tope diario). Para cambiar el estado: servidor/pedidos.mjs */
+const ARCHIVO_PEDIDOS = path.join(DIR_DATOS, 'pedidos.json');
+const SECCIONES = ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'];
+const PRIORIDADES = ['alta', 'media', 'baja'];
+const TOPE_PEDIDOS_NUEVOS_DIA = Number(process.env.TOPE_PEDIDOS_NUEVOS_DIA || 20), TOPE_PEDIDOS_TOTAL = 1000;
+const nuevosHoy = new Map();   // persona → { dia, n }
+function leerPedidos() {
+  try { const d = JSON.parse(fs.readFileSync(ARCHIVO_PEDIDOS, 'utf8')); if (Array.isArray(d.pedidos)) return { siguiente: d.siguiente || d.pedidos.length + 1, pedidos: d.pedidos }; } catch { /* todavía no hay */ }
+  return { siguiente: 1, pedidos: [] };
+}
+function guardarPedidos(d) { const tmp = ARCHIVO_PEDIDOS + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(d, null, 2)); fs.renameSync(tmp, ARCHIVO_PEDIDOS); }
+const recortar = (x, max) => (typeof x === 'string' ? x : '').replace(/\r/g, '').trim().slice(0, max);
+function crearPedido(cuerpo, quien) {
+  const titulo = recortar(cuerpo.titulo, 100);
+  if (!titulo) throw Object.assign(new Error('falta el título'), { estado: 400 });
+  const hoy = new Date().toISOString().slice(0, 10), c = nuevosHoy.get(quien);
+  const n = c && c.dia === hoy ? c.n : 0;
+  if (n >= TOPE_PEDIDOS_NUEVOS_DIA) throw Object.assign(new Error('tope'), { estado: 429 });
+  const d = leerPedidos();
+  if (d.pedidos.length >= TOPE_PEDIDOS_TOTAL) throw Object.assign(new Error('lleno'), { estado: 507 });
+  const pedido = { numero: d.siguiente, titulo, seccion: SECCIONES.includes(cuerpo.seccion) ? cuerpo.seccion : 'Otra cosa',
+    prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', fecha: new Date().toISOString() };
+  d.siguiente++; d.pedidos.push(pedido); guardarPedidos(d); nuevosHoy.set(quien, { dia: hoy, n: n + 1 });
+  registrar('pedido', '#' + pedido.numero, pedido.seccion, pedido.prioridad);
+  return pedido;
+}
+
 /* ---------- HTTP ---------- */
 function leerCuerpo(req, max = 1_500_000) {
   return new Promise((resolver, rechazar) => {
@@ -193,6 +224,10 @@ const servidor = http.createServer(async (req, res) => {
       if (!ID_VALIDO.test(m[1])) return responder(res, 400, { error: 'id inválido' });
       await anotarPedido(m[1], await leerCuerpo(req));
       return responder(res, 200, { ok: true });
+    }
+    if (url.pathname === '/api/pedidos') {
+      if (req.method === 'GET') return responder(res, 200, { pedidos: leerPedidos().pedidos.slice().reverse() });
+      if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 20_000), persona(req)) });
     }
     if (url.pathname === '/api/ia' && req.method === 'POST') {
       if (!ia) return responder(res, 503, { error: 'sin_clave' });

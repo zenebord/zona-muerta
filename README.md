@@ -925,13 +925,16 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
   esponja exprimida (la grabación `impacto_carne`, que quedó sin usar): ahora es un golpe seco de bala contra algo
   duro, hecho con ruido, un tono corto y un golpe grave. En el campo de pruebas, la rueda del mouse sobre la
   ficha del arma la desplaza y no cambia de arma.
-- **Pedidos** (`js/pedidos.js`): un gestor de tickets sencillo dentro del juego (botón PEDIDOS del menú, debajo de
-  TUTORIAL). Lista los issues del repositorio público `zenebord/zona-muerta-pedidos`, que GitHub deja leer sin
-  iniciar sesión: número, estado, etiquetas y texto, con filtro por estado (abiertos, cerrados, todos) y por sección
-  del juego. NUEVO PEDIDO es un formulario (sección, prioridad, título y qué se pide) que abre GitHub con el ticket
-  ya escrito; ahí se toca «Submit new issue». **Crear** un ticket necesita una cuenta de GitHub (no hay forma sin una
-  clave guardada en un servidor; el juego no guarda ninguna); **verlos**, no. Todo lo que llega de GitHub se muestra
-  como texto, nunca como HTML. Probado contra el repo real: lista los 3 tickets, filtra y arma el enlace de creación.
+- **Pedidos** (`js/pedidos.js`, `servidor/pedidos.mjs`): un gestor de tickets sencillo dentro del juego (botón PEDIDOS
+  del menú, debajo de TUTORIAL). La lista muestra el número, el título, el estado (abierto, en curso, listo o cerrado), la
+  sección del juego y la prioridad de cada pedido, con su texto al tocarlo, y se filtra por estado y por sección. NUEVO
+  PEDIDO es un formulario (sección, prioridad, título y qué se pide) y el botón **CREAR** lo guarda, sin salir del juego.
+  **Dónde se guarda:** si el juego corre en el servidor de construcción, en su base de datos sencilla,
+  `servidor/datos/pedidos.json` (un archivo JSON que se puede abrir y editar a mano; tope de 20 pedidos nuevos por
+  persona y por día, 1000 en total, y no se guarda ningún dato de quien lo pide); si no (la web publicada o el
+  artefacto), en el propio navegador y sólo los ve quien los creó en ese dispositivo. Para administrarlos:
+  `node servidor/pedidos.mjs` (lista), `… ver 3` y `… estado 3 cerrado`; los cambios se ven al instante. Todo lo
+  guardado se muestra como texto, nunca como HTML.
 - **Tutorial** (`js/tutorial.js`, pedido de Enzo): un cuadrito TUTORIAL arriba a la derecha del menú, debajo del
   personaje, abre un campo plano con 11 pasos guiados (caminar, saltar con una flecha apretada, agacharse, girar,
   disparar a un zombie lento, recargar, cambiar de arma, la mira del Remington 700, el ataque aéreo con A, la pausa y
