@@ -35,7 +35,7 @@ html, body {
 .pantalla.visible { display: flex; }
 
 /* ---- Menú principal ---- */
-#menu-principal {
+#menu-principal, #panel-pedidos {   /* la pantalla de pedidos tiene el mismo fondo que el menú principal */
   background:
     radial-gradient(ellipse at 50% 120%, rgba(163, 72, 42, .55), transparent 60%),
     linear-gradient(#1a1420, #0d0a10);
