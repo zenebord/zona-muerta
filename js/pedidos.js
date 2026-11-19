@@ -32,6 +32,11 @@ Object.assign(TEXTOS.es, {
   'pedidos.errorCrear': 'No se pudo crear el pedido. Prueba de nuevo.', 'pedidos.tope': 'Hiciste muchos pedidos hoy. Vuelve mañana.',
   'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'No se pudo cambiar el estado.',
   'pedidos.borrar': 'BORRAR', 'pedidos.seguro': '¿SEGURO? TOCA OTRA VEZ', 'pedidos.borrado': v => `Pedido #${v.n} borrado.`, 'pedidos.errorBorrar': 'No se pudo borrar el pedido.',
+  'pedidos.yo': 'Tú', 'pedidos.quienPidio': 'Quien lo pidió', 'pedidos.desarrollo': 'Desarrollo',
+  'pedidos.n.confirmo': 'confirmó que quedó bien', 'pedidos.n.rechazo': 'dijo que todavía no', 'pedidos.n.reabrio': 'reabrió el pedido', 'pedidos.n.nota': 'escribió',
+  'pedidos.quedoBien': '¿Quedó como lo pediste?', 'pedidos.si': 'SÍ, QUEDÓ BIEN', 'pedidos.no': 'NO, TODAVÍA NO', 'pedidos.reabrir': 'REABRIR', 'pedidos.aclarar': 'AGREGAR UNA ACLARACIÓN', 'pedidos.responder': 'RESPONDER',
+  'pedidos.enviar': 'ENVIAR', 'pedidos.cancelarNota': 'CANCELAR', 'pedidos.queFalta': '¿Qué falta o qué falla?', 'pedidos.quePaso': '¿Qué pasó? Cuéntanos', 'pedidos.escribe': 'Escribe aquí', 'pedidos.tuTurno': '¿Quedó bien?',
+  'pedidos.faltaTexto': 'Cuéntanos con unas palabras.', 'pedidos.errorResponder': 'No se pudo enviar. Prueba de nuevo.', 'pedidos.gracias': 'Anotado, gracias.',
 });
 Object.assign(TEXTOS.pt, {
   'pedidos.titulo': 'PEDIDOS', 'pedidos.ayuda': 'Peça melhorias ou avise de erros do jogo. Cada pedido é um ticket: tem seu número, seu estado e sua prioridade.',
@@ -47,6 +52,11 @@ Object.assign(TEXTOS.pt, {
   'pedidos.errorCrear': 'Não foi possível criar o pedido. Tente de novo.', 'pedidos.tope': 'Você fez muitos pedidos hoje. Volte amanhã.',
   'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'Não foi possível mudar o estado.',
   'pedidos.borrar': 'APAGAR', 'pedidos.seguro': 'TEM CERTEZA? TOQUE DE NOVO', 'pedidos.borrado': v => `Pedido #${v.n} apagado.`, 'pedidos.errorBorrar': 'Não foi possível apagar o pedido.',
+  'pedidos.yo': 'Você', 'pedidos.quienPidio': 'Quem pediu', 'pedidos.desarrollo': 'Desenvolvimento',
+  'pedidos.n.confirmo': 'confirmou que ficou bom', 'pedidos.n.rechazo': 'disse que ainda não', 'pedidos.n.reabrio': 'reabriu o pedido', 'pedidos.n.nota': 'escreveu',
+  'pedidos.quedoBien': 'Ficou como você pediu?', 'pedidos.si': 'SIM, FICOU BOM', 'pedidos.no': 'NÃO, AINDA NÃO', 'pedidos.reabrir': 'REABRIR', 'pedidos.aclarar': 'ADICIONAR UM ESCLARECIMENTO', 'pedidos.responder': 'RESPONDER',
+  'pedidos.enviar': 'ENVIAR', 'pedidos.cancelarNota': 'CANCELAR', 'pedidos.queFalta': 'O que falta ou o que falha?', 'pedidos.quePaso': 'O que aconteceu? Conte', 'pedidos.escribe': 'Escreva aqui', 'pedidos.tuTurno': 'Ficou bom?',
+  'pedidos.faltaTexto': 'Conte com poucas palavras.', 'pedidos.errorResponder': 'Não foi possível enviar. Tente de novo.', 'pedidos.gracias': 'Anotado, obrigado.',
 });
 Object.assign(TEXTOS.en, {
   'pedidos.titulo': 'REQUESTS', 'pedidos.ayuda': 'Ask for improvements or report bugs. Each request is a ticket: it has its number, status and priority.',
@@ -62,6 +72,11 @@ Object.assign(TEXTOS.en, {
   'pedidos.errorCrear': 'Could not create the request. Try again.', 'pedidos.tope': 'You made a lot of requests today. Come back tomorrow.',
   'pedidos.cambiarEstado': 'Status', 'pedidos.errorEstado': 'Could not change the status.',
   'pedidos.borrar': 'DELETE', 'pedidos.seguro': 'SURE? TAP AGAIN', 'pedidos.borrado': v => `Request #${v.n} deleted.`, 'pedidos.errorBorrar': 'Could not delete the request.',
+  'pedidos.yo': 'You', 'pedidos.quienPidio': 'Requester', 'pedidos.desarrollo': 'Development',
+  'pedidos.n.confirmo': 'confirmed it\'s good', 'pedidos.n.rechazo': 'said not yet', 'pedidos.n.reabrio': 'reopened the request', 'pedidos.n.nota': 'wrote',
+  'pedidos.quedoBien': 'Is it the way you asked?', 'pedidos.si': 'YES, IT\'S GOOD', 'pedidos.no': 'NO, NOT YET', 'pedidos.reabrir': 'REOPEN', 'pedidos.aclarar': 'ADD A NOTE', 'pedidos.responder': 'REPLY',
+  'pedidos.enviar': 'SEND', 'pedidos.cancelarNota': 'CANCEL', 'pedidos.queFalta': 'What is missing or broken?', 'pedidos.quePaso': 'What happened? Tell us', 'pedidos.escribe': 'Write here', 'pedidos.tuTurno': 'Is it good?',
+  'pedidos.faltaTexto': 'Tell us in a few words.', 'pedidos.errorResponder': 'Could not send. Try again.', 'pedidos.gracias': 'Noted, thanks.',
 });
 
 const PedidosUI = (() => {
@@ -137,22 +152,92 @@ const PedidosUI = (() => {
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
-      const acciones = hijo(det, 'div', 'pedido-acciones');   // una sola barra: el estado a la izquierda y BORRAR a la derecha
-      if (conServidor() ? dueno : esLocal(p)) {   // el estado lo cambia el dueño (sin servidor, quien lo creó en este navegador)
-        const fila = hijo(acciones, 'label', 'pedido-estado-fila'); hijo(fila, 'span', '', t('pedidos.cambiarEstado'));
-        const sel = hijo(fila, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
-        sel.addEventListener('change', () => cambiarEstado(p, sel.value));
-      }
-      if (puedeBorrar(p)) {   // BORRAR: dos toques seguidos (el primero pide confirmar)
-        const b = hijo(acciones, 'button', 'boton mini peligro pedido-borrar', t('pedidos.borrar')); b.type = 'button';
-        b.addEventListener('click', () => {
-          if (b.dataset.seguro === '1') { b.disabled = true; borrar(p); return; }
-          b.dataset.seguro = '1'; b.textContent = t('pedidos.seguro');
-          setTimeout(() => { if (b.isConnected && !b.disabled) { b.dataset.seguro = ''; b.textContent = t('pedidos.borrar'); } }, 3000);
-        });
-      }
+      armarConversacion(det, p, cab, etiquetas);
       cab.addEventListener('click', () => { det.hidden = !det.hidden; if (det.hidden) abiertos.delete(p.numero); else abiertos.add(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden)); });
     }
+  }
+
+  /* ---------- Conversación: lo que cada uno puede hacer con un pedido, según su estado ----------
+   * Quien lo pidió (con servidor, la clave que guarda su navegador; sin servidor, los «L1»):
+   *   abierto o en curso → agregar una aclaración;  listo o esperando → «sí, quedó bien» (→ cerrado) o «no, todavía no»
+   *   con el motivo (→ abierto);  cerrado → reabrir con el motivo (→ abierto);  siempre → borrarlo.
+   * El dueño (desde la Mac del servidor): cambia el estado, responde y borra cualquiera. Los demás pedidos, sólo se leen.
+   * Cada respuesta queda como una nota del pedido (quién, qué y cuándo). */
+  const esMio = p => conServidor() ? !!leerClaves()[p.numero] : esLocal(p);
+  async function responder(p, accion, texto) {
+    if (conServidor()) {
+      const r = await fetch(`/api/pedidos/${p.numero}/accion`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, texto, clave: leerClaves()[p.numero] || '' }) });
+      if (!r.ok) throw new Error('http ' + r.status);
+      Object.assign(p, (await r.json()).pedido);
+    } else {   // sin servidor, las mismas reglas sobre el pedido guardado en este navegador
+      const d = leerLocal(), x = d.pedidos.find(y => y.numero === p.numero); if (!x) throw new Error('no existe');
+      const tipo = accion === 'confirmar' ? 'confirmo' : accion === 'rechazar' ? (x.estado === 'cerrado' ? 'reabrio' : 'rechazo') : 'nota';
+      if (accion === 'confirmar') x.estado = 'cerrado'; else if (accion === 'rechazar') x.estado = 'abierto';
+      (x.notas ||= []).push({ de: 'pedido', tipo, texto, fecha: new Date().toISOString() }); guardarLocal(d); Object.assign(p, x);
+    }
+  }
+  function armarConversacion(det, p, cab, etiquetas) {
+    const mio = esMio(p), jefe = conServidor() && dueno;
+    // Las notas: una conversación debajo del texto
+    if ((p.notas || []).length) {
+      const lista = hijo(det, 'div', 'pedido-notas');
+      for (const n of p.notas) {
+        const nota = hijo(lista, 'div', 'pedido-nota ' + (n.de === 'desarrollo' ? 'desarrollo' : 'pedido'));
+        const quien = n.de === 'desarrollo' ? t('pedidos.desarrollo') : (mio && !jefe ? t('pedidos.yo') : t('pedidos.quienPidio'));
+        hijo(nota, 'b', '', `${quien} · ${t('pedidos.n.' + n.tipo)} · ${new Date(n.fecha).toLocaleDateString(Idioma.actual())}`);
+        if (n.texto) hijo(nota, 'span', '', n.texto);
+      }
+    }
+    const esperaRespuesta = mio && !jefe && (p.estado === 'listo' || p.estado === 'esperando');
+    if (esperaRespuesta) {   // se nota en la lista que le toca a quien lo pidió
+      const chip = document.createElement('span'); chip.className = 'pedido-etiqueta tu-turno'; chip.textContent = '● ' + t('pedidos.tuTurno');
+      etiquetas.insertBefore(chip, etiquetas.querySelector('.pedido-fecha'));
+    }
+    const barra = hijo(det, 'div', 'pedido-acciones');
+    const izq = hijo(barra, 'div', 'pedido-acciones-izq');
+    // El cuadro para escribir (motivo o aclaración): se abre con el botón que corresponde
+    const redactar = hijo(det, 'div', 'pedido-redactar'); redactar.hidden = true;
+    const campo = hijo(redactar, 'textarea'); campo.rows = 3; campo.maxLength = 500;
+    const aviso = hijo(redactar, 'p', 'pedidos-aviso');
+    const fila = hijo(redactar, 'div', 'pedido-redactar-botones');
+    const enviar = hijo(fila, 'button', 'boton mini boton-usar', t('pedidos.enviar')); enviar.type = 'button';
+    const cancelar = hijo(fila, 'button', 'boton mini', t('pedidos.cancelarNota')); cancelar.type = 'button';
+    let accionPendiente = null;
+    const abrirRedactar = (accion, rotulo, obligatorio) => { accionPendiente = { accion, obligatorio }; campo.placeholder = rotulo; campo.value = ''; aviso.textContent = ''; redactar.hidden = false; campo.focus(); };
+    cancelar.addEventListener('click', () => { redactar.hidden = true; accionPendiente = null; });
+    enviar.addEventListener('click', async () => {
+      if (!accionPendiente) return;
+      const texto = campo.value.trim();
+      if (accionPendiente.obligatorio && !texto) { aviso.textContent = t('pedidos.faltaTexto'); return; }
+      enviar.disabled = true;
+      try { await responder(p, accionPendiente.accion, texto); abiertos.add(p.numero); pintar(); }
+      catch { aviso.textContent = t('pedidos.errorResponder'); enviar.disabled = false; }
+    });
+    const boton = (clase, rotulo, alTocar) => { const b = hijo(izq, 'button', 'boton mini ' + clase, rotulo); b.type = 'button'; b.addEventListener('click', alTocar); return b; };
+    const sin = async (accion, texto) => { try { await responder(p, accion, texto); abiertos.add(p.numero); pintar(); } catch { aviso.textContent = t('pedidos.errorResponder'); redactar.hidden = false; } };
+    if (jefe || (!conServidor() && esLocal(p))) {   // el dueño (y, sin servidor, quien lo creó en este navegador): cambia el estado
+      const f = hijo(izq, 'label', 'pedido-estado-fila'); hijo(f, 'span', '', t('pedidos.cambiarEstado'));
+      const sel = hijo(f, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
+      sel.addEventListener('change', () => cambiarEstado(p, sel.value));
+    }
+    if (jefe) boton('', t('pedidos.responder'), () => abrirRedactar('nota', t('pedidos.escribe'), true));
+    else if (mio) {
+      if (esperaRespuesta) {
+        hijo(izq, 'span', 'pedido-pregunta', t('pedidos.quedoBien'));
+        boton('bien', t('pedidos.si'), () => sin('confirmar', ''));
+        boton('mal', t('pedidos.no'), () => abrirRedactar('rechazar', t('pedidos.queFalta'), true));
+      } else if (p.estado === 'cerrado') boton('', t('pedidos.reabrir'), () => abrirRedactar('rechazar', t('pedidos.quePaso'), true));
+      else boton('', t('pedidos.aclarar'), () => abrirRedactar('nota', t('pedidos.escribe'), true));
+    }
+    if (puedeBorrar(p)) {   // BORRAR: dos toques seguidos (el primero pide confirmar)
+      const b = hijo(barra, 'button', 'boton mini peligro pedido-borrar', t('pedidos.borrar')); b.type = 'button';
+      b.addEventListener('click', () => {
+        if (b.dataset.seguro === '1') { b.disabled = true; borrar(p); return; }
+        b.dataset.seguro = '1'; b.textContent = t('pedidos.seguro');
+        setTimeout(() => { if (b.isConnected && !b.disabled) { b.dataset.seguro = ''; b.textContent = t('pedidos.borrar'); } }, 3000);
+      });
+    }
+    if (!izq.childElementCount && !barra.querySelector('.pedido-borrar')) { barra.remove(); redactar.remove(); }   // un pedido ajeno: sólo se lee
   }
 
   function armarFormulario() {

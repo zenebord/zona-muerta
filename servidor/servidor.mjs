@@ -204,6 +204,37 @@ function cambiarEstadoPedido(numero, estado, esDueno) {
   if (!p) throw Object.assign(new Error('no existe'), { estado: 404 });
   p.estado = estado; guardarPedidos(d); registrar('pedido', '#' + numero, '→', estado);
 }
+// Respuestas de quien pidió (con su clave) o del dueño. Cada una deja una nota en el pedido, que se lee como conversación.
+//   confirmar: «sí, quedó bien»   listo | esperando → cerrado
+//   rechazar:  «no, todavía no» (o reabrir)   listo | esperando | cerrado → abierto, con el motivo
+//   nota:      una aclaración, en cualquier estado
+const TOPE_NOTAS_POR_PEDIDO = 30;
+const nuevasNotasHoy = new Map();   // persona → { dia, n }
+function accionPedido(numero, cuerpo, esDueno, quien) {
+  const d = leerPedidos(), p = d.pedidos.find(x => x.numero === numero);
+  if (!p) throw Object.assign(new Error('no existe'), { estado: 404 });
+  const claveValida = typeof cuerpo.clave === 'string' && p.clave && cuerpo.clave.length === p.clave.length && crypto.timingSafeEqual(Buffer.from(cuerpo.clave), Buffer.from(p.clave));
+  if (!esDueno && !claveValida) throw Object.assign(new Error('no permitido'), { estado: 403 });
+  const texto = recortar(cuerpo.texto, 500), de = esDueno ? 'desarrollo' : 'pedido';
+  const nota = (tipo, t) => { if (!Array.isArray(p.notas)) p.notas = []; p.notas.push({ de, tipo, texto: t, fecha: new Date().toISOString() }); };
+  if ((p.notas || []).length >= TOPE_NOTAS_POR_PEDIDO) throw Object.assign(new Error('demasiadas notas'), { estado: 429 });
+  const hoy = new Date().toISOString().slice(0, 10), c = nuevasNotasHoy.get(quien), n = c && c.dia === hoy ? c.n : 0;
+  if (!esDueno && n >= 60) throw Object.assign(new Error('tope'), { estado: 429 });
+  if (cuerpo.accion === 'confirmar') {
+    if (!['listo', 'esperando'].includes(p.estado)) throw Object.assign(new Error('todavía no está listo'), { estado: 409 });
+    p.estado = 'cerrado'; nota('confirmo', texto);
+  } else if (cuerpo.accion === 'rechazar') {
+    if (!['listo', 'esperando', 'cerrado'].includes(p.estado)) throw Object.assign(new Error('no se puede rechazar'), { estado: 409 });
+    if (!texto) throw Object.assign(new Error('falta el motivo'), { estado: 400 });
+    const reabre = p.estado === 'cerrado'; p.estado = 'abierto'; nota(reabre ? 'reabrio' : 'rechazo', texto);
+  } else if (cuerpo.accion === 'nota') {
+    if (!texto) throw Object.assign(new Error('falta el texto'), { estado: 400 });
+    nota('nota', texto);
+  } else throw Object.assign(new Error('acción inválida'), { estado: 400 });
+  guardarPedidos(d); nuevasNotasHoy.set(quien, { dia: hoy, n: n + 1 });
+  registrar('pedido', '#' + numero, cuerpo.accion, '→', p.estado, '(' + de + ')');
+  return sinClave(p);
+}
 // Borra un pedido: lo puede borrar quien lo creó (con su clave) o el dueño, desde la Mac donde corre el servidor
 function borrarPedido(numero, clave, esDueno) {
   const d = leerPedidos(), i = d.pedidos.findIndex(p => p.numero === numero);
@@ -251,6 +282,9 @@ const servidor = http.createServer(async (req, res) => {
     if (url.pathname === '/api/pedidos') {
       if (req.method === 'GET') return responder(res, 200, { dueno: esDueno(req), pedidos: leerPedidos().pedidos.slice().reverse().map(sinClave) });
       if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 20_000), persona(req)) });   // con su clave, una sola vez
+    }
+    if ((m = /^\/api\/pedidos\/(\d+)\/accion$/.exec(url.pathname)) && req.method === 'POST') {
+      return responder(res, 200, { ok: true, pedido: accionPedido(Number(m[1]), await leerCuerpo(req, 4_000), esDueno(req), persona(req)) });
     }
     if ((m = /^\/api\/pedidos\/(\d+)$/.exec(url.pathname)) && req.method === 'PATCH') {
       cambiarEstadoPedido(Number(m[1]), (await leerCuerpo(req, 2_000)).estado, esDueno(req));
