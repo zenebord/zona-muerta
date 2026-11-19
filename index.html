@@ -122,6 +122,15 @@
       <label><span data-t="pedidos.prioridad">¿Qué tan importante es?</span><select id="pedidos-f-prioridad"></select></label>
       <label><span data-t="pedidos.titulo.campo">Título corto</span><input id="pedidos-f-titulo" type="text" maxlength="100" autocomplete="off"></label>
       <label><span data-t="pedidos.texto">Explica en detalle lo que quieres cambiar/agregar o el problema que encontraste</span><textarea id="pedidos-f-texto" rows="5" maxlength="2000"></textarea></label>
+      <div class="pedidos-foto-campo">
+        <span data-t="pedidos.foto">Foto (opcional)</span>
+        <div class="pedidos-foto-fila">
+          <button id="pedidos-f-foto-boton" class="boton mini" type="button" data-t="pedidos.agregarFoto">AGREGAR FOTO</button>
+          <button id="pedidos-f-foto-quitar" class="boton mini" type="button" data-t="pedidos.quitarFoto" hidden>QUITAR</button>
+          <input id="pedidos-f-foto" type="file" accept="image/*" hidden>
+        </div>
+        <img id="pedidos-f-foto-vista" class="pedido-foto" alt="" hidden>
+      </div>
       <p id="pedidos-f-aviso" class="pedidos-aviso" role="status"></p>
       <div class="fila-botones">
         <button id="pedidos-cancelar" class="boton chico" type="button" data-t="pedidos.cancelar">CANCELAR</button>

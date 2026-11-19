@@ -169,6 +169,21 @@ async function preguntarAClaude(cuerpo) {
  * cada pedido (son pocos) y se puede abrir o editar a mano; los cambios se ven al instante. No se guarda ningún dato de
  * quien lo pide (ni la IP: sólo se cuenta en memoria para el tope diario). Para cambiar el estado: servidor/pedidos.mjs */
 const ARCHIVO_PEDIDOS = path.join(DIR_DATOS, 'pedidos.json');
+const DIR_FOTOS = path.join(DIR_DATOS, 'pedidos-fotos');   // una foto opcional por pedido (JPEG ya achicado por el navegador)
+fs.mkdirSync(DIR_FOTOS, { recursive: true });
+const TOPE_FOTO_BYTES = 700_000;
+// Valida y guarda la foto: tiene que ser un JPEG de verdad (los primeros bytes) y no pasar del tope. Devuelve el nombre del archivo
+function guardarFoto(dataUrl, numero) {
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(typeof dataUrl === 'string' ? dataUrl : '');
+  if (!m) throw Object.assign(new Error('foto inválida'), { estado: 400 });
+  const bin = Buffer.from(m[1], 'base64');
+  if (bin.length > TOPE_FOTO_BYTES) throw Object.assign(new Error('foto demasiado grande'), { estado: 413 });
+  if (bin.length < 200 || bin[0] !== 0xFF || bin[1] !== 0xD8 || bin[2] !== 0xFF) throw Object.assign(new Error('foto inválida'), { estado: 400 });
+  const nombre = `${numero}-${crypto.randomBytes(5).toString('hex')}.jpg`;
+  fs.writeFileSync(path.join(DIR_FOTOS, nombre), bin);
+  return nombre;
+}
+const borrarFoto = nombre => { if (typeof nombre === 'string' && /^\d+-[a-f0-9]{10}\.jpg$/.test(nombre)) try { fs.unlinkSync(path.join(DIR_FOTOS, nombre)); } catch { /* ya no estaba */ } };
 const SECCIONES = ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'];
 const PRIORIDADES = ['alta', 'media', 'baja'];
 const CREADORES = ['tio-lea', 'francisco', 'claude'];   // quienes abren pedidos; desde la pantalla sólo Tío Lea y Francisco (Claude abre los suyos con servidor/pedidos.mjs)
@@ -193,6 +208,7 @@ function crearPedido(cuerpo, quien) {
   const pedido = { numero: d.siguiente, titulo, seccion: SECCIONES.includes(cuerpo.seccion) ? cuerpo.seccion : 'Otra cosa',
     prioridad: PRIORIDADES.includes(cuerpo.prioridad) ? cuerpo.prioridad : 'media', texto: recortar(cuerpo.texto, 2000), estado: 'abierto', creador: cuerpo.creador, fecha: new Date().toISOString() };   // creador: quien lo abre y, por eso, quien lo confirma
   pedido.clave = crypto.randomBytes(12).toString('hex');   // sólo se le entrega a quien lo crea: con ella puede borrarlo
+  if (cuerpo.foto) pedido.foto = guardarFoto(cuerpo.foto, pedido.numero);   // después de validar todo lo demás
   d.siguiente++; d.pedidos.push(pedido); guardarPedidos(d); nuevosHoy.set(quien, { dia: hoy, n: n + 1 });
   registrar('pedido', '#' + pedido.numero, pedido.seccion, pedido.prioridad);
   return pedido;
@@ -244,7 +260,7 @@ function borrarPedido(numero, clave, esDueno) {
   const p = d.pedidos[i];
   const claveValida = typeof clave === 'string' && p.clave && clave.length === p.clave.length && crypto.timingSafeEqual(Buffer.from(clave), Buffer.from(p.clave));
   if (!esDueno && !claveValida) throw Object.assign(new Error('no permitido'), { estado: 403 });
-  d.pedidos.splice(i, 1); guardarPedidos(d); registrar('pedido borrado', '#' + numero);
+  d.pedidos.splice(i, 1); guardarPedidos(d); borrarFoto(p.foto); registrar('pedido borrado', '#' + numero);
 }
 
 /* ---------- HTTP ---------- */
@@ -283,7 +299,11 @@ const servidor = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/pedidos') {
       if (req.method === 'GET') return responder(res, 200, { dueno: esDueno(req), pedidos: leerPedidos().pedidos.slice().reverse().map(sinClave) });
-      if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 20_000), persona(req)) });   // con su clave, una sola vez
+      if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 1_300_000), persona(req)) });   // con su clave, una sola vez (el tope grande es por la foto)
+    }
+    if ((m = /^\/api\/pedidos\/foto\/(\d+-[a-f0-9]{10}\.jpg)$/.exec(url.pathname)) && req.method === 'GET') {
+      let foto; try { foto = fs.readFileSync(path.join(DIR_FOTOS, m[1])); } catch { return responder(res, 404, 'No existe', 'text/plain; charset=utf-8'); }
+      res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' }); return res.end(foto);
     }
     if ((m = /^\/api\/pedidos\/(\d+)\/accion$/.exec(url.pathname)) && req.method === 'POST') {
       return responder(res, 200, { ok: true, pedido: accionPedido(Number(m[1]), await leerCuerpo(req, 4_000), esDueno(req), persona(req)) });

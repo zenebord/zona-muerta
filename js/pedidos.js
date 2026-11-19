@@ -15,6 +15,8 @@ const PEDIDOS = {
   // Un color para cada persona que abre pedidos: su etiqueta «Abierto por…» (fondo lleno, para no confundirla con las de sección) y sus notas
   personas: { 'tio-lea': '#4fd1e8', 'francisco': '#b6e35a', 'claude': '#d97757' },
   estados: ['abierto', 'en curso', 'listo', 'esperando', 'cerrado'],   // «esperando» = hecho, falta que quien lo pidió confirme; «cerrado» = confirmado; los otros son «abiertos»
+  carpetaFotos: 'fotos/',   // sin servidor, las fotos de los pedidos publicados viajan en esta carpeta
+  fotoLado: 1280, fotoCalidad: 0.8,   // la foto se achica en el navegador antes de guardarla: lado máximo y calidad JPEG
   publicados: 'pedidos.json',   // copia de los pedidos que se publica con el juego (sin servidor, sólo se leen)
   clave: 'zonaMuerta.pedidos',
   yo: 'zonaMuerta.pedidosYo',   // quién eligió ser la última vez en este dispositivo
@@ -36,6 +38,7 @@ Object.assign(TEXTOS.es, {
   'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'No se pudo cambiar el estado.',
   'pedidos.quien': '¿Quién eres?', 'pedidos.elige': 'Elige…', 'pedidos.faltaQuien': 'Elige quién eres.', 'pedidos.abiertoPor': v => `Abierto por ${v.quien}`, 'pedidos.e.esperandoDe': v => `Esperando confirmación de ${v.quien}`,
   'pedidos.c.tio-lea': 'Tío Lea', 'pedidos.c.francisco': 'Francisco', 'pedidos.c.claude': 'Claude',
+  'pedidos.foto': 'Foto (opcional)', 'pedidos.agregarFoto': 'AGREGAR FOTO', 'pedidos.cambiarFoto': 'CAMBIAR FOTO', 'pedidos.quitarFoto': 'QUITAR', 'pedidos.errorFoto': 'No se pudo leer esa foto. Prueba con otra.', 'pedidos.altFoto': 'Foto del pedido',
   'pedidos.borrar': 'BORRAR', 'pedidos.seguro': '¿SEGURO? TOCA OTRA VEZ', 'pedidos.borrado': v => `Pedido #${v.n} borrado.`, 'pedidos.errorBorrar': 'No se pudo borrar el pedido.',
   'pedidos.yo': 'Tú', 'pedidos.quienPidio': 'Quien lo pidió', 'pedidos.desarrollo': 'Desarrollo',
   'pedidos.n.confirmo': 'confirmó que quedó bien', 'pedidos.n.rechazo': 'dijo que todavía no', 'pedidos.n.reabrio': 'reabrió el pedido', 'pedidos.n.nota': 'escribió',
@@ -58,6 +61,7 @@ Object.assign(TEXTOS.pt, {
   'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'Não foi possível mudar o estado.',
   'pedidos.quien': 'Quem é você?', 'pedidos.elige': 'Escolha…', 'pedidos.faltaQuien': 'Escolha quem você é.', 'pedidos.abiertoPor': v => `Aberto por ${v.quien}`, 'pedidos.e.esperandoDe': v => `Aguardando confirmação de ${v.quien}`,
   'pedidos.c.tio-lea': 'Tio Lea', 'pedidos.c.francisco': 'Francisco', 'pedidos.c.claude': 'Claude',
+  'pedidos.foto': 'Foto (opcional)', 'pedidos.agregarFoto': 'ADICIONAR FOTO', 'pedidos.cambiarFoto': 'TROCAR FOTO', 'pedidos.quitarFoto': 'REMOVER', 'pedidos.errorFoto': 'Não foi possível ler essa foto. Tente outra.', 'pedidos.altFoto': 'Foto do pedido',
   'pedidos.borrar': 'APAGAR', 'pedidos.seguro': 'TEM CERTEZA? TOQUE DE NOVO', 'pedidos.borrado': v => `Pedido #${v.n} apagado.`, 'pedidos.errorBorrar': 'Não foi possível apagar o pedido.',
   'pedidos.yo': 'Você', 'pedidos.quienPidio': 'Quem pediu', 'pedidos.desarrollo': 'Desenvolvimento',
   'pedidos.n.confirmo': 'confirmou que ficou bom', 'pedidos.n.rechazo': 'disse que ainda não', 'pedidos.n.reabrio': 'reabriu o pedido', 'pedidos.n.nota': 'escreveu',
@@ -80,6 +84,7 @@ Object.assign(TEXTOS.en, {
   'pedidos.cambiarEstado': 'Status', 'pedidos.errorEstado': 'Could not change the status.',
   'pedidos.quien': 'Who are you?', 'pedidos.elige': 'Choose…', 'pedidos.faltaQuien': 'Choose who you are.', 'pedidos.abiertoPor': v => `Opened by ${v.quien}`, 'pedidos.e.esperandoDe': v => `Awaiting confirmation from ${v.quien}`,
   'pedidos.c.tio-lea': 'Uncle Lea', 'pedidos.c.francisco': 'Francisco', 'pedidos.c.claude': 'Claude',
+  'pedidos.foto': 'Photo (optional)', 'pedidos.agregarFoto': 'ADD PHOTO', 'pedidos.cambiarFoto': 'CHANGE PHOTO', 'pedidos.quitarFoto': 'REMOVE', 'pedidos.errorFoto': 'Could not read that photo. Try another one.', 'pedidos.altFoto': 'Photo of the request',
   'pedidos.borrar': 'DELETE', 'pedidos.seguro': 'SURE? TAP AGAIN', 'pedidos.borrado': v => `Request #${v.n} deleted.`, 'pedidos.errorBorrar': 'Could not delete the request.',
   'pedidos.yo': 'You', 'pedidos.quienPidio': 'Requester', 'pedidos.desarrollo': 'Development',
   'pedidos.n.confirmo': 'confirmed it\'s good', 'pedidos.n.rechazo': 'said not yet', 'pedidos.n.reabrio': 'reopened the request', 'pedidos.n.nota': 'wrote',
@@ -139,6 +144,7 @@ const PedidosUI = (() => {
     cargando = false; if (!silencioso || lista) pintar();
   }
 
+  const urlFoto = f => f.startsWith('data:') ? f : conServidor() ? '/api/pedidos/foto/' + encodeURIComponent(f) : PEDIDOS.carpetaFotos + encodeURIComponent(f);
   const esAbierto = p => p.estado !== 'cerrado';
   // La confirmación la da quien abrió el pedido: si lo abrió Claude (el desarrollo), espera la confirmación de Claude
   const CREADORES = ['tio-lea', 'francisco', 'claude'];   // quienes abren pedidos (el servidor deja elegir sólo a los dos primeros desde la pantalla)
@@ -166,6 +172,10 @@ const PedidosUI = (() => {
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
+      if (p.foto) {   // la foto del pedido: chica, y al tocarla se agranda
+        const im = hijo(det, 'img', 'pedido-foto'); im.src = urlFoto(p.foto); im.alt = t('pedidos.altFoto'); im.loading = 'lazy';
+        im.addEventListener('click', () => im.classList.toggle('grande'));
+      }
       armarConversacion(det, p, cab, etiquetas);
       cab.addEventListener('click', () => { det.hidden = !det.hidden; if (det.hidden) abiertos.delete(p.numero); else abiertos.add(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden)); });
     }
@@ -269,13 +279,30 @@ const PedidosUI = (() => {
     prio.replaceChildren(); [['alta', 'pedidos.prioAlta'], ['media', 'pedidos.prioMedia'], ['baja', 'pedidos.prioBaja']].forEach(([v, k]) => { const o = new Option(t(k), v); o.selected = v === 'media'; prio.add(o); });
     $('pedidos-f-titulo').placeholder = t('pedidos.titulo.ejemplo');
     $('pedidos-f-titulo').value = $('pedidos-f-texto').value = $('pedidos-f-aviso').textContent = '';
+    fotoElegida = ''; $('pedidos-f-foto').value = ''; mostrarFoto();
+  }
+  // La foto elegida: se achica en el navegador (lado máximo y JPEG; de paso se pierden los datos ocultos de la foto, como la ubicación)
+  let fotoElegida = '';
+  function mostrarFoto() {
+    const v = $('pedidos-f-foto-vista'); v.hidden = !fotoElegida; if (fotoElegida) v.src = fotoElegida;
+    $('pedidos-f-foto-quitar').hidden = !fotoElegida; $('pedidos-f-foto-boton').textContent = t(fotoElegida ? 'pedidos.cambiarFoto' : 'pedidos.agregarFoto');
+  }
+  async function achicar(archivo) {
+    const url = URL.createObjectURL(archivo);
+    try {
+      const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = url; });
+      const k = Math.min(1, PEDIDOS.fotoLado / Math.max(img.naturalWidth, img.naturalHeight)), lienzo = document.createElement('canvas');
+      lienzo.width = Math.max(1, Math.round(img.naturalWidth * k)); lienzo.height = Math.max(1, Math.round(img.naturalHeight * k));
+      const c = lienzo.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, lienzo.width, lienzo.height); c.drawImage(img, 0, 0, lienzo.width, lienzo.height);   // fondo blanco: un PNG transparente no queda negro
+      return lienzo.toDataURL('image/jpeg', PEDIDOS.fotoCalidad);
+    } finally { URL.revokeObjectURL(url); }
   }
   async function crear() {
     const titulo = $('pedidos-f-titulo').value.trim(), aviso = $('pedidos-f-aviso');
     if (!$('pedidos-f-quien').value) { aviso.textContent = t('pedidos.faltaQuien'); return; }
     if (!titulo) { aviso.textContent = t('pedidos.faltaTitulo'); return; }
     try { localStorage.setItem(PEDIDOS.yo, $('pedidos-f-quien').value); } catch { /* ídem */ }
-    const pedido = { creador: $('pedidos-f-quien').value, titulo: titulo.slice(0, 100), texto: $('pedidos-f-texto').value.trim().slice(0, 2000), seccion: $('pedidos-f-seccion').value, prioridad: $('pedidos-f-prioridad').value };
+    const pedido = { foto: fotoElegida || undefined, creador: $('pedidos-f-quien').value, titulo: titulo.slice(0, 100), texto: $('pedidos-f-texto').value.trim().slice(0, 2000), seccion: $('pedidos-f-seccion').value, prioridad: $('pedidos-f-prioridad').value };
     const boton = $('pedidos-crear'); boton.disabled = true;
     try {
       let numero;
@@ -307,6 +334,14 @@ const PedidosUI = (() => {
     $('pedidos-nuevo').addEventListener('click', () => verFormulario(true));
     $('pedidos-cancelar').addEventListener('click', () => verFormulario(false));
     $('pedidos-crear').addEventListener('click', crear);
+    $('pedidos-f-foto-boton').addEventListener('click', () => $('pedidos-f-foto').click());
+    $('pedidos-f-foto-quitar').addEventListener('click', () => { fotoElegida = ''; $('pedidos-f-foto').value = ''; mostrarFoto(); });
+    $('pedidos-f-foto').addEventListener('change', async e => {
+      const archivo = e.target.files[0]; if (!archivo) return;
+      try { if (archivo.size > 25_000_000) throw new Error('enorme'); fotoElegida = await achicar(archivo); $('pedidos-f-aviso').textContent = ''; }
+      catch { fotoElegida = ''; $('pedidos-f-aviso').textContent = t('pedidos.errorFoto'); }
+      mostrarFoto();
+    });
     // La lista se renueva sola cada 20 s mientras se ve (con servidor: pueden llegar pedidos o cambiar estados)
     setInterval(() => { if (conServidor() && $('panel-pedidos').classList.contains('visible') && $('pedidos-form').hidden && !document.hidden) cargar(true); }, 20000);
     Idioma.alCambiar(() => { sec.options[0].textContent = t('pedidos.todasSecciones'); if (lista) pintar(); });

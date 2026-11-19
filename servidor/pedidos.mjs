@@ -44,6 +44,7 @@ if (orden === 'lista') {
   const i = d.pedidos.findIndex(x => x.numero === Number(a));
   if (i < 0) { console.error('No existe ese pedido.'); process.exit(1); }
   const [p] = d.pedidos.splice(i, 1);   // d.siguiente no cambia: los números no se reutilizan
+  if (p.foto && /^\d+-[a-f0-9]{10}\.jpg$/.test(p.foto)) try { fs.unlinkSync(path.join(path.dirname(ARCHIVO), 'pedidos-fotos', p.foto)); } catch { /* ya no estaba */ }
   fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
   console.log(`#${p.numero} borrado: ${p.titulo}`);
 } else { console.error('Órdenes: lista | ver <n> | estado <n> <estado> | crear "título" "Sección" <prioridad> "texto" | nota <n> "texto" | borrar <n>'); process.exit(1); }

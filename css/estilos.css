@@ -1141,3 +1141,12 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-redactar textarea { font: inherit; font-size: 14px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 8px; resize: vertical; user-select: text; }
 .pedido-redactar-botones { display: flex; gap: 8px; justify-content: flex-end; }
 .pedido-etiqueta.quien { color: #15110f; font-weight: 700; }   /* el fondo y el borde los pone js/pedidos.js según la persona */
+
+/* Foto de un pedido: en el formulario (vista previa) y en el pedido desplegado (chica; al tocarla, grande) */
+.pedidos-foto-campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--arena); }
+.pedidos-foto-fila { display: flex; gap: 8px; }
+.pedidos-foto-fila .boton { box-sizing: border-box; height: 36px; padding: 0 14px; }
+.pedidos-foto-campo .pedido-foto { max-height: 160px; align-self: flex-start; }
+.pedido-foto { display: block; max-width: 220px; max-height: 160px; object-fit: contain; border: 1px solid rgba(201,169,110,.4); background: #000; cursor: zoom-in; }
+.pedido-foto[hidden] { display: none; }
+.pedido-foto.grande { max-width: 100%; max-height: 70vh; cursor: zoom-out; }
