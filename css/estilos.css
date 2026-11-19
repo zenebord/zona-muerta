@@ -35,7 +35,7 @@ html, body {
 .pantalla.visible { display: flex; }
 
 /* ---- Menú principal ---- */
-#menu-principal {
+#menu-principal, #panel-pedidos {   /* la pantalla de pedidos tiene el mismo fondo que el menú principal */
   background:
     radial-gradient(ellipse at 50% 120%, rgba(163, 72, 42, .55), transparent 60%),
     linear-gradient(#1a1420, #0d0a10);
@@ -1073,3 +1073,49 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .bunker-accion .equip-puesto { flex: 0 0 auto; color: #9dffb0; font-weight: 700; letter-spacing: .08em; font-size: clamp(10px, 1.7vh, 13px); }
 .bunker-accion .equip-novale { flex: 0 0 auto; max-width: 9em; text-align: right; font-size: clamp(9.5px, 1.5vh, 11.5px); opacity: .75; }
 .boton-equipables { margin-top: 2px; }
+
+/* ===== Pedidos (js/pedidos.js): lista de tickets y formulario de nuevo pedido ===== */
+.boton-pedidos { position: absolute; top: 146px; right: 14px; z-index: 5; }
+.boton-tutorial, .boton-pedidos { min-width: 150px; }
+@media (max-width: 760px), (max-height: 460px) { .boton-pedidos { top: 104px; right: 6px; font-size: 12px; padding: 7px 14px; } }
+#panel-pedidos { justify-content: safe center; gap: 10px; overflow-y: auto; }
+#panel-pedidos > * { flex-shrink: 0; }
+.pedidos-caja { width: min(860px, 94vw); display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.pedidos-caja[hidden] { display: none; }
+.pedidos-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.pedidos-filtros select, .pedidos-formulario select, .pedidos-formulario input, .pedidos-formulario textarea {
+  font: inherit; font-size: 14px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 7px 8px; user-select: text; }
+.pedidos-formulario label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--arena); }
+.pedidos-formulario textarea { resize: vertical; }
+.pedidos-formulario h3 { margin: 0; letter-spacing: .12em; color: var(--luz); }
+.pedidos-aviso { margin: 0; min-height: 1.2em; font-size: 13px; color: #ffb36a; text-align: center; }
+.pedidos-lista { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.pedido { border: 1px solid rgba(201,169,110,.4); background: rgba(20,16,24,.85); }
+.pedido.cerrado { opacity: .7; }
+.pedido-cab { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%; padding: 8px 10px; font: inherit; color: var(--texto); background: none; border: 0; cursor: pointer; text-align: left; }
+.pedido-fila { display: flex; align-items: center; gap: 10px; }
+.pedido-cab:hover, .pedido-cab:focus-visible { background: rgba(201,169,110,.12); outline: none; }
+.pedido-num { color: var(--arena); font-weight: 700; flex: none; }
+.pedido-tit { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.pedido-estado { flex: none; font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border: 1px solid; }
+.pedido-estado.e-abierto { color: #8fe07a; border-color: #8fe07a; }
+.pedido-estado.e-en-curso { color: #ffd27a; border-color: #ffd27a; }
+.pedido-estado.e-listo { color: #7fd0ff; border-color: #7fd0ff; }
+.pedido-estado.e-cerrado { color: #b39cff; border-color: #b39cff; }
+.pedido-etiqueta.seccion { font-weight: 700; }   /* el color lo pone js/pedidos.js según la sección */
+.pedido-etiqueta.prio-alta { color: #ff8a7a; border-color: #ff8a7a; }
+.pedido-etiqueta.prio-media { color: #ffd27a; border-color: #ffd27a; }
+.pedido-etiqueta.prio-baja { color: #9dffb0; border-color: #9dffb0; }
+.pedido-fecha { font-size: 11px; opacity: .6; align-self: center; margin-left: auto; }
+.pedidos-aviso.bien { color: #9dffb0; font-weight: 700; }
+.pedidos-aviso.suave { color: var(--texto); opacity: .6; }
+.pedido-etiquetas { display: flex; flex-wrap: wrap; gap: 4px; }
+.pedido-etiqueta { font-size: 11px; padding: 1px 7px; border: 1px solid; border-radius: 10px; }
+.pedido-detalle { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(201,169,110,.25); }
+.pedido-cuerpo { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; user-select: text; }
+/* Barra de acciones de un pedido: estado a la izquierda, BORRAR a la derecha, todo del mismo alto y centrado */
+.pedido-acciones { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px; padding-top: 10px; border-top: 1px dashed rgba(201,169,110,.25); }
+.pedido-acciones:empty { display: none; }
+.pedido-estado-fila { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--arena); }
+.pedido-estado-fila select { box-sizing: border-box; height: 36px; min-width: 9em; font: inherit; font-size: 13px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 0 8px; cursor: pointer; }
+.pedido-acciones .pedido-borrar { box-sizing: border-box; height: 36px; margin-left: auto; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; }
