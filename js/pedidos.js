@@ -176,6 +176,12 @@ const PedidosUI = (() => {
       (x.notas ||= []).push({ de: 'pedido', tipo, texto, fecha: new Date().toISOString() }); guardarLocal(d); Object.assign(p, x);
     }
   }
+  // Después de responder, el pedido no tiene que esfumarse: si ya no encaja en el filtro (por ejemplo, se cerró estando en ABIERTOS), la lista pasa a TODOS
+  function mantenerVisible(p) {
+    if (estado === 'todos' || (estado === 'abiertos') === esAbierto(p)) return;
+    estado = 'todos'; document.querySelectorAll('#pedidos-estados button').forEach(x => x.classList.toggle('elegida', x.dataset.estado === 'todos'));
+  }
+  const gracias = () => { $('pedidos-estado').textContent = t('pedidos.gracias'); $('pedidos-estado').classList.add('bien'); };
   function armarConversacion(det, p, cab, etiquetas) {
     const mio = esMio(p), jefe = conServidor() && dueno;
     // Las notas: una conversación debajo del texto
@@ -210,11 +216,11 @@ const PedidosUI = (() => {
       const texto = campo.value.trim();
       if (accionPendiente.obligatorio && !texto) { aviso.textContent = t('pedidos.faltaTexto'); return; }
       enviar.disabled = true;
-      try { await responder(p, accionPendiente.accion, texto); abiertos.add(p.numero); pintar(); }
+      try { await responder(p, accionPendiente.accion, texto); abiertos.add(p.numero); mantenerVisible(p); pintar(); gracias(); }
       catch { aviso.textContent = t('pedidos.errorResponder'); enviar.disabled = false; }
     });
     const boton = (clase, rotulo, alTocar) => { const b = hijo(izq, 'button', 'boton mini ' + clase, rotulo); b.type = 'button'; b.addEventListener('click', alTocar); return b; };
-    const sin = async (accion, texto) => { try { await responder(p, accion, texto); abiertos.add(p.numero); pintar(); } catch { aviso.textContent = t('pedidos.errorResponder'); redactar.hidden = false; } };
+    const sin = async (accion, texto) => { try { await responder(p, accion, texto); abiertos.add(p.numero); mantenerVisible(p); pintar(); gracias(); } catch { aviso.textContent = t('pedidos.errorResponder'); redactar.hidden = false; } };
     if (jefe || (!conServidor() && esLocal(p))) {   // el dueño (y, sin servidor, quien lo creó en este navegador): cambia el estado
       const f = hijo(izq, 'label', 'pedido-estado-fila'); hijo(f, 'span', '', t('pedidos.cambiarEstado'));
       const sel = hijo(f, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
