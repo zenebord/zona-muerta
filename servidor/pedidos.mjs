@@ -2,6 +2,7 @@
  *   node servidor/pedidos.mjs                      lista todos
  *   node servidor/pedidos.mjs estado 3 cerrado     abierto | en curso | listo | cerrado
  *   node servidor/pedidos.mjs ver 3                el texto completo de uno
+ *   node servidor/pedidos.mjs borrar 3             lo borra para siempre (el número no se vuelve a usar)
  * Lee y escribe servidor/datos/pedidos.json (el mismo archivo que usa el servidor: los cambios se ven al instante). */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,4 +23,10 @@ if (orden === 'lista') {
   if (!p || !ESTADOS.includes(estado)) { console.error(`Uso: estado <número> <${ESTADOS.join('|')}>`); process.exit(1); }
   p.estado = estado; fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
   console.log(`#${p.numero} → ${estado}`);
-} else { console.error('Órdenes: lista | ver <n> | estado <n> <estado>'); process.exit(1); }
+} else if (orden === 'borrar') {
+  const i = d.pedidos.findIndex(x => x.numero === Number(a));
+  if (i < 0) { console.error('No existe ese pedido.'); process.exit(1); }
+  const [p] = d.pedidos.splice(i, 1);   // d.siguiente no cambia: los números no se reutilizan
+  fs.writeFileSync(ARCHIVO + '.tmp', JSON.stringify(d, null, 2)); fs.renameSync(ARCHIVO + '.tmp', ARCHIVO);
+  console.log(`#${p.numero} borrado: ${p.titulo}`);
+} else { console.error('Órdenes: lista | ver <n> | estado <n> <estado> | borrar <n>'); process.exit(1); }
