@@ -1089,15 +1089,15 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedidos-formulario textarea { resize: vertical; }
 .pedidos-formulario h3 { margin: 0; letter-spacing: .12em; color: var(--luz); }
 .pedidos-aviso { margin: 0; min-height: 1.2em; font-size: 13px; color: #ffb36a; text-align: center; }
-.pedidos-lista { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.pedidos-lista { display: flex; flex-direction: column; gap: 12px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
 .pedido { border: 1px solid rgba(201,169,110,.4); background: rgba(20,16,24,.85); }
 .pedido.cerrado { opacity: .7; }
-.pedido-cab { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%; padding: 8px 10px; font: inherit; color: var(--texto); background: none; border: 0; cursor: pointer; text-align: left; }
-.pedido-fila { display: flex; align-items: center; gap: 10px; }
+.pedido-cab { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; padding: 14px 16px; font: inherit; color: var(--texto); background: none; border: 0; cursor: pointer; text-align: left; }
+.pedido-fila { display: flex; align-items: center; gap: 14px; }
 .pedido-cab:hover, .pedido-cab:focus-visible { background: rgba(201,169,110,.12); outline: none; }
 .pedido-num { color: var(--arena); font-weight: 700; flex: none; }
 .pedido-tit { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
-.pedido-estado { flex: none; font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border: 1px solid; }
+.pedido-estado { flex: none; font-size: 11px; letter-spacing: .1em; padding: 4px 10px; border: 1px solid; }
 .pedido-estado.e-abierto { color: #8fe07a; border-color: #8fe07a; }
 .pedido-estado.e-en-curso { color: #ffd27a; border-color: #ffd27a; }
 .pedido-estado.e-listo { color: #7fd0ff; border-color: #7fd0ff; }
@@ -1110,20 +1110,20 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-fecha { font-size: 11px; opacity: .6; align-self: center; margin-left: auto; }
 .pedidos-aviso.bien { color: #9dffb0; font-weight: 700; }
 .pedidos-aviso.suave { color: var(--texto); opacity: .6; }
-.pedido-etiquetas { display: flex; flex-wrap: wrap; gap: 4px; }
-.pedido-etiqueta { font-size: 11px; padding: 1px 7px; border: 1px solid; border-radius: 10px; }
-.pedido-detalle { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(201,169,110,.25); }
-.pedido-cuerpo { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; user-select: text; }
+.pedido-etiquetas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pedido-etiqueta { font-size: 11px; padding: 3px 10px; border: 1px solid; border-radius: 12px; }
+.pedido-detalle { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(201,169,110,.25); }
+.pedido-cuerpo { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.4; user-select: text; }
 /* Barra de acciones de un pedido: estado a la izquierda, BORRAR a la derecha, todo del mismo alto y centrado */
-.pedido-acciones { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px; padding-top: 10px; border-top: 1px dashed rgba(201,169,110,.25); }
+.pedido-acciones { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 6px; padding-top: 14px; border-top: 1px dashed rgba(201,169,110,.25); }
 .pedido-acciones:empty { display: none; }
 .pedido-estado-fila { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--arena); }
 .pedido-estado-fila select { box-sizing: border-box; height: 36px; min-width: 9em; font: inherit; font-size: 13px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 0 8px; cursor: pointer; }
 .pedido-acciones .pedido-borrar { box-sizing: border-box; height: 36px; margin-left: auto; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; }
 
 /* Conversación de un pedido: notas, botones de respuesta y el cuadro para escribir */
-.pedido-notas { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
-.pedido-nota { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; font-size: 13px; line-height: 1.35; border-left: 3px solid rgba(201,169,110,.5); background: rgba(255,255,255,.04); overflow-wrap: anywhere; }
+.pedido-notas { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.pedido-nota { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; font-size: 13px; line-height: 1.35; border-left: 3px solid rgba(201,169,110,.5); background: rgba(255,255,255,.04); overflow-wrap: anywhere; }
 .pedido-nota b { font-size: 11px; letter-spacing: .06em; color: var(--arena); }
 .pedido-nota.desarrollo { border-left-color: #7fd0ff; }
 .pedido-nota.desarrollo b { color: #7fd0ff; }
@@ -1136,7 +1136,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-acciones-izq .boton.mal { border-color: #ff8a7a; color: #ffc8bf; }
 .pedido-acciones-izq .boton.mal:hover { background: #ff8a7a; color: #2a0f0b; }
 .pedido-etiqueta.tu-turno { color: #ffa94d; border-color: #ffa94d; background: rgba(255,169,77,.15); font-weight: 700; }
-.pedido-redactar { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.pedido-redactar { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 .pedido-redactar[hidden] { display: none; }
 .pedido-redactar textarea { font: inherit; font-size: 14px; color: var(--texto); background: rgba(0,0,0,.35); border: 1px solid rgba(201,169,110,.5); padding: 8px; resize: vertical; user-select: text; }
 .pedido-redactar-botones { display: flex; gap: 8px; justify-content: flex-end; }
@@ -1155,7 +1155,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .cara { display: inline-block; flex: none; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; vertical-align: middle; }
 .cara svg { display: block; width: 100%; height: 100%; }
 .cara.grande { width: 64px; height: 64px; }
-.pedido-etiqueta.quien { display: inline-flex; align-items: center; gap: 5px; padding-left: 2px; }
+.pedido-etiqueta.quien { display: inline-flex; align-items: center; gap: 7px; padding: 2px 12px 2px 3px; }
 .pedido-nota b { display: flex; align-items: center; gap: 6px; }
 .pedido-nota b .cara { width: 24px; height: 24px; }
 .pedidos-quien-campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--arena); }
