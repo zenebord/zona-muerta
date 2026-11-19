@@ -113,10 +113,12 @@ const PedidosUI = (() => {
     for (const p of visibles) {
       const caja = hijo(cont, 'div', 'pedido' + (esAbierto(p) ? '' : ' cerrado'));
       const cab = hijo(caja, 'button', 'pedido-cab'); cab.type = 'button'; cab.setAttribute('aria-expanded', 'false');
-      hijo(cab, 'span', 'pedido-num', '#' + p.numero);
-      hijo(cab, 'span', 'pedido-tit', p.titulo);
-      hijo(cab, 'span', 'pedido-estado e-' + String(p.estado).replace(' ', '-'), t('pedidos.e.' + p.estado));
-      const etiquetas = hijo(caja, 'div', 'pedido-etiquetas');
+      // Todo el encabezado del pedido (título, estado, etiquetas y fecha) es un solo botón: se toca en cualquier parte
+      const fila1 = hijo(cab, 'span', 'pedido-fila');
+      hijo(fila1, 'span', 'pedido-num', '#' + p.numero);
+      hijo(fila1, 'span', 'pedido-tit', p.titulo);
+      hijo(fila1, 'span', 'pedido-estado e-' + String(p.estado).replace(' ', '-'), t('pedidos.e.' + p.estado));
+      const etiquetas = hijo(cab, 'span', 'pedido-etiquetas');
       hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion);
       hijo(etiquetas, 'span', 'pedido-etiqueta prio-' + p.prioridad, t('pedidos.p.' + p.prioridad));
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
