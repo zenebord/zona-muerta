@@ -171,7 +171,7 @@ async function preguntarAClaude(cuerpo) {
 const ARCHIVO_PEDIDOS = path.join(DIR_DATOS, 'pedidos.json');
 const SECCIONES = ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'];
 const PRIORIDADES = ['alta', 'media', 'baja'];
-const ESTADOS_PEDIDO = ['abierto', 'en curso', 'listo', 'cerrado'];   // «cerrado»: ya está en el juego
+const ESTADOS_PEDIDO = ['abierto', 'en curso', 'listo', 'esperando', 'cerrado'];   // «esperando»: hecho y publicado, falta que quien lo pidió confirme; «cerrado»: confirmado
 const TOPE_PEDIDOS_NUEVOS_DIA = Number(process.env.TOPE_PEDIDOS_NUEVOS_DIA || 20), TOPE_PEDIDOS_TOTAL = 1000;
 const nuevosHoy = new Map();   // persona → { dia, n }
 function leerPedidos() {

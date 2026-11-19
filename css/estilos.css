@@ -1101,6 +1101,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-estado.e-abierto { color: #8fe07a; border-color: #8fe07a; }
 .pedido-estado.e-en-curso { color: #ffd27a; border-color: #ffd27a; }
 .pedido-estado.e-listo { color: #7fd0ff; border-color: #7fd0ff; }
+.pedido-estado.e-esperando { color: #ffa94d; border-color: #ffa94d; }
 .pedido-estado.e-cerrado { color: #b39cff; border-color: #b39cff; }
 .pedido-etiqueta.seccion { font-weight: 700; }   /* el color lo pone js/pedidos.js según la sección */
 .pedido-etiqueta.prio-alta { color: #ff8a7a; border-color: #ff8a7a; }

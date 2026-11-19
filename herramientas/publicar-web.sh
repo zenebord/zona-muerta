@@ -12,6 +12,8 @@ VERSION=$(date +%Y%m%d-%H%M)-$COMMIT
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 mkdir "$T/fuente"; git archive HEAD | tar -x -C "$T/fuente"
 COMMIT=$COMMIT VERSION=$VERSION python3 -I "$T/fuente/herramientas/armar-web.py" "$T/web" "$URL" >&2
+# Los pedidos (tickets) viajan con el juego, sin las claves de borrado: la web no tiene servidor y los lee de ahí
+python3 -I herramientas/exportar-pedidos.py "$T/web/pedidos.json" >&2
 git push -q origin HEAD:main
 cd "$T/web"
 git init -q -b gh-pages

@@ -927,12 +927,12 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
   ficha del arma la desplaza y no cambia de arma.
 - **Pedidos** (`js/pedidos.js`, `servidor/pedidos.mjs`): un gestor de tickets sencillo dentro del juego (botón PEDIDOS
   del menú, debajo de TUTORIAL). La lista muestra el número, el título, el estado (abierto, en curso, listo o cerrado), la
-  sección del juego y la prioridad de cada pedido, con su texto al tocarlo, y se filtra por estado y por sección; se actualiza sola cada 20 segundos (no hay botón de actualizar). NUEVO
+  sección del juego y la prioridad de cada pedido, con su texto al tocarlo, y se filtra por estado y por sección; se actualiza sola cada 20 segundos (no hay botón de actualizar). Estados: abierto, en curso, listo (hecho y publicado), **esperando confirmación** (se le pidió a quien lo pidió que lo pruebe) y cerrado (confirmado). NUEVO
   PEDIDO es un formulario (sección, prioridad, título y qué se pide) y el botón **CREAR** lo guarda, sin salir del juego.
   **Dónde se guarda:** si el juego corre en el servidor de construcción, en su base de datos sencilla,
   `servidor/datos/pedidos.json` (un archivo JSON que se puede abrir y editar a mano; tope de 20 pedidos nuevos por
   persona y por día, 1000 en total, y no se guarda ningún dato de quien lo pide); si no (la web publicada o el
-  artefacto), en el propio navegador y sólo los ve quien los creó en ese dispositivo. Para administrarlos:
+  artefacto), los pedidos de la lista son una **copia de sólo lectura que viaja con el juego** (`pedidos.json`, que `herramientas/publicar-web.sh` genera con `herramientas/exportar-pedidos.py`, sin las claves de borrado; se actualiza en cada publicación) y los que crea cada persona se guardan en su navegador (se numeran «L1», «L2»…) y sólo los ve ella. Para administrarlos:
   `node servidor/pedidos.mjs` (lista), `… ver 3`, `… estado 3 cerrado` y `… borrar 3` (los números no se reutilizan); **desde la pantalla**, el dueño cambia el estado de cualquier pedido con un selector (abierto, en curso, listo o cerrado) y cada pedido desplegado tiene BORRAR (con confirmación de dos toques) para quien lo creó (el servidor le entrega una clave al crearlo y la guarda su navegador) y para el dueño, que es quien entra desde la Mac del servidor, no por el túnel; los cambios se ven al instante. Todo lo
   guardado se muestra como texto, nunca como HTML.
 - **Tutorial** (`js/tutorial.js`, pedido de Enzo): un cuadrito TUTORIAL arriba a la derecha del menú, debajo del

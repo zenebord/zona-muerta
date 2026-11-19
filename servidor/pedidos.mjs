@@ -1,6 +1,6 @@
 /* ===== Administrar los pedidos (tickets) desde la terminal =====
  *   node servidor/pedidos.mjs                      lista todos
- *   node servidor/pedidos.mjs estado 3 cerrado     abierto | en curso | listo | cerrado
+ *   node servidor/pedidos.mjs estado 3 cerrado     abierto | en curso | listo | esperando | cerrado
  *   node servidor/pedidos.mjs ver 3                el texto completo de uno
  *   node servidor/pedidos.mjs borrar 3             lo borra para siempre (el número no se vuelve a usar)
  * Lee y escribe servidor/datos/pedidos.json (el mismo archivo que usa el servidor: los cambios se ven al instante). */
@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const ARCHIVO = path.join(path.dirname(fileURLToPath(import.meta.url)), 'datos', 'pedidos.json');
-const ESTADOS = ['abierto', 'en curso', 'listo', 'cerrado'];
+const ESTADOS = ['abierto', 'en curso', 'listo', 'esperando', 'cerrado'];   // esperando = hecho, falta la confirmación de quien lo pidió
 const leer = () => { try { return JSON.parse(fs.readFileSync(ARCHIVO, 'utf8')); } catch { return { siguiente: 1, pedidos: [] }; } };
 const [, , orden = 'lista', a, ...resto] = process.argv, d = leer();
 if (orden === 'lista') {
