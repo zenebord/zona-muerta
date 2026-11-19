@@ -25,6 +25,7 @@ Object.assign(TEXTOS.es, {
   'pedidos.titulo.campo': 'Título corto', 'pedidos.titulo.ejemplo': 'Ej.: Que el comerciante venda granadas', 'pedidos.texto': 'Qué quieres que cambie o qué falla',
   'pedidos.crear': 'CREAR', 'pedidos.cancelar': 'CANCELAR', 'pedidos.faltaTitulo': 'Escribe un título corto.', 'pedidos.creado': v => `¡Listo! Tu pedido es el #${v.n}.`,
   'pedidos.errorCrear': 'No se pudo crear el pedido. Prueba de nuevo.', 'pedidos.tope': 'Hiciste muchos pedidos hoy. Vuelve mañana.',
+  'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'No se pudo cambiar el estado.',
   'pedidos.borrar': 'BORRAR', 'pedidos.seguro': '¿SEGURO? TOCA OTRA VEZ', 'pedidos.borrado': v => `Pedido #${v.n} borrado.`, 'pedidos.errorBorrar': 'No se pudo borrar el pedido.',
 });
 Object.assign(TEXTOS.pt, {
@@ -39,6 +40,7 @@ Object.assign(TEXTOS.pt, {
   'pedidos.titulo.campo': 'Título curto', 'pedidos.titulo.ejemplo': 'Ex.: Que o comerciante venda granadas', 'pedidos.texto': 'O que você quer que mude ou o que falha',
   'pedidos.crear': 'CRIAR', 'pedidos.cancelar': 'CANCELAR', 'pedidos.faltaTitulo': 'Escreva um título curto.', 'pedidos.creado': v => `Pronto! Seu pedido é o #${v.n}.`,
   'pedidos.errorCrear': 'Não foi possível criar o pedido. Tente de novo.', 'pedidos.tope': 'Você fez muitos pedidos hoje. Volte amanhã.',
+  'pedidos.cambiarEstado': 'Estado', 'pedidos.errorEstado': 'Não foi possível mudar o estado.',
   'pedidos.borrar': 'APAGAR', 'pedidos.seguro': 'TEM CERTEZA? TOQUE DE NOVO', 'pedidos.borrado': v => `Pedido #${v.n} apagado.`, 'pedidos.errorBorrar': 'Não foi possível apagar o pedido.',
 });
 Object.assign(TEXTOS.en, {
@@ -53,11 +55,13 @@ Object.assign(TEXTOS.en, {
   'pedidos.titulo.campo': 'Short title', 'pedidos.titulo.ejemplo': 'E.g.: Let the merchant sell grenades', 'pedidos.texto': 'What do you want changed, or what is broken',
   'pedidos.crear': 'CREATE', 'pedidos.cancelar': 'CANCEL', 'pedidos.faltaTitulo': 'Write a short title.', 'pedidos.creado': v => `Done! Your request is #${v.n}.`,
   'pedidos.errorCrear': 'Could not create the request. Try again.', 'pedidos.tope': 'You made a lot of requests today. Come back tomorrow.',
+  'pedidos.cambiarEstado': 'Status', 'pedidos.errorEstado': 'Could not change the status.',
   'pedidos.borrar': 'DELETE', 'pedidos.seguro': 'SURE? TAP AGAIN', 'pedidos.borrado': v => `Request #${v.n} deleted.`, 'pedidos.errorBorrar': 'Could not delete the request.',
 });
 
 const PedidosUI = (() => {
   let lista = null, cargando = false, estado = 'abiertos', seccion = '', dueno = false;
+  const abiertos = new Set();   // pedidos con el detalle desplegado: al repintar, siguen desplegados
   const $ = id => document.getElementById(id);
   const conServidor = () => !!window.SERVIDOR_JUEGO;
   const hijo = (padre, tag, clase, s) => { const e = document.createElement(tag); if (clase) e.className = clase; if (s !== undefined) e.textContent = s; padre.appendChild(e); return e; };
@@ -73,6 +77,13 @@ const PedidosUI = (() => {
   async function traer() {
     if (conServidor()) { const r = await fetch('/api/pedidos', { cache: 'no-store' }); if (!r.ok) throw new Error('http ' + r.status); const d = await r.json(); dueno = !!d.dueno; return d.pedidos; }
     dueno = false; return leerLocal().pedidos.slice().reverse();
+  }
+  async function cambiarEstado(p, estadoNuevo) {
+    try {
+      if (conServidor()) { const r = await fetch('/api/pedidos/' + p.numero, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: estadoNuevo }) }); if (!r.ok) throw new Error('http ' + r.status); }
+      else { const d = leerLocal(), x = d.pedidos.find(y => y.numero === p.numero); if (x) { x.estado = estadoNuevo; guardarLocal(d); } }
+      p.estado = estadoNuevo; $('pedidos-estado').textContent = ''; abiertos.add(p.numero); pintar();
+    } catch { $('pedidos-estado').textContent = t('pedidos.errorEstado'); $('pedidos-estado').classList.remove('bien'); }
   }
   async function borrar(p) {
     try {
@@ -109,8 +120,13 @@ const PedidosUI = (() => {
       hijo(etiquetas, 'span', 'pedido-etiqueta seccion', p.seccion);
       hijo(etiquetas, 'span', 'pedido-etiqueta prio-' + p.prioridad, t('pedidos.p.' + p.prioridad));
       hijo(etiquetas, 'span', 'pedido-fecha', new Date(p.fecha).toLocaleDateString(Idioma.actual()));
-      const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = true;
+      const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
+      if (dueno || !conServidor()) {   // el estado lo cambia el dueño (en este navegador, quien lo creó)
+        const fila = hijo(det, 'label', 'pedido-estado-fila'); hijo(fila, 'span', '', t('pedidos.cambiarEstado'));
+        const sel = hijo(fila, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
+        sel.addEventListener('change', () => cambiarEstado(p, sel.value));
+      }
       if (puedeBorrar(p)) {   // BORRAR: dos toques seguidos (el primero pide confirmar)
         const b = hijo(det, 'button', 'boton mini peligro pedido-borrar', t('pedidos.borrar')); b.type = 'button';
         b.addEventListener('click', () => {
@@ -119,7 +135,7 @@ const PedidosUI = (() => {
           setTimeout(() => { if (b.isConnected && !b.disabled) { b.dataset.seguro = ''; b.textContent = t('pedidos.borrar'); } }, 3000);
         });
       }
-      cab.addEventListener('click', () => { det.hidden = !det.hidden; cab.setAttribute('aria-expanded', String(!det.hidden)); });
+      cab.addEventListener('click', () => { det.hidden = !det.hidden; if (det.hidden) abiertos.delete(p.numero); else abiertos.add(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden)); });
     }
   }
 

@@ -171,6 +171,7 @@ async function preguntarAClaude(cuerpo) {
 const ARCHIVO_PEDIDOS = path.join(DIR_DATOS, 'pedidos.json');
 const SECCIONES = ['Pelea infinita', 'Camino a casa', 'Misiones', 'Defensa zombie', 'Defensa zombie ultra', 'Último bastión', 'Entrenamiento', 'Campo de pruebas', 'Tutorial', 'VR', 'Menú y configuración', 'Armas', 'Sonido y música', 'Gráficos', 'Zombies', 'Controles y celular', 'Otra cosa'];
 const PRIORIDADES = ['alta', 'media', 'baja'];
+const ESTADOS_PEDIDO = ['abierto', 'en curso', 'listo', 'cerrado'];   // «cerrado»: ya está en el juego
 const TOPE_PEDIDOS_NUEVOS_DIA = Number(process.env.TOPE_PEDIDOS_NUEVOS_DIA || 20), TOPE_PEDIDOS_TOTAL = 1000;
 const nuevosHoy = new Map();   // persona → { dia, n }
 function leerPedidos() {
@@ -195,6 +196,14 @@ function crearPedido(cuerpo, quien) {
   return pedido;
 }
 const sinClave = ({ clave, ...resto }) => resto;   // la clave de borrado nunca sale en las listas
+// Cambia el estado de un pedido: sólo el dueño (desde la Mac del servidor)
+function cambiarEstadoPedido(numero, estado, esDueno) {
+  if (!esDueno) throw Object.assign(new Error('no permitido'), { estado: 403 });
+  if (!ESTADOS_PEDIDO.includes(estado)) throw Object.assign(new Error('estado inválido'), { estado: 400 });
+  const d = leerPedidos(), p = d.pedidos.find(x => x.numero === numero);
+  if (!p) throw Object.assign(new Error('no existe'), { estado: 404 });
+  p.estado = estado; guardarPedidos(d); registrar('pedido', '#' + numero, '→', estado);
+}
 // Borra un pedido: lo puede borrar quien lo creó (con su clave) o el dueño, desde la Mac donde corre el servidor
 function borrarPedido(numero, clave, esDueno) {
   const d = leerPedidos(), i = d.pedidos.findIndex(p => p.numero === numero);
@@ -242,6 +251,10 @@ const servidor = http.createServer(async (req, res) => {
     if (url.pathname === '/api/pedidos') {
       if (req.method === 'GET') return responder(res, 200, { dueno: esDueno(req), pedidos: leerPedidos().pedidos.slice().reverse().map(sinClave) });
       if (req.method === 'POST') return responder(res, 200, { ok: true, pedido: crearPedido(await leerCuerpo(req, 20_000), persona(req)) });   // con su clave, una sola vez
+    }
+    if ((m = /^\/api\/pedidos\/(\d+)$/.exec(url.pathname)) && req.method === 'PATCH') {
+      cambiarEstadoPedido(Number(m[1]), (await leerCuerpo(req, 2_000)).estado, esDueno(req));
+      return responder(res, 200, { ok: true });
     }
     if ((m = /^\/api\/pedidos\/(\d+)$/.exec(url.pathname)) && req.method === 'DELETE') {
       borrarPedido(Number(m[1]), (await leerCuerpo(req, 2_000)).clave, esDueno(req));
