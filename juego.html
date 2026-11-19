@@ -1108,6 +1108,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .pedido-estado.e-abierto { color: #8fe07a; border-color: #8fe07a; }
 .pedido-estado.e-en-curso { color: #ffd27a; border-color: #ffd27a; }
 .pedido-estado.e-listo { color: #7fd0ff; border-color: #7fd0ff; }
+.pedido-estado.e-esperando { color: #ffa94d; border-color: #ffa94d; }
 .pedido-estado.e-cerrado { color: #b39cff; border-color: #b39cff; }
 .pedido-etiqueta.seccion { font-weight: 700; }   /* el color lo pone js/pedidos.js según la sección */
 .pedido-etiqueta.prio-alta { color: #ff8a7a; border-color: #ff8a7a; }
@@ -1661,7 +1662,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261118-2323-0908b9f';
+const VERSION_JUEGO = '20261118-2327-27daf7a';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -20320,7 +20321,8 @@ const PEDIDOS = {
   colores: { 'Pelea infinita': '#5aa9ff', 'Camino a casa': '#5fd38d', 'Misiones': '#b58cff', 'Defensa zombie': '#ff7a6b', 'Defensa zombie ultra': '#ff9a4d', 'Último bastión': '#a3c45a',
     'Entrenamiento': '#6fd3d9', 'Campo de pruebas': '#e0b04a', 'Tutorial': '#ffd23a', 'VR': '#ff7ac8', 'Menú y configuración': '#a9a9d9', 'Armas': '#c98b5a',
     'Sonido y música': '#4dc3b0', 'Gráficos': '#f08aa5', 'Zombies': '#8fcf4a', 'Controles y celular': '#7a8cff', 'Otra cosa': '#9a9a9a' },
-  estados: ['abierto', 'en curso', 'listo', 'cerrado'],   // «cerrado» = ya está en el juego; los otros tres son «abiertos»
+  estados: ['abierto', 'en curso', 'listo', 'esperando', 'cerrado'],   // «esperando» = hecho, falta que quien lo pidió confirme; «cerrado» = confirmado; los otros son «abiertos»
+  publicados: 'pedidos.json',   // copia de los pedidos que se publica con el juego (sin servidor, sólo se leen)
   clave: 'zonaMuerta.pedidos',
   claves: 'zonaMuerta.pedidosClaves',   // número → clave con la que su creador lo puede borrar del servidor
 };
@@ -20329,8 +20331,8 @@ Object.assign(TEXTOS.es, {
   'pedidos.titulo': 'PEDIDOS', 'pedidos.ayuda': 'Pide mejoras o avisa de errores del juego. Cada pedido es un ticket: tiene su número, su estado y su prioridad.',
   'pedidos.abiertos': 'ABIERTOS', 'pedidos.cerrados': 'CERRADOS', 'pedidos.todos': 'TODOS', 'pedidos.todasSecciones': 'Todas las secciones',
   'pedidos.nuevo': 'NUEVO PEDIDO', 'pedidos.actualizar': 'ACTUALIZAR', 'pedidos.cargando': 'Cargando los pedidos…', 'pedidos.vacio': 'No hay pedidos con ese filtro.',
-  'pedidos.error': 'No se pudieron cargar los pedidos. Prueba de nuevo.', 'pedidos.local': 'Los pedidos se guardan en este dispositivo.',
-  'pedidos.e.abierto': 'Abierto', 'pedidos.e.en curso': 'En curso', 'pedidos.e.listo': 'Listo', 'pedidos.e.cerrado': 'Cerrado',
+  'pedidos.error': 'No se pudieron cargar los pedidos. Prueba de nuevo.', 'pedidos.local': 'Los pedidos que crees aquí se guardan en este dispositivo.',
+  'pedidos.e.abierto': 'Abierto', 'pedidos.e.en curso': 'En curso', 'pedidos.e.listo': 'Listo', 'pedidos.e.esperando': 'Esperando confirmación', 'pedidos.e.cerrado': 'Cerrado',
   'pedidos.p.alta': 'Prioridad alta', 'pedidos.p.media': 'Prioridad media', 'pedidos.p.baja': 'Prioridad baja', 'pedidos.sinTexto': '(sin descripción)',
   'pedidos.formTitulo': 'NUEVO PEDIDO', 'pedidos.seccion': 'Sección del juego', 'pedidos.prioridad': '¿Qué tan importante es?',
   'pedidos.prioAlta': 'Alta: el juego falla o no se puede jugar bien', 'pedidos.prioMedia': 'Media: lo quiero pronto', 'pedidos.prioBaja': 'Baja: sería lindo tenerlo algún día',
@@ -20344,8 +20346,8 @@ Object.assign(TEXTOS.pt, {
   'pedidos.titulo': 'PEDIDOS', 'pedidos.ayuda': 'Peça melhorias ou avise de erros do jogo. Cada pedido é um ticket: tem seu número, seu estado e sua prioridade.',
   'pedidos.abiertos': 'ABERTOS', 'pedidos.cerrados': 'FECHADOS', 'pedidos.todos': 'TODOS', 'pedidos.todasSecciones': 'Todas as seções',
   'pedidos.nuevo': 'NOVO PEDIDO', 'pedidos.actualizar': 'ATUALIZAR', 'pedidos.cargando': 'Carregando os pedidos…', 'pedidos.vacio': 'Não há pedidos com esse filtro.',
-  'pedidos.error': 'Não foi possível carregar os pedidos. Tente de novo.', 'pedidos.local': 'Os pedidos ficam salvos neste dispositivo.',
-  'pedidos.e.abierto': 'Aberto', 'pedidos.e.en curso': 'Em andamento', 'pedidos.e.listo': 'Pronto', 'pedidos.e.cerrado': 'Fechado',
+  'pedidos.error': 'Não foi possível carregar os pedidos. Tente de novo.', 'pedidos.local': 'Os pedidos que você criar aqui ficam salvos neste dispositivo.',
+  'pedidos.e.abierto': 'Aberto', 'pedidos.e.en curso': 'Em andamento', 'pedidos.e.listo': 'Pronto', 'pedidos.e.esperando': 'Aguardando confirmação', 'pedidos.e.cerrado': 'Fechado',
   'pedidos.p.alta': 'Prioridade alta', 'pedidos.p.media': 'Prioridade média', 'pedidos.p.baja': 'Prioridade baixa', 'pedidos.sinTexto': '(sem descrição)',
   'pedidos.formTitulo': 'NOVO PEDIDO', 'pedidos.seccion': 'Seção do jogo', 'pedidos.prioridad': 'Qual a importância?',
   'pedidos.prioAlta': 'Alta: o jogo falha ou não dá para jogar bem', 'pedidos.prioMedia': 'Média: quero logo', 'pedidos.prioBaja': 'Baixa: seria legal ter algum dia',
@@ -20359,8 +20361,8 @@ Object.assign(TEXTOS.en, {
   'pedidos.titulo': 'REQUESTS', 'pedidos.ayuda': 'Ask for improvements or report bugs. Each request is a ticket: it has its number, status and priority.',
   'pedidos.abiertos': 'OPEN', 'pedidos.cerrados': 'CLOSED', 'pedidos.todos': 'ALL', 'pedidos.todasSecciones': 'All sections',
   'pedidos.nuevo': 'NEW REQUEST', 'pedidos.actualizar': 'REFRESH', 'pedidos.cargando': 'Loading requests…', 'pedidos.vacio': 'No requests match that filter.',
-  'pedidos.error': 'Could not load the requests. Try again.', 'pedidos.local': 'Requests are saved on this device.',
-  'pedidos.e.abierto': 'Open', 'pedidos.e.en curso': 'In progress', 'pedidos.e.listo': 'Done', 'pedidos.e.cerrado': 'Closed',
+  'pedidos.error': 'Could not load the requests. Try again.', 'pedidos.local': 'Requests you create here are saved on this device.',
+  'pedidos.e.abierto': 'Open', 'pedidos.e.en curso': 'In progress', 'pedidos.e.listo': 'Done', 'pedidos.e.esperando': 'Awaiting confirmation', 'pedidos.e.cerrado': 'Closed',
   'pedidos.p.alta': 'High priority', 'pedidos.p.media': 'Medium priority', 'pedidos.p.baja': 'Low priority', 'pedidos.sinTexto': '(no description)',
   'pedidos.formTitulo': 'NEW REQUEST', 'pedidos.seccion': 'Game section', 'pedidos.prioridad': 'How important is it?',
   'pedidos.prioAlta': 'High: the game breaks or can\'t be played well', 'pedidos.prioMedia': 'Medium: I want it soon', 'pedidos.prioBaja': 'Low: it would be nice someday',
@@ -20385,15 +20387,20 @@ const PedidosUI = (() => {
   // Las claves de borrado de los pedidos que se crearon desde este navegador (sólo con servidor)
   const leerClaves = () => { try { return JSON.parse(localStorage.getItem(PEDIDOS.claves) || '{}'); } catch { return {}; } };
   const guardarClave = (numero, clave) => { try { const c = leerClaves(); c[numero] = clave; localStorage.setItem(PEDIDOS.claves, JSON.stringify(c)); } catch { /* sin almacenamiento */ } };
-  const puedeBorrar = p => !conServidor() || dueno || !!leerClaves()[p.numero];
+  const esLocal = p => typeof p.numero === 'string';   // creado en este navegador sin servidor («L1»…); los publicados son de sólo lectura
+  const puedeBorrar = p => conServidor() ? (dueno || !!leerClaves()[p.numero]) : esLocal(p);
   async function traer() {
     if (conServidor()) { const r = await fetch('/api/pedidos', { cache: 'no-store' }); if (!r.ok) throw new Error('http ' + r.status); const d = await r.json(); dueno = !!d.dueno; return d.pedidos; }
-    dueno = false; return leerLocal().pedidos.slice().reverse();
+    // Sin servidor: los publicados con el juego (pedidos.json, si se pudo leer) y los creados en este navegador
+    dueno = false; let publicados = [];
+    try { const r = await fetch(PEDIDOS.publicados, { cache: 'no-store' }); if (r.ok) publicados = (await r.json()).pedidos || []; } catch { /* sin copia publicada: sólo los locales */ }
+    const locales = leerLocal().pedidos;
+    return locales.concat(publicados).sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
   }
   async function cambiarEstado(p, estadoNuevo) {
     try {
       if (conServidor()) { const r = await fetch('/api/pedidos/' + p.numero, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: estadoNuevo }) }); if (!r.ok) throw new Error('http ' + r.status); }
-      else { const d = leerLocal(), x = d.pedidos.find(y => y.numero === p.numero); if (x) { x.estado = estadoNuevo; guardarLocal(d); } }
+      else if (esLocal(p)) { const d = leerLocal(), x = d.pedidos.find(y => y.numero === p.numero); if (x) { x.estado = estadoNuevo; guardarLocal(d); } }
       p.estado = estadoNuevo; $('pedidos-estado').textContent = ''; abiertos.add(p.numero); pintar();
     } catch { $('pedidos-estado').textContent = t('pedidos.errorEstado'); $('pedidos-estado').classList.remove('bien'); }
   }
@@ -20440,7 +20447,7 @@ const PedidosUI = (() => {
       const det = hijo(caja, 'div', 'pedido-detalle'); det.hidden = !abiertos.has(p.numero); cab.setAttribute('aria-expanded', String(!det.hidden));
       hijo(det, 'p', 'pedido-cuerpo', (p.texto || '').trim() || t('pedidos.sinTexto'));
       const acciones = hijo(det, 'div', 'pedido-acciones');   // una sola barra: el estado a la izquierda y BORRAR a la derecha
-      if (dueno || !conServidor()) {   // el estado lo cambia el dueño (en este navegador, quien lo creó)
+      if (conServidor() ? dueno : esLocal(p)) {   // el estado lo cambia el dueño (sin servidor, quien lo creó en este navegador)
         const fila = hijo(acciones, 'label', 'pedido-estado-fila'); hijo(fila, 'span', '', t('pedidos.cambiarEstado'));
         const sel = hijo(fila, 'select'); for (const e of PEDIDOS.estados) sel.add(new Option(t('pedidos.e.' + e), e)); sel.value = p.estado;
         sel.addEventListener('change', () => cambiarEstado(p, sel.value));
@@ -20477,7 +20484,7 @@ const PedidosUI = (() => {
         if (!r.ok) throw new Error('http ' + r.status);
         const creado = (await r.json()).pedido; numero = creado.numero; if (creado.clave) guardarClave(numero, creado.clave);
       } else {
-        const d = leerLocal(); numero = d.siguiente++;
+        const d = leerLocal(); numero = 'L' + d.siguiente++;
         d.pedidos.push({ numero, ...pedido, estado: 'abierto', fecha: new Date().toISOString() });
         if (!guardarLocal(d)) throw new Error('sin almacenamiento');
       }
