@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=58d47df2de">
+  <link rel="stylesheet" href="css/estilos.css?v=3e6111d57d">
 </head>
 <body>
 
@@ -320,7 +320,9 @@
         <div class="bunker-pestanas" role="tablist">
           <button type="button" role="tab" data-bunker="pestana:propias" data-t="bunker.tusArmas">TUS ARMAS</button>
           <button type="button" role="tab" data-bunker="pestana:venta" data-t="bunker.venta">COMPRAR</button>
-          <button type="button" id="bunker-bombardear" class="bunker-bombardear" data-bunker="bombardear"><span data-t="bunker.bombardear">BOMBARDEAR LA SUPERFICIE · GRATIS</span></button>
+          <span id="bunker-m2-ayuda" class="bunker-m2-ayuda" data-t="bunker.m2Ayuda">M2 BROWNING · F dispara · W la gira</span>
+          <button type="button" class="bunker-m2" data-m2="-1" data-t="bunker.m2Izq">◀ DISPARAR</button>
+          <button type="button" class="bunker-m2" data-m2="1" data-t="bunker.m2Der">DISPARAR ▶</button>
           <button type="button" class="boton chico bunker-salir" data-bunker="salir" data-t="bunker.salir">SALIR DEL BÚNKER</button>
         </div>
         <div id="bunker-lista" class="bunker-lista"></div>
@@ -555,7 +557,7 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=f68d2ab7d4"></script>
+  <script src="js/version.js?v=b3f0947ff2"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
@@ -588,16 +590,16 @@
   <script src="js/anatomia.js?v=4cf570a5d0"></script>
   <script src="js/jugador-dibujo.js?v=eb7ab90fff"></script>
   <script src="js/skins.js?v=92c4f293be"></script>
-  <script src="js/zombie.js?v=1bba0c724d"></script>
+  <script src="js/zombie.js?v=f963900c1e"></script>
   <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
   <script src="js/zombie-congelado.js?v=7245dc0443"></script>
-  <script src="js/objetos.js?v=37bee1f455"></script>
-  <script src="js/juego.js?v=817d6f6b16"></script>
+  <script src="js/objetos.js?v=cab34790cf"></script>
+  <script src="js/juego.js?v=fdebd10c25"></script>
   <script src="js/poderes.js?v=93de692929"></script>
   <script src="js/armas-especiales.js?v=6e29fa77c5"></script>
   <script src="js/defensa-ultra.js?v=54c14cb81a"></script>
   <script src="js/equipables.js?v=8b831b5efc"></script>
-  <script src="js/bunker.js?v=e610d32938"></script>
+  <script src="js/bunker.js?v=dafb012762"></script>
   <script src="js/escenario-historia.js?v=3224c7c117"></script>
   <script src="js/zombies-autoctonos.js?v=f81ec35cc6"></script>
   <script src="js/historia.js?v=d758c09db1"></script>
@@ -615,7 +617,7 @@
   <script src="js/bastion-v2-ui.js?v=94fc2356c3"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=a4038893a6"></script>
-  <script src="js/interfaz.js?v=39d26a8a12"></script>
+  <script src="js/interfaz.js?v=4b5837f11d"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>

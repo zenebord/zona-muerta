@@ -1033,12 +1033,13 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
   color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.5); }
 .bunker-pestanas button[role="tab"].elegida { background: #7dffa0; color: #0d1a12; border-color: #7dffa0; }
 .bunker-pestanas .bunker-salir { padding: 3px 14px; font-size: clamp(10px, 1.7vh, 13px); letter-spacing: .12em; min-width: 0; width: auto; }
-/* Bombardear la superficie: gratis, las veces que haga falta mientras se esté abajo, para poder salir sin zombies arriba */
-.bunker-bombardear { margin-left: auto; font: inherit; font-weight: 900; letter-spacing: .1em; font-size: clamp(10px, 1.7vh, 13px); padding: 3px 14px; cursor: pointer;
+/* La M2 de abajo: dos botones (a la izquierda y a la derecha de la boca) que disparan mientras se mantienen apretados */
+.bunker-m2-ayuda { margin-left: auto; align-self: center; font-size: clamp(9px, 1.5vh, 12px); letter-spacing: .1em; color: #ffd27a; font-weight: 700; }
+.bunker-m2 { font: inherit; font-weight: 900; letter-spacing: .1em; font-size: clamp(10px, 1.7vh, 13px); padding: 3px 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   color: #fff1e6; background: linear-gradient(#b3361f, #7c1f10); border: 2px solid #ff9a6b; }
-.bunker-bombardear:hover:not([disabled]), .bunker-bombardear:focus-visible { background: #ff8a4d; color: #240a02; outline: none; }
-.bunker-bombardear[disabled] { cursor: default; opacity: .75; animation: parpadeo .7s steps(2) infinite; }
-.bunker-lista { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; overscroll-behavior: contain; }
+.bunker-m2:hover, .bunker-m2:focus-visible { background: #ff8a4d; color: #240a02; outline: none; }
+.bunker-m2:active, .bunker-m2.mirando { box-shadow: 0 0 0 2px #ffd27a inset; }
+.tactil .bunker-m2-ayuda { display: none; }
 .bunker-carta { flex: 0 0 auto; width: clamp(80px, 9vw, 112px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 4px 5px; cursor: pointer;
   font: inherit; color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.4); }
 .bunker-carta canvas { display: block; width: 100%; height: auto; aspect-ratio: 150 / 64; }

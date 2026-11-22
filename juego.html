@@ -1040,12 +1040,13 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
   color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.5); }
 .bunker-pestanas button[role="tab"].elegida { background: #7dffa0; color: #0d1a12; border-color: #7dffa0; }
 .bunker-pestanas .bunker-salir { padding: 3px 14px; font-size: clamp(10px, 1.7vh, 13px); letter-spacing: .12em; min-width: 0; width: auto; }
-/* Bombardear la superficie: gratis, las veces que haga falta mientras se esté abajo, para poder salir sin zombies arriba */
-.bunker-bombardear { margin-left: auto; font: inherit; font-weight: 900; letter-spacing: .1em; font-size: clamp(10px, 1.7vh, 13px); padding: 3px 14px; cursor: pointer;
+/* La M2 de abajo: dos botones (a la izquierda y a la derecha de la boca) que disparan mientras se mantienen apretados */
+.bunker-m2-ayuda { margin-left: auto; align-self: center; font-size: clamp(9px, 1.5vh, 12px); letter-spacing: .1em; color: #ffd27a; font-weight: 700; }
+.bunker-m2 { font: inherit; font-weight: 900; letter-spacing: .1em; font-size: clamp(10px, 1.7vh, 13px); padding: 3px 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   color: #fff1e6; background: linear-gradient(#b3361f, #7c1f10); border: 2px solid #ff9a6b; }
-.bunker-bombardear:hover:not([disabled]), .bunker-bombardear:focus-visible { background: #ff8a4d; color: #240a02; outline: none; }
-.bunker-bombardear[disabled] { cursor: default; opacity: .75; animation: parpadeo .7s steps(2) infinite; }
-.bunker-lista { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; overscroll-behavior: contain; }
+.bunker-m2:hover, .bunker-m2:focus-visible { background: #ff8a4d; color: #240a02; outline: none; }
+.bunker-m2:active, .bunker-m2.mirando { box-shadow: 0 0 0 2px #ffd27a inset; }
+.tactil .bunker-m2-ayuda { display: none; }
 .bunker-carta { flex: 0 0 auto; width: clamp(80px, 9vw, 112px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 4px 5px; cursor: pointer;
   font: inherit; color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.4); }
 .bunker-carta canvas { display: block; width: 100%; height: auto; aspect-ratio: 150 / 64; }
@@ -1508,7 +1509,9 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
         <div class="bunker-pestanas" role="tablist">
           <button type="button" role="tab" data-bunker="pestana:propias" data-t="bunker.tusArmas">TUS ARMAS</button>
           <button type="button" role="tab" data-bunker="pestana:venta" data-t="bunker.venta">COMPRAR</button>
-          <button type="button" id="bunker-bombardear" class="bunker-bombardear" data-bunker="bombardear"><span data-t="bunker.bombardear">BOMBARDEAR LA SUPERFICIE · GRATIS</span></button>
+          <span id="bunker-m2-ayuda" class="bunker-m2-ayuda" data-t="bunker.m2Ayuda">M2 BROWNING · F dispara · W la gira</span>
+          <button type="button" class="bunker-m2" data-m2="-1" data-t="bunker.m2Izq">◀ DISPARAR</button>
+          <button type="button" class="bunker-m2" data-m2="1" data-t="bunker.m2Der">DISPARAR ▶</button>
           <button type="button" class="boton chico bunker-salir" data-bunker="salir" data-t="bunker.salir">SALIR DEL BÚNKER</button>
         </div>
         <div id="bunker-lista" class="bunker-lista"></div>
@@ -1745,7 +1748,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261122-1510-76fa6d8';
+const VERSION_JUEGO = '20261122-1518-e664fe2';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -13676,8 +13679,8 @@ class Zombie {
         jugador.recibirDano(this.mordida, juego);
         Audio_.zombieGolpea();
       }
-    } else if (juego.bunker && juego.bunker.abierto && distancia < 46 && !this.vyCaida) {
-      // El jugador está abajo, en el búnker: los zombies se juntan en la boca y esperan (sin morder)
+    } else if (juego.bunker && juego.bunker.abierto && distancia < 90 && !this.vyCaida) {
+      // El jugador está abajo, en el búnker: los zombies se juntan en la boca y esperan (sin morder), un poco más allá de la boca de la M2 (64)
       this.estado = 'camina';
       this.fase += dt * 2.5;
     } else {
@@ -15311,7 +15314,7 @@ class Misil {
     this.xDestino = xDestino; this.retraso = retraso;
     this.yPiso = alturaSuelo(xDestino);
     this.inclinacion = (Math.random() - 0.5) * 0.35;           // llega un poco en diagonal
-    this.x = xDestino - Math.sin(this.inclinacion) * 600; this.y = -60 + (juego.bunker && juego.bunker.abierto ? DESPLAZAMIENTO_BUNKER : 0);   // desde el búnker la pantalla empieza más abajo
+    this.x = xDestino - Math.sin(this.inclinacion) * 600; this.y = -60;
     this.velocidad = 14; this.vivo = true; this.silbo = false; this.estela = [];
     this.juego = juego;
   }
@@ -15847,15 +15850,12 @@ class Juego {
   /* ---------- Ataque aéreo (modo torreta) ----------
    * Siete misiles repartidos por la pantalla (ninguno sobre el parapeto); al terminar no queda ningún zombie a la vista.
    * Mientras dura, el tirador se agacha detrás de las bolsas de arena y no recibe daño. */
-  // `gratis`: el bombardeo del búnker (js/bunker.js): sin espera, sin cargas y sin límite mientras se esté adentro
-  pedirAtaqueAereo(gratis = false) {
+  pedirAtaqueAereo() {
     if (!this.aereo || this.terminado || this.jugador.muerto) return;
     const a = this.aereo;
     if (a.activo) return;
-    const dentro = !!(this.bunker && this.bunker.abierto);
-    if (gratis !== dentro) return;   // abajo sólo vale el botón del búnker; arriba, el de siempre
-    if (gratis) { /* no gasta nada */ }
-    else if (this.historia) {   // en la historia, cada radio es un pedido
+    if (this.bunker && this.bunker.abierto) return;   // abajo, en el búnker, se usa la M2 (js/bunker.js)
+    if (this.historia) {   // en la historia, cada radio es un pedido
       if (a.cargas <= 0) { this.aviso(t('hist.aviso.sinRadio'), 1800); return; }
       a.cargas--; this.historia.aereos++;
     } else {
@@ -15868,10 +15868,9 @@ class Juego {
     a.activo = { t: 0, duracion: 3.4 };
     this.jugador.protegido = true;
     Audio_.radioAereo();
-    this.aviso(t(gratis ? 'bunker.bombardeo' : 'aviso.aereo'), 2400);
+    this.aviso(t('aviso.aereo'), 2400);
     const centro = this.jugador.x;
-    const baja = dentro ? DESPLAZAMIENTO_BUNKER : 0;   // con la vista del búnker, la pantalla empieza más abajo
-    this.aviones.push(new Avion(this.camaraX * 0.4 - 120, 70 + baja, 1, 0.45), new Avion(this.camaraX * 0.4 - 220, 104 + baja, 1, 0.62));
+    this.aviones.push(new Avion(this.camaraX * 0.4 - 120, 70, 1, 0.45), new Avion(this.camaraX * 0.4 - 220, 104, 1, 0.62));
     setTimeout(() => Audio_.avionPasa(), 450);
     const n = 7;
     for (let k = 0; k < n; k++) {
@@ -16132,7 +16131,7 @@ class Juego {
     this.aparecerZombies(dt);
     this.aparecerCajas(dt);
 
-    const vistoPorZombies = dentro ? Object.assign(Object.create(j), { muerto: true }) : j;   // el zombie ve «a nadie» arriba de la boca
+    const vistoPorZombies = dentro ? Object.assign(Object.create(j), { muerto: true, x: this.bunker.bocaX }) : j;   // el zombie ve «a nadie» arriba de la boca
     for (const z of this.zombies) z.actualizar(dt, vistoPorZombies, this);
     for (const p of this.proyectiles) p.actualizar(dt, this);
     for (const x of this.explosiones) x.actualizar(dt);
@@ -16187,7 +16186,7 @@ class Juego {
     this.escupitajos = this.escupitajos.filter(e2 => e2.vivo);
     this.charcos = this.charcos.filter(c => c.vivo);
 
-    const objetivo = this.ultra ? j.x - ULTRA.tiradorX : this.torreta || this.entrenamiento ? j.x - ANCHO / 2 : j.x - ANCHO / 2 + j.direccion * 110;   // centrada: se ven los dos lados
+    const objetivo = this.ultra ? j.x - ULTRA.tiradorX : this.torreta || this.entrenamiento || dentro ? j.x - ANCHO / 2 : j.x - ANCHO / 2 + j.direccion * 110;   // centrada: se ven los dos lados
     this.camaraX += (objetivo - this.camaraX) * Math.min(1, dt * 4);
     if (this.historia) this.actualizarHistoria();
     this.sacudida = Math.max(0, this.sacudida - dt * 40);
@@ -16296,12 +16295,17 @@ class Juego {
     for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) luces.push({ x: z.x, y: z.y - 30, dir: 0, tam: 6, color: 'fuego', luz: () => 0.45 });
     LuzFogonazo.piso(ctx, cam, luces);
     if (this.entrenamiento) { this.dibujarDistancias(ctx, cam); for (const b of this.blancos) b.dibujar(ctx, cam); }
-    if (j.montada) j.dibujar(ctx, cam, this.ahora);
+    if (j.montada && !dentro) j.dibujar(ctx, cam, this.ahora);   // abajo, en el búnker, sólo se ve la M2
     const eM2 = j.montada ? j.estadoArma() : null;
-    for (const a of this.ametralladoras.values()) a.dibujar(ctx, cam, j.direccion, a.cercaDe(j), j.montada === a ? eM2.tapa : 0, j.montada === a ? eM2.retroX : 0, j.montada === a ? eM2.corredera : 0);
+    const dibujarM2 = a => a.dibujar(ctx, cam, j.direccion, a.cercaDe(j), j.montada === a ? eM2.tapa : 0, j.montada === a ? eM2.retroX : 0, j.montada === a ? eM2.corredera : 0);
+    for (const a of this.ametralladoras.values()) if (!(dentro && this.bunker.m2 === a)) dibujarM2(a);   // la del búnker va después de la boca
     if (this.ultra) this.dibujarEntidadesUltra(ctx, cam);   // cajas, torretas, zombies y tirador, del carril del fondo al de adelante
     else {
       if (this.bunker) this.dibujarBunkers(ctx, cam);   // la boca de cada búnker y su luz verde (js/bunker.js)
+      if (dentro) {   // la M2 del búnker sube desde la boca (se recorta a lo que queda sobre el piso) y se ve encima de la losa
+        const a = this.bunker.m2, s = suavizar(Math.min(1, (performance.now() - this.bunker.m2Desde) / 800));
+        ctx.save(); ctx.beginPath(); ctx.rect(a.x - cam - 260, a.y - 420, 520, 420); ctx.clip(); ctx.translate(0, (1 - s) * 78); dibujarM2(a); ctx.restore();
+      }
       for (const c of this.cajas) c.dibujar(ctx, cam);
       for (const c of this.charcos) c.dibujar(ctx, cam, this.tiempoJugado);
       Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con hordas grandes (o calidad baja) se aliviana el dibujo de los zombies
@@ -17936,14 +17940,19 @@ Object.assign(Juego.prototype, {
     this.jugador.mira = false;
     this.jugador.invulnerableHasta = Infinity;   // abajo nadie lo toca; al salir (salirBunker) se le da un respiro
     document.body.classList.add('en-bunker');
-    B.arriba = -1; B.bombardeando = null;
+    B.arriba = -1;
+    // La M2 Browning sale de la boca y se maneja desde abajo (pedido de Leandro): el mismo arma y dibujo que la de las montañas,
+    // montada por el jugador (que no se ve), con munición sin fin; se dispara a los dos lados (F y W, o los botones del menú)
+    B.bocaX = B.sobre; const m2 = new AmetralladoraFija(B.bocaX); B.m2 = m2; B.m2Desde = performance.now();
+    this.ametralladoras.set('bunker', m2);
+    this.jugador.x = B.bocaX; this.jugador.montar(m2);
     B.dice = t('bunker.saludo' + (1 + Math.floor(Math.random() * 3)));
     if (!B.elegido || (B.pestana === 'propias' && !this.jugador.inventario.includes(B.elegido))) { B.pestana = 'propias'; B.elegido = this.jugador.montada ? null : this.jugador.arma().id; }
     document.getElementById('bunker').classList.remove('oculta');
     Musica.intensidad(0.08);
     Audio_.recoger();
     this.pintarBunker();
-    this.actualizarBombardeoBunker(true);
+    this.actualizarCuentaBunker(true);
     document.querySelector('#bunker .bunker-carta.elegida, #bunker button:not([disabled])')?.focus();
     return true;
   },
@@ -17953,6 +17962,8 @@ Object.assign(Juego.prototype, {
     B.abierto = false; B.equipables = false;
     document.getElementById('bunker').classList.add('oculta');
     document.body.classList.remove('en-bunker');
+    this.soltarM2Bunker();
+    if (B.m2) { this.jugador.desmontar(); this.ametralladoras.delete('bunker'); this.jugador.x = B.bocaX; B.m2 = null; }
     Object.assign(this.entrada, { derecha: false, izquierda: false, abajo: false, disparar: false, dispararPulsado: false, saltarPulsado: false, abajoPulsado: false });
     this.jugador.invulnerableHasta = this.ahora + 1500;   // un respiro al subir: los zombies quedaron donde estaban
     Audio_.recoger();
@@ -18144,7 +18155,6 @@ Object.assign(Juego.prototype, {
     const [que, id] = accion.split(':');
     const cobrar = precio => { if (B.dinero < precio) { B.dice = t('bunker.sinDinero'); this.pintarDetalleBunker(); return false; } B.dinero -= precio; return true; };
     if (que === 'salir') return this.salirBunker();
-    if (que === 'bombardear') { this.pedirAtaqueAereo(true); this.actualizarBombardeoBunker(true); return; }   // gratis y sin límite, mientras se esté adentro
     if (que === 'pestana') { B.pestana = id; B.elegido = null; B.equipables = false; }
     else if (que === 'elegir') { B.elegido = id; B.equipables = false; }
     else if (que === 'equipables') { B.equipables = true; }
@@ -18182,8 +18192,11 @@ Object.assign(Juego.prototype, {
     if (que === 'elegir' || que === 'pestana') document.querySelector('#bunker .bunker-carta.elegida')?.focus({ preventScroll: true });
   },
   // Teclado con el menú abierto: ← → otra carta, Tab la otra pestaña, Enter la acción, Esc o ↑ salir
-  teclaBunker(e) {
+  teclaBunker(e, tecla) {
     const B = this.bunker;
+    // La M2 de abajo: F dispara (mantenida, ráfaga) hacia donde mira, W la gira hacia el otro lado
+    if (tecla === 'KeyF') { this.dispararM2Bunker(0); return true; }
+    if (tecla === 'KeyW') { if (!e.repeat) this.jugador.direccion = -this.jugador.direccion; return true; }
     if (e.code === 'Escape' || e.code === 'ArrowUp') { this.salirBunker(); return true; }
     if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
       const cartas = this.cartasBunker(), i = cartas.indexOf(B.elegido);
@@ -18202,25 +18215,35 @@ Object.assign(Juego.prototype, {
     }
     return false;
   },
-  // Zombies vivos a la vista (los que se lleva un bombardeo) y el botón de bombardear (apagado mientras caen los misiles)
-  actualizarBombardeoBunker(forzar = false) {
-    const B = this.bunker, bombardeando = !!(this.aereo && this.aereo.activo);
+  // M2 del búnker: a la izquierda (-1) o a la derecha (1), mientras se aprieta el botón (o F); soltar la deja de disparar
+  dispararM2Bunker(dir) {
+    const B = this.bunker, j = this.jugador;
+    if (!B || !B.abierto || !B.m2) return;
+    if (dir) j.direccion = dir;
+    this.entrada.disparar = true; this.entrada.dispararPulsado = true;
+  },
+  soltarM2Bunker() { if (this.entrada) this.entrada.disparar = false; },
+  // Zombies vivos a la vista (los que la M2 puede alcanzar), el dinero que sube con las muertes y la munición sin fin
+  actualizarCuentaBunker(forzar = false) {
+    const B = this.bunker;
+    if (B.m2) B.m2.municion = ARMA_FIJA.cargador;   // sin fin: nunca hay que recargar
     if (B.dinero !== B.dineroPintado) {   // los muertos de arriba pagan aunque se esté abajo: se actualiza el dinero y lo que se puede comprar
       const enLista = document.activeElement && document.activeElement.closest('#bunker-lista');
       B.dineroPintado = B.dinero; this.pintarBunker();
       if (enLista) document.querySelector('#bunker .bunker-carta.elegida')?.focus({ preventScroll: true });
     }
     const arriba = this.zombies.reduce((n, z) => n + (z.estado !== 'muerto' && !z.maniqui && z.x > this.camaraX - 20 && z.x < this.camaraX + ANCHO + 20 ? 1 : 0), 0);
-    if (!forzar && arriba === B.arriba && bombardeando === B.bombardeando) return;
-    B.arriba = arriba; B.bombardeando = bombardeando;
-    const boton = document.getElementById('bunker-bombardear'), cuenta = document.getElementById('bunker-arriba');
+    const lado = this.jugador.direccion;
+    if (!forzar && arriba === B.arriba && lado === B.ladoM2) return;
+    B.arriba = arriba; B.ladoM2 = lado;
+    const cuenta = document.getElementById('bunker-arriba');
     if (cuenta) { cuenta.textContent = t('bunker.arriba', { n: arriba }); cuenta.classList.toggle('limpio', arriba === 0); }
-    if (boton) { boton.disabled = bombardeando; boton.querySelector('span').textContent = t(bombardeando ? 'bunker.bombardeando' : 'bunker.bombardear'); }
+    document.querySelectorAll('#bunker [data-m2]').forEach(b => b.classList.toggle('mirando', +b.dataset.m2 === lado));
   },
   // La partida sigue arriba mientras se está adentro; el comerciante se redibuja unas 20 veces por segundo
   actualizarBunkerAbierto() {
     const B = this.bunker;
-    this.actualizarBombardeoBunker();
+    this.actualizarCuentaBunker();
     if (performance.now() < B.proximoDibujo) return;
     B.proximoDibujo = performance.now() + 50;
     const id = B.elegido && B.elegido !== 'botiquin' && B.elegido !== 'aereo' ? B.elegido : null;
@@ -18233,10 +18256,18 @@ document.getElementById('bunker').addEventListener('click', e => {
   if (b && juego && juego.bunker && !b.disabled) juego.accionBunker(b.dataset.bunker);
 });
 
+// Los dos botones de la M2 (a la izquierda y a la derecha): se mantienen apretados para disparar; sirven con mouse y con el dedo
+document.getElementById('bunker').addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-m2]'), juego = window.ZonaMuerta && ZonaMuerta.juego();
+  if (!b || !juego || !juego.bunker) return;
+  e.preventDefault(); juego.dispararM2Bunker(+b.dataset.m2);
+});
+for (const ev of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(ev, () => { const juego = window.ZonaMuerta && ZonaMuerta.juego(); if (juego && juego.bunker) juego.soltarM2Bunker(); });
+
 /* ---------- Textos ---------- */
 Object.assign(TEXTOS.es, {
   'caja.botiquin': 'BOTIQUÍN', 'aviso.botiquinCaja': v => `BOTIQUÍN +1 (${v.n}/${v.max})`, 'aviso.botiquinLleno': v => `YA LLEVAS LOS ${v.max} BOTIQUINES`,
-  'bunker.bombardear': 'BOMBARDEAR LA SUPERFICIE · GRATIS', 'bunker.bombardeando': 'MISILES EN CAMINO…', 'bunker.arriba': v => `ARRIBA: ${v.n} ☠`, 'bunker.bombardeo': 'BOMBARDEO SOBRE LA SUPERFICIE', 'bunker.titulo': 'MEJORAS', 'bunker.tusArmas': 'TUS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SALIR DEL BÚNKER',
+  'bunker.arriba': v => `ARRIBA: ${v.n} ☠`, 'bunker.m2Izq': '◀ DISPARAR', 'bunker.m2Der': 'DISPARAR ▶', 'bunker.m2Ayuda': 'M2 BROWNING · F dispara · W la gira', 'bunker.titulo': 'MEJORAS', 'bunker.tusArmas': 'TUS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SALIR DEL BÚNKER',
   'bunker.entrar': v => `${v.tecla}  ENTRAR AL BÚNKER`, 'bunker.entrarTactil': 'TOCA ▼ ABAJO PARA ENTRAR AL BÚNKER',
   'bunker.hudProximo': v => `BÚNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BÚNKER AQUÍ · ${v.tecla} PARA ENTRAR`,
   'bunker.nivel': v => `NIVEL ${v.n} DE ${v.max}`, 'bunker.mejorar': 'MEJORAR', 'bunker.comprar1': 'COMPRAR',
@@ -18261,7 +18292,7 @@ Object.assign(TEXTOS.es, {
 });
 Object.assign(TEXTOS.pt, {
   'caja.botiquin': 'KIT MÉDICO', 'aviso.botiquinCaja': v => `KIT MÉDICO +1 (${v.n}/${v.max})`, 'aviso.botiquinLleno': v => `JÁ LEVA OS ${v.max} KITS MÉDICOS`,
-  'bunker.bombardear': 'BOMBARDEAR A SUPERFÍCIE · GRÁTIS', 'bunker.bombardeando': 'MÍSSEIS A CAMINHO…', 'bunker.arriba': v => `LÁ EM CIMA: ${v.n} ☠`, 'bunker.bombardeo': 'BOMBARDEIO NA SUPERFÍCIE', 'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
+  'bunker.arriba': v => `LÁ EM CIMA: ${v.n} ☠`, 'bunker.m2Izq': '◀ ATIRAR', 'bunker.m2Der': 'ATIRAR ▶', 'bunker.m2Ayuda': 'M2 BROWNING · F atira · W a vira', 'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
   'bunker.entrar': v => `${v.tecla}  ENTRAR NO BUNKER`, 'bunker.entrarTactil': 'TOQUE ▼ ABAIXO PARA ENTRAR NO BUNKER',
   'bunker.hudProximo': v => `BUNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BUNKER AQUI · ${v.tecla} PARA ENTRAR`,
   'bunker.nivel': v => `NÍVEL ${v.n} DE ${v.max}`, 'bunker.mejorar': 'MELHORAR', 'bunker.comprar1': 'COMPRAR',
@@ -18286,7 +18317,7 @@ Object.assign(TEXTOS.pt, {
 });
 Object.assign(TEXTOS.en, {
   'caja.botiquin': 'MEDKIT', 'aviso.botiquinCaja': v => `MEDKIT +1 (${v.n}/${v.max})`, 'aviso.botiquinLleno': v => `YOU ALREADY CARRY ${v.max} MEDKITS`,
-  'bunker.bombardear': 'BOMB THE SURFACE · FREE', 'bunker.bombardeando': 'MISSILES INCOMING…', 'bunker.arriba': v => `ABOVE: ${v.n} ☠`, 'bunker.bombardeo': 'AIRSTRIKE ON THE SURFACE', 'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
+  'bunker.arriba': v => `ABOVE: ${v.n} ☠`, 'bunker.m2Izq': '◀ FIRE', 'bunker.m2Der': 'FIRE ▶', 'bunker.m2Ayuda': 'M2 BROWNING · F fires · W turns it', 'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
   'bunker.entrar': v => `${v.tecla}  ENTER THE BUNKER`, 'bunker.entrarTactil': 'TAP ▼ DOWN TO ENTER THE BUNKER',
   'bunker.hudProximo': v => `BUNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BUNKER HERE · ${v.tecla} TO ENTER`,
   'bunker.nivel': v => `LEVEL ${v.n} OF ${v.max}`, 'bunker.mejorar': 'UPGRADE', 'bunker.comprar1': 'BUY',
@@ -27695,7 +27726,7 @@ const Asistente = (() => {
     if (!juego) return;
     if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
     if (juego.enTienda) { if ((e.code === 'Escape' || tecla === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
-    if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
+    if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e, tecla)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
     if ((juego.pruebas || juego.entrenamiento) && tecla === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
     if (menuPruebasAbierto) {
       if (armaEnDetalle) {   // en la ficha: Esc vuelve a la lista, Enter la usa
