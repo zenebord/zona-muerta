@@ -939,6 +939,15 @@ Mientras está el jefe, salen la mitad de zombies sueltos.
   ostinato de sintetizador y percusión de fábrica. Las capas entran según cuántos zombies hay vivos: en el
   descanso entre rondas queda tranquila, con la horda encima suena todo. El galpón y el campo de pruebas
   no tienen música. Se pausa con el juego y se apaga al morir.
+- **Jerarquía de armas** (`js/jerarquia.js`, pedido de Leandro el 22/11): en la pelea infinita y las misiones, una caja con
+  un arma de **menor nivel** que la de la mano **no la cambia**: el arma se guarda igual en el inventario (con su
+  munición, aviso «GUARDADA EN EL INVENTARIO») y la mano sigue con la más valiosa; una de igual o mayor nivel sí pasa a la
+  mano. Niveles, de menor a mayor: cuerpo a cuerpo, pistolas, metralletas, **rifles** (no los nombró: los puse acá), especiales,
+  especiales cuerpo a cuerpo (las legendarias) y, arriba de todo, escopetas. En la configuración (sección **JERARQUÍA DE
+  ARMAS**) se apaga con una casilla y se reordena con ▲ ▼; «Orden original» y RESTABLECER lo devuelven. No rige en la
+  defensa zombie, la ultra ni la historia. Probado: con una AK-47 en la mano, pistola y machete no la cambian (quedan en el
+  inventario), una metralleta y una escopeta sí; con el cuerpo a cuerpo subido arriba de todo, el hacha sí; apagada la
+  casilla, todo cambia como antes. Al guardar un arma sin equiparla, el inventario se reordena sin mover la de la mano.
 - **Configuración**: el **engranaje** de arriba a la izquierda (en todas las pantallas; en partida pausa el
   juego) abre un panel con volumen general, efectos y música, silenciar todo y un botón para probar el
   sonido; idioma; dificultad; calidad gráfica (alta: hasta 2× de resolución; normal: 1×, para celulares

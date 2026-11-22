@@ -525,6 +525,15 @@
           <label class="fila-check"><input type="checkbox" data-config="raton"><span data-t="config.raton">Mouse para disparar, recargar y cambiar de arma</span></label>
         </div>
       </section>
+      <section id="config-jerarquia">
+        <h3 data-t="config.jerarquia">JERARQUÍA DE ARMAS</h3>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="jerarquia"><span data-t="config.jerarquiaUsar">Una caja con un arma de menor nivel no reemplaza a la que llevas en la mano</span></label>
+        </div>
+        <p class="nota izq" data-t="config.jerarquiaNota">Pelea infinita y misiones. El arma igual queda en tu inventario; sólo cambia la que llevas en la mano. La más valiosa va arriba.</p>
+        <div id="lista-jerarquia" class="lista-jerarquia"></div>
+        <div class="fila-doble"><span></span><button class="boton mini" type="button" data-accion="jerarquia-original" data-t="config.jerarquiaOriginal">Orden original</button></div>
+      </section>
       <section id="config-teclas">
         <h3 data-t="config.teclas">TECLAS</h3>
         <p class="nota" data-t="config.teclasNota">Toca la tecla de una acción y presiona la nueva. Esc cancela.</p>
@@ -558,6 +567,7 @@
   <script src="js/audio.js"></script>
   <script src="js/musica.js"></script>
   <script src="js/armas.js"></script>
+  <script src="js/jerarquia.js"></script>
   <script src="js/dificultad.js"></script>
   <script src="js/dibujo.js"></script>
   <script src="js/armas-dibujo.js"></script>

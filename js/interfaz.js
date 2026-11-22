@@ -675,6 +675,7 @@
     });
     const completa = document.getElementById('boton-completa');
     completa.hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+    Jerarquia.dibujarLista(document.getElementById('lista-jerarquia'));   // los niveles de las armas (js/jerarquia.js)
     Teclas.dibujarLista(document.getElementById('lista-teclas'));   // las teclas de cada acción (js/teclas.js)
   }
   capaConfig.addEventListener('input', e => {
