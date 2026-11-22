@@ -95,13 +95,13 @@ html, body {
 .boton.descarga .columna-descarga { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.15; text-align: left; }
 .boton.descarga .nota-descarga { font-size: .62em; font-weight: 400; letter-spacing: .03em; opacity: .7; }
 /* Más de 480 px de alto: una columna, salvo las dos defensas y el bastión con el entrenamiento, que van de a pares
-   (botones: 1 historia, 2 pelea, 3 misiones, 4 defensa, 5 ultra, 6 bastión, 7 entrenamiento) */
+   (botones: 1 historia, 2 pelea, 3 defensa, 4 ultra, 5 bastión, 6 entrenamiento) */
 @media (min-height: 481px) {
   #menu-principal .opciones { display: grid; grid-template-columns: 1fr 1fr; width: min(600px, 100%); }
   #menu-principal .opciones > * { grid-column: 1 / -1; }
-  #menu-principal .opciones > .boton:nth-of-type(4), #menu-principal .opciones > .boton:nth-of-type(6) { grid-column: 1; }
-  #menu-principal .opciones > .boton:nth-of-type(5), #menu-principal .opciones > .boton:nth-of-type(7) { grid-column: 2; }
-  #menu-principal .opciones > .boton.grande:nth-of-type(n+4) { font-size: clamp(12px, 2vh, 18px); letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 6px; padding-right: 6px; }   /* los de a pares, en una línea */
+  #menu-principal .opciones > .boton:nth-of-type(3), #menu-principal .opciones > .boton:nth-of-type(5) { grid-column: 1; }
+  #menu-principal .opciones > .boton:nth-of-type(4), #menu-principal .opciones > .boton:nth-of-type(6) { grid-column: 2; }
+  #menu-principal .opciones > .boton.grande:nth-of-type(n+3) { font-size: clamp(12px, 2vh, 18px); letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 6px; padding-right: 6px; }   /* los de a pares, en una línea */
 }
 @media (max-height: 700px) { #menu-principal .pie { display: none; } #menu-principal .creditos { margin-top: clamp(6px, 1.4vh, 12px); }
   #menu-principal .boton.descarga .nota-descarga:not(.estado) { display: none; } }   /* en una línea; los avisos de la descarga se siguen viendo */

@@ -27,11 +27,11 @@ const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
 function indiceTrozo(x) { return Math.floor(x / TAMANO_TROZO); }
 
 // Modo del mundo: en el campo de pruebas no hay montañas, es una planicie
-const Mundo = { plano: false, interior: false, nieve: false };   // interior: galpón del entrenamiento; nieve: el mapa de la nieve
+const Mundo = { plano: false, interior: false, nieve: false, sinMontana: null };   // sinMontana: trozos donde hay un búnker (js/bunker.js): ahí nunca hay montaña   // interior: galpón del entrenamiento; nieve: el mapa de la nieve
 
 // ¿El trozo i es una montaña? Nunca cerca del punto de aparición ni dos montañas seguidas
 function esMontana(i) {
-  if (Mundo.plano || Math.abs(i) <= 1) return false;
+  if (Mundo.plano || Math.abs(i) <= 1 || (Mundo.sinMontana && Mundo.sinMontana.has(i))) return false;
   return azar(i, 1) < 0.3 && azar(i - 1, 1) >= 0.3;
 }
 function tipoTrozo(i) { return esMontana(i) ? 'montana' : 'calle'; }

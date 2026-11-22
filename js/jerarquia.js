@@ -49,21 +49,21 @@ const Jerarquia = (() => {
 
 Object.assign(TEXTOS.es, {
   'config.jerarquia': 'JERARQUÍA DE ARMAS', 'config.jerarquiaUsar': 'Una caja con un arma de menor nivel no reemplaza a la que llevas en la mano',
-  'config.jerarquiaNota': 'Pelea infinita y misiones. El arma igual queda en tu inventario; sólo cambia la que llevas en la mano. La más valiosa va arriba.',
+  'config.jerarquiaNota': 'Pelea infinita. El arma igual queda en tu inventario; sólo cambia la que llevas en la mano. La más valiosa va arriba.',
   'config.jerarquiaOriginal': 'Orden original', 'aviso.guardada': 'GUARDADA EN EL INVENTARIO: ',
   'jerarquia.cuerpo': 'Cuerpo a cuerpo', 'jerarquia.pistola': 'Pistolas', 'jerarquia.metralleta': 'Metralletas', 'jerarquia.rifle': 'Rifles', 'jerarquia.especial': 'Especiales',
   'jerarquia.legendaria': 'Especiales cuerpo a cuerpo', 'jerarquia.escopeta': 'Escopetas', 'jerarquia.subir': v => `Subir ${v.n}`, 'jerarquia.bajar': v => `Bajar ${v.n}`,
 });
 Object.assign(TEXTOS.pt, {
   'config.jerarquia': 'HIERARQUIA DE ARMAS', 'config.jerarquiaUsar': 'Uma caixa com arma de nível menor não substitui a que você leva na mão',
-  'config.jerarquiaNota': 'Luta infinita e missões. A arma fica no inventário do mesmo jeito; só muda a que está na mão. A mais valiosa vai em cima.',
+  'config.jerarquiaNota': 'Luta infinita. A arma fica no inventário do mesmo jeito; só muda a que está na mão. A mais valiosa vai em cima.',
   'config.jerarquiaOriginal': 'Ordem original', 'aviso.guardada': 'GUARDADA NO INVENTÁRIO: ',
   'jerarquia.cuerpo': 'Corpo a corpo', 'jerarquia.pistola': 'Pistolas', 'jerarquia.metralleta': 'Submetralhadoras', 'jerarquia.rifle': 'Rifles', 'jerarquia.especial': 'Especiais',
   'jerarquia.legendaria': 'Especiais corpo a corpo', 'jerarquia.escopeta': 'Espingardas', 'jerarquia.subir': v => `Subir ${v.n}`, 'jerarquia.bajar': v => `Descer ${v.n}`,
 });
 Object.assign(TEXTOS.en, {
   'config.jerarquia': 'WEAPON RANKING', 'config.jerarquiaUsar': 'A crate with a lower-ranked weapon does not replace the one in your hand',
-  'config.jerarquiaNota': 'Endless fight and missions. The weapon still goes into your inventory; only the one in your hand stays. The most valuable goes on top.',
+  'config.jerarquiaNota': 'Endless fight. The weapon still goes into your inventory; only the one in your hand stays. The most valuable goes on top.',
   'config.jerarquiaOriginal': 'Original order', 'aviso.guardada': 'STORED IN INVENTORY: ',
   'jerarquia.cuerpo': 'Melee', 'jerarquia.pistola': 'Pistols', 'jerarquia.metralleta': 'Submachine guns', 'jerarquia.rifle': 'Rifles', 'jerarquia.especial': 'Special weapons',
   'jerarquia.legendaria': 'Special melee', 'jerarquia.escopeta': 'Shotguns', 'jerarquia.subir': v => `Move ${v.n} up`, 'jerarquia.bajar': v => `Move ${v.n} down`,

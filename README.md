@@ -76,14 +76,13 @@ y entrá a <http://127.0.0.1:8791/>.
   - **Distancia y búnkeres** (`js/bunker.js`, pedido de Enzo el 16/11; los botiquines los sumó Leandro): en los
     tres mapas, arriba de la pantalla se ve **cuántos metros** se recorrieron desde el punto de partida (1 m = 44
     unidades, la medida de las estacas del entrenamiento) y a cuánto está el **próximo búnker** hacia donde se camina.
-    El primero está a **300 m**, para los dos lados, y después **la distancia entre búnkeres crece 1 km cada 3 hordas
-    (rondas) superadas** (300 m, 1,3 km, 2,3 km…; pedido de Enzo el 18/11), salvo el **5 %** de las veces en que, aunque
-    pasen las 3 hordas, no cambia (probado: 5,1 % de 20 000; un aviso lo dice cuando crece). Cada búnker queda fijo con la
-    distancia que había cuando se generó, y se genera el siguiente cuando el jugador se acerca a 3 pantallas del último.
+    El primero está a **300 m**, para los dos lados, y **cada búnker queda siempre a 300 m del anterior** (pedido de
+    Leandro el 22/11; antes, por pedido de Enzo del 18/11, la distancia crecía 1 km cada 3 hordas: se sacó). Se genera el
+    siguiente cuando el jugador se acerca a 3 pantallas del último.
     Cada uno es un **búnker subterráneo**: en el piso, una losa blanca con una reja encima
     de la escalera que baja, lámparas verdes en las esquinas y una **luz verde** que sale del piso y sube hasta el
-    cielo (se ve desde lejos). Si el búnker cae en una montaña, se corre al trozo de al lado (de 400 búnkeres, 93 se
-    corren unos 27 m; ninguno queda arriba de una montaña). Parado encima aparece **«↓ ENTRAR AL BÚNKER»** (en el
+    cielo (se ve desde lejos). Si el trozo de un búnker iba a ser una montaña, deja de serlo (`Mundo.sinMontana`): así queda a 300 m exactos y
+    nunca arriba de una montaña. Parado encima aparece **«↓ ENTRAR AL BÚNKER»** (en el
     celular, «toca ▼ ABAJO»); entrar es opcional y la partida queda quieta mientras se está adentro; al salir hay
     1,5 s sin daño. Adentro, en una bóveda de concreto blanco con armero, lámpara y la puerta de la escalera
     iluminada de verde, atiende el **comerciante**: un señor de unos 75 años con **parche en el ojo**, **barba blanca
@@ -121,6 +120,14 @@ y entrá a <http://127.0.0.1:8791/>.
     de veces** mientras se esté adentro; el contador «ARRIBA: N ☠» dice cuántos zombies hay a la vista y se pone verde en 0,
     para salir con la superficie limpia (probado: 7 de 8 muertos, el que seguía estaba a 760 px, fuera de la pantalla; se
     repite gratis). Con el búnker cerrado, el ataque aéreo sigue como siempre (`A`, 60 s).
+- **Botiquines en las cajas** (pedido de Leandro, 22/11): en la pelea infinita, ~22 de cada 100 cajas del camino traen un
+  **botiquín** (caja con la valija blanca y el aviso BOTIQUÍN) en vez de un arma; al pasar suma uno a los que se llevan (hasta
+  3, se usan con V o ✚). Con los tres encima ya no salen y la que quedó en el camino no se levanta. Medido: 21,3 % de 4000
+  cajas; 0 de 500 con los tres; levantar suma 1 (1 → 2).
+- **Menú principal**: el botón **MISIONES** se sacó (pedido de Leandro, 22/11); el código y el panel quedan en el juego pero
+  sin acceso desde el menú. Los demás modos se reacomodan en dos columnas.
+- **Parpadeo del personaje**: sólo en el respiro corto tras un golpe o al reaparecer (hasta 2 s). En el tutorial, que lo hace
+  invulnerable 60 s, titilaba como un foco fallando: ya no (medido: 0 de 100 cuadros con parpadeo; tras un golpe, 53 de 100).
 - **Misiones**: 17 misiones que se juegan dentro de la pelea infinita (matar zombies, conseguir
   armas, sobrevivir, y varias contrarreloj). El progreso queda guardado en el navegador.
 - **Defensa zombie ultra** (`js/defensa-ultra.js`): el tirador defiende su sector, a la izquierda, y los zombies llegan

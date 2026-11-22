@@ -348,7 +348,9 @@ function brazoSuelto(ctx, j, cual, hx, hy, armar, C) {
 
 Jugador.prototype.dibujar = function (ctx, camaraX, ahora) {
   const sx = this.x - camaraX;
-  const parpadeo = ahora < this.invulnerableHasta && Math.floor(ahora / 80) % 2 === 0;
+  // Parpadea sólo el respiro corto tras un golpe o al reaparecer (hasta 2 s); la invulnerabilidad larga del tutorial (60 s) y la del búnker no
+  const resto = this.invulnerableHasta - ahora;
+  const parpadeo = resto > 0 && resto <= 2000 && Math.floor(ahora / 80) % 2 === 0;
   const cuerpo = (c = ctx) => this.cuerpo(c, parpadeo);
   if (this.muerto) {
     ctx.save();
