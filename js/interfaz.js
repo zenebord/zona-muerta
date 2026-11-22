@@ -190,6 +190,7 @@
     if (juego && !menuPruebasAbierto) {
       const enMano = juego.jugador.montada ? null : juego.jugador.arma().id;
       document.querySelectorAll('#lista-armas-prueba [data-arma]').forEach(b => b.classList.toggle('en-mano', b.dataset.arma === enMano));
+      Protecciones.marcarMenu(juego);   // las protecciones puestas, marcadas
     }
     if (!juego || !(juego.pruebas || juego.entrenamiento) || juego.terminado) return;
     menuPruebasAbierto = !menuPruebasAbierto;
@@ -233,6 +234,7 @@
       grupo.appendChild(rejilla);
       lista.appendChild(grupo);
     }
+    Protecciones.seccionMenu(lista);   // chaleco, casco, escudo… para probarlos (js/protecciones.js)
   }
 
   /* ---- Ficha del arma: imagen, descripción real, datos de juego y USAR ---- */

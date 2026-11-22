@@ -290,8 +290,8 @@ class Juego {
     // Al jugador lo lastima solo si explota a menos de 1 m del cuerpo (60 px): de 10 (pegado) a 5 (a 1 m);
     // si cae justo encima, la mitad de la vida
     const j = this.jugador, dx = Math.max(0, Math.abs(j.x - x) - 8), dy = Math.max(0, (j.y - 56) - y, y - j.y), d = Math.hypot(dx, dy);
-    if (d < 6) j.recibirDano(j.vidaMax / 2, this);
-    else if (d < 60) j.recibirDano(Math.round(10 - 5 * (d - 6) / 54), this);
+    if (d < 6) j.recibirDano(j.vidaMax / 2, this, 'explosion', x);
+    else if (d < 60) j.recibirDano(Math.round(10 - 5 * (d - 6) / 54), this, 'explosion', x);
     this.sacudida = 12;
     Audio_.explosion();
   }

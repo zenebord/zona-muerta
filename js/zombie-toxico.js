@@ -53,7 +53,7 @@ class ZombieToxico extends Zombie {
       if (a && a.tipo === 'esquiva') this.giro = -this.direccion * Math.PI * 2 * Math.min(1, (ahora - a.desde) / a.dur);
       if (a && a.tipo === 'salto' && !a.pego && distancia < 28 && Math.abs((jugador.y - 40) - (this.y - this.altura - 35)) < 55 && !jugador.muerto) {
         a.pego = true;
-        jugador.recibirDano(Math.round(this.mordida * 1.3), juego);
+        jugador.recibirDano(Math.round(this.mordida * 1.3), juego, 'mordida', this.x);
         jugador.envenenar(1.5);
       }
       this.y = alturaSuelo(this.x);
@@ -202,7 +202,7 @@ class Escupitajo {
     // Contra el jugador: agachado es más bajo (la cabeza baja BAJA_AGACHADO)
     const tope = j.y - 84 + j.agachado * BAJA_AGACHADO;
     if (!j.muerto && Math.abs(this.x - j.x) < 11 && this.y > tope && this.y < j.y) {
-      j.recibirDano(this.dano, juego);
+      j.recibirDano(this.dano, juego, 'aire', this.x - this.vx * 10);   // viene del lado de donde vuela
       j.envenenar(2.6);
       juego.salpicar(this.x, this.y, '#a6ff4a', 12, 3);
       Audio_.salpicaduraToxica();
@@ -247,7 +247,7 @@ class CharcoToxico {
     const j = juego.jugador, crece = Math.min(1, this.edad / 0.3);
     if (!j.muerto && j.enSuelo && Math.abs(j.x - this.x) < this.ancho * 0.5 * crece && juego.ahora >= this.proximoDano) {
       this.proximoDano = juego.ahora + 650;
-      j.recibirDano(4, juego);
+      j.recibirDano(4, juego, 'charco');
       j.envenenar(1.6);
       Audio_.salpicaduraToxica(0.35);
     }

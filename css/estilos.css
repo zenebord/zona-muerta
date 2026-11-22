@@ -1040,6 +1040,8 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 .bunker-m2:hover, .bunker-m2:focus-visible { background: #ff8a4d; color: #240a02; outline: none; }
 .bunker-m2:active, .bunker-m2.mirando { box-shadow: 0 0 0 2px #ffd27a inset; }
 .tactil .bunker-m2-ayuda { display: none; }
+/* (la fila de cartas se había borrado por error en e664fe2: las cartas quedaban una debajo de la otra) */
+.bunker-lista { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; overscroll-behavior: contain; }
 .bunker-carta { flex: 0 0 auto; width: clamp(80px, 9vw, 112px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 4px 5px; cursor: pointer;
   font: inherit; color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.4); }
 .bunker-carta canvas { display: block; width: 100%; height: auto; aspect-ratio: 150 / 64; }
@@ -1185,3 +1187,13 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .quien-opcion:hover, .quien-opcion:focus-visible { border-color: var(--color); outline: none; }
 .quien-opcion.elegida { border-color: var(--color); background: color-mix(in srgb, var(--color) 20%, rgba(0,0,0,.35)); }
 .quien-opcion:not(.elegida) .cara { opacity: .55; filter: grayscale(.4); }
+
+/* ===== Protecciones (js/protecciones.js): barra azul del blindaje, debajo de la vida, y su grupo en el menú de armas ===== */
+.barra-blindaje { width: 220px; height: 12px; border: 2px solid #fff3; background: #0008; position: relative; margin-top: -2px; }
+#blindaje-relleno { height: 100%; width: 0; background: linear-gradient(#5aa9ff, #1e4f9a); transition: width .15s; }
+#blindaje-texto { position: absolute; inset: 0; font-size: 10px; line-height: 9px; text-align: center; }
+.grupo-armas.protecciones h3 { color: #7fc4ff; border-bottom-color: rgba(127,196,255,.35); }
+.boton-arma.boton-proteccion { border-color: rgba(127,196,255,.6); }
+.boton-arma.boton-proteccion:hover { background: #7fc4ff; color: var(--noche); }
+@media (max-width: 760px), (max-height: 460px) { .barra-blindaje { width: 120px; height: 9px; } #blindaje-texto { font-size: 8px; line-height: 6px; } }
+.boton-arma.boton-proteccion.en-mano small::after { content: " ✓"; }

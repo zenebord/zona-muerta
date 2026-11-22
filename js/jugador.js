@@ -223,8 +223,8 @@ class Jugador {
       const apretoDir = (entrada.derecha && !this.dirPrevia.d) || (entrada.izquierda && !this.dirPrevia.i);
       if (this.giroFijo && (apretoDir || (!entrada.derecha && !entrada.izquierda))) this.giroFijo = false;
       this.dirPrevia = { d: !!entrada.derecha, i: !!entrada.izquierda };
-      if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; if (!this.giroFijo) this.direccion = 1; }
-      if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador; if (!this.giroFijo) this.direccion = -1; }
+      if (entrada.derecha) { this.vx = VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador * (this.pasoProteccion || 1); if (!this.giroFijo) this.direccion = 1; }   // pasoProteccion: chaleco con placas o traje antibombas (js/protecciones.js)
+      if (entrada.izquierda) { this.vx = -VELOCIDAD_JUGADOR * AJUSTE.velocidadJugador * (this.pasoProteccion || 1); if (!this.giroFijo) this.direccion = -1; }
       if (agachandose) this.vx = 0;
       // Impulso al soltarse de una soga: lo lleva por el aire hasta que toca el piso; las flechas lo corrigen y se puede girar
       if (this.impulso && !this.enSuelo) this.vx = this.impulso + this.vx * 0.55;
@@ -235,7 +235,7 @@ class Jugador {
       else if (entrada.saltarPulsado) this.saltoPedidoEn = this.ahora;
       const puedeSaltar = this.enSuelo || (!this.saltando && this.vy >= 0 && this.ahora - this.ultimoSuelo < MARGEN_SALTO_MS);
       const pidioSalto = entrada.saltarPulsado || (this.enSuelo && this.ahora - this.saltoPedidoEn < MARGEN_SALTO_MS);
-      if (pidioSalto && puedeSaltar && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto; this.enSuelo = false; this.saltando = true; this.saltoPedidoEn = -1e9; }
+      if (pidioSalto && puedeSaltar && !agachandose && this.agachado < 0.3) { this.vy = SALTO * AJUSTE.salto * (this.saltoProteccion || 1); this.enSuelo = false; this.saltando = true; this.saltoPedidoEn = -1e9; }
       const nx = this.x + this.vx * paso;
       if (!(this.vx !== 0 && alturaSuelo(nx) < this.y - ESCALON_MAX)) this.x = nx;   // contra una pared alta: no avanza
       const suelo = alturaSuelo(this.x);
