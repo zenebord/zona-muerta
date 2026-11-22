@@ -665,9 +665,12 @@ class Juego {
       c.actualizar(dt);
       if (!j.muerto && c.tocaA(j) && c.alRecoger) { c.alRecoger(this); c.vivo = false; }
       else if (!j.muerto && c.tocaA(j)) {
-        const nueva = j.recoger(c.armaId), a = ARMAS[c.armaId];
-        this.aviso(t(nueva ? 'aviso.nueva' : 'aviso.municion') + a.nombre.toUpperCase(), 1800);
-        if (nueva) Audio_.sacarArma(a); else Audio_.municion();
+        // Pelea infinita y misiones: un arma de menor nivel que la de la mano se guarda sin cambiarla (js/jerarquia.js)
+        const jerarquia = !this.ultra && !this.torreta && !this.historia && !this.pruebas && !j.montada;
+        const equipar = !jerarquia || Jerarquia.reemplaza(c.armaId, j.arma().id);
+        const nueva = j.recoger(c.armaId, equipar), a = ARMAS[c.armaId];
+        this.aviso(t(!nueva ? 'aviso.municion' : equipar ? 'aviso.nueva' : 'aviso.guardada') + a.nombre.toUpperCase(), 1800);
+        if (nueva && equipar) Audio_.sacarArma(a); else if (nueva) Audio_.recoger(); else Audio_.municion();
         if (this.mision) this.mision.alRecoger(a);
         if (c.especial) this.especialesTomadas.set(c.indiceMontana, this.tiempoJugado);
         if (this.historia && c.historia && nueva) this.historia.armas.push(c.armaId);

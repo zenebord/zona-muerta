@@ -668,15 +668,18 @@ class Jugador {
   cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; this.granadaFuera = this.pasadorFuera = false; }
 
   // Agarra un arma: si es nueva se suma al inventario; si ya la tenía, le repone munición
-  recoger(armaId) {
+  // equipar: false guarda el arma (y la carga) sin pasarla a la mano (js/jerarquia.js)
+  recoger(armaId, equipar = true) {
     const arma = ARMAS[armaId];
     const nueva = !this.inventario.includes(armaId);
     if (nueva) {
+      const enMano = this.inventario[this.indiceArma];   // el inventario se reordena: la de la mano se vuelve a buscar
       this.inventario.push(armaId);
       this.inventario.sort((a, b) => ORDEN_INVENTARIO.indexOf(a) - ORDEN_INVENTARIO.indexOf(b));
+      if (!equipar && enMano) this.indiceArma = this.inventario.indexOf(enMano);
       this.municion[armaId] = arma.cargador;
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = arma.reservaInicial;
-      if (!this.montada) { this.indiceArma = this.inventario.indexOf(armaId); this.cancelarRecarga(); }
+      if (!this.montada && equipar) { this.indiceArma = this.inventario.indexOf(armaId); this.cancelarRecarga(); }
     } else {
       this.municion[armaId] = arma.cargador; this.servidas[armaId] = 0;   // cargada de nuevo: sin vainas servidas adentro
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = (this.reserva[armaId] || 0) + arma.reservaInicial;

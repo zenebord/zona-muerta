@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zona Muerta — Zombies del Apocalipsis</title>
-  <link rel="stylesheet" href="css/estilos.css?v=e87869a6a9">
+  <link rel="stylesheet" href="css/estilos.css?v=1ba53a590e">
 </head>
 <body>
 
@@ -525,6 +525,15 @@
           <label class="fila-check"><input type="checkbox" data-config="raton"><span data-t="config.raton">Mouse para disparar, recargar y cambiar de arma</span></label>
         </div>
       </section>
+      <section id="config-jerarquia">
+        <h3 data-t="config.jerarquia">JERARQUÍA DE ARMAS</h3>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="jerarquia"><span data-t="config.jerarquiaUsar">Una caja con un arma de menor nivel no reemplaza a la que llevas en la mano</span></label>
+        </div>
+        <p class="nota izq" data-t="config.jerarquiaNota">Pelea infinita y misiones. El arma igual queda en tu inventario; sólo cambia la que llevas en la mano. La más valiosa va arriba.</p>
+        <div id="lista-jerarquia" class="lista-jerarquia"></div>
+        <div class="fila-doble"><span></span><button class="boton mini" type="button" data-accion="jerarquia-original" data-t="config.jerarquiaOriginal">Orden original</button></div>
+      </section>
       <section id="config-teclas">
         <h3 data-t="config.teclas">TECLAS</h3>
         <p class="nota" data-t="config.teclasNota">Toca la tecla de una acción y presiona la nueva. Esc cancela.</p>
@@ -547,17 +556,18 @@
     </div>
   </div>
 
-  <script src="js/version.js?v=995aec937b"></script>
+  <script src="js/version.js?v=5782c5531f"></script>
   <script src="js/lanzador.js?v=c9b43bf48c"></script>
   <script src="js/sonidos-datos.js?v=7384f89d08"></script>
   <script src="js/sonidos-ambiente.js?v=29d13fb4a5"></script>
   <script src="js/sonidos-armas.js?v=e377a1bd0a"></script>
-  <script src="js/config.js?v=82f622ead4"></script>
+  <script src="js/config.js?v=0693a21b40"></script>
   <script src="js/idioma.js?v=572e59619c"></script>
   <script src="js/teclas.js?v=89545aad19"></script>
   <script src="js/audio.js?v=b1af55e5ff"></script>
   <script src="js/musica.js?v=50afd150ca"></script>
   <script src="js/armas.js?v=9bc6b2c059"></script>
+  <script src="js/jerarquia.js?v=a7cdcb5cee"></script>
   <script src="js/dificultad.js?v=bb419df011"></script>
   <script src="js/dibujo.js?v=81c959fcbf"></script>
   <script src="js/armas-dibujo.js?v=9f55c033cf"></script>
@@ -575,7 +585,7 @@
   <script src="js/escenario-objetos.js?v=8c9ccc7cc9"></script>
   <script src="js/escenario-cloaca.js?v=b8f2e8e22f"></script>
   <script src="js/escenario-nieve.js?v=d0ce6c9a71"></script>
-  <script src="js/jugador.js?v=9f18665412"></script>
+  <script src="js/jugador.js?v=6cb449850d"></script>
   <script src="js/anatomia.js?v=4cf570a5d0"></script>
   <script src="js/jugador-dibujo.js?v=25bb618144"></script>
   <script src="js/skins.js?v=92c4f293be"></script>
@@ -583,9 +593,9 @@
   <script src="js/zombie-toxico.js?v=e5647dbddd"></script>
   <script src="js/zombie-congelado.js?v=7245dc0443"></script>
   <script src="js/objetos.js?v=37bee1f455"></script>
-  <script src="js/juego.js?v=8d51f05622"></script>
+  <script src="js/juego.js?v=196ad163da"></script>
   <script src="js/poderes.js?v=93de692929"></script>
-  <script src="js/armas-especiales.js?v=2df0a2414c"></script>
+  <script src="js/armas-especiales.js?v=6e29fa77c5"></script>
   <script src="js/defensa-ultra.js?v=54c14cb81a"></script>
   <script src="js/equipables.js?v=8b831b5efc"></script>
   <script src="js/bunker.js?v=d4040ffcaa"></script>
@@ -606,7 +616,7 @@
   <script src="js/bastion-v2-ui.js?v=94fc2356c3"></script>
   <script src="js/rama.js?v=a923ab6bf2"></script>
   <script src="js/asistente.js?v=a4038893a6"></script>
-  <script src="js/interfaz.js?v=b209efbc30"></script>
+  <script src="js/interfaz.js?v=39d26a8a12"></script>
   <script src="js/tactil.js?v=96be5efe86"></script>
 </body>
 </html>

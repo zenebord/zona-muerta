@@ -28,6 +28,8 @@ const Config = (() => {
     sonImpactos: true, // la bala que pega en un zombie
     sonZombies: true,  // gemidos, golpes y muertes de los zombies
     skin: 'sobreviviente',   // personaje elegido (js/skins.js)
+    jerarquia: true,   // una caja con un arma de menor nivel no reemplaza a la de la mano (js/jerarquia.js)
+    jerarquiaOrden: null,   // niveles de menor a mayor si se reordenaron; null: el de fábrica
     teclas: null,      // { acción: [códigos] } si se cambió alguna (js/teclas.js); null: las originales
     teclasNombres: {}, // código → cómo se ve esa tecla en el teclado de quien la eligió (la Ñ es 'Semicolon')
   };

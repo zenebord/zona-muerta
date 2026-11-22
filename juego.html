@@ -541,6 +541,13 @@ kbd {
 .boton.mini { font-size: 12px; padding: 6px 12px; letter-spacing: .08em; }
 .panel-config .nota { margin: 2px 0 0; font-size: 12px; opacity: .65; text-align: right; }
 .panel-config .fila-botones { justify-content: center; margin-top: 12px; }
+/* Jerarquía de armas (js/jerarquia.js): la más valiosa arriba, con ▲ ▼ */
+.lista-jerarquia { display: flex; flex-direction: column; gap: 3px; margin: 6px 0; }
+.fila-jerarquia { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 2px 0; border-bottom: 1px dashed rgba(201,169,110,.12); }
+.fila-jerarquia .puesto { width: 1.6em; color: var(--luz); font-weight: 700; text-align: right; }
+.fila-jerarquia .nombre { flex: 1; text-align: left; }
+.fila-jerarquia .boton.mini { padding: 2px 10px; min-width: 38px; }
+.fila-jerarquia .boton.mini[disabled] { opacity: .3; cursor: default; pointer-events: none; }
 /* Teclas (js/teclas.js): cada acción con sus teclas como botones; se toca una y se presiona la nueva */
 #config-teclas > .nota { text-align: left; margin-bottom: 6px; }
 #config-teclas .fila-doble .nota { text-align: left; flex: 1 1 14em; opacity: .85; color: var(--luz); }
@@ -1706,6 +1713,15 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
           <label class="fila-check"><input type="checkbox" data-config="raton"><span data-t="config.raton">Mouse para disparar, recargar y cambiar de arma</span></label>
         </div>
       </section>
+      <section id="config-jerarquia">
+        <h3 data-t="config.jerarquia">JERARQUÍA DE ARMAS</h3>
+        <div class="fila-doble">
+          <label class="fila-check"><input type="checkbox" data-config="jerarquia"><span data-t="config.jerarquiaUsar">Una caja con un arma de menor nivel no reemplaza a la que llevas en la mano</span></label>
+        </div>
+        <p class="nota izq" data-t="config.jerarquiaNota">Pelea infinita y misiones. El arma igual queda en tu inventario; sólo cambia la que llevas en la mano. La más valiosa va arriba.</p>
+        <div id="lista-jerarquia" class="lista-jerarquia"></div>
+        <div class="fila-doble"><span></span><button class="boton mini" type="button" data-accion="jerarquia-original" data-t="config.jerarquiaOriginal">Orden original</button></div>
+      </section>
       <section id="config-teclas">
         <h3 data-t="config.teclas">TECLAS</h3>
         <p class="nota" data-t="config.teclasNota">Toca la tecla de una acción y presiona la nueva. Esc cancela.</p>
@@ -1730,7 +1746,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261122-1459-8f027fa';
+const VERSION_JUEGO = '20261122-1507-0c0e89d';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1833,6 +1849,8 @@ const Config = (() => {
     sonImpactos: true, // la bala que pega en un zombie
     sonZombies: true,  // gemidos, golpes y muertes de los zombies
     skin: 'sobreviviente',   // personaje elegido (js/skins.js)
+    jerarquia: true,   // una caja con un arma de menor nivel no reemplaza a la de la mano (js/jerarquia.js)
+    jerarquiaOrden: null,   // niveles de menor a mayor si se reordenaron; null: el de fábrica
     teclas: null,      // { acción: [códigos] } si se cambió alguna (js/teclas.js); null: las originales
     teclasNombres: {}, // código → cómo se ve esa tecla en el teclado de quien la eligió (la Ñ es 'Semicolon')
   };
@@ -4418,6 +4436,79 @@ function segundosParaMatarFuego(arma, vidaZombie = VIDA_ZOMBIE_NORMAL) {
 function disparosParaMatar(arma, vidaZombie = VIDA_ZOMBIE_NORMAL) {
   return Math.ceil(vidaZombie / arma.dano);
 }
+
+</script>
+  <script>
+/* ===== Jerarquía de armas al recoger una caja (pedido de Leandro, 22/11) =====
+ * En la pelea infinita, una caja con un arma de menor nivel que la que llevás en la mano no te la cambia: el arma se guarda
+ * igual en el inventario (y se carga la munición), pero la mano sigue con la de más valor. Una de igual o mayor nivel
+ * sí pasa a la mano, como siempre. Los niveles son los de las categorías de arma, de menor a mayor; el orden de fábrica es el
+ * que pidió Leandro: cuerpo a cuerpo, pistolas, metralletas, [rifles: no los nombró, quedan acá], especiales, especiales
+ * cuerpo a cuerpo (las legendarias) y, arriba de todo, las escopetas. Se puede reordenar y apagar en la configuración.
+ */
+const Jerarquia = (() => {
+  const CLAVES = ['cuerpo', 'pistola', 'metralleta', 'rifle', 'especial', 'legendaria', 'escopeta'];   // de menor a mayor
+  const clave = id => {
+    const a = ARMAS[id];
+    if (!a) return 'especial';
+    return CLAVES.includes(a.categoria) ? a.categoria : 'especial';   // lanzagranadas, bazuca, lanzallamas, láser, granadas, ametralladora…
+  };
+  // El orden guardado (si es una permutación válida de las siete) o el de fábrica
+  const orden = () => {
+    const g = Config.get('jerarquiaOrden');
+    return Array.isArray(g) && g.length === CLAVES.length && CLAVES.every(c => g.includes(c)) ? g : CLAVES;
+  };
+  const rango = id => orden().indexOf(clave(id));
+  // ¿La caja con `nuevoId` pasa a la mano, estando `actualId` en ella?
+  const reemplaza = (nuevoId, actualId) => !Config.get('jerarquia') || rango(nuevoId) >= rango(actualId);
+
+  // La lista de la configuración: la más valiosa arriba, con ▲ ▼ para subir o bajar cada nivel
+  function dibujarLista(el) {
+    const o = orden().slice().reverse();
+    el.innerHTML = o.map((c, i) => `<div class="fila-jerarquia"><span class="puesto">${i + 1}</span><span class="nombre">${t('jerarquia.' + c)}</span>` +
+      `<button type="button" class="boton mini" data-jerarquia-sube="${c}" aria-label="${t('jerarquia.subir', { n: t('jerarquia.' + c) })}"${i === 0 ? ' disabled' : ''}>▲</button>` +
+      `<button type="button" class="boton mini" data-jerarquia-baja="${c}" aria-label="${t('jerarquia.bajar', { n: t('jerarquia.' + c) })}"${i === o.length - 1 ? ' disabled' : ''}>▼</button></div>`).join('');
+  }
+  function mover(c, delta) {   // delta +1: sube un puesto (más valiosa)
+    const o = orden().slice(), i = o.indexOf(c), j = i + delta;
+    if (i < 0 || j < 0 || j >= o.length) return;
+    [o[i], o[j]] = [o[j], o[i]];
+    Config.set('jerarquiaOrden', o);
+  }
+  document.addEventListener('click', e => {
+    const lista = document.getElementById('lista-jerarquia');
+    const sube = e.target.closest('[data-jerarquia-sube]'), baja = e.target.closest('[data-jerarquia-baja]'), orig = e.target.closest('[data-accion="jerarquia-original"]');
+    if (sube) mover(sube.dataset.jerarquiaSube, +1);
+    else if (baja) mover(baja.dataset.jerarquiaBaja, -1);
+    else if (orig) Config.set('jerarquiaOrden', null);
+    else return;
+    if (lista) dibujarLista(lista);
+  });
+  Idioma.alCambiar(() => { const l = document.getElementById('lista-jerarquia'); if (l && l.childElementCount) dibujarLista(l); });
+  return { clave, orden, rango, reemplaza, dibujarLista, CLAVES };
+})();
+
+Object.assign(TEXTOS.es, {
+  'config.jerarquia': 'JERARQUÍA DE ARMAS', 'config.jerarquiaUsar': 'Una caja con un arma de menor nivel no reemplaza a la que llevas en la mano',
+  'config.jerarquiaNota': 'Pelea infinita y misiones. El arma igual queda en tu inventario; sólo cambia la que llevas en la mano. La más valiosa va arriba.',
+  'config.jerarquiaOriginal': 'Orden original', 'aviso.guardada': 'GUARDADA EN EL INVENTARIO: ',
+  'jerarquia.cuerpo': 'Cuerpo a cuerpo', 'jerarquia.pistola': 'Pistolas', 'jerarquia.metralleta': 'Metralletas', 'jerarquia.rifle': 'Rifles', 'jerarquia.especial': 'Especiales',
+  'jerarquia.legendaria': 'Especiales cuerpo a cuerpo', 'jerarquia.escopeta': 'Escopetas', 'jerarquia.subir': v => `Subir ${v.n}`, 'jerarquia.bajar': v => `Bajar ${v.n}`,
+});
+Object.assign(TEXTOS.pt, {
+  'config.jerarquia': 'HIERARQUIA DE ARMAS', 'config.jerarquiaUsar': 'Uma caixa com arma de nível menor não substitui a que você leva na mão',
+  'config.jerarquiaNota': 'Luta infinita e missões. A arma fica no inventário do mesmo jeito; só muda a que está na mão. A mais valiosa vai em cima.',
+  'config.jerarquiaOriginal': 'Ordem original', 'aviso.guardada': 'GUARDADA NO INVENTÁRIO: ',
+  'jerarquia.cuerpo': 'Corpo a corpo', 'jerarquia.pistola': 'Pistolas', 'jerarquia.metralleta': 'Submetralhadoras', 'jerarquia.rifle': 'Rifles', 'jerarquia.especial': 'Especiais',
+  'jerarquia.legendaria': 'Especiais corpo a corpo', 'jerarquia.escopeta': 'Espingardas', 'jerarquia.subir': v => `Subir ${v.n}`, 'jerarquia.bajar': v => `Descer ${v.n}`,
+});
+Object.assign(TEXTOS.en, {
+  'config.jerarquia': 'WEAPON RANKING', 'config.jerarquiaUsar': 'A crate with a lower-ranked weapon does not replace the one in your hand',
+  'config.jerarquiaNota': 'Endless fight and missions. The weapon still goes into your inventory; only the one in your hand stays. The most valuable goes on top.',
+  'config.jerarquiaOriginal': 'Original order', 'aviso.guardada': 'STORED IN INVENTORY: ',
+  'jerarquia.cuerpo': 'Melee', 'jerarquia.pistola': 'Pistols', 'jerarquia.metralleta': 'Submachine guns', 'jerarquia.rifle': 'Rifles', 'jerarquia.especial': 'Special weapons',
+  'jerarquia.legendaria': 'Special melee', 'jerarquia.escopeta': 'Shotguns', 'jerarquia.subir': v => `Move ${v.n} up`, 'jerarquia.bajar': v => `Move ${v.n} down`,
+});
 
 </script>
   <script>
@@ -11450,15 +11541,18 @@ class Jugador {
   cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; this.granadaFuera = this.pasadorFuera = false; }
 
   // Agarra un arma: si es nueva se suma al inventario; si ya la tenía, le repone munición
-  recoger(armaId) {
+  // equipar: false guarda el arma (y la carga) sin pasarla a la mano (js/jerarquia.js)
+  recoger(armaId, equipar = true) {
     const arma = ARMAS[armaId];
     const nueva = !this.inventario.includes(armaId);
     if (nueva) {
+      const enMano = this.inventario[this.indiceArma];   // el inventario se reordena: la de la mano se vuelve a buscar
       this.inventario.push(armaId);
       this.inventario.sort((a, b) => ORDEN_INVENTARIO.indexOf(a) - ORDEN_INVENTARIO.indexOf(b));
+      if (!equipar && enMano) this.indiceArma = this.inventario.indexOf(enMano);
       this.municion[armaId] = arma.cargador;
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = arma.reservaInicial;
-      if (!this.montada) { this.indiceArma = this.inventario.indexOf(armaId); this.cancelarRecarga(); }
+      if (!this.montada && equipar) { this.indiceArma = this.inventario.indexOf(armaId); this.cancelarRecarga(); }
     } else {
       this.municion[armaId] = arma.cargador; this.servidas[armaId] = 0;   // cargada de nuevo: sin vainas servidas adentro
       if (arma.reservaInicial !== undefined) this.reserva[armaId] = (this.reserva[armaId] || 0) + arma.reservaInicial;
@@ -16052,9 +16146,12 @@ class Juego {
       c.actualizar(dt);
       if (!j.muerto && c.tocaA(j) && c.alRecoger) { c.alRecoger(this); c.vivo = false; }
       else if (!j.muerto && c.tocaA(j)) {
-        const nueva = j.recoger(c.armaId), a = ARMAS[c.armaId];
-        this.aviso(t(nueva ? 'aviso.nueva' : 'aviso.municion') + a.nombre.toUpperCase(), 1800);
-        if (nueva) Audio_.sacarArma(a); else Audio_.municion();
+        // Pelea infinita y misiones: un arma de menor nivel que la de la mano se guarda sin cambiarla (js/jerarquia.js)
+        const jerarquia = !this.ultra && !this.torreta && !this.historia && !this.pruebas && !j.montada;
+        const equipar = !jerarquia || Jerarquia.reemplaza(c.armaId, j.arma().id);
+        const nueva = j.recoger(c.armaId, equipar), a = ARMAS[c.armaId];
+        this.aviso(t(!nueva ? 'aviso.municion' : equipar ? 'aviso.nueva' : 'aviso.guardada') + a.nombre.toUpperCase(), 1800);
+        if (nueva && equipar) Audio_.sacarArma(a); else if (nueva) Audio_.recoger(); else Audio_.municion();
         if (this.mision) this.mision.alRecoger(a);
         if (c.especial) this.especialesTomadas.set(c.indiceMontana, this.tiempoJugado);
         if (this.historia && c.historia && nueva) this.historia.armas.push(c.armaId);
@@ -16777,9 +16874,9 @@ function estadoMinigun(j) { return j.minigun || (j.minigun = { vel: 0, angulo: 0
 
 // Recoger: las armas de otro personaje no se agarran
 const recogerBase = Jugador.prototype.recoger;
-Jugador.prototype.recoger = function (armaId) {
+Jugador.prototype.recoger = function (armaId, equipar) {
   if (!armaPermitida(armaId, this)) return false;
-  return recogerBase.call(this, armaId);
+  return recogerBase.call(this, armaId, equipar);
 };
 
 // Las armas de personaje: con el cazador, su machete está siempre en el inventario; con otro, no está
@@ -27736,6 +27833,7 @@ const Asistente = (() => {
     });
     const completa = document.getElementById('boton-completa');
     completa.hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+    Jerarquia.dibujarLista(document.getElementById('lista-jerarquia'));   // los niveles de las armas (js/jerarquia.js)
     Teclas.dibujarLista(document.getElementById('lista-teclas'));   // las teclas de cada acción (js/teclas.js)
   }
   capaConfig.addEventListener('input', e => {

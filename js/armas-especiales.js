@@ -332,9 +332,9 @@ function estadoMinigun(j) { return j.minigun || (j.minigun = { vel: 0, angulo: 0
 
 // Recoger: las armas de otro personaje no se agarran
 const recogerBase = Jugador.prototype.recoger;
-Jugador.prototype.recoger = function (armaId) {
+Jugador.prototype.recoger = function (armaId, equipar) {
   if (!armaPermitida(armaId, this)) return false;
-  return recogerBase.call(this, armaId);
+  return recogerBase.call(this, armaId, equipar);
 };
 
 // Las armas de personaje: con el cazador, su machete está siempre en el inventario; con otro, no está
