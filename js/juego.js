@@ -20,6 +20,7 @@ class Juego {
     Mundo.nieve = this.nieve;   // pisadas que crujen (Jugador.superficie)
     Mundo.plano = this.pruebas || this.entrenamiento || this.cloaca || this.ultra || this.tutorial;
     Mundo.carriles = this.ultra;   // la calle se pinta con carriles en vez de la doble amarilla
+    Mundo.sinMontana = null;       // los búnkeres de la pelea infinita reservan sus trozos (js/bunker.js)
     Mundo.perfil = null;           // desniveles propios: solo en la historia (js/historia.js)
     Mundo.interior = this.entrenamiento || this.cloaca;   // el polígono y la cloaca son lugares cerrados
     Audio_.lugar(this.entrenamiento || this.pruebas ? 'galpon' : this.cloaca ? 'cloaca' : 'aire');   // el campo de pruebas también es un galpón
@@ -356,7 +357,6 @@ class Juego {
     const j = this.jugador;
     if (!j.muerto && j.vida < j.vidaMax) j.vida = Math.min(j.vidaMax, j.vida + 20);
     Audio_.rondaSuperada();
-    if (this.bunker) this.contarHorda();   // cada 3 hordas, los búnkeres se alejan 1 km (js/bunker.js)
     if (this.ultra) this.soltarCajaUltra(true);   // al terminar cada ola, siempre cae un arma
     if (this.torreta || this.ultra) this.avisoRonda(t('ronda.olaSuperada'), t('ronda.olaLlega', { n: this.ronda + 1, s: this.dificultad.descanso }));
     else this.avisoRonda(t('ronda.superada'), t('ronda.llega', { n: this.ronda + 1, s: this.dificultad.descanso }));
@@ -617,6 +617,8 @@ class Juego {
     const j = this.jugador;
     let x = j.x + j.direccion * (350 + Math.random() * 400);
     if (esMontana(indiceTrozo(x))) x = (indiceTrozo(x) + j.direccion) * TAMANO_TROZO + 100;   // nunca sobre la montaña
+    // Pelea infinita: a veces la caja trae un botiquín (js/bunker.js), mientras no lleve los tres
+    if (this.bunker && this.bunker.botiquines < BUNKER.botiquin.maximo && Math.random() < BUNKER.botiquin.probCaja) { this.cajas.push(new CajaBotiquin(x)); return; }
     const faltantes = ARMAS_COMUNES.filter(id => !j.inventario.includes(id));
     const opciones = faltantes.length ? faltantes : ARMAS_COMUNES;
     this.cajas.push(new Caja(x, opciones[Math.floor(Math.random() * opciones.length)], false));
@@ -663,7 +665,7 @@ class Juego {
     if (this.cloaca && this.ahora >= this.proximaGota) { Audio_.gota(Math.random()); this.proximaGota = this.ahora + 400 + Math.random() * 1800; }
     for (const c of this.cajas) {
       c.actualizar(dt);
-      if (!j.muerto && c.tocaA(j) && c.alRecoger) { c.alRecoger(this); c.vivo = false; }
+      if (!j.muerto && c.tocaA(j) && c.alRecoger) { if (c.alRecoger(this) !== false) c.vivo = false; }   // false: no se levantó (el botiquín con los tres encima)
       else if (!j.muerto && c.tocaA(j)) {
         // Pelea infinita y misiones: un arma de menor nivel que la de la mano se guarda sin cambiarla (js/jerarquia.js)
         const jerarquia = !this.ultra && !this.torreta && !this.historia && !this.pruebas && !j.montada;

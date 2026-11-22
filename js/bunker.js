@@ -1,6 +1,6 @@
 /* ===== Búnkeres de la pelea infinita (pedido de Enzo, 16/11, y los botiquines que sumó Leandro) =====
  * Arriba de la pantalla, la distancia recorrida desde el punto de partida. El primero está a 300 m (para los dos lados) y
- * después la distancia entre búnkeres crece 1 km cada 3 hordas superadas (con un 5 % de que, aun así, no cambie). Hay un
+ * después uno cada 300 m, siempre (pedido de Leandro, 22/11: antes la distancia crecía 1 km cada 3 hordas). Hay un
  * búnker subterráneo: en el piso, la boca de concreto blanco con la escalera que baja, y una luz verde que sale del piso
  * y se ve de lejos. Parado encima aparece «↓ ENTRAR AL BÚNKER»; con ↓ se entra (la partida queda quieta mientras tanto).
  * Adentro atiende un comerciante: un señor de unos 75 años con un parche en el ojo, barba blanca más o menos larga y el
@@ -14,14 +14,11 @@
 const DESPLAZAMIENTO_BUNKER = 215;
 const BUNKER = {
   cada: 300,               // metros entre búnkeres al empezar
-  hordasPorSalto: 3,       // cada tantas hordas (rondas) superadas, los búnkeres que faltan van más lejos...
-  saltoM: 1000,            // ...tantos metros más (1 km)
-  probSinSalto: 0.05,      // pero una de cada veinte veces, aunque pasen las 3 hordas, la distancia no cambia
   pxPorMetro: 44,          // la medida de las estacas del entrenamiento (js/juego.js)
   boca: 104,               // ancho del hueco de la escalera, en unidades del mundo
   radioEntrar: 50,         // a cuánto del centro de la boca hay que estar parado para poder entrar
   mejoraMax: 5, mejoraDano: 0.2,
-  botiquin: { precio: 150, cura: 50, maximo: 3 },
+  botiquin: { precio: 150, cura: 50, maximo: 3, probCaja: 0.22 },   // probCaja: de cada 100 cajas del camino, ~22 traen un botiquín (pedido de Leandro, 22/11)
   aereo: { precio: 400, maximo: 3, recarga: 60 },   // ataque aéreo: uno gratis cada 60 s (el primero a los 60 s de empezar) y hasta 3 cargas extra compradas, que se usan sin esperar
   paga: { zombie: 10, corredor: 15, raro: 20, porRonda: 2 },   // raro: tóxico o congelado; porRonda: lo que suma cada ronda
 };
@@ -121,6 +118,34 @@ function dibujarBotiquin(ctx, x, y, w) {
   const b = w * 0.09, l = w * 0.24;
   ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.rect(-b, -l + h * 0.08, b * 2, l * 2); ctx.rect(-l, -b + h * 0.08, l * 2, b * 2); ctx.fill();   // cruz verde
   ctx.restore();
+}
+
+// Caja del camino con un botiquín en vez de un arma (pelea infinita): se levanta al pasar y suma uno a los que se llevan (hasta 3);
+// con los tres encima se queda donde está, para cuando haga falta. Se usa con V o el botón ✚, igual que los del comerciante
+class CajaBotiquin extends Caja {
+  constructor(x) { super(x, ARMA_INICIAL, false); this.botiquin = true; this.avisoEn = 0; }
+  alRecoger(juego) {
+    const B = juego.bunker;
+    if (B.botiquines >= BUNKER.botiquin.maximo) {
+      if (juego.ahora >= this.avisoEn) { this.avisoEn = juego.ahora + 1800; juego.aviso(t('aviso.botiquinLleno', { max: BUNKER.botiquin.maximo }), 1400); }
+      return false;   // no se levanta
+    }
+    B.botiquines++;
+    juego.aviso(t('aviso.botiquinCaja', { n: B.botiquines, max: BUNKER.botiquin.maximo }), 1800);
+    Audio_.municion();
+  }
+  dibujar(ctx, camaraX) {
+    const sx = this.x - camaraX, flote = Math.sin(this.t * 3) * 3;
+    sombraElipse(ctx, sx + 8, this.y + 2, 24, 7, 0.3 - flote * 0.02);
+    ctx.save(); ctx.translate(sx, this.y - 16 + flote);
+    ctx.shadowColor = '#4ade80'; ctx.shadowBlur = 14 + Math.sin(this.t * 5) * 5;
+    dibujarBotiquin(ctx, 0, 0, 34);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(-64, -44, 128, 16);
+    ctx.fillStyle = '#9dffb0'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(t('caja.botiquin'), 0, -32);
+    ctx.restore();
+  }
 }
 
 // Misil (el ataque aéreo que vende el comerciante): cuerpo gris con la punta roja, aletas y la llama
@@ -225,6 +250,7 @@ function dibujarEscenaBunker(lienzo, armaId, ahora) {
 /* ---------- La partida: posición de los búnkeres, entrar y salir, dinero, botiquines, mejoras ---------- */
 Object.assign(Juego.prototype, {
   prepararBunkers() {
+    Mundo.sinMontana = new Set();
     // Ataque aéreo (pedido de Enzo): como en las defensas, la A o el botón; uno cada 60 s sin costo y las cargas extra del comerciante
     this.aereo = { listoEn: BUNKER.aereo.recarga, activo: null, recarga: BUNKER.aereo.recarga, extra: 0 };   // no se ofrece de entrada: el primero llega a los 60 s
     this.jugador.aTierra = true;   // en el ataque aéreo se tira cuerpo a tierra (en la calle no hay parapeto donde agacharse)
@@ -232,18 +258,17 @@ Object.assign(Juego.prototype, {
     this.hud.aereo.classList.remove('oculta');
     this.bunker = { origen: this.jugador.x, dinero: 0, botiquines: 0, abierto: false, sobre: null,
       pestana: 'propias', elegido: null, dice: '', hud: '', proximoDibujo: 0, avisoEn: 2.8,   // avisoEn: después del «¡SOBREVIVE!» del arranque
-      lados: { 1: [], '-1': [] }, hordas: 0, saltos: 0 };   // lados: los búnkeres generados a cada lado, en orden; saltos: cuántas veces creció la distancia
+      lados: { 1: [], '-1': [] } };   // lados: los búnkeres generados a cada lado, en orden
     this.mejoras = {};   // id del arma → nivel (lo lee Zombie.recibirDano)
   },
-  // Distancia entre un búnker y el siguiente, en metros: 300 al empezar y 1 km más cada 3 hordas superadas (salvo el 5 % de
-  // las veces que no cambia: contarHorda). Cada búnker queda fijo con la distancia que había cuando se generó
-  separacionM() { return BUNKER.cada + BUNKER.saltoM * this.bunker.saltos; },
-  // Un búnker nunca sobre una montaña: si cae en una, pasa al trozo de al lado, que nunca es montaña (js/terreno.js: no hay dos seguidas)
+  // Distancia entre un búnker y el siguiente, en metros: siempre 300 (el primero está a 300 m del punto de partida)
+  separacionM() { return BUNKER.cada; },
+  // Cada búnker queda exactamente a 300 m del anterior: si su trozo iba a ser una montaña, ese trozo deja de serlo (Mundo.sinMontana;
+  // está a más de 10 000 unidades del jugador, nunca a la vista), así nunca queda arriba de una montaña ni corrido de lugar
   generarBunker(lado) {
     const B = this.bunker, lista = B.lados[lado], ultimo = lista.length ? lista[lista.length - 1] : B.origen;
-    let x = ultimo + lado * (lista.length ? this.separacionM() : BUNKER.cada) * BUNKER.pxPorMetro;
-    const i = indiceTrozo(x);
-    if (esMontana(i)) x = (i + lado) * TAMANO_TROZO + TAMANO_TROZO / 2;
+    let x = ultimo + lado * this.separacionM() * BUNKER.pxPorMetro;
+    if (Mundo.sinMontana) Mundo.sinMontana.add(indiceTrozo(x));
     lista.push(x);
   },
   // A cada lado hay siempre generado uno más allá de lo que el jugador ve: cuando se acerca a el último (a 3 pantallas) o
@@ -258,15 +283,6 @@ Object.assign(Juego.prototype, {
   },
   todosBunkers() { const B = this.bunker; return B.lados[1].concat(B.lados[-1]); },
   bunkersEntre(x0, x1) { this.asegurarBunkers(); return this.todosBunkers().filter(x => x >= x0 && x <= x1); },
-  // Cada vez que se supera una horda; cada 3, la distancia entre búnkeres sube 1 km (con un 5 % de que se quede igual)
-  contarHorda() {
-    const B = this.bunker; if (!B) return;
-    B.hordas++;
-    if (B.hordas % BUNKER.hordasPorSalto !== 0) return;
-    if (Math.random() < BUNKER.probSinSalto) return;   // esta vez no cambia
-    B.saltos++;
-    this.aviso(t('bunker.separacion', { km: (this.separacionM() / 1000).toLocaleString(Idioma.actual(), { maximumFractionDigits: 1 }) }), 4200);
-  },
   metrosRecorridos() { return Math.round(Math.abs(this.jugador.x - this.bunker.origen) / BUNKER.pxPorMetro); },
   // El próximo hacia donde va el jugador (o el que tiene debajo)
   proximoBunker() {
@@ -600,6 +616,7 @@ document.getElementById('bunker').addEventListener('click', e => {
 
 /* ---------- Textos ---------- */
 Object.assign(TEXTOS.es, {
+  'caja.botiquin': 'BOTIQUÍN', 'aviso.botiquinCaja': v => `BOTIQUÍN +1 (${v.n}/${v.max})`, 'aviso.botiquinLleno': v => `YA LLEVAS LOS ${v.max} BOTIQUINES`,
   'bunker.bombardear': 'BOMBARDEAR LA SUPERFICIE · GRATIS', 'bunker.bombardeando': 'MISILES EN CAMINO…', 'bunker.arriba': v => `ARRIBA: ${v.n} ☠`, 'bunker.bombardeo': 'BOMBARDEO SOBRE LA SUPERFICIE', 'bunker.titulo': 'MEJORAS', 'bunker.tusArmas': 'TUS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SALIR DEL BÚNKER',
   'bunker.entrar': v => `${v.tecla}  ENTRAR AL BÚNKER`, 'bunker.entrarTactil': 'TOCA ▼ ABAJO PARA ENTRAR AL BÚNKER',
   'bunker.hudProximo': v => `BÚNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BÚNKER AQUÍ · ${v.tecla} PARA ENTRAR`,
@@ -620,11 +637,11 @@ Object.assign(TEXTOS.es, {
   'aviso.botiquin': v => `+${v.n} DE VIDA`, 'aviso.sinBotiquin': 'NO TIENES BOTIQUINES', 'aviso.vidaLlena': 'TU VIDA ESTÁ LLENA',
   'accion.botiquin': 'Usar botiquín (Pelea infinita)', 'controles.botiquin': 'Usar un botiquín (se compran en los búnkeres de la pelea infinita)',
   'tactil.botiquin': 'Usar botiquín',
-  'bunker.separacion': v => `AHORA LOS BÚNKERES QUEDAN A ${v.km} km UNO DEL OTRO`,
   'bunker.aereo': 'Ataque aéreo', 'bunker.aereoTexto': v => `Una carga extra de ataque aéreo: se usa con ${v.tecla} aunque el gratuito (uno cada ${v.s} s) esté en espera. Limpia la pantalla de zombies.`,
   'bunker.aereoLleno': v => `YA LLEVAS ${v.max} CARGAS: NO ENTRAN MÁS`, 'bunker.dijoAereo': 'Cuando lo pidas por radio, el cielo se encarga.',
 });
 Object.assign(TEXTOS.pt, {
+  'caja.botiquin': 'KIT MÉDICO', 'aviso.botiquinCaja': v => `KIT MÉDICO +1 (${v.n}/${v.max})`, 'aviso.botiquinLleno': v => `JÁ LEVA OS ${v.max} KITS MÉDICOS`,
   'bunker.bombardear': 'BOMBARDEAR A SUPERFÍCIE · GRÁTIS', 'bunker.bombardeando': 'MÍSSEIS A CAMINHO…', 'bunker.arriba': v => `LÁ EM CIMA: ${v.n} ☠`, 'bunker.bombardeo': 'BOMBARDEIO NA SUPERFÍCIE', 'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
   'bunker.entrar': v => `${v.tecla}  ENTRAR NO BUNKER`, 'bunker.entrarTactil': 'TOQUE ▼ ABAIXO PARA ENTRAR NO BUNKER',
   'bunker.hudProximo': v => `BUNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BUNKER AQUI · ${v.tecla} PARA ENTRAR`,
@@ -645,11 +662,11 @@ Object.assign(TEXTOS.pt, {
   'aviso.botiquin': v => `+${v.n} DE VIDA`, 'aviso.sinBotiquin': 'VOCÊ NÃO TEM KITS MÉDICOS', 'aviso.vidaLlena': 'SUA VIDA ESTÁ CHEIA',
   'accion.botiquin': 'Usar kit médico (Luta infinita)', 'controles.botiquin': 'Usar um kit médico (compram-se nos bunkers da luta infinita)',
   'tactil.botiquin': 'Usar kit médico',
-  'bunker.separacion': v => `AGORA OS BUNKERS FICAM A ${v.km} km UM DO OUTRO`,
   'bunker.aereo': 'Ataque aéreo', 'bunker.aereoTexto': v => `Uma carga extra de ataque aéreo: usa-se com ${v.tecla} mesmo com o gratuito (um a cada ${v.s} s) em espera. Limpa a tela de zumbis.`,
   'bunker.aereoLleno': v => `VOCÊ JÁ LEVA ${v.max} CARGAS: NÃO CABEM MAIS`, 'bunker.dijoAereo': 'Quando pedir pelo rádio, o céu cuida do resto.',
 });
 Object.assign(TEXTOS.en, {
+  'caja.botiquin': 'MEDKIT', 'aviso.botiquinCaja': v => `MEDKIT +1 (${v.n}/${v.max})`, 'aviso.botiquinLleno': v => `YOU ALREADY CARRY ${v.max} MEDKITS`,
   'bunker.bombardear': 'BOMB THE SURFACE · FREE', 'bunker.bombardeando': 'MISSILES INCOMING…', 'bunker.arriba': v => `ABOVE: ${v.n} ☠`, 'bunker.bombardeo': 'AIRSTRIKE ON THE SURFACE', 'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
   'bunker.entrar': v => `${v.tecla}  ENTER THE BUNKER`, 'bunker.entrarTactil': 'TAP ▼ DOWN TO ENTER THE BUNKER',
   'bunker.hudProximo': v => `BUNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BUNKER HERE · ${v.tecla} TO ENTER`,
@@ -670,7 +687,6 @@ Object.assign(TEXTOS.en, {
   'aviso.botiquin': v => `+${v.n} HEALTH`, 'aviso.sinBotiquin': 'YOU HAVE NO MEDKITS', 'aviso.vidaLlena': 'YOUR HEALTH IS FULL',
   'accion.botiquin': 'Use medkit (Endless fight)', 'controles.botiquin': 'Use a medkit (bought in the bunkers of the endless fight)',
   'tactil.botiquin': 'Use medkit',
-  'bunker.separacion': v => `NOW THE BUNKERS ARE ${v.km} km APART`,
   'bunker.aereo': 'Air strike', 'bunker.aereoTexto': v => `One extra air strike charge: use it with ${v.tecla} even while the free one (one every ${v.s} s) is recharging. It clears the screen of zombies.`,
   'bunker.aereoLleno': v => `YOU ALREADY CARRY ${v.max} CHARGES: NO ROOM FOR MORE`, 'bunker.dijoAereo': 'Radio it in and the sky will do the rest.',
 });
