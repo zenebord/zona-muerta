@@ -238,7 +238,7 @@ class BloqueHielo {
     // Contra el jugador (agachado es más bajo)
     const tope = j.y - 84 + j.agachado * BAJA_AGACHADO;
     if (!j.muerto && Math.abs(this.x - j.x) < 12 && this.y > tope && this.y < j.y) {
-      j.recibirDano(this.dano, juego);
+      j.recibirDano(this.dano, juego, 'aire', this.x - this.vx * 10);   // el casco y el escudo lo frenan (js/protecciones.js)
       this.romper(juego, 1);
       return;
     }

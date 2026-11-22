@@ -192,6 +192,7 @@
     <div id="hud" class="hud">
       <div class="hud-izq">
         <div class="barra-vida"><div id="vida-relleno"></div><span id="vida-texto">100</span></div>
+        <div id="barra-blindaje" class="barra-blindaje oculta"><div id="blindaje-relleno"></div><span id="blindaje-texto"></span></div>
         <div id="hud-arma" class="hud-arma"></div>
         <button id="hud-aereo" class="hud-aereo oculta" type="button" data-t-aria="hud.aereo.aria" aria-label="Pedir ataque aéreo"></button>
       </div>
@@ -320,6 +321,7 @@
         <div class="bunker-pestanas" role="tablist">
           <button type="button" role="tab" data-bunker="pestana:propias" data-t="bunker.tusArmas">TUS ARMAS</button>
           <button type="button" role="tab" data-bunker="pestana:venta" data-t="bunker.venta">COMPRAR</button>
+          <button type="button" role="tab" data-bunker="pestana:protecciones" data-t="bunker.protecciones">PROTECCIONES</button>
           <span id="bunker-m2-ayuda" class="bunker-m2-ayuda" data-t="bunker.m2Ayuda">M2 BROWNING · F dispara · W la gira</span>
           <button type="button" class="bunker-m2" data-m2="-1" data-t="bunker.m2Izq">◀ DISPARAR</button>
           <button type="button" class="bunker-m2" data-m2="1" data-t="bunker.m2Der">DISPARAR ▶</button>
@@ -600,6 +602,7 @@
   <script src="js/defensa-ultra.js"></script>
   <script src="js/equipables.js"></script>
   <script src="js/bunker.js"></script>
+  <script src="js/protecciones.js"></script>
   <script src="js/escenario-historia.js"></script>
   <script src="js/zombies-autoctonos.js"></script>
   <script src="js/historia.js"></script>

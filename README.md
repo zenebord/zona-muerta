@@ -1088,6 +1088,37 @@ tiros por caso, contra un zombie 75 y 150 px más arriba en la montaña, 75 y 15
 75 (la Saiga, 9 de 9 con los 54 perdigones adentro: los de 150 px quedan fuera de su alcance; el MGL y la bazuca,
 todas las explosiones en el zombie); la telescópica, 15 de 15. Con un arma sin mira, el aviso dice cuáles la tienen.
 
+## Protecciones (`js/protecciones.js`)
+
+Pedido de Leandro (22/11): siete piezas, una por parte del cuerpo, que **solo se compran en el búnker** de la pelea
+infinita (tercera pestaña, PROTECCIONES) y **solo en el entrenamiento y el campo de pruebas** aparecen en el menú de
+armas (C), donde se ponen y se sacan gratis. En los otros modos no hay.
+
+| Pieza | Dónde | Qué frena | Aguante | Precio |
+|---|---|---|---|---|
+| Brazales de kevlar | antebrazos | −20 % mordidas | 40 | $250 |
+| Chaleco antibalas | torso | −35 % mordidas y golpes | 80 | $500 |
+| Chaleco con placas | torso (reemplaza al chaleco) | −55 % mordidas y golpes; camina 10 % más lento | 160 | $1100 |
+| Casco balístico | cabeza | −60 % a lo que viene por el aire (hielo, ácido), −10 % mordidas | 60 | $400 |
+| Máscara de gas | cara | sin veneno de los tóxicos; los charcos de ácido, la mitad | no se gasta | $350 |
+| Escudo antidisturbios | mano de apoyo | todo lo que viene de frente (mordidas, hielo, ácido) | 150 | $900 |
+| Traje antibombas | torso, cabeza y brazos | −80 % explosiones propias, −40 % mordidas y aire; 25 % más lento y salta menos | 250 | $2500 |
+
+- Cada golpe pasa primero por el escudo (si viene de frente), después cabeza, torso y brazos (`Jugador.recibirDano`
+  recibe el tipo: mordida, aire, charco, explosion, y de dónde viene). Lo que una pieza frena se descuenta de su aguante:
+  la barra azul debajo de la vida. En 0 se rompe y se cae. Probado: una mordida de 10 deja 90 sin nada, 92 con brazales,
+  93,5 con chaleco, 95,5 con placas, 96,8 con placas, casco y brazales, y 100 con el escudo de frente (por atrás, 90).
+- El **escudo solo protege con armas de una mano** (pistolas, revólveres, machete, Égida, Gungnir): la mano de apoyo lo
+  sostiene adelante del pecho y se tira con una sola mano; con un arma de dos manos va colgado en la espalda y no
+  protege. Al empezar y terminar una recarga la mano va y vuelve de la guardia en 150 ms (salto máximo por cuadro igual
+  que sin escudo: 2,1 contra 2,0 en la Glock).
+- En el búnker se compran, se reparan (la mitad del precio, según el daño) y se mejoran (+25 % de aguante por nivel,
+  hasta 5). Antes de comprar avisa lo que se saca (las placas sacan el chaleco; el traje, el chaleco, el casco y los
+  brazales). La vista previa es el personaje elegido con esa pieza puesta.
+- En el campo de pruebas hay además **+ ZOMBIE QUE MUERDE** (el zombie de prueba no ataca) para ver bajar la barra.
+- Se dibujan sobre la ropa de cada personaje envolviendo `dibujarTorso`, `dibujarCabeza`, `dibujarBrazo`,
+  `piernaArticulada` y `Jugador.cuerpo`; no se toca ningún dibujo de arma, así que la VR no cambia.
+
 ## Armas y tiros para matar un zombie
 
 **Escopetas, de a dos** (pedido de Enzo): los perdigones de un tiro comparten la cuenta de zombies alcanzados y, tocados
@@ -1513,6 +1544,7 @@ js/zombie.js      zombie (verde, camiseta azul manchada, pantalón marrón roto)
 js/zombie-toxico.js  zombie tóxico de la cloaca, escupitajo de ácido y charco
 js/zombie-congelado.js  zombie congelado del bosque nevado y su bloque de hielo
 js/bunker.js            pelea infinita: distancia, búnkeres cada vez más lejos, comerciante, mejoras y botiquines
+js/protecciones.js      chaleco, casco, escudo y las demás protecciones: daño, dibujo, búnker y menú de pruebas
 js/equipables.js        bípode, mira y silenciador que se compran en el búnker (dibujo, efectos y ventana)
 js/tutorial.js          tutorial guiado de lo básico
 js/armas-modelos-2.js  las 20 armas nuevas (fuego, cuerpo a cuerpo y legendarias)

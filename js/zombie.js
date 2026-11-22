@@ -185,7 +185,7 @@ class Zombie {
       this.fase += dt * 4;
       if (ahora >= this.ataqueEn) {
         this.ataqueEn = ahora + 900;
-        jugador.recibirDano(this.mordida, juego);
+        jugador.recibirDano(this.mordida, juego, 'mordida', this.x);   // tipo y de dónde viene: para las protecciones (js/protecciones.js)
         Audio_.zombieGolpea();
       }
     } else if (juego.bunker && juego.bunker.abierto && distancia < 90 && !this.vyCaida) {
