@@ -1197,3 +1197,21 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 .boton-arma.boton-proteccion:hover { background: #7fc4ff; color: var(--noche); }
 @media (max-width: 760px), (max-height: 460px) { .barra-blindaje { width: 120px; height: 9px; } #blindaje-texto { font-size: 8px; line-height: 6px; } }
 .boton-arma.boton-proteccion.en-mano small::after { content: " ✓"; }
+
+/* ===== Campo de pruebas: cámara lenta en tres medidas y menú de zombies (js/menu-zombies.js) ===== */
+.ficha-vitrina .fv-lentas { gap: 3px; }
+.ficha-vitrina .fv-lentas .boton { padding: 5px 2px; font-size: .78em; letter-spacing: .04em; }
+.ficha-vitrina .fv-lentas .boton.elegida { background: var(--arena); color: var(--noche); }
+.rejilla-zombies { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)) !important; }
+.boton-zombie-menu { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 4px 6px; }
+.boton-zombie-menu canvas { width: 72px; height: 72px; display: block; }
+.boton-zombie-menu span { font-size: 11px; line-height: 1.15; }
+.grupo-zombies.jefes h3 { color: #ff8a65; border-bottom-color: rgba(255,138,101,.35); }
+#menu-zombies .lista-grupos-armas { max-height: 62vh; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #menu-zombies { gap: 6px; padding: 8px 12px; }
+  #menu-zombies h2 { font-size: 20px; letter-spacing: .2em; margin: 0; }
+  #menu-zombies .ayuda { display: none; }
+  #menu-zombies .lista-grupos-armas { max-height: calc(100vh - 110px); margin: 0; }
+  .boton-zombie-menu canvas { width: 54px; height: 54px; }
+}

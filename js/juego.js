@@ -129,13 +129,15 @@ class Juego {
   }
   // Zombie de prueba: quieto, no muerde, sólo recibe tiros. Cada uno nuevo va un poco más atrás que el anterior (en la
   // vitrina, más cerca para que entre en el cuadro); hasta 5 vivos: con uno más se va el más viejo
-  ponerZombiePrueba() {
+  // fabrica(x): un zombie elegido del menú de zombies (js/menu-zombies.js); sin ella, uno común al azar (ZOMBIE RANDOM)
+  ponerZombiePrueba(fabrica = null) {
     const j = this.jugador, vivos = this.zombies.filter(z => z.maniqui && z.estado !== 'muerto');
     if (vivos.length >= 5) this.zombies.splice(this.zombies.indexOf(vivos.shift()), 1);
     const base = this.pruebas ? 140 : 220, paso = 26;
     let k = 0;
     while (k < 4 && vivos.some(z => Math.abs(z.x - (j.x + j.direccion * (base + k * paso))) < paso / 2)) k++;
-    const z = new Zombie(j.x + j.direccion * (base + k * paso), false, this.dificultad);
+    const x = j.x + j.direccion * (base + k * paso);
+    const z = fabrica ? fabrica(x) : new Zombie(x, false, this.dificultad);
     z.maniqui = true;
     this.zombies.push(z);
     Audio_.gemido(true, base + k * paso);

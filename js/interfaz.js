@@ -61,7 +61,7 @@
 
   /* ---- Partida ---- */
   function iniciar(mision, opciones = {}) {
-    Audio_.activar();
+    Audio_.activar(); Audio_.lento(1);   // cada partida arranca sin cámara lenta
     misionActual = mision || null;
     opcionesActuales = opciones;
     const difGuardada = opciones.estrategia && opciones.estrategia.dificultad && DIFICULTADES[opciones.estrategia.dificultad];   // la partida guardada sigue con la suya
@@ -77,6 +77,7 @@
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     document.body.classList.toggle('en-bastion', !!opciones.estrategia);
     document.body.classList.toggle('en-pruebas', !!opciones.pruebas);
+    MenuZombies.cerrar(); pintarCamaraLenta();   // el menú de zombies cerrado y la cámara lenta en NORMAL
     document.body.classList.toggle('en-tutorial', !!opciones.tutorial);
     fichaVitrinaId = null;
     tituloPruebas();
@@ -111,9 +112,9 @@
     if (!pausado && juego && !juego.terminado) medirRendimiento(t - ultimo);
     ultimo = t;
     if (!pausado && juego) {
-      // Campo de pruebas: cámara lenta a un cuarto. Último bastión: 2×, 5× o 10× en pasos normales (no uno gigante, que atravesaría todo)
+      // Campo de pruebas: cámara lenta (la mitad, un cuarto o un décimo). Último bastión: 2×, 5× o 10× en pasos normales (no uno gigante, que atravesaría todo)
       const pasos = juego.velocidad || 1;
-      for (let k = 0; k < pasos && !juego.terminado; k++) juego.actualizar(juego.camaraLenta ? dt * 0.25 : dt);
+      for (let k = 0; k < pasos && !juego.terminado; k++) juego.actualizar(juego.camaraLenta ? dt * juego.camaraLenta : dt);
       if (juego.pruebas) fichaVitrina();
       juego.dibujar();
       if (juego.terminado) { mostrarFin(); return; }
@@ -357,18 +358,29 @@
     const carga = j.municionActual(), reserva = a.cuerpo ? '' : (j.reserva[id] === undefined || j.reserva[id] >= 999 ? '∞' : j.reserva[id]);
     document.getElementById('fv-carga').textContent = a.cuerpo ? '—' : `${carga} / ${a.cargador}`;
     document.getElementById('fv-reserva').textContent = a.cuerpo ? '' : t('vitrina.reserva', { n: reserva });
-    document.getElementById('fv-estado').textContent = j.recarga ? t('vitrina.recargando') : juego.camaraLenta ? t('vitrina.lenta') : '';
+    document.getElementById('fv-estado').textContent = j.recarga ? t('vitrina.recargando') : juego.camaraLenta ? t('lenta.' + juego.nivelLento) : '';
   }
-  function alternarCamaraLenta() {
+  // Cámara lenta del campo de pruebas, en tres medidas (pedido de Enzo): lenta (la mitad), muy lenta (un cuarto, la de
+  // antes) y extremadamente lenta (un décimo). El sonido también va más lento y más grave (Audio_.lento, js/audio.js).
+  // La L pasa a la siguiente; los botones de la ficha eligen una
+  const NIVELES_LENTA = [0, 0.5, 0.25, 0.1];
+  function elegirCamaraLenta(n) {
     if (!juego || !juego.pruebas) return;
-    juego.camaraLenta = !juego.camaraLenta;
-    document.getElementById('fv-lenta').classList.toggle('elegida', juego.camaraLenta);
-    juego.aviso(t(juego.camaraLenta ? 'vitrina.lentaSi' : 'vitrina.lentaNo'), 1000);
+    juego.nivelLento = n; juego.camaraLenta = NIVELES_LENTA[n] || 0;
+    Audio_.lento(juego.camaraLenta || 1);
+    pintarCamaraLenta();
+    juego.aviso(t('lenta.aviso' + n), 1100);
+  }
+  function alternarCamaraLenta() { if (juego && juego.pruebas) elegirCamaraLenta(((juego.nivelLento || 0) + 1) % NIVELES_LENTA.length); }
+  function pintarCamaraLenta() {
+    const n = (juego && juego.nivelLento) || 0, b = document.getElementById('fv-lenta');
+    b.classList.toggle('elegida', n > 0); b.textContent = n ? t('lenta.' + n) : t('vitrina.botonLenta');
+    document.querySelectorAll('[data-accion="lenta"]').forEach(x => x.classList.toggle('elegida', +x.dataset.nivel === n));
   }
 
   function salirAlMenu() {
     cancelAnimationFrame(cuadro);
-    Audio_.ambiente(0);
+    Audio_.ambiente(0); Audio_.lento(1);   // fuera del campo de pruebas no hay cámara lenta
     Musica.detener(0.8);
     juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto', 'en-tutorial');
     capaPruebas.classList.add('oculta');
@@ -485,6 +497,8 @@
       case 'config-completa': alternarPantallaCompleta(); break;
       case 'descargar-juego': descargarJuego(boton); break;
       case 'camara-lenta': alternarCamaraLenta(); break;
+      case 'lenta': elegirCamaraLenta(+boton.dataset.nivel); break;   // normal, lenta, muy lenta o extremadamente lenta
+      case 'menu-zombies': if (juego && juego.pruebas) { if (menuPruebasAbierto) alternarMenuPruebas(); MenuZombies.abrir(juego); } break;   // js/menu-zombies.js
       case 'arma-ant': case 'arma-sig': if (juego) { juego.jugador.cambiarArma(boton.dataset.accion === 'arma-sig' ? 1 : -1); juego.jugador.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;
       case 'asist-abrir': Asistente.abrir(capaConfig); break;   // asistente de construcción (temporal)
       case 'asist-volver': Asistente.cerrar(); break;
@@ -519,6 +533,10 @@
     if (TECLAS_BLOQUEADAS.has(e.code)) e.preventDefault();
     if (!juego) return;
     if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
+    if (MenuZombies.abierto) {   // menú de zombies abierto: Esc lo cierra, X borra lo puesto
+      if (e.code === 'Escape') MenuZombies.cerrar(); else if (tecla === 'KeyX' && !e.repeat) juego.borrarGenerado();
+      return;
+    }
     if (juego.enTienda) { if ((e.code === 'Escape' || tecla === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
     if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e, tecla)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
     if ((juego.pruebas || juego.entrenamiento) && tecla === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
@@ -549,6 +567,7 @@
     const en = juego.entrada, j = juego.jugador;
     if (juego.pruebas && tecla === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
     if (juego.pruebas && tecla === 'KeyZ' && !e.repeat) { juego.ponerZombiePrueba(); return; }   // zombie de prueba
+    if (juego.pruebas && tecla === 'KeyX' && !e.repeat) { juego.borrarGenerado(); return; }   // X: borra los zombies puestos, las M2 y las cajas (antes solo con el menú de armas abierto)
     switch (tecla) {
       case 'ArrowRight': en.derecha = true; break;
       case 'ArrowLeft':  en.izquierda = true; break;
@@ -609,7 +628,7 @@
       if (pausado || juego.terminado || sobreControl(e) || e.target.closest('#panel-bastion')) return;
       const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'down', e.button); e.preventDefault(); return;
     }
-    if (!Config.get('raton') || e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
+    if (!Config.get('raton') || e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || MenuZombies.abierto || sobreControl(e)) return;
     if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
     else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }
   });

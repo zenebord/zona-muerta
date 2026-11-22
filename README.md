@@ -188,10 +188,25 @@ y entrá a <http://127.0.0.1:8791/>.
 
 El personaje queda quieto y la cámara se acerca (3,3× con pistolas, 2,9× con metralletas y cuerpo a cuerpo, 2,6×
 con el resto) para ver de cerca el arma, el fogonazo, los casquillos y la recarga. ← y → cambian de arma (lista para
-tirar, sin heredar la espera de la anterior), `F` o clic dispara, `S` o clic derecho recarga y `L` pone cámara lenta
-(un cuarto de la velocidad; el sonido sigue normal). `Z` o el botón **+ ZOMBIE DE PRUEBA** de la ficha ponen un zombie quieto
-que no muerde, para probar el arma: cada uno nuevo va un poco más atrás que el anterior y puede haber hasta 5 (con uno
-más se va el más viejo). Se dibuja siempre con todos los píxeles de la pantalla (hasta 3×), sin importar la calidad elegida, para que de cerca no se vea pixelado. La ficha del arma en la mano: su dibujo entero de perfil con el largo, grupo, origen, año,
+tirar, sin heredar la espera de la anterior), `F` o clic dispara y `S` o clic derecho recarga.
+
+**Cámara lenta** (pedido de Enzo, 22/11): tres medidas, con los botones NORMAL · LENTA · MUY LENTA · EXTREMA de la
+ficha o `L` (pasa a la siguiente): **lenta** a la mitad, **muy lenta** a un cuarto (la de antes) y **extremadamente
+lenta** a un décimo. **El sonido también**: todo lo que suena mientras dura (disparos, mecanismos, casquillos, impactos,
+zombies, el viento) se estira y baja de tono como una cinta pasada más despacio, por √f (×0,71, ×0,5 y ×0,32): con f
+la extrema sería tres octavas y media más grave y casi no se oiría. No se tocó cada sonido: en `js/audio.js`
+(`Audio_.lento`) los nodos que nacen durante la cámara lenta quedan marcados y `AudioParam` y `start/stop` les estiran
+los tiempos y les bajan las frecuencias (probado: un tono de 200 ms a 440 Hz marcado a ×0,5 suena 400 ms a 218 Hz). La
+recarga adelanta cada grabación lo justo para ese ritmo. Al salir del campo de pruebas vuelve a la normal.
+
+**Zombies de prueba**: `Z`, **+ ZOMBIE RANDOM** de la ficha o ZOMBIE RANDOM del menú de armas ponen un zombie común al
+azar, como siempre; **MENÚ DE ZOMBIES** (`js/menu-zombies.js`) muestra los 48 del juego con su retrato, para elegir:
+los 10 comunes (cocinero, policía, obrero…), los 5 chicos (el bicicletero, el de capucha…), el tóxico y el congelado,
+los 12 de la historia (personajes y animales), 11 del Último bastión y 8 jefes (los cuatro de la historia y los del
+bastión). Todos quedan quietos y no atacan (ni escupen, ni tiran hielo, ni embisten), con la vida y el aspecto de su
+modo; cada uno nuevo va un poco más atrás que el anterior y puede haber hasta 5 (con uno más se va el más viejo). **`X`**
+(o BORRAR TODO, o ✕ BORRAR en el celular) los borra; antes la X solo andaba con el menú de armas abierto. Probado: los 48
+se ponen, en 3 s no le sacan vida al jugador ni tiran nada, y mueren y caen sin errores. Se dibuja siempre con todos los píxeles de la pantalla (hasta 3×), sin importar la calidad elegida, para que de cerca no se vea pixelado. La ficha del arma en la mano: su dibujo entero de perfil con el largo, grupo, origen, año,
 munición, descripción, daño, tiros para matar, cargador, cadencia, funcionamiento, recarga, alcance y retroceso, con
 la munición en vivo; va arriba a la izquierda y el personaje justo a su derecha (el juego mide dónde termina la ficha, que cambia con la
 pantalla: entre el 30 % y el 42 % del ancho), así queda lugar a la derecha para los zombies de prueba, desde 140 px. `C` sigue abriendo la lista de todas las armas.

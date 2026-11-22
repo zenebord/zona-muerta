@@ -21,6 +21,58 @@ const Audio_ = (() => {
     maestro.gain.setTargetAtTime(0.85 * vol.efectos, t, 0.05);
     busMusica.gain.setTargetAtTime(apagado.musica ? 0 : vol.musica, t, 0.05);
   }
+  /* ---------- Cámara lenta del campo de pruebas: todo el sonido más lento y más grave ----------
+   * Con la cámara lenta (lento(f), f = 0,5, 0,25 o 0,1 del tiempo), cada sonido que nace mientras dura suena como una
+   * cinta pasada más despacio: los tiempos se estiran (arranques, envolventes, retrasos, finales) y las frecuencias
+   * bajan (osciladores, filtros y la velocidad de las grabaciones), todo por v = √f (×0,71, ×0,5 o ×0,32). Con √f y no
+   * con f, la más lenta sigue oyéndose (×0,1 sería tres octavas y media más grave: casi no se oye en un parlante chico).
+   * No hace falta tocar cada sonido: los nodos que se crean durante la cámara lenta quedan marcados (marcarLento) y
+   * AudioParam y start/stop les traducen el tiempo y la frecuencia. Los que ya sonaban (o los fijos de la mezcla) no. */
+  let lentoV = 1, lentoInstalado = false;
+  const PARAMS_LENTO = ['frequency', 'detune', 'Q', 'gain', 'playbackRate', 'delayTime', 'pan', 'offset'];
+  function marcarLento(n) {
+    const t0 = ctx.currentTime;
+    n._lv = lentoV; n._t0 = t0;
+    for (const k of PARAMS_LENTO) {
+      const q = n[k];
+      if (q instanceof AudioParam) { q._lv = lentoV; q._t0 = t0; q._esc = k === 'frequency' || k === 'playbackRate' ? lentoV : k === 'delayTime' ? 1 / lentoV : 1; }
+    }
+  }
+  function instalarLento() {
+    if (lentoInstalado || !ctx) return;
+    lentoInstalado = true;
+    const P = AudioParam.prototype, S = AudioScheduledSourceNode.prototype;
+    const estirar = (o, t) => o._lv ? o._t0 + (t - o._t0) / o._lv : t;    // el tiempo, contado desde que nació el nodo
+    const valor = (q, v) => q._esc ? v * q._esc : v;
+    for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'exponentialRampToValueAtTime']) {
+      const orig = P[m]; P[m] = function (v, t) { return orig.call(this, valor(this, v), estirar(this, t)); };
+    }
+    const objetivo = P.setTargetAtTime; P.setTargetAtTime = function (v, t, tc) { return objetivo.call(this, valor(this, v), estirar(this, t), this._lv ? tc / this._lv : tc); };
+    const curvaV = P.setValueCurveAtTime; P.setValueCurveAtTime = function (c, t, d) { if (this._esc && this._esc !== 1) c = Float32Array.from(c, x => x * this._esc); return curvaV.call(this, c, estirar(this, t), this._lv ? d / this._lv : d); };
+    const cancelar = P.cancelScheduledValues; P.cancelScheduledValues = function (t) { return cancelar.call(this, estirar(this, t)); };
+    const d = Object.getOwnPropertyDescriptor(P, 'value');
+    Object.defineProperty(P, 'value', { configurable: true, enumerable: d.enumerable, get: d.get, set(v) { d.set.call(this, valor(this, v)); } });
+    // (las grabaciones y el ruido tienen su propio start, con desde dónde y cuánto: AudioBufferSourceNode no hereda el de S)
+    for (const proto of [S, AudioBufferSourceNode.prototype, OscillatorNode.prototype, window.ConstantSourceNode && ConstantSourceNode.prototype]) {
+      if (!proto) continue;
+      if (proto.hasOwnProperty('start')) { const arrancar = proto.start; proto.start = function (t = 0, ...resto) { return arrancar.call(this, t ? estirar(this, t) : t, ...resto); }; }
+      if (proto.hasOwnProperty('stop')) { const parar = proto.stop; proto.stop = function (t = 0) { return parar.call(this, t ? estirar(this, t) : t); }; }
+    }
+    for (const nombre of ['createOscillator', 'createBufferSource', 'createBiquadFilter', 'createGain', 'createDelay', 'createStereoPanner', 'createConstantSource']) {
+      const orig = ctx[nombre]; if (!orig) continue;
+      ctx[nombre] = function (...a) { const n = orig.apply(this, a); if (lentoV < 1) marcarLento(n); return n; };
+    }
+  }
+  // Lo que ya está sonando de fondo (viento, agua): la fuente y sus vaivenes, al ritmo nuevo
+  function reajustarFondos() {
+    for (const fondo of [viento, agua]) if (fondo) for (const n of fondo.nodos) {
+      const q = n.playbackRate || n.frequency; if (!q) continue;
+      if (q._base === undefined) q._base = q.value / (q._esc || 1);
+      q._esc = 1; q._lv = 0; n._lv = 0;
+      q.value = q._base * lentoV;
+    }
+  }
+
   // Eco de cada lugar: cuándo vuelve el rebote, cuántas veces y qué tan brillante
   const ECOS = { aire: [0.21, 0.3, 1400], galpon: [0.13, 0.36, 2300], cloaca: [0.17, 0.46, 1500] };
 
@@ -695,10 +747,20 @@ const Audio_ = (() => {
     const salida = ganancia(ctx, vol), nodos = [];
     conectar(salida, rev, 0);
     const fin = generador(ctx, salida, ctx.currentTime + 0.01, nodos, ...args);
-    setTimeout(() => { salida.disconnect(); for (const n of nodos) n.disconnect(); }, (fin - ctx.currentTime + 0.3) * 1000);
+    setTimeout(() => { salida.disconnect(); for (const n of nodos) n.disconnect(); }, ((fin - ctx.currentTime) / lentoV + 0.3) * 1000);   // en cámara lenta dura más
   }
 
   return {
+    // Cámara lenta (campo de pruebas): f es la fracción del tiempo (1 normal; 0,5, 0,25 o 0,1). El sonido va a √f
+    lento(f) {
+      const v = f > 0 && f < 1 ? Math.sqrt(f) : 1;
+      if (v === lentoV) return;
+      lentoV = v;
+      if (v < 1 && asegurar()) instalarLento();
+      if (ctx) reajustarFondos();
+    },
+    // Cuánto se estira el sonido (1 normal): con esto la recarga adelanta cada grabación lo justo (js/jugador.js)
+    factorLento: () => lentoV,
     activar: asegurar,
     // Versión VR (vr/campo.js): con el visor puesto la página no pinta cuadros con requestAnimationFrame y puede
     // figurar oculta, así que el silencio automático la dejaría muda. Se apaga al entrar

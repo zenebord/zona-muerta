@@ -220,7 +220,17 @@
         <button type="button" class="boton mini" id="fv-lenta" data-accion="camara-lenta" data-t="vitrina.botonLenta">CÁMARA LENTA</button>
         <button type="button" class="boton mini" data-accion="arma-sig">▶</button>
       </div>
-      <div class="fv-botones"><button type="button" class="boton mini" data-accion="poner-zombie" data-t="vitrina.botonZombie">+ ZOMBIE DE PRUEBA (Z)</button></div>
+      <!-- Cámara lenta: qué tan lenta (js/interfaz.js: elegirCamaraLenta); también la imagen y el sonido -->
+      <div class="fv-botones fv-lentas">
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="0" data-t="lenta.0">NORMAL</button>
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="1" data-t="lenta.1">LENTA</button>
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="2" data-t="lenta.2">MUY LENTA</button>
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="3" data-t="lenta.3">EXTREMA</button>
+      </div>
+      <div class="fv-botones">
+        <button type="button" class="boton mini" data-accion="poner-zombie" data-t="zm.random">+ ZOMBIE RANDOM (Z)</button>
+        <button type="button" class="boton mini" data-accion="menu-zombies" data-t="zm.menu">MENÚ DE ZOMBIES</button>
+      </div>
       <p class="fv-ayuda" data-t-html="vitrina.ayuda"></p>
     </aside>
     <!-- Último bastión: dinero, oleada y vida del campamento arriba; qué construir y la próxima oleada abajo -->
@@ -267,6 +277,8 @@
         <button class="boton-tactil pildora solo-mira" data-tecla="KeyD" data-t="tactil.mira">MIRA</button>
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
+        <button class="boton-tactil pildora solo-pruebas boton-zombie" data-accion="menu-zombies" data-t="zm.tactil">ZOMBIES ▤</button>
+        <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyX" data-t="zm.borrarTactil">✕ BORRAR</button>
         <button class="boton-tactil pildora solo-ultra" data-tecla="KeyB" data-t="tactil.tienda">TIENDA</button>
         <button class="boton-tactil pildora solo-botiquin" data-tecla="KeyV" data-t-aria="tactil.botiquin" aria-label="Usar botiquín">✚</button>
         <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
@@ -330,6 +342,17 @@
         <div id="bunker-lista" class="bunker-lista"></div>
       </div>
     </div>
+    <!-- Menú de zombies del campo de pruebas (js/menu-zombies.js): cada zombie del juego, para ponerlo de blanco -->
+    <div id="menu-zombies" class="capa oculta" role="dialog" aria-labelledby="menu-zombies-titulo">
+      <h2 id="menu-zombies-titulo" data-t="zm.titulo">MENÚ DE ZOMBIES</h2>
+      <p class="ayuda" data-t="zm.ayuda">Toca uno para ponerlo en el campo. Con X (o BORRAR TODO) se borran.</p>
+      <div id="lista-zombies" class="lista-grupos-armas"></div>
+      <div class="fila-botones">
+        <button class="boton chico" type="button" data-zombie="random" data-t="zm.randomCorto">ZOMBIE RANDOM</button>
+        <button class="boton chico peligro" type="button" data-zombie="borrar" data-t="pruebas.borrar">BORRAR TODO (X)</button>
+        <button class="boton chico" type="button" data-zombie="cerrar" data-t="boton.volver">VOLVER</button>
+      </div>
+    </div>
     <div id="menu-pruebas" class="capa oculta">
       <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
       <p class="ayuda" data-t-html="pruebas.ayuda"></p>
@@ -351,7 +374,8 @@
       <div class="fila-botones">
         <button class="boton chico" data-accion="poner-m2" data-t="pruebas.ponerM2">PONER M2 BROWNING</button>
         <button class="boton chico" data-accion="quitar-m2" data-t="pruebas.quitarM2">QUITAR LA M2 CERCANA</button>
-        <button class="boton chico" data-accion="poner-zombie" data-t="pruebas.zombie">ZOMBIE DE PRUEBA</button>
+        <button class="boton chico" data-accion="poner-zombie" data-t="zm.randomCorto">ZOMBIE RANDOM</button>
+        <button class="boton chico" data-accion="menu-zombies" data-t="zm.menu">MENÚ DE ZOMBIES</button>
         <button class="boton chico peligro" data-accion="borrar-generado" data-t="pruebas.borrar">BORRAR TODO (X)</button>
       </div>
       <button class="boton chico" data-accion="cerrar-pruebas" data-t="pruebas.seguir">SEGUIR (C)</button>
@@ -620,6 +644,7 @@
   <script src="js/bastion-v2-ui.js"></script>
   <script src="js/rama.js"></script>
   <script src="js/asistente.js"></script>
+  <script src="js/menu-zombies.js"></script>
   <script src="js/interfaz.js"></script>
   <script src="js/tactil.js"></script>
 </body>
