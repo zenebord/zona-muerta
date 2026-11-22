@@ -32,8 +32,8 @@ y entrá a <http://127.0.0.1:8791/>.
   hasta 23 con un sombrero) y la inclinación y los brazos quedaban afuera, así que el tiro de la M2 desde una montaña
   (la boca queda a 46 px sobre la cima y dispara recta; los zombies de la ladera tienen la cabeza a esa altura) pasaba por la
   cabeza que se veía sin pegarle. Medido sobre 34 tipos (comunes, corredores, tóxico, congelado, los del lugar con los
-  animales y los 4 jefes, en las dos direcciones): lo máximo que algo visible queda fuera de la caja es 0,8 px, antes del
-  margen; probado con la M2 desde la montaña: la bala le pega a la cabeza de todos, aun a 1 px del tope. **Excepción: los
+  animales y los 4 jefes, en las dos direcciones): lo máximo que algo visible queda fuera de la caja es 0,8 px a los costados (el
+  margen de 4 px es sólo vertical); probado con la M2 desde la montaña: la bala le pega a la cabeza de todos, aun a 1 px del tope. **Excepción: los
   chicos y los animales** conservan un piso de altura (56 y 52 px, más el margen) y su caja es la completa de su dibujo: agachado
   (la boca queda a 50–52 px) se les pega siempre, 8 de 8 con la Glock incluso al más chico (0,58); parados, 0 de 8 (la boca está
   a 65 px: hay que agacharse, o usar el bípode o la mira, que los sigue). Los comunes, tóxicos y congelados, 8 de 8 parados y
@@ -112,6 +112,15 @@ y entrá a <http://127.0.0.1:8791/>.
     El dinero sale de los zombies: $10 cada uno, $15 los corredores, $20 los
     tóxicos y congelados, y $2 más por cada ronda. En el menú: ← → otra carta, Tab la otra pestaña, Enter la acción,
     Esc o ↑ salen. Las misiones, la historia y los otros modos no tienen búnkeres.
+    **Vista dividida** (pedido de Leandro): al bajar, **la partida sigue arriba tal cual** —los zombies caminan, las rondas
+    pasan, el dinero de las muertes sube— y el búnker ocupa **la mitad de abajo** de la pantalla (todo mide en vh). El
+    jugador no se ve ni recibe daño (invulnerable mientras esté abajo, el veneno queda en pausa) y los zombies lo toman por
+    ausente: no muerden, escupen ni lanzan, sólo se juntan en la boca (probado: 5 tipos 20 s, vida 100 → 100; al salir
+    muerden de nuevo). Un botón rojo, **BOMBARDEAR LA SUPERFICIE · GRATIS**, lanza el ataque aéreo (dos cazas, siete
+    misiles y remate sobre todo lo que está a la vista) **sin gastar la espera de 60 s ni las cargas compradas y sin límite
+    de veces** mientras se esté adentro; el contador «ARRIBA: N ☠» dice cuántos zombies hay a la vista y se pone verde en 0,
+    para salir con la superficie limpia (probado: 7 de 8 muertos, el que seguía estaba a 760 px, fuera de la pantalla; se
+    repite gratis). Con el búnker cerrado, el ataque aéreo sigue como siempre (`A`, 60 s).
 - **Misiones**: 17 misiones que se juegan dentro de la pelea infinita (matar zombies, conseguir
   armas, sobrevivir, y varias contrarreloj). El progreso queda guardado en el navegador.
 - **Defensa zombie ultra** (`js/defensa-ultra.js`): el tirador defiende su sector, a la izquierda, y los zombies llegan

@@ -989,45 +989,54 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 .tactil.con-botiquin .extras-tactiles .solo-botiquin { display: flex; border-color: rgba(22,163,74,.9); color: #b8ffcb; font-size: 18px; }
 @media (max-width: 760px), (max-height: 460px) { .hud-distancia b { font-size: 14px; } .hud-distancia small { font-size: 8.5px; } }
 
-.capa-bunker { justify-content: safe center; gap: clamp(4px, 1.2vh, 10px); padding: clamp(6px, 1.6vh, 14px) 14px; background: radial-gradient(ellipse at 50% 0%, rgba(40,70,48,.96), rgba(8,12,10,.97) 70%); }
+/* El búnker ocupa la mitad de abajo de la pantalla; arriba la partida sigue (zombies incluidos). Todo mide en vh: la mitad de la pantalla es 50vh */
+.capa-bunker { inset: 50% 0 0 0; justify-content: flex-start; gap: clamp(2px, .7vh, 6px); padding: clamp(3px, .8vh, 8px) 14px; border-top: 3px solid #4fd36e; box-shadow: 0 -8px 26px rgba(70,255,120,.28);
+  background: radial-gradient(ellipse at 50% 0%, rgba(40,70,48,.97), rgba(8,12,10,.98) 70%); }
 .bunker-cabeza, .bunker-medio, .bunker-pie { width: min(1240px, 100%); }
 .bunker-cabeza { padding-left: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.capa-bunker .bunker-cabeza h2 { margin: 0; font-size: clamp(22px, 5.4vh, 42px); letter-spacing: .3em; color: #b8ffcb; text-shadow: 0 0 14px rgba(80,255,120,.45), 0 3px 0 #0b2414; }
-.bunker-cuenta { display: flex; gap: 16px; font-weight: 900; font-size: clamp(15px, 3.2vh, 24px); letter-spacing: .06em; }
+.capa-bunker .bunker-cabeza h2 { margin: 0; font-size: clamp(14px, 3vh, 26px); letter-spacing: .26em; color: #b8ffcb; text-shadow: 0 0 14px rgba(80,255,120,.45), 0 3px 0 #0b2414; }
+.bunker-cuenta { display: flex; gap: 16px; font-weight: 900; font-size: clamp(12px, 2.5vh, 19px); letter-spacing: .06em; }
+.bunker-cuenta .arriba { color: #ff9c88; }
+.bunker-cuenta .arriba.limpio { color: #8fe07a; }
 .bunker-cuenta .dinero { color: #8fe07a; }
-.bunker-medio { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.35fr); gap: 10px; align-items: stretch; }
+.bunker-medio { display: grid; grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 10px; align-items: stretch; }
 .bunker-escena { margin: 0; position: relative; border: 1px solid rgba(157,255,176,.35); background: #111; }
-.bunker-escena canvas { display: block; width: 100%; height: auto; aspect-ratio: 480 / 300; }
-.bunker-escena figcaption { position: absolute; left: 8px; right: 8px; bottom: 6px; padding: 4px 8px; text-align: left; font-size: clamp(11px, 1.9vh, 14px); font-style: italic;
+.bunker-escena canvas { display: block; width: 100%; height: clamp(90px, 22vh, 260px); object-fit: cover; object-position: 50% 30%; }
+.bunker-escena figcaption { position: absolute; left: 8px; right: 8px; bottom: 6px; padding: 4px 8px; text-align: left; font-size: clamp(10px, 1.7vh, 13px); font-style: italic;
   background: rgba(10,14,12,.8); border-left: 3px solid #7dffa0; color: #e8fff0; }
 .bunker-escena figcaption:empty { display: none; }
 .bunker-detalle { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid rgba(201,169,110,.4); background: rgba(20,16,24,.85); }
-.bunker-vista canvas { display: block; width: 100%; height: auto; aspect-ratio: 640 / 300; background: radial-gradient(ellipse at center, rgba(236,230,218,.16), rgba(236,230,218,.03) 70%); }
+.bunker-vista canvas { display: block; width: 100%; height: clamp(70px, 19vh, 220px); object-fit: contain; background: radial-gradient(ellipse at center, rgba(236,230,218,.16), rgba(236,230,218,.03) 70%); }
 .bunker-accion { display: flex; flex-direction: column; gap: 6px; text-align: left; }
-.bunker-accion h3 { margin: 0; font-size: clamp(16px, 3.2vh, 26px); letter-spacing: .05em; color: var(--luz); }
-.bunker-accion p { margin: 0; max-width: none; font-size: clamp(11px, 1.9vh, 14px); line-height: 1.35; }
+.bunker-accion h3 { margin: 0; font-size: clamp(13px, 2.5vh, 21px); letter-spacing: .05em; color: var(--luz); }
+.bunker-accion p { margin: 0; max-width: none; font-size: clamp(10px, 1.6vh, 13px); line-height: 1.3; }
 .bunker-accion .estrellas { color: #ffd27a; letter-spacing: .08em; font-weight: 700; }
-.bunker-accion .bunker-desc { opacity: .75; font-size: clamp(10px, 1.7vh, 12.5px); }
+.bunker-accion .bunker-desc { opacity: .75; font-size: clamp(9px, 1.45vh, 11.5px); }
 .bunker-accion .aviso-bunker { color: #9dffb0; font-weight: 700; letter-spacing: .1em; }
-.boton-bunker { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: clamp(6px, 1.4vh, 11px) 14px; cursor: pointer;
-  font: inherit; font-weight: 900; letter-spacing: .12em; font-size: clamp(12px, 2.2vh, 17px); color: #eaffea; background: rgba(36,74,40,.92); border: 2px solid #8fe07a; }
+.boton-bunker { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: clamp(4px, .9vh, 8px) 12px; cursor: pointer;
+  font: inherit; font-weight: 900; letter-spacing: .1em; font-size: clamp(11px, 1.9vh, 15px); color: #eaffea; background: rgba(36,74,40,.92); border: 2px solid #8fe07a; }
 .boton-bunker b { color: #c8ffb0; letter-spacing: .04em; }
 .boton-bunker:hover:not([disabled]), .boton-bunker:focus-visible { background: #8fe07a; color: #10200f; outline: none; }
 .boton-bunker:hover:not([disabled]) b, .boton-bunker:focus-visible b { color: #10200f; }
 .boton-bunker[disabled] { cursor: default; opacity: .6; color: #d9cfc0; background: rgba(40,30,28,.85); border-color: #7a6a5a; }
 .boton-bunker[disabled] b { color: #ff9c88; }
 .boton-bunker.secundario { font-size: clamp(10px, 1.8vh, 13px); border-color: rgba(201,169,110,.6); background: rgba(30,26,22,.85); }
-.bunker-pestanas { display: flex; align-items: stretch; gap: 6px; margin-bottom: 6px; }
-.bunker-pestanas button[role="tab"] { font: inherit; font-weight: 700; letter-spacing: .14em; font-size: clamp(11px, 1.9vh, 14px); padding: 5px 16px; cursor: pointer;
+.bunker-pestanas { display: flex; align-items: stretch; gap: 6px; margin-bottom: clamp(2px, .6vh, 5px); }
+.bunker-pestanas button[role="tab"] { font: inherit; font-weight: 700; letter-spacing: .14em; font-size: clamp(10px, 1.7vh, 13px); padding: 3px 14px; cursor: pointer;
   color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.5); }
 .bunker-pestanas button[role="tab"].elegida { background: #7dffa0; color: #0d1a12; border-color: #7dffa0; }
-.bunker-pestanas .bunker-salir { margin-left: auto; padding: 5px 16px; font-size: clamp(11px, 1.9vh, 14px); letter-spacing: .14em; min-width: 0; width: auto; }
+.bunker-pestanas .bunker-salir { padding: 3px 14px; font-size: clamp(10px, 1.7vh, 13px); letter-spacing: .12em; min-width: 0; width: auto; }
+/* Bombardear la superficie: gratis, las veces que haga falta mientras se esté abajo, para poder salir sin zombies arriba */
+.bunker-bombardear { margin-left: auto; font: inherit; font-weight: 900; letter-spacing: .1em; font-size: clamp(10px, 1.7vh, 13px); padding: 3px 14px; cursor: pointer;
+  color: #fff1e6; background: linear-gradient(#b3361f, #7c1f10); border: 2px solid #ff9a6b; }
+.bunker-bombardear:hover:not([disabled]), .bunker-bombardear:focus-visible { background: #ff8a4d; color: #240a02; outline: none; }
+.bunker-bombardear[disabled] { cursor: default; opacity: .75; animation: parpadeo .7s steps(2) infinite; }
 .bunker-lista { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; overscroll-behavior: contain; }
-.bunker-carta { flex: 0 0 auto; width: clamp(92px, 12vw, 132px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 4px 5px; cursor: pointer;
+.bunker-carta { flex: 0 0 auto; width: clamp(80px, 9vw, 112px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 4px 5px; cursor: pointer;
   font: inherit; color: var(--texto); background: rgba(20,16,24,.85); border: 1px solid rgba(201,169,110,.4); }
 .bunker-carta canvas { display: block; width: 100%; height: auto; aspect-ratio: 150 / 64; }
-.bunker-carta .nombre { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(10px, 1.7vh, 12px); font-weight: 700; }
-.bunker-carta small { font-size: clamp(9.5px, 1.6vh, 11px); color: #ffd27a; letter-spacing: .06em; }
+.bunker-carta .nombre { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(9px, 1.5vh, 11.5px); font-weight: 700; }
+.bunker-carta small { font-size: clamp(8.5px, 1.4vh, 10.5px); color: #ffd27a; letter-spacing: .06em; }
 .bunker-carta small.precio { color: #8fe07a; font-weight: 700; }
 .bunker-carta.caro small.precio { color: #ff8a65; }
 .bunker-carta:hover { border-color: #7dffa0; }
@@ -1036,12 +1045,15 @@ body.en-infinita .hud-dinero { display: block; color: #8fe07a; }
 .bunker-vacia { margin: 6px 0; opacity: .7; }
 /* Pantalla baja (teléfono apaisado): todo más chico para que entre sin desplazarse */
 @media (max-height: 500px) {
-  .bunker-medio { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); }
-  .bunker-detalle { padding: 4px 6px; gap: 6px; }
-  .bunker-accion { gap: 3px; }
-  .bunker-carta { width: 84px; padding: 2px; }
-  .bunker-pestanas { margin-bottom: 3px; }
+  .bunker-medio { grid-template-columns: minmax(0, 0.6fr) minmax(0, 1.4fr); }
+  .bunker-detalle { padding: 3px 5px; gap: 5px; }
+  .bunker-accion { gap: 2px; }
+  .bunker-carta { width: 72px; padding: 2px; }
+  .bunker-pestanas { margin-bottom: 2px; }
 }
+/* Mientras se está abajo, sin los botones táctiles ni avisos tapando la escena de arriba */
+body.en-bunker .aviso { top: 26%; }
+body.en-bunker .aviso-ronda { top: 14%; }
 .capa-bunker { z-index: 4; }
 #pantalla-juego:has(#bunker:not(.oculta)) #pausa { z-index: 6; }   /* si la partida se pausa sola (pestaña oculta), la pausa va encima */
 

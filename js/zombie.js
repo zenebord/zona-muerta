@@ -188,6 +188,10 @@ class Zombie {
         jugador.recibirDano(this.mordida, juego);
         Audio_.zombieGolpea();
       }
+    } else if (juego.bunker && juego.bunker.abierto && distancia < 46 && !this.vyCaida) {
+      // El jugador está abajo, en el búnker: los zombies se juntan en la boca y esperan (sin morder)
+      this.estado = 'camina';
+      this.fase += dt * 2.5;
     } else {
       this.estado = 'camina';
       // Andar a tirones: avanza más cuando apoya la pierna buena

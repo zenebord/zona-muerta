@@ -252,7 +252,7 @@ class Jugador {
     this.actualizarMira(juego, dt);
 
     this.cubierto += ((this.protegido ? 1 : 0) - this.cubierto) * Math.min(1, dt * 10);   // agacharse detrás del parapeto
-    if (this.veneno > 0) {
+    if (this.veneno > 0 && !(juego.bunker && juego.bunker.abierto)) {   // abajo, en el búnker, el veneno espera
       this.veneno = Math.max(0, this.veneno - dt);
       if (!this.muerto) {
         this.vida = Math.max(0, this.vida - 2.6 * dt);

@@ -308,7 +308,7 @@
     <div id="bunker" class="capa capa-bunker oculta" role="dialog" aria-labelledby="bunker-titulo">
       <div class="bunker-cabeza">
         <h2 id="bunker-titulo" data-t="bunker.titulo">MEJORAS</h2>
-        <div class="bunker-cuenta"><span id="bunker-bajas">☠ 0</span><span id="bunker-dinero" class="dinero">$ 0</span></div>
+        <div class="bunker-cuenta"><span id="bunker-arriba" class="arriba"></span><span id="bunker-bajas">☠ 0</span><span id="bunker-dinero" class="dinero">$ 0</span></div>
       </div>
       <div class="bunker-medio">
         <figure class="bunker-escena"><canvas id="bunker-escena" width="480" height="300" aria-hidden="true"></canvas><figcaption id="bunker-dice"></figcaption></figure>
@@ -321,6 +321,7 @@
         <div class="bunker-pestanas" role="tablist">
           <button type="button" role="tab" data-bunker="pestana:propias" data-t="bunker.tusArmas">TUS ARMAS</button>
           <button type="button" role="tab" data-bunker="pestana:venta" data-t="bunker.venta">COMPRAR</button>
+          <button type="button" id="bunker-bombardear" class="bunker-bombardear" data-bunker="bombardear"><span data-t="bunker.bombardear">BOMBARDEAR LA SUPERFICIE · GRATIS</span></button>
           <button type="button" class="boton chico bunker-salir" data-bunker="salir" data-t="bunker.salir">SALIR DEL BÚNKER</button>
         </div>
         <div id="bunker-lista" class="bunker-lista"></div>

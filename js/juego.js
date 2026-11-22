@@ -365,11 +365,15 @@ class Juego {
   /* ---------- Ataque aéreo (modo torreta) ----------
    * Siete misiles repartidos por la pantalla (ninguno sobre el parapeto); al terminar no queda ningún zombie a la vista.
    * Mientras dura, el tirador se agacha detrás de las bolsas de arena y no recibe daño. */
-  pedirAtaqueAereo() {
+  // `gratis`: el bombardeo del búnker (js/bunker.js): sin espera, sin cargas y sin límite mientras se esté adentro
+  pedirAtaqueAereo(gratis = false) {
     if (!this.aereo || this.terminado || this.jugador.muerto) return;
     const a = this.aereo;
     if (a.activo) return;
-    if (this.historia) {   // en la historia, cada radio es un pedido
+    const dentro = !!(this.bunker && this.bunker.abierto);
+    if (gratis !== dentro) return;   // abajo sólo vale el botón del búnker; arriba, el de siempre
+    if (gratis) { /* no gasta nada */ }
+    else if (this.historia) {   // en la historia, cada radio es un pedido
       if (a.cargas <= 0) { this.aviso(t('hist.aviso.sinRadio'), 1800); return; }
       a.cargas--; this.historia.aereos++;
     } else {
@@ -382,9 +386,10 @@ class Juego {
     a.activo = { t: 0, duracion: 3.4 };
     this.jugador.protegido = true;
     Audio_.radioAereo();
-    this.aviso(t('aviso.aereo'), 2400);
+    this.aviso(t(gratis ? 'bunker.bombardeo' : 'aviso.aereo'), 2400);
     const centro = this.jugador.x;
-    this.aviones.push(new Avion(this.camaraX * 0.4 - 120, 70, 1, 0.45), new Avion(this.camaraX * 0.4 - 220, 104, 1, 0.62));
+    const baja = dentro ? DESPLAZAMIENTO_BUNKER : 0;   // con la vista del búnker, la pantalla empieza más abajo
+    this.aviones.push(new Avion(this.camaraX * 0.4 - 120, 70 + baja, 1, 0.45), new Avion(this.camaraX * 0.4 - 220, 104 + baja, 1, 0.62));
     setTimeout(() => Audio_.avionPasa(), 450);
     const n = 7;
     for (let k = 0; k < n; k++) {
@@ -621,7 +626,10 @@ class Juego {
   actualizar(dt) {
     if (this.estrategia) { this.ahora += dt * 1000; this.tiempoJugado += dt; this.actualizarBastion(dt); return; }
     if (this.enTienda) { this.actualizarHud(); return; }   // defensa ultra: con la tienda abierta, todo queda quieto
-    if (this.bunker && this.bunker.abierto) { this.actualizarBunkerAbierto(); this.actualizarHud(); return; }   // adentro del búnker, igual
+    // Adentro del búnker la partida sigue arriba (los zombies se mueven, las rondas pasan): el jugador no está a la vista
+    // ni recibe daño, y los zombies lo toman por muerto (no atacan, escupen ni lanzan); sólo se juntan en la boca
+    const dentro = !!(this.bunker && this.bunker.abierto);
+    if (dentro) this.actualizarBunkerAbierto();
     this.ahora += dt * 1000;
     this.tiempoJugado += dt;
     const j = this.jugador, e = this.entrada;
@@ -640,7 +648,8 @@ class Juego {
     this.aparecerZombies(dt);
     this.aparecerCajas(dt);
 
-    for (const z of this.zombies) z.actualizar(dt, j, this);
+    const vistoPorZombies = dentro ? Object.assign(Object.create(j), { muerto: true }) : j;   // el zombie ve «a nadie» arriba de la boca
+    for (const z of this.zombies) z.actualizar(dt, vistoPorZombies, this);
     for (const p of this.proyectiles) p.actualizar(dt, this);
     for (const x of this.explosiones) x.actualizar(dt);
     for (const p of this.particulas) p.actualizar(dt);
@@ -770,6 +779,9 @@ class Juego {
     ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     ctx.imageSmoothingQuality = 'high';
     const cam = this.camaraX + (this.sacudida ? (Math.random() - 0.5) * this.sacudida : 0);
+    // Con el búnker abierto, la partida se ve en la mitad de arriba (el suelo cerca del borde de la mitad); abajo va el búnker
+    const dentro = !!(this.bunker && this.bunker.abierto);
+    if (dentro) { const E = Lienzo.escala; ctx.setTransform(E, 0, 0, E, 0, -E * DESPLAZAMIENTO_BUNKER); }
     // Campo de pruebas: vitrina. La cámara se acerca al personaje (quieto, un poco a la izquierda del centro) para
     // ver el arma, el disparo, los casquillos y la recarga de cerca; lo de la pantalla (viñeta) se dibuja sin acercar
     if (this.pruebas) {   // más cerca con las armas chicas: pistolas 3,3×, metralletas y cuerpo a cuerpo 2,9×, el resto 2,6× (cambia suave)
@@ -808,8 +820,8 @@ class Juego {
       Pincel.bisel = !Lienzo.liviano && this.zombies.length <= 25;   // con hordas grandes (o calidad baja) se aliviana el dibujo de los zombies
       for (const z of this.zombies) z.dibujar(ctx, cam, this.ahora);
       Pincel.bisel = !Lienzo.liviano;
-      if (!j.montada) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }
-      if (this.bunker) this.dibujarAvisoBunker(ctx, cam);
+      if (!j.montada && !dentro) { j.dibujar(ctx, cam, this.ahora); LuzFogonazo.cuerpo(ctx, cam, j, luces); }   // abajo, el jugador no se ve
+      if (this.bunker && !dentro) this.dibujarAvisoBunker(ctx, cam);
     }
     if (j.mira && j.objetivoMira && !j.muerto) (tipoMira(j.arma().id) === 'puntoRojo' ? dibujarMiraPuntoRojo : dibujarMiraTelescopica)(ctx, cam, j, this.ahora);   // tecla D
     for (const z of this.zombies) if (z.quemandose && z.quemandose(this.ahora)) Fuego.cuerpo(ctx, cam, z, this.ahora);
@@ -823,7 +835,7 @@ class Juego {
     else if (this.nieve) Escenario.dibujarNieveFrente(ctx, cam, this.ambiente, this.tiempoJugado);
     else if (this.historia) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); EscenarioHistoria.frente(ctx, cam, this.tiempoJugado, this.historia, this); }
     else if (!this.pruebas && !this.entrenamiento) { Escenario.dibujarAmbiente(ctx, cam, this.ambiente); if (!this.ultra) Escenario.dibujarFrente(ctx, cam); }   // con carriles, sin alambrado adelante
-    if (this.pruebas) ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
+    if (this.pruebas || dentro) ctx.setTransform(Lienzo.escala, 0, 0, Lienzo.escala, 0, 0);
     const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ALTO * 0.45, ANCHO / 2, ALTO / 2, ALTO * 0.95);
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, ANCHO, ALTO);
