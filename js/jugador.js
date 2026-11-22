@@ -74,7 +74,7 @@ const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
 const MIRA_PUNTO_ROJO = new Set(['vector', 'p90', 'saiga', 'mgl', 'bazuca']);
 // (y la que se compra en el búnker de la pelea infinita, js/equipables.js: la telescópica sólo en los rifles)
 const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : (typeof EQUIPO_ARMAS !== 'undefined' && EQUIPO_ARMAS.has(id) && EQUIPO_ARMAS.get(id).mira) || null;
-const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
+const centroZombie = z => z.pecho();   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'

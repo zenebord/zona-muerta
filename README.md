@@ -22,7 +22,16 @@ y entrá a <http://127.0.0.1:8791/>.
   (camisa hawaiana y cámara), cocinero (chaqueta y gorro), granjero (overol y sombrero de paja) y gordo (más
   grande, con panza). Los **corredores** (5), más chicos y rápidos: maratonista (musculosa con dorsal y una
   zapatilla), basquetbolista (camiseta con número y vincha), encapuchado, ciclista (casco y calzas) y
-  adolescente (el más chico, gorra para atrás). Cada uno varía además el tono de la piel y de la ropa. El
+  adolescente (el más chico, gorra para atrás). Cada uno varía además el tono de la piel y de la ropa.
+  **Tamaño y zona de impacto** (pedido de Enzo, 22/11): los chicos (los 5 corredores) pasaron de 0,68–0,86 a **0,58–0,68**
+  del tamaño común (unos 50 px de alto contra 75–100 del común). La zona de impacto, que medía 64·escala + 4 y dejaba
+  la cabeza afuera (sobresalía 11 px en el común y 6–8 en los chicos: el tiro pasaba por la cabeza que se veía y no le
+  pegaba), ahora llega hasta lo más alto del dibujo, medido por variante (80 px a escala 1; 91 con el sombrero de chef;
+  83 los corredores): sobra 4 px en los comunes y 6–9 en los chicos. Los chicos tienen además un piso de 60 px, para que
+  agachado (la boca queda a 50–52 px) siempre se les pegue aunque se vean de 50: probado con la Glock, 8 de 8 agachado
+  incluso al más chico (0,58) y 0 de 8 parado (la boca está a 65 px: hay que agacharse, o usar el bípode o la mira, que
+  los sigue). Una bala a la altura de la cabeza que se ve ahora le pega a todos. La mira automática sigue apuntando al
+  pecho (`Zombie.pecho()`, 41 px en el común, igual que antes). El
   **tóxico** (cloaca) lleva el traje amarillo y el **congelado** (bosque nevado), campera y gorro de lana nevados.
 - **Personaje**: arriba a la derecha del menú principal se elige la skin, con vista previa animada:
   Sobreviviente (el de siempre), Dios del trueno, Armadura de combate, Cazador enmascarado, Centinela, Bufón

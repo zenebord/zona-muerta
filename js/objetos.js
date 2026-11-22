@@ -44,7 +44,7 @@ class Proyectil {
       const z = this.objetivo;
       if (z.estado === 'muerto' || !juego.zombies.includes(z)) this.objetivo = null;
       else {
-        const c = z.caja(), dx = c.x + c.w / 2 - this.x, dy = c.y + c.h * 0.4 - this.y, d = Math.hypot(dx, dy) || 1, v = Math.hypot(this.vx, this.vy);
+        const c = z.pecho(), dx = c.x - this.x, dy = c.y - this.y, d = Math.hypot(dx, dy) || 1, v = Math.hypot(this.vx, this.vy);
         this.vx = dx / d * v; this.vy = dy / d * v; this.direccion = Math.sign(this.vx) || this.direccion;
       }
     }
