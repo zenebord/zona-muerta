@@ -1717,7 +1717,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261122-1413-d9e24a4';
+const VERSION_JUEGO = '20261122-1419-7b4546a';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -10842,7 +10842,7 @@ const MIRA_TELESCOPICA = new Set(['remington700', 'barrett', 'mosin', 'svd']);
 const MIRA_PUNTO_ROJO = new Set(['vector', 'p90', 'saiga', 'mgl', 'bazuca']);
 // (y la que se compra en el búnker de la pelea infinita, js/equipables.js: la telescópica sólo en los rifles)
 const tipoMira = id => MIRA_TELESCOPICA.has(id) ? 'telescopica' : MIRA_PUNTO_ROJO.has(id) ? 'puntoRojo' : (typeof EQUIPO_ARMAS !== 'undefined' && EQUIPO_ARMAS.has(id) && EQUIPO_ARMAS.get(id).mira) || null;
-const centroZombie = z => { const c = z.caja(); return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 }; };   // donde apunta: el pecho
+const centroZombie = z => z.pecho();   // donde apunta: el pecho
 
 /* Línea de tiempo de una animación (recarga o acción). Cada fase dice:
  *   a        adónde va la mano de apoyo: 'arma' | 'cargador' | 'corredera' | 'cadera'
@@ -13402,12 +13402,14 @@ const VARIANTES_CAMINANTE = [
   { id: 'gordo',       torso: 'abierta', estampado: 'lisa', camiseta: '#d8c05a', panza: true, piernas: 'short', pantalon: '#5a5a2a', escala: [1.12, 1.22] },
 ];
 const VARIANTES_CORREDOR = [
-  { id: 'maratonista', torso: 'musculosa', camiseta: '#8c2a26', dorsal: true, piernas: 'corto', pantalon: '#24252a', zapatilla: true, escala: [0.78, 0.83] },
-  { id: 'basquet',     torso: 'musculosa', camiseta: '#e2b81e', numero: '#5a2a8a', piernas: 'short', pantalon: '#5a2a8a', accesorio: 'vincha', escala: [0.8, 0.86] },
-  { id: 'capucha',     torso: 'capucha', camiseta: '#5d6066', piernas: 'largo', pantalon: '#2e3034', accesorio: 'capucha', escala: [0.76, 0.82] },
-  { id: 'ciclista',    torso: 'remera', franja: '#f2f2ea', camiseta: '#3fbf3a', piernas: 'corto', pantalon: '#1d1d22', zapatilla: true, accesorio: 'casco-ciclista', escala: [0.78, 0.84] },
-  { id: 'adolescente', torso: 'remera', estampa: '#f2d24a', camiseta: '#3a6fd8', piernas: 'short', pantalon: '#2e3a55', accesorio: 'gorra-atras', escala: [0.68, 0.74] },
+  { id: 'maratonista', torso: 'musculosa', camiseta: '#8c2a26', dorsal: true, piernas: 'corto', pantalon: '#24252a', zapatilla: true, escala: [0.60, 0.66] },
+  { id: 'basquet',     torso: 'musculosa', camiseta: '#e2b81e', numero: '#5a2a8a', piernas: 'short', pantalon: '#5a2a8a', accesorio: 'vincha', escala: [0.62, 0.68] },
+  { id: 'capucha',     torso: 'capucha', camiseta: '#5d6066', piernas: 'largo', pantalon: '#2e3034', accesorio: 'capucha', escala: [0.58, 0.64] },
+  { id: 'ciclista',    torso: 'remera', franja: '#f2f2ea', camiseta: '#3fbf3a', piernas: 'corto', pantalon: '#1d1d22', zapatilla: true, accesorio: 'casco-ciclista', escala: [0.60, 0.66] },
+  { id: 'adolescente', torso: 'remera', estampa: '#f2d24a', camiseta: '#3a6fd8', piernas: 'short', pantalon: '#2e3a55', accesorio: 'gorra-atras', escala: [0.58, 0.64] },
 ];
+// Los chicos (los corredores y el adolescente) eran de 0,68–0,86 del tamaño común: ahora son de 0,58–0,68, bastante más chicos
+// pero no ridículos (unos 50 px de alto contra 80–90 del común). Para poder pegarles, ver PISO_CAJA_CHICOS
 const PIELES_ZOMBIE = ['#6aa641', '#5a9436', '#7bb352', '#6f9c4a', '#7d9a62', '#8aa86a', '#5f8a4e', '#86a24c'];
 // Elige una variante distinta de la última que salió (así dos seguidos nunca son iguales)
 const ultimaVariante = { caminante: -1, corredor: -1 };
@@ -13438,6 +13440,10 @@ const MUERTE = { rodillas: 0.35, desploma: 1.0, caida: 0.45, fin: 4.45 };
 
 // Hasta dónde llega el arma como tope para los zombies de frente (historia): un fusil muy largo no los deja a más que esto
 const LARGO_MAX_ARMA_ZOMBIE = 84;
+
+// Alto con el que se dibuja cada variante a escala 1 (medido): el resto, 80. Piso de la zona de impacto de los chicos (escala < 0,8)
+const ALTO_ZOMBIE_BASE = 80, PISO_CAJA_CHICOS = 56;
+const ALTO_ZOMBIE_DIBUJADO = { chef: 91, granjero: 87, obrero: 85, policia: 84, ciclista: 83, capucha: 83, adolescente: 83 };
 
 class Zombie {
   constructor(x, corredor, dificultad) {
@@ -13602,7 +13608,21 @@ class Zombie {
   quemandose(ahora) { return this.estado !== 'muerto' && this.quemaHasta > ahora; }
 
   // Caja de impacto: el cuerpo más los brazos estirados hacia donde mira
-  caja() { const w = this.ancho + 8 * this.escala; return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - this.alto - 4, w, h: this.alto + 4 }; }
+  // La zona de impacto cubre lo que se dibuja. Antes medía 64·escala + 4 y la cabeza (80–83 px a escala 1; con sombrero de chef,
+  // 91) sobresalía hasta 11 px: el tiro pasaba por la cabeza que se veía y no le pegaba. Ahora llega hasta la parte de arriba
+  // del dibujo (medida por variante). Los chicos tienen además un piso: aunque se vean de 50 px, la zona no baja de
+  // PISO_CAJA_CHICOS + 4 = 60 px, así que agachado (la boca queda a 50–52 px) siempre se les pega; parados, no (la boca está a 65)
+  caja() {
+    const w = this.ancho + 8 * this.escala, dibujado = (ALTO_ZOMBIE_DIBUJADO[this.estilo && this.estilo.id] || ALTO_ZOMBIE_BASE) * this.escala;
+    const h = Math.max(dibujado, this.escala < 0.8 ? PISO_CAJA_CHICOS : 0) + 4;
+    return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - h, w, h };
+  }
+  // A dónde apunta la mira automática y la bala que sigue a su zombie: el pecho (no cambia con la zona de impacto)
+  pecho() {
+    const c = this.caja();
+    if (this.caja === Zombie.prototype.caja) return { x: c.x + c.w / 2, y: this.y - this.altura - 0.6 * this.alto - 2.4 };   // 0,6 de su alto: igual que antes
+    return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 };   // los que tienen otra zona de impacto (animales, jefes)
+  }
   terminado() { return this.estado === 'muerto' && this.tiempoMuerto > (this.muerte ? 5 : MUERTE.fin); }
 
   /* Muerte aparatosa: el golpe lo despide de espaldas según el arma (pistola: trastabilla y cae; escopeta o
@@ -14716,7 +14736,7 @@ class Proyectil {
       const z = this.objetivo;
       if (z.estado === 'muerto' || !juego.zombies.includes(z)) this.objetivo = null;
       else {
-        const c = z.caja(), dx = c.x + c.w / 2 - this.x, dy = c.y + c.h * 0.4 - this.y, d = Math.hypot(dx, dy) || 1, v = Math.hypot(this.vx, this.vy);
+        const c = z.pecho(), dx = c.x - this.x, dy = c.y - this.y, d = Math.hypot(dx, dy) || 1, v = Math.hypot(this.vx, this.vy);
         this.vx = dx / d * v; this.vy = dy / d * v; this.direccion = Math.sign(this.vx) || this.direccion;
       }
     }
