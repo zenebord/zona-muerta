@@ -511,6 +511,9 @@
     if (configAbierta) { if (e.code === 'Escape') { if (Asistente.abierto()) Asistente.cerrar(); else cerrarConfig(); } return; }
     if (personajesAbierto) { if (e.code === 'Escape') cerrarPersonajes(); return; }
     if (guiaB2Abierta) { if (e.code === 'Escape' || (e.code === 'KeyH' && !e.repeat)) cerrarGuiaB2(); return; }
+    // Escribiendo en un campo de texto (por ejemplo el título de un pedido): el juego no toca las teclas. Si no, la barra
+    // espaciadora y las flechas, que se bloquean para que la página no se desplace, no se podían usar para escribir
+    if (e.target && e.target.closest && e.target.closest('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=file]), textarea, [contenteditable="true"]')) return;
     if (TECLAS_BLOQUEADAS.has(e.code)) e.preventDefault();
     if (!juego) return;
     if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
