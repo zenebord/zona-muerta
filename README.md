@@ -115,11 +115,16 @@ y entrá a <http://127.0.0.1:8791/>.
     pasan, el dinero de las muertes sube— y el búnker ocupa **la mitad de abajo** de la pantalla (todo mide en vh). El
     jugador no se ve ni recibe daño (invulnerable mientras esté abajo, el veneno queda en pausa) y los zombies lo toman por
     ausente: no muerden, escupen ni lanzan, sólo se juntan en la boca (probado: 5 tipos 20 s, vida 100 → 100; al salir
-    muerden de nuevo). Un botón rojo, **BOMBARDEAR LA SUPERFICIE · GRATIS**, lanza el ataque aéreo (dos cazas, siete
-    misiles y remate sobre todo lo que está a la vista) **sin gastar la espera de 60 s ni las cargas compradas y sin límite
-    de veces** mientras se esté adentro; el contador «ARRIBA: N ☠» dice cuántos zombies hay a la vista y se pone verde en 0,
-    para salir con la superficie limpia (probado: 7 de 8 muertos, el que seguía estaba a 760 px, fuera de la pantalla; se
-    repite gratis). Con el búnker cerrado, el ataque aéreo sigue como siempre (`A`, 60 s).
+    muerden de nuevo). **M2 Browning desde el búnker** (pedido de Leandro, que reemplaza al bombardeo gratis del primer
+    intento): al bajar, una **M2 Browning** —la misma de las montañas, con su dibujo, fogonazo, casquillos y daño— sube desde la boca
+    (0,8 s) y la maneja el jugador desde abajo, **a los dos lados y sin límite**: munición sin fin (nunca se recarga). **F**
+    dispara (mantenida, ráfaga) hacia donde mira y **W** la gira hacia el otro lado; en el menú, dos botones **◀ DISPARAR** y
+    **DISPARAR ▶** disparan mientras se mantienen apretados (mouse y dedo; el que mira se marca). Las flechas siguen siendo del
+    menú. Los zombies se juntan a unos 90 unidades de la boca, un poco más allá de la boca del arma (64), para que la M2 los
+    alcance; la cámara queda quieta, centrada en la boca, y se ven los dos lados. El contador «ARRIBA: N ☠» dice cuántos hay a la
+    vista y se pone verde en 0, para salir con la superficie limpia. Probado: 8 zombies a los dos lados, 4 de 4 a la derecha y
+    después 4 de 4 a la izquierda, vida 100 → 100, munición siempre 100; al salir vuelve a la mano la misma arma, sin M2 montada
+    y en el mismo lugar. El ataque aéreo comprado (`A`, 60 s) no se usa abajo.
 - **Botiquines en las cajas** (pedido de Leandro, 22/11): en la pelea infinita, ~22 de cada 100 cajas del camino traen un
   **botiquín** (caja con la valija blanca y el aviso BOTIQUÍN) en vez de un arma; al pasar suma uno a los que se llevan (hasta
   3, se usan con V o ✚). Con los tres encima ya no salen y la que quedó en el camino no se levanta. Medido: 21,3 % de 4000

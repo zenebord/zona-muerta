@@ -518,7 +518,7 @@
     if (!juego) return;
     if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
     if (juego.enTienda) { if ((e.code === 'Escape' || tecla === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
-    if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
+    if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e, tecla)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
     if ((juego.pruebas || juego.entrenamiento) && tecla === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
     if (menuPruebasAbierto) {
       if (armaEnDetalle) {   // en la ficha: Esc vuelve a la lista, Enter la usa

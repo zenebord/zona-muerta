@@ -481,7 +481,7 @@ class Misil {
     this.xDestino = xDestino; this.retraso = retraso;
     this.yPiso = alturaSuelo(xDestino);
     this.inclinacion = (Math.random() - 0.5) * 0.35;           // llega un poco en diagonal
-    this.x = xDestino - Math.sin(this.inclinacion) * 600; this.y = -60 + (juego.bunker && juego.bunker.abierto ? DESPLAZAMIENTO_BUNKER : 0);   // desde el búnker la pantalla empieza más abajo
+    this.x = xDestino - Math.sin(this.inclinacion) * 600; this.y = -60;
     this.velocidad = 14; this.vivo = true; this.silbo = false; this.estela = [];
     this.juego = juego;
   }
