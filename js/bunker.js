@@ -348,6 +348,7 @@ Object.assign(Juego.prototype, {
 
   // Dinero por zombie: más por los corredores y los raros (tóxicos y congelados), y un poco más en cada ronda
   cobrarZombieInfinita(z) {
+    if (this.bunker.abierto) return;   // los que cae la M2 del búnker no pagan (pedido de Leandro): sólo se cobra lo que se mata arriba
     const P = BUNKER.paga, base = z.toxico || z.congelado ? P.raro : z.corredor ? P.corredor : P.zombie;
     this.bunker.dinero += base + Math.max(0, this.ronda - 1) * P.porRonda;
   },
@@ -445,6 +446,7 @@ Object.assign(Juego.prototype, {
   /* ---------- El menú del comerciante ---------- */
   cartasBunker() {
     const j = this.jugador;
+    if (this.bunker.pestana === 'protecciones') return ORDEN_PROTECCIONES.map(id => 'prot:' + id);   // js/protecciones.js
     if (this.bunker.pestana === 'propias') return j.inventario.filter(id => ARMAS[id] && DIBUJO_ARMAS[id]);
     return ['botiquin', 'aereo', ...ARMAS_BUNKER.filter(id => !j.inventario.includes(id) && DIBUJO_ARMAS[id])];
   },
@@ -458,6 +460,7 @@ Object.assign(Juego.prototype, {
     // Cartas de abajo: miniatura, nombre y nivel (las propias) o precio (las de la venta)
     const lista = document.getElementById('bunker-lista'), desplazado = lista.scrollLeft;
     lista.innerHTML = cartas.map(id => {
+      if (id.startsWith('prot:')) return this.cartaProteccion(id, id === B.elegido);   // js/protecciones.js
       if (id === 'aereo') {
         const caro = BUNKER.aereo.precio > B.dinero;
         return `<button type="button" class="bunker-carta${id === B.elegido ? ' elegida' : ''}${caro ? ' caro' : ''}" data-bunker="elegir:aereo"><canvas width="150" height="64" aria-hidden="true"></canvas>` +
@@ -478,6 +481,7 @@ Object.assign(Juego.prototype, {
       const cv = b.querySelector('canvas'), id = cartas[i], c = cv.getContext('2d');
       if (id === 'botiquin') dibujarBotiquin(c, cv.width / 2, cv.height / 2 + 4, 62);
       else if (id === 'aereo') dibujarMisil(c, cv.width / 2 + 8, cv.height / 2, 110);
+      else if (id.startsWith('prot:')) dibujarMuestraProteccion(c, cv.width, cv.height, id.slice(5));
       else c.drawImage(miniaturaArma(id), 0, 0, cv.width, cv.height);
     });
     this.pintarDetalleBunker();
@@ -491,6 +495,7 @@ Object.assign(Juego.prototype, {
     const vida = this.dificultad.vidaZombie, tiros = arma => disparosParaMatar(arma, vida);
     let html = '';
     if (!id) { lienzo.getContext('2d').clearRect(0, 0, lienzo.width, lienzo.height); acc.innerHTML = `<p>${t('bunker.nadaMas')}</p>`; return; }
+    if (id.startsWith('prot:')) { this.detalleProteccion(id.slice(5), lienzo, acc, boton); document.getElementById('bunker-dice').textContent = B.dice ? '— ' + B.dice : ''; return; }   // js/protecciones.js
     if (id === 'aereo') {
       const c = lienzo.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, lienzo.width, lienzo.height);
       dibujarMisil(c, lienzo.width / 2 + 20, lienzo.height / 2, lienzo.height * 2.1);
@@ -529,7 +534,7 @@ Object.assign(Juego.prototype, {
   accionBunker(accion) {
     const B = this.bunker, j = this.jugador;
     if (!B || !B.abierto) return;
-    const [que, id] = accion.split(':');
+    const [que, ...resto] = accion.split(':'), id = resto.join(':');   // (las protecciones llevan más de un «:», 'prot:casco:comprar')
     const cobrar = precio => { if (B.dinero < precio) { B.dice = t('bunker.sinDinero'); this.pintarDetalleBunker(); return false; } B.dinero -= precio; return true; };
     if (que === 'salir') return this.salirBunker();
     if (que === 'pestana') { B.pestana = id; B.elegido = null; B.equipables = false; }
@@ -537,6 +542,7 @@ Object.assign(Juego.prototype, {
     else if (que === 'equipables') { B.equipables = true; }
     else if (que === 'equipables-volver') { B.equipables = false; }
     else if (que === 'equipo') { if (!this.comprarEquipo(id, B.elegido, cobrar)) return; }
+    else if (que === 'prot') { if (!this.accionProteccion(id, cobrar)) return; }   // comprar, reparar o mejorar una protección (js/protecciones.js)
     else if (que === 'mejorar') {
       const n = this.mejoras[id] || 0;
       if (n >= BUNKER.mejoraMax || !j.inventario.includes(id) || !cobrar(precioMejora(id, n))) return;
@@ -583,7 +589,7 @@ Object.assign(Juego.prototype, {
       const el = document.querySelector('#bunker .bunker-carta.elegida'); if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
       return true;
     }
-    if (e.code === 'Tab') { this.accionBunker('pestana:' + (B.pestana === 'propias' ? 'venta' : 'propias')); return true; }
+    if (e.code === 'Tab') { this.accionBunker('pestana:' + (B.pestana === 'propias' ? 'venta' : B.pestana === 'venta' ? 'protecciones' : 'propias')); return true; }
     if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) {
       if (document.activeElement && document.activeElement.closest('#bunker') && document.activeElement.dataset.bunker && !document.activeElement.dataset.bunker.startsWith('elegir:')) return false;   // el botón con foco hace lo suyo
       const b = document.querySelector('#bunker .boton-bunker:not([disabled])');
@@ -623,7 +629,7 @@ Object.assign(Juego.prototype, {
     this.actualizarCuentaBunker();
     if (performance.now() < B.proximoDibujo) return;
     B.proximoDibujo = performance.now() + 50;
-    const id = B.elegido && B.elegido !== 'botiquin' && B.elegido !== 'aereo' ? B.elegido : null;
+    const id = B.elegido && B.elegido !== 'botiquin' && B.elegido !== 'aereo' && !B.elegido.startsWith('prot:') ? B.elegido : null;
     dibujarEscenaBunker(document.getElementById('bunker-escena'), id, this.ahora + performance.now());
   },
 });

@@ -122,7 +122,7 @@ y entrá a <http://127.0.0.1:8791/>.
     **DISPARAR ▶** disparan mientras se mantienen apretados (mouse y dedo; el que mira se marca). Las flechas siguen siendo del
     menú. Los zombies se juntan a unos 90 unidades de la boca, un poco más allá de la boca del arma (64), para que la M2 los
     alcance; la cámara queda quieta, centrada en la boca, y se ven los dos lados. El contador «ARRIBA: N ☠» dice cuántos hay a la
-    vista y se pone verde en 0, para salir con la superficie limpia. Probado: 8 zombies a los dos lados, 4 de 4 a la derecha y
+    vista y se pone verde en 0, para salir con la superficie limpia. **Lo que mata la M2 desde abajo no paga**: el dinero sólo sube con lo que se mata arriba. Probado: 8 zombies a los dos lados, 4 de 4 a la derecha y
     después 4 de 4 a la izquierda, vida 100 → 100, munición siempre 100; al salir vuelve a la mano la misma arma, sin M2 montada
     y en el mismo lugar. El ataque aéreo comprado (`A`, 60 s) no se usa abajo.
 - **Botiquines en las cajas** (pedido de Leandro, 22/11): en la pelea infinita, ~22 de cada 100 cajas del camino traen un
