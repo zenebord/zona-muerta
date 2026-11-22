@@ -1717,7 +1717,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261122-1419-7b4546a';
+const VERSION_JUEGO = '20261122-1436-60d9a61';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -13441,9 +13441,38 @@ const MUERTE = { rodillas: 0.35, desploma: 1.0, caida: 0.45, fin: 4.45 };
 // Hasta dónde llega el arma como tope para los zombies de frente (historia): un fusil muy largo no los deja a más que esto
 const LARGO_MAX_ARMA_ZOMBIE = 84;
 
-// Alto con el que se dibuja cada variante a escala 1 (medido): el resto, 80. Piso de la zona de impacto de los chicos (escala < 0,8)
-const ALTO_ZOMBIE_BASE = 80, PISO_CAJA_CHICOS = 56;
-const ALTO_ZOMBIE_DIBUJADO = { chef: 91, granjero: 87, obrero: 85, policia: 84, ciclista: 83, capucha: 83, adolescente: 83 };
+/* Zona de impacto completa (pedido de Enzo): la caja de cada zombie, de cualquier tipo, es lo que se ve dibujado: la cabeza, el
+ * sombrero, los brazos estirados y la inclinación hacia adelante. Se mide una sola vez por tipo, dibujando su cuerpo en un lienzo
+ * aparte (a escala 1, mirando a la derecha, caminando y atacando, en ocho momentos del paso) y quedándose con todo lo que
+ * se llegó a ver. Antes la caja era un rectángulo fijo de 64·escala: la cabeza sobresalía (hasta 11 px, 23 con un sombrero), y
+ * la inclinación y los brazos quedaban afuera: el tiro de la M2 desde una montaña, en diagonal o rasante, pasaba por la cabeza
+ * que se veía sin pegarle. Los chicos (escala < 0,8) y los animales conservan un piso de altura para que agachado se les pueda pegar */
+const MARGEN_CAJA = 4, PISO_CAJA_CHICOS = 56, PISO_CAJA_ANIMALES = 52;
+const FORMAS_CAJA = new Map();   // tipo → { izq, der, arriba } a escala 1 (x desde los pies, mirando a la derecha; arriba = alto)
+let lienzoForma = null;
+function medirFormaZombie(z) {
+  const clave = [z.constructor.name, z.estilo && z.estilo.id, z.clave, z.E && (z.E.id || z.especie), z.grosorBrazos].join('|');
+  if (FORMAS_CAJA.has(clave)) return FORMAS_CAJA.get(clave);
+  const W = 640, H = 480, PX = 2, X0 = 320, Y0 = 360;   // 2 px por unidad: medida fina; los pies en (320, 360)
+  try {
+    lienzoForma = lienzoForma || document.createElement('canvas'); lienzoForma.width = W; lienzoForma.height = H;
+    const g = lienzoForma.getContext('2d', { willReadFrequently: true }), silueta = Pincel.silueta, bisel = Pincel.bisel;
+    Pincel.silueta = null;
+    let izq = Infinity, der = -Infinity, arriba = 0;
+    try {
+      for (const estado of ['camina', 'ataca']) for (const fase of [0, 0.79, 1.57, 2.36, 3.14, 3.93, 4.71, 5.5]) {
+        const m = Object.create(z);   // una copia que no toca al zombie de verdad: lo que el dibujo escriba queda en la copia
+        m.escala = 1; m.direccion = 1; m.estado = estado; m.fase = fase; m.ahora = 0; m.ancho = z.ancho / z.escala; m.alto = z.alto / z.escala; m.dormido = false; m.recogido = 0; m.giro = 0;
+        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.save(); g.translate(X0, Y0); g.scale(PX, PX); m.cuerpo(g, false); g.restore();
+        const d = g.getImageData(0, 0, W, H).data;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 40) { if (x < izq) izq = x; if (x > der) der = x; if (Y0 - y > arriba) arriba = Y0 - y; }
+      }
+    } finally { Pincel.silueta = silueta; Pincel.bisel = bisel; }
+    const forma = isFinite(izq) && arriba > 20 ? { izq: (izq - X0) / PX, der: (der + 1 - X0) / PX, arriba: arriba / PX } : null;
+    FORMAS_CAJA.set(clave, forma);
+    return forma;
+  } catch { FORMAS_CAJA.set(clave, null); return null; }   // si no se pudo medir, queda la caja vieja
+}
 
 class Zombie {
   constructor(x, corredor, dificultad) {
@@ -13608,21 +13637,17 @@ class Zombie {
   quemandose(ahora) { return this.estado !== 'muerto' && this.quemaHasta > ahora; }
 
   // Caja de impacto: el cuerpo más los brazos estirados hacia donde mira
-  // La zona de impacto cubre lo que se dibuja. Antes medía 64·escala + 4 y la cabeza (80–83 px a escala 1; con sombrero de chef,
-  // 91) sobresalía hasta 11 px: el tiro pasaba por la cabeza que se veía y no le pegaba. Ahora llega hasta la parte de arriba
-  // del dibujo (medida por variante). Los chicos tienen además un piso: aunque se vean de 50 px, la zona no baja de
-  // PISO_CAJA_CHICOS + 4 = 60 px, así que agachado (la boca queda a 50–52 px) siempre se les pega; parados, no (la boca está a 65)
+  // La zona de impacto completa (ver medirFormaZombie): todo lo que se ve del zombie, de cualquier tipo, en la posición y el sentido en
+  // que está. Chicos y animales: nunca más baja que su piso (agachado, la boca está a 50–52 px: siempre se les pega; parado, a 65: no)
+  pisoCaja() { return this.escala < 0.8 ? PISO_CAJA_CHICOS : 0; }
   caja() {
-    const w = this.ancho + 8 * this.escala, dibujado = (ALTO_ZOMBIE_DIBUJADO[this.estilo && this.estilo.id] || ALTO_ZOMBIE_BASE) * this.escala;
-    const h = Math.max(dibujado, this.escala < 0.8 ? PISO_CAJA_CHICOS : 0) + 4;
-    return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - h, w, h };
+    const f = this.formaCaja || (this.formaCaja = medirFormaZombie(this) || false), e = this.escala;
+    if (!f) { const w = this.ancho + 8 * e; return { x: this.x - w / 2 + this.direccion * 3, y: this.y - this.altura - this.alto - 4, w, h: this.alto + 4 }; }   // sin medida: la de antes
+    const izq = this.direccion >= 0 ? f.izq : -f.der, der = this.direccion >= 0 ? f.der : -f.izq, h = Math.max(f.arriba * e, this.pisoCaja()) + MARGEN_CAJA;
+    return { x: this.x + izq * e, y: this.y - this.altura - h, w: (der - izq) * e, h };
   }
-  // A dónde apunta la mira automática y la bala que sigue a su zombie: el pecho (no cambia con la zona de impacto)
-  pecho() {
-    const c = this.caja();
-    if (this.caja === Zombie.prototype.caja) return { x: c.x + c.w / 2, y: this.y - this.altura - 0.6 * this.alto - 2.4 };   // 0,6 de su alto: igual que antes
-    return { x: c.x + c.w / 2, y: c.y + c.h * 0.4 };   // los que tienen otra zona de impacto (animales, jefes)
-  }
+  // A dónde apunta la mira automática y la bala que sigue a su zombie: el pecho, a 0,6 de su alto (no depende de la zona de impacto)
+  pecho() { const c = this.caja(); return { x: c.x + c.w / 2, y: this.y - this.altura - 0.6 * this.alto - 2.4 }; }
   terminado() { return this.estado === 'muerto' && this.tiempoMuerto > (this.muerte ? 5 : MUERTE.fin); }
 
   /* Muerte aparatosa: el golpe lo despide de espaldas según el arma (pistola: trastabilla y cae; escopeta o
@@ -19205,7 +19230,8 @@ class ZombieAnimal extends Zombie {
     this.escala = 0.94 + Math.random() * 0.12;
     this.ancho = E.ancho * this.escala; this.alto = E.alto * this.escala;
   }
-  caja() { const w = this.ancho, h = Math.max(this.alto, 52); return { x: this.x - w / 2 + this.direccion * 4, y: this.y - this.altura - h, w, h }; }
+  pisoCaja() { return PISO_CAJA_ANIMALES; }   // la caja es la completa de todos (js/zombie.js), con el piso que ya tenían
+  pecho() { const h = Math.max(this.alto, PISO_CAJA_ANIMALES), c = this.caja(); return { x: c.x + c.w / 2, y: this.y - this.altura - 0.6 * h }; }   // igual que antes
   // Agresivo: cuando ve al jugador a menos de 260 px se lanza un 50 % más rápido, muerde cada 0,6 s (no 0,9) y
   // gruñe en vez de gemir; al morder, ladra o brama
   actualizar(dt, jugador, juego) {
