@@ -415,7 +415,8 @@ class ZombieAnimal extends Zombie {
     this.escala = 0.94 + Math.random() * 0.12;
     this.ancho = E.ancho * this.escala; this.alto = E.alto * this.escala;
   }
-  caja() { const w = this.ancho, h = Math.max(this.alto, 52); return { x: this.x - w / 2 + this.direccion * 4, y: this.y - this.altura - h, w, h }; }
+  pisoCaja() { return PISO_CAJA_ANIMALES; }   // la caja es la completa de todos (js/zombie.js), con el piso que ya tenían
+  pecho() { const h = Math.max(this.alto, PISO_CAJA_ANIMALES), c = this.caja(); return { x: c.x + c.w / 2, y: this.y - this.altura - 0.6 * h }; }   // igual que antes
   // Agresivo: cuando ve al jugador a menos de 260 px se lanza un 50 % más rápido, muerde cada 0,6 s (no 0,9) y
   // gruñe en vez de gemir; al morder, ladra o brama
   actualizar(dt, jugador, juego) {
