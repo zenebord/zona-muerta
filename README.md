@@ -164,8 +164,9 @@ y entrá a <http://127.0.0.1:8791/>.
 
 | | Fácil | Medio | Difícil |
 |---|---|---|---|
-| Zombies en la ronda 1 | 5 | 8 | 12 |
+| Zombies en la ronda 1 (base) | 5 | 8 | 12 |
 | Más por ronda | +2 | +3 | +4 |
+| Zombies reales por ronda | **10 % menos** que la base, redondeado (`FACTOR_ZOMBIES_INFINITA`, pedido de Leandro): en Medio, rondas 1, 2, 3, 5 y 10 = 7, 10, 13, 18 y 32 (antes 8, 11, 14, 20 y 35) | | |
 | Vida del zombie | 9 | 15 | 15 |
 | Tiros con pistola / metralleta / rifle | 2 / 3 / 1 | 3 / 5 / 1 | 3 / 5 / 1 |
 | Velocidad | ×0,75 | ×1 | ×1,3 |

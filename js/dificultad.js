@@ -29,6 +29,7 @@ const DIFICULTADES = {
 
 const CLAVE_DIFICULTAD = 'zonaMuerta.dificultad';
 
+const FACTOR_ZOMBIES_INFINITA = 0.9;   // 10 % menos zombies por ronda
 const Dificultad = {
   actual() {
     let id = 'medio';
@@ -39,8 +40,8 @@ const Dificultad = {
     if (!DIFICULTADES[id]) return;
     try { localStorage.setItem(CLAVE_DIFICULTAD, id); } catch { /* ídem */ }
   },
-  // Cuántos zombies trae la ronda n (empieza en 1)
+  // Cuántos zombies trae la ronda n (empieza en 1); pedido de Leandro: un 10 % menos en todas las oleadas de la pelea infinita
   zombiesDeRonda(dificultad, ronda) {
-    return Math.max(1, Math.round((dificultad.zombiesBase + dificultad.zombiesPorRonda * (ronda - 1)) * AJUSTE.cantidadZombies));
+    return Math.max(1, Math.round((dificultad.zombiesBase + dificultad.zombiesPorRonda * (ronda - 1)) * AJUSTE.cantidadZombies * FACTOR_ZOMBIES_INFINITA));
   },
 };
