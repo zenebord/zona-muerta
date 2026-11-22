@@ -1205,6 +1205,24 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 @media (max-width: 760px), (max-height: 460px) { .barra-blindaje { width: 120px; height: 9px; } #blindaje-texto { font-size: 8px; line-height: 6px; } }
 .boton-arma.boton-proteccion.en-mano small::after { content: " ✓"; }
 
+/* ===== Campo de pruebas: cámara lenta en tres medidas y menú de zombies (js/menu-zombies.js) ===== */
+.ficha-vitrina .fv-lentas { gap: 3px; }
+.ficha-vitrina .fv-lentas .boton { padding: 5px 2px; font-size: .78em; letter-spacing: .04em; }
+.ficha-vitrina .fv-lentas .boton.elegida { background: var(--arena); color: var(--noche); }
+.rejilla-zombies { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)) !important; }
+.boton-zombie-menu { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 4px 6px; }
+.boton-zombie-menu canvas { width: 72px; height: 72px; display: block; }
+.boton-zombie-menu span { font-size: 11px; line-height: 1.15; }
+.grupo-zombies.jefes h3 { color: #ff8a65; border-bottom-color: rgba(255,138,101,.35); }
+#menu-zombies .lista-grupos-armas { max-height: 62vh; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #menu-zombies { gap: 6px; padding: 8px 12px; }
+  #menu-zombies h2 { font-size: 20px; letter-spacing: .2em; margin: 0; }
+  #menu-zombies .ayuda { display: none; }
+  #menu-zombies .lista-grupos-armas { max-height: calc(100vh - 110px); margin: 0; }
+  .boton-zombie-menu canvas { width: 54px; height: 54px; }
+}
+
 </style>
 </head>
 <body>
@@ -1421,7 +1439,17 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
         <button type="button" class="boton mini" id="fv-lenta" data-accion="camara-lenta" data-t="vitrina.botonLenta">CÁMARA LENTA</button>
         <button type="button" class="boton mini" data-accion="arma-sig">▶</button>
       </div>
-      <div class="fv-botones"><button type="button" class="boton mini" data-accion="poner-zombie" data-t="vitrina.botonZombie">+ ZOMBIE DE PRUEBA (Z)</button></div>
+      <!-- Cámara lenta: qué tan lenta (js/interfaz.js: elegirCamaraLenta); también la imagen y el sonido -->
+      <div class="fv-botones fv-lentas">
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="0" data-t="lenta.0">NORMAL</button>
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="1" data-t="lenta.1">LENTA</button>
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="2" data-t="lenta.2">MUY LENTA</button>
+        <button type="button" class="boton mini" data-accion="lenta" data-nivel="3" data-t="lenta.3">EXTREMA</button>
+      </div>
+      <div class="fv-botones">
+        <button type="button" class="boton mini" data-accion="poner-zombie" data-t="zm.random">+ ZOMBIE RANDOM (Z)</button>
+        <button type="button" class="boton mini" data-accion="menu-zombies" data-t="zm.menu">MENÚ DE ZOMBIES</button>
+      </div>
       <p class="fv-ayuda" data-t-html="vitrina.ayuda"></p>
     </aside>
     <!-- Último bastión: dinero, oleada y vida del campamento arriba; qué construir y la próxima oleada abajo -->
@@ -1468,6 +1496,8 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
         <button class="boton-tactil pildora solo-mira" data-tecla="KeyD" data-t="tactil.mira">MIRA</button>
         <button class="boton-tactil pildora solo-pruebas" data-tecla="KeyC" data-t="tactil.cajas">CAJAS</button>
         <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyZ" data-t="tactil.zombie">ZOMBIE</button>
+        <button class="boton-tactil pildora solo-pruebas boton-zombie" data-accion="menu-zombies" data-t="zm.tactil">ZOMBIES ▤</button>
+        <button class="boton-tactil pildora solo-pruebas boton-zombie" data-tecla="KeyX" data-t="zm.borrarTactil">✕ BORRAR</button>
         <button class="boton-tactil pildora solo-ultra" data-tecla="KeyB" data-t="tactil.tienda">TIENDA</button>
         <button class="boton-tactil pildora solo-botiquin" data-tecla="KeyV" data-t-aria="tactil.botiquin" aria-label="Usar botiquín">✚</button>
         <button class="boton-tactil pildora" data-tecla="KeyP" data-t-aria="tactil.pausa">❚❚</button>
@@ -1531,6 +1561,17 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
         <div id="bunker-lista" class="bunker-lista"></div>
       </div>
     </div>
+    <!-- Menú de zombies del campo de pruebas (js/menu-zombies.js): cada zombie del juego, para ponerlo de blanco -->
+    <div id="menu-zombies" class="capa oculta" role="dialog" aria-labelledby="menu-zombies-titulo">
+      <h2 id="menu-zombies-titulo" data-t="zm.titulo">MENÚ DE ZOMBIES</h2>
+      <p class="ayuda" data-t="zm.ayuda">Toca uno para ponerlo en el campo. Con X (o BORRAR TODO) se borran.</p>
+      <div id="lista-zombies" class="lista-grupos-armas"></div>
+      <div class="fila-botones">
+        <button class="boton chico" type="button" data-zombie="random" data-t="zm.randomCorto">ZOMBIE RANDOM</button>
+        <button class="boton chico peligro" type="button" data-zombie="borrar" data-t="pruebas.borrar">BORRAR TODO (X)</button>
+        <button class="boton chico" type="button" data-zombie="cerrar" data-t="boton.volver">VOLVER</button>
+      </div>
+    </div>
     <div id="menu-pruebas" class="capa oculta">
       <h2 id="titulo-pruebas">CAMPO DE PRUEBAS</h2>
       <p class="ayuda" data-t-html="pruebas.ayuda"></p>
@@ -1552,7 +1593,8 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
       <div class="fila-botones">
         <button class="boton chico" data-accion="poner-m2" data-t="pruebas.ponerM2">PONER M2 BROWNING</button>
         <button class="boton chico" data-accion="quitar-m2" data-t="pruebas.quitarM2">QUITAR LA M2 CERCANA</button>
-        <button class="boton chico" data-accion="poner-zombie" data-t="pruebas.zombie">ZOMBIE DE PRUEBA</button>
+        <button class="boton chico" data-accion="poner-zombie" data-t="zm.randomCorto">ZOMBIE RANDOM</button>
+        <button class="boton chico" data-accion="menu-zombies" data-t="zm.menu">MENÚ DE ZOMBIES</button>
         <button class="boton chico peligro" data-accion="borrar-generado" data-t="pruebas.borrar">BORRAR TODO (X)</button>
       </div>
       <button class="boton chico" data-accion="cerrar-pruebas" data-t="pruebas.seguir">SEGUIR (C)</button>
@@ -1762,7 +1804,7 @@ body.tactil.en-tutorial .tutorial, body.en-tutorial.tactil .tutorial { top: 46px
 
   <script>
 /* Versión publicada (la escribe herramientas/armar-web.py). */
-const VERSION_JUEGO = '20261122-1529-64157d3';
+const VERSION_JUEGO = '20261122-1551-66488a3';
 const URL_ACTUALIZACION = 'https://zenebord.github.io/zona-muerta/';
 
 </script>
@@ -1959,7 +2001,7 @@ const TEXTOS = {
     'hud.cambiaTactil': '◀ ARMA ▶ cambia', 'hud.cambiaTeclado': '1-7 grupo · Q/E',
     'hud.pruebas': 'CAMPO DE PRUEBAS', 'hud.pruebasTactil': 'ARMAS: menú · ◀ ARMA ▶ · ZOMBIE', 'hud.pruebasTeclado': 'C: menú · Q E: arma · L: cámara lenta · Z: zombie',
     'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARGANDO…', 'vitrina.lenta': 'CÁMARA LENTA', 'vitrina.lentaSi': 'CÁMARA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDAD NORMAL', 'vitrina.botonLenta': 'CÁMARA LENTA', 'vitrina.botonZombie': '+ ZOMBIE DE PRUEBA (Z)',
-    'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> caminan · <kbd>{k:saltar}</kbd> salta · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> cambian de arma · <kbd>{k:disparar}</kbd> o clic dispara · <kbd>{k:recargar}</kbd> o clic derecho recarga · <kbd>{k:camaraLenta}</kbd> cámara lenta · <kbd>{k:zombie}</kbd> zombie de prueba · <kbd>{k:menuPruebas}</kbd> todas las armas',
+    'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> caminan · <kbd>{k:saltar}</kbd> salta · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> cambian de arma · <kbd>{k:disparar}</kbd> o clic dispara · <kbd>{k:recargar}</kbd> o clic derecho recarga · <kbd>{k:camaraLenta}</kbd> cámara lenta · <kbd>{k:zombie}</kbd> zombie random · <kbd>{k:borrar}</kbd> borra los zombies · <kbd>{k:menuPruebas}</kbd> todas las armas',
     'hud.entrenamiento': 'ENTRENAMIENTO', 'hud.pruebasModo': 'PRUEBAS', 'hud.torreta': 'DEFENSA ZOMBIE · ', 'hud.cloaca': 'CLOACA · ', 'hud.nieve': 'NIEVE · ',
     'aereo.nombre': '✈ ATAQUE AÉREO', 'aereo.tocar': 'TOCA AQUÍ', 'aereo.tecla': 'TECLA {k:ataqueAereo}', 'aereo.listo': v => `LISTO · ${v.tecla}`, 'aereo.curso': 'MISILES EN CAMINO', 'aereo.recargando': v => `RECARGANDO · ${v.s} S`,
     'serie.titulo': v => `SERIE ${v.n}`, 'serie.blancos': v => `15 blancos · ${v.nov}`,
@@ -2139,7 +2181,7 @@ const TEXTOS = {
     'hud.cambiaTactil': '◀ ARMA ▶ troca', 'hud.cambiaTeclado': '1-7 grupo · Q/E',
     'hud.pruebas': 'CAMPO DE TESTES', 'hud.pruebasTactil': 'ARMAS: menu · ◀ ARMA ▶ · ZUMBI', 'hud.pruebasTeclado': 'C: menu · Q E: arma · L: câmera lenta · Z: zumbi',
     'vitrina.reserva': v => `reserva ${v.n}`, 'vitrina.recargando': 'RECARREGANDO…', 'vitrina.lenta': 'CÂMERA LENTA', 'vitrina.lentaSi': 'CÂMERA LENTA ×¼', 'vitrina.lentaNo': 'VELOCIDADE NORMAL', 'vitrina.botonLenta': 'CÂMERA LENTA', 'vitrina.botonZombie': '+ ZUMBI DE TESTE (Z)',
-    'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> andam · <kbd>{k:saltar}</kbd> pula · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> trocam de arma · <kbd>{k:disparar}</kbd> ou clique atira · <kbd>{k:recargar}</kbd> ou clique direito recarrega · <kbd>{k:camaraLenta}</kbd> câmera lenta · <kbd>{k:zombie}</kbd> zumbi de teste · <kbd>{k:menuPruebas}</kbd> todas as armas',
+    'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> andam · <kbd>{k:saltar}</kbd> pula · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> trocam de arma · <kbd>{k:disparar}</kbd> ou clique atira · <kbd>{k:recargar}</kbd> ou clique direito recarrega · <kbd>{k:camaraLenta}</kbd> câmera lenta · <kbd>{k:zombie}</kbd> zumbi aleatório · <kbd>{k:borrar}</kbd> apaga os zumbis · <kbd>{k:menuPruebas}</kbd> todas as armas',
     'hud.entrenamiento': 'TREINAMENTO', 'hud.pruebasModo': 'TESTES', 'hud.torreta': 'DEFESA ZUMBI · ', 'hud.cloaca': 'ESGOTO · ', 'hud.nieve': 'NEVE · ',
     'aereo.nombre': '✈ ATAQUE AÉREO', 'aereo.tocar': 'TOQUE AQUI', 'aereo.tecla': 'TECLA {k:ataqueAereo}', 'aereo.listo': v => `PRONTO · ${v.tecla}`, 'aereo.curso': 'MÍSSEIS A CAMINHO', 'aereo.recargando': v => `RECARREGANDO · ${v.s} S`,
     'serie.titulo': v => `SÉRIE ${v.n}`, 'serie.blancos': v => `15 alvos · ${v.nov}`,
@@ -2318,7 +2360,7 @@ const TEXTOS = {
     'hud.cambiaTactil': '◀ GUN ▶ switches', 'hud.cambiaTeclado': '1-7 group · Q/E',
     'hud.pruebas': 'TEST FIELD', 'hud.pruebasTactil': 'WEAPONS: menu · ◀ GUN ▶ · ZOMBIE', 'hud.pruebasTeclado': 'C: menu · Q E: weapon · L: slow motion · Z: zombie',
     'vitrina.reserva': v => `reserve ${v.n}`, 'vitrina.recargando': 'RELOADING…', 'vitrina.lenta': 'SLOW MOTION', 'vitrina.lentaSi': 'SLOW MOTION ×¼', 'vitrina.lentaNo': 'NORMAL SPEED', 'vitrina.botonLenta': 'SLOW MOTION', 'vitrina.botonZombie': '+ TEST ZOMBIE (Z)',
-    'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> walk · <kbd>{k:saltar}</kbd> jump · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> switch weapon · <kbd>{k:disparar}</kbd> or click shoots · <kbd>{k:recargar}</kbd> or right click reloads · <kbd>{k:camaraLenta}</kbd> slow motion · <kbd>{k:zombie}</kbd> test zombie · <kbd>{k:menuPruebas}</kbd> all weapons',
+    'vitrina.ayuda': '<kbd>{k:izquierda}</kbd> <kbd>{k:derecha}</kbd> walk · <kbd>{k:saltar}</kbd> jump · <kbd>{k:armaAnterior}</kbd> <kbd>{k:armaSiguiente}</kbd> switch weapon · <kbd>{k:disparar}</kbd> or click shoots · <kbd>{k:recargar}</kbd> or right click reloads · <kbd>{k:camaraLenta}</kbd> slow motion · <kbd>{k:zombie}</kbd> random zombie · <kbd>{k:borrar}</kbd> clears the zombies · <kbd>{k:menuPruebas}</kbd> all weapons',
     'hud.entrenamiento': 'TRAINING', 'hud.pruebasModo': 'TEST', 'hud.torreta': 'ZOMBIE DEFENSE · ', 'hud.cloaca': 'SEWER · ', 'hud.nieve': 'SNOW · ',
     'aereo.nombre': '✈ AIR STRIKE', 'aereo.tocar': 'TAP HERE', 'aereo.tecla': 'KEY {k:ataqueAereo}', 'aereo.listo': v => `READY · ${v.tecla}`, 'aereo.curso': 'MISSILES INBOUND', 'aereo.recargando': v => `RECHARGING · ${v.s} S`,
     'serie.titulo': v => `SERIES ${v.n}`, 'serie.blancos': v => `15 targets · ${v.nov}`,
@@ -2723,6 +2765,58 @@ const Audio_ = (() => {
     maestro.gain.setTargetAtTime(0.85 * vol.efectos, t, 0.05);
     busMusica.gain.setTargetAtTime(apagado.musica ? 0 : vol.musica, t, 0.05);
   }
+  /* ---------- Cámara lenta del campo de pruebas: todo el sonido más lento y más grave ----------
+   * Con la cámara lenta (lento(f), f = 0,5, 0,25 o 0,1 del tiempo), cada sonido que nace mientras dura suena como una
+   * cinta pasada más despacio: los tiempos se estiran (arranques, envolventes, retrasos, finales) y las frecuencias
+   * bajan (osciladores, filtros y la velocidad de las grabaciones), todo por v = √f (×0,71, ×0,5 o ×0,32). Con √f y no
+   * con f, la más lenta sigue oyéndose (×0,1 sería tres octavas y media más grave: casi no se oye en un parlante chico).
+   * No hace falta tocar cada sonido: los nodos que se crean durante la cámara lenta quedan marcados (marcarLento) y
+   * AudioParam y start/stop les traducen el tiempo y la frecuencia. Los que ya sonaban (o los fijos de la mezcla) no. */
+  let lentoV = 1, lentoInstalado = false;
+  const PARAMS_LENTO = ['frequency', 'detune', 'Q', 'gain', 'playbackRate', 'delayTime', 'pan', 'offset'];
+  function marcarLento(n) {
+    const t0 = ctx.currentTime;
+    n._lv = lentoV; n._t0 = t0;
+    for (const k of PARAMS_LENTO) {
+      const q = n[k];
+      if (q instanceof AudioParam) { q._lv = lentoV; q._t0 = t0; q._esc = k === 'frequency' || k === 'playbackRate' ? lentoV : k === 'delayTime' ? 1 / lentoV : 1; }
+    }
+  }
+  function instalarLento() {
+    if (lentoInstalado || !ctx) return;
+    lentoInstalado = true;
+    const P = AudioParam.prototype, S = AudioScheduledSourceNode.prototype;
+    const estirar = (o, t) => o._lv ? o._t0 + (t - o._t0) / o._lv : t;    // el tiempo, contado desde que nació el nodo
+    const valor = (q, v) => q._esc ? v * q._esc : v;
+    for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'exponentialRampToValueAtTime']) {
+      const orig = P[m]; P[m] = function (v, t) { return orig.call(this, valor(this, v), estirar(this, t)); };
+    }
+    const objetivo = P.setTargetAtTime; P.setTargetAtTime = function (v, t, tc) { return objetivo.call(this, valor(this, v), estirar(this, t), this._lv ? tc / this._lv : tc); };
+    const curvaV = P.setValueCurveAtTime; P.setValueCurveAtTime = function (c, t, d) { if (this._esc && this._esc !== 1) c = Float32Array.from(c, x => x * this._esc); return curvaV.call(this, c, estirar(this, t), this._lv ? d / this._lv : d); };
+    const cancelar = P.cancelScheduledValues; P.cancelScheduledValues = function (t) { return cancelar.call(this, estirar(this, t)); };
+    const d = Object.getOwnPropertyDescriptor(P, 'value');
+    Object.defineProperty(P, 'value', { configurable: true, enumerable: d.enumerable, get: d.get, set(v) { d.set.call(this, valor(this, v)); } });
+    // (las grabaciones y el ruido tienen su propio start, con desde dónde y cuánto: AudioBufferSourceNode no hereda el de S)
+    for (const proto of [S, AudioBufferSourceNode.prototype, OscillatorNode.prototype, window.ConstantSourceNode && ConstantSourceNode.prototype]) {
+      if (!proto) continue;
+      if (proto.hasOwnProperty('start')) { const arrancar = proto.start; proto.start = function (t = 0, ...resto) { return arrancar.call(this, t ? estirar(this, t) : t, ...resto); }; }
+      if (proto.hasOwnProperty('stop')) { const parar = proto.stop; proto.stop = function (t = 0) { return parar.call(this, t ? estirar(this, t) : t); }; }
+    }
+    for (const nombre of ['createOscillator', 'createBufferSource', 'createBiquadFilter', 'createGain', 'createDelay', 'createStereoPanner', 'createConstantSource']) {
+      const orig = ctx[nombre]; if (!orig) continue;
+      ctx[nombre] = function (...a) { const n = orig.apply(this, a); if (lentoV < 1) marcarLento(n); return n; };
+    }
+  }
+  // Lo que ya está sonando de fondo (viento, agua): la fuente y sus vaivenes, al ritmo nuevo
+  function reajustarFondos() {
+    for (const fondo of [viento, agua]) if (fondo) for (const n of fondo.nodos) {
+      const q = n.playbackRate || n.frequency; if (!q) continue;
+      if (q._base === undefined) q._base = q.value / (q._esc || 1);
+      q._esc = 1; q._lv = 0; n._lv = 0;
+      q.value = q._base * lentoV;
+    }
+  }
+
   // Eco de cada lugar: cuándo vuelve el rebote, cuántas veces y qué tan brillante
   const ECOS = { aire: [0.21, 0.3, 1400], galpon: [0.13, 0.36, 2300], cloaca: [0.17, 0.46, 1500] };
 
@@ -3397,10 +3491,20 @@ const Audio_ = (() => {
     const salida = ganancia(ctx, vol), nodos = [];
     conectar(salida, rev, 0);
     const fin = generador(ctx, salida, ctx.currentTime + 0.01, nodos, ...args);
-    setTimeout(() => { salida.disconnect(); for (const n of nodos) n.disconnect(); }, (fin - ctx.currentTime + 0.3) * 1000);
+    setTimeout(() => { salida.disconnect(); for (const n of nodos) n.disconnect(); }, ((fin - ctx.currentTime) / lentoV + 0.3) * 1000);   // en cámara lenta dura más
   }
 
   return {
+    // Cámara lenta (campo de pruebas): f es la fracción del tiempo (1 normal; 0,5, 0,25 o 0,1). El sonido va a √f
+    lento(f) {
+      const v = f > 0 && f < 1 ? Math.sqrt(f) : 1;
+      if (v === lentoV) return;
+      lentoV = v;
+      if (v < 1 && asegurar()) instalarLento();
+      if (ctx) reajustarFondos();
+    },
+    // Cuánto se estira el sonido (1 normal): con esto la recarga adelanta cada grabación lo justo (js/jugador.js)
+    factorLento: () => lentoV,
     activar: asegurar,
     // Versión VR (vr/campo.js): con el visor puesto la página no pinta cuadros con requestAnimationFrame y puede
     // figurar oculta, así que el silencio automático la dejaría muda. Se apaga al entrar
@@ -11293,7 +11397,7 @@ class Jugador {
             ['cerrojo', 0, llegada + (1 - llegada) * 0.6, llegada + (1 - llegada) * 0.5], ['cerrojo', 1, llegada + (1 - llegada) * 0.95, llegada + (1 - llegada) * 0.65]]
           : sonidoVaiven(sonido, llegada) })
       .fase('volver', dur * 0.25, { a: 'arma', incl: 0 })
-      .terminar(arma.id, juego.camaraLenta ? 0.25 : 1);
+      .terminar(arma.id, juego.camaraLenta ? Math.sqrt(juego.camaraLenta) : 1)   /* en cámara lenta el sonido va a √f (Audio_.lento): las grabaciones se adelantan f / √f */;
     this.ciclo.accion = accion;
   }
 
@@ -11551,7 +11655,7 @@ class Jugador {
         l.fase('cadera', T * 0.55, { a: 'cadera', mano: [['granada', 0.5, 1]], alInicio: () => { this.sinCargador = true; Audio_.recarga('granada', arma.id); } });
         l.fase('volver', T * 0.45, { a: 'arma', mano: [['granada', 0, 0.85]], alTerminar: llenar(null) });
     }
-    this.recarga = l.terminar(arma.id, juego.camaraLenta ? 0.25 : 1);
+    this.recarga = l.terminar(arma.id, juego.camaraLenta ? Math.sqrt(juego.camaraLenta) : 1)   /* en cámara lenta el sonido va a √f (Audio_.lento): las grabaciones se adelantan f / √f */;
   }
 
   cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; this.granadaFuera = this.pasadorFuera = false; }
@@ -15628,13 +15732,15 @@ class Juego {
   }
   // Zombie de prueba: quieto, no muerde, sólo recibe tiros. Cada uno nuevo va un poco más atrás que el anterior (en la
   // vitrina, más cerca para que entre en el cuadro); hasta 5 vivos: con uno más se va el más viejo
-  ponerZombiePrueba() {
+  // fabrica(x): un zombie elegido del menú de zombies (js/menu-zombies.js); sin ella, uno común al azar (ZOMBIE RANDOM)
+  ponerZombiePrueba(fabrica = null) {
     const j = this.jugador, vivos = this.zombies.filter(z => z.maniqui && z.estado !== 'muerto');
     if (vivos.length >= 5) this.zombies.splice(this.zombies.indexOf(vivos.shift()), 1);
     const base = this.pruebas ? 140 : 220, paso = 26;
     let k = 0;
     while (k < 4 && vivos.some(z => Math.abs(z.x - (j.x + j.direccion * (base + k * paso))) < paso / 2)) k++;
-    const z = new Zombie(j.x + j.direccion * (base + k * paso), false, this.dificultad);
+    const x = j.x + j.direccion * (base + k * paso);
+    const z = fabrica ? fabrica(x) : new Zombie(x, false, this.dificultad);
     z.maniqui = true;
     this.zombies.push(z);
     Audio_.gemido(true, base + k * paso);
@@ -27677,6 +27783,184 @@ const Asistente = (() => {
 
 </script>
   <script>
+/* ===== Menú de zombies del campo de pruebas (pedido de Enzo, 22/11) =====
+ * Dos maneras de poner un zombie de prueba: ZOMBIE RANDOM (Z: el común al azar de siempre) y MENÚ DE ZOMBIES, con cada
+ * zombie del juego para elegirlo: los comunes (el cocinero, el policía…), los chicos (el ciclista…), el tóxico y el
+ * congelado, los del modo historia (personajes y animales), los del Último bastión y los jefes. Todos quedan quietos
+ * como el de prueba (no muerden, no escupen, no tiran hielo ni embisten): miran al jugador y acusan los tiros. Hasta 5
+ * a la vez (con uno más se va el más viejo) y se borran con X o BORRAR TODO (Juego.borrarGenerado).
+ * Cada uno se arma igual que en su modo (zombieConEstilo, ZombieAnimal, crearJefe, crearZombieV2…), con su vida.
+ */
+const CATALOGO_ZOMBIES = [
+  { grupo: 'comunes', ids: () => VARIANTES_CAMINANTE.map(v => 'v:' + v.id) },
+  { grupo: 'chicos', ids: () => VARIANTES_CORREDOR.map(v => 'c:' + v.id) },
+  { grupo: 'mapas', ids: () => ['toxico', 'congelado'] },
+  { grupo: 'historia', ids: () => ['a:esquiador', 'a:gaucho', 'a:colectivero', 'a:abuela', 'a:parrillero', 'a:hincha', 'an:guanaco', 'an:ciervo', 'an:vaca', 'an:perro', 'an:gato', 'an:nandu'] },
+  { grupo: 'bastion', ids: () => ['b:soldadoZombie', 'b:acorazado', 'b:griton', 'b:hinchado', 'b:dinamitero', 'b:topo', 'b:lanzador', 'b:escupidor', 'b:rabioso', 'b:cuervo', 'b:buitre'] },
+  { grupo: 'jefes', ids: () => ['j:avion', 'j:ruta', 'j:ciudad', 'j:barrio', 'b:jefe', 'b:escudo', 'b:cisterna', 'b:sirena'] },
+];
+// Un zombie de la clave pedida, en x (la vida y el aspecto de su modo; la dificultad, la del campo de pruebas)
+function crearZombieDeMenu(clave, x, dif) {
+  const [tipo, id] = clave.includes(':') ? clave.split(':') : [clave, null];
+  let z;
+  if (tipo === 'v' || tipo === 'c') {   // comunes y chicos: el zombie de siempre con esa ropa
+    const est = (tipo === 'c' ? VARIANTES_CORREDOR : VARIANTES_CAMINANTE).find(v => v.id === id);
+    z = new Zombie(x, tipo === 'c', dif);
+    z.estilo = est; z.escala = azarEntre(...est.escala); z.ancho = 26 * z.escala; z.alto = 64 * z.escala;
+    z.colores = { ...COLORES_ZOMBIE, camiseta: variarColor(est.camiseta), pantalon: variarColor(est.pantalon) };
+  } else if (tipo === 'toxico') z = new ZombieToxico(x, dif);
+  else if (tipo === 'congelado') z = new ZombieCongelado(x, dif);
+  else if (tipo === 'a') z = zombieConEstilo(x, id === 'hincha' ? varianteHincha() : VARIANTES_AUTOCTONAS[id], dif);
+  else if (tipo === 'an') z = new ZombieAnimal(x, id, dif);
+  else if (tipo === 'j') z = crearJefe(id, x, dif);
+  else if (tipo === 'b') {   // los del Último bastión, como los arma el retrato de su guía (js/bastion-v2-ui.js)
+    const P = Juego.prototype, falso = { dificultad: dif, ronda: 1, nivelV2: { vida: 1 }, ahora: 0, vidaComunV2: P.vidaComunV2, vestirZombieV2: P.vestirZombieV2 };
+    z = P.crearZombieV2.call(falso, id, dif);
+    z.x = x; z.direccion = -1;
+  }
+  z.x = x; z.y = alturaSuelo(x); if (z.ySuelo !== undefined) z.ySuelo = z.y;
+  return z;
+}
+// Quieto como el zombie de prueba, aunque su clase tenga su propio comportamiento (escupir, tirar hielo, embestir):
+// vivo, solo mira al jugador, respira y acusa el empujón de los tiros; muerto, cae como en su modo
+function quietoDePrueba(z) {
+  const propio = z.actualizar;
+  z.actualizar = function (dt, jugador, juego) {
+    if (this.estado === 'muerto') return propio.call(this, dt, jugador, juego);
+    const paso = dt * 60;
+    this.ahora = juego.ahora;
+    this.direccion = jugador.x >= this.x ? 1 : -1;
+    this.fase = (this.fase || 0) + dt * 1.5;
+    if (Math.abs(this.empuje || 0) > 0.05) { this.x += this.empuje * paso; this.empuje *= Math.pow(0.8, paso); }
+    this.y = alturaSuelo(this.x); if (this.ySuelo !== undefined) this.ySuelo = this.y;
+  };
+  return z;
+}
+// Nombre de cada uno (los del bastión y los jefes de la historia ya tienen el suyo)
+const nombreZombieMenu = clave => {
+  const [tipo, id] = clave.includes(':') ? clave.split(':') : [clave, null];
+  if (tipo === 'b') return t('b2.z.' + id);
+  if (tipo === 'j') { const n = t('hist.jefe.' + id); return n.charAt(0) + n.slice(1).toLowerCase(); }
+  return t('zm.' + (id || tipo));
+};
+
+// Retrato de cada zombie: dibujado una vez, entero y centrado en un cuadrado
+const retratosZombie = new Map();
+function retratoZombie(clave) {
+  if (retratosZombie.has(clave)) return retratosZombie.get(clave);
+  const W = 420, H = 420, aparte = document.createElement('canvas'); aparte.width = W; aparte.height = H;
+  const o = aparte.getContext('2d'), salida = document.createElement('canvas'); salida.width = salida.height = 112;
+  try {
+    const z = crearZombieDeMenu(clave, 0, DIFICULTADES.medio);
+    z.x = 0; z.y = 0; if (z.ySuelo !== undefined) z.ySuelo = 0; z.direccion = 1; z.estado = 'camina'; z.fase = 1.2;
+    if (z.variante) z.variante.brazoColgando = false;
+    const silueta = Pincel.silueta; Pincel.silueta = null;
+    o.setTransform(1, 0, 0, 1, W / 2, H - 40);
+    z.dibujar(o, 0, 1000);
+    Pincel.silueta = silueta;
+    const datos = o.getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) if (datos[(y * W + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 > x0) {
+      const c = salida.getContext('2d'), lado = Math.max(x1 - x0, y1 - y0) + 8;
+      c.drawImage(aparte, (x0 + x1) / 2 - lado / 2, (y0 + y1) / 2 - lado / 2, lado, lado, 0, 0, salida.width, salida.height);
+    }
+  } catch (err) { /* sin retrato */ }
+  retratosZombie.set(clave, salida);
+  return salida;
+}
+
+const MenuZombies = {
+  abierto: false,
+  juego: null,
+  abrir(juego) {
+    this.juego = juego; this.abierto = true;
+    const capa = document.getElementById('menu-zombies'), lista = document.getElementById('lista-zombies');
+    if (!lista.childElementCount || lista.dataset.idioma !== Idioma.actual()) this.pintar(lista);
+    capa.classList.remove('oculta');
+    document.body.classList.add('menu-armas-abierto');   // la ficha de la vitrina se esconde (CSS), como con el menú de armas
+    juego.entrada.derecha = juego.entrada.izquierda = juego.entrada.disparar = juego.entrada.abajo = false;
+    capa.querySelector('[data-zombie]')?.focus({ preventScroll: true });
+  },
+  cerrar() {
+    this.abierto = false;
+    document.getElementById('menu-zombies').classList.add('oculta');
+    document.body.classList.remove('menu-armas-abierto');
+  },
+  pintar(lista) {
+    lista.dataset.idioma = Idioma.actual();
+    lista.innerHTML = CATALOGO_ZOMBIES.map(G => {
+      const ids = G.ids();
+      return `<section class="grupo-armas grupo-zombies ${G.grupo}"><h3>${t('zm.grupo.' + G.grupo)} <span>${ids.length}</span></h3><div class="rejilla-armas rejilla-zombies">` +
+        ids.map(c => `<button class="boton-arma boton-zombie-menu" type="button" data-zombie="${c}"><canvas width="112" height="112" aria-hidden="true"></canvas><span>${nombreZombieMenu(c)}</span></button>`).join('') +
+        `</div></section>`;
+    }).join('');
+    lista.querySelectorAll('[data-zombie] canvas').forEach(cv => cv.getContext('2d').drawImage(retratoZombie(cv.parentElement.dataset.zombie), 0, 0));
+  },
+  poner(clave) {
+    const J = this.juego;
+    if (!J || !J.pruebas) return;
+    if (clave === 'random') J.ponerZombiePrueba();
+    else J.ponerZombiePrueba(x => quietoDePrueba(crearZombieDeMenu(clave, x, J.dificultad)));
+    J.aviso(t('zm.puesto', { nombre: (clave === 'random' ? t('zm.randomCorto') : nombreZombieMenu(clave)).toUpperCase() }), 1300);
+  },
+};
+document.getElementById('menu-zombies').addEventListener('click', e => {
+  const b = e.target.closest('[data-zombie]');
+  if (!b || !MenuZombies.juego) return;
+  const clave = b.dataset.zombie;
+  if (clave === 'cerrar') return MenuZombies.cerrar();
+  if (clave === 'borrar') { MenuZombies.juego.borrarGenerado(); return; }
+  MenuZombies.poner(clave);
+  MenuZombies.cerrar();   // a la vista para probarlo enseguida
+});
+
+/* ---------- Textos (los de la cámara lenta, también) ---------- */
+Object.assign(TEXTOS.es, {
+  'lenta.0': 'NORMAL', 'lenta.1': 'LENTA', 'lenta.2': 'MUY LENTA', 'lenta.3': 'EXTREMA',
+  'lenta.aviso0': 'VELOCIDAD NORMAL', 'lenta.aviso1': 'CÁMARA LENTA (×½)', 'lenta.aviso2': 'CÁMARA MUY LENTA (×¼)', 'lenta.aviso3': 'CÁMARA EXTREMADAMENTE LENTA (×⅒)',
+  'zm.random': '+ ZOMBIE RANDOM (Z)', 'zm.randomCorto': 'ZOMBIE RANDOM', 'zm.menu': 'MENÚ DE ZOMBIES', 'zm.tactil': 'ZOMBIES ▤', 'zm.borrarTactil': '✕ BORRAR',
+  'zm.titulo': 'MENÚ DE ZOMBIES', 'zm.ayuda': 'Toca uno para ponerlo en el campo (quieto, como el de prueba). Con X o BORRAR TODO se borran.',
+  'zm.puesto': v => `ZOMBIE: ${v.nombre}`,
+  'zm.grupo.comunes': 'COMUNES', 'zm.grupo.chicos': 'CHICOS', 'zm.grupo.mapas': 'DE LOS MAPAS', 'zm.grupo.historia': 'DE LA HISTORIA', 'zm.grupo.bastion': 'DEL ÚLTIMO BASTIÓN', 'zm.grupo.jefes': 'JEFES',
+  'zm.leñador': 'Leñador', 'zm.camisa-roja': 'Camisa roja', 'zm.oficinista': 'Oficinista', 'zm.obrero': 'Obrero', 'zm.enfermero': 'Enfermero', 'zm.policia': 'Policía',
+  'zm.turista': 'Turista', 'zm.chef': 'Cocinero', 'zm.granjero': 'Granjero', 'zm.gordo': 'Gordo',
+  'zm.maratonista': 'Maratonista', 'zm.basquet': 'Basquetbolista', 'zm.capucha': 'Chico de capucha', 'zm.ciclista': 'Chico bicicletero', 'zm.adolescente': 'Adolescente',
+  'zm.toxico': 'Tóxico (cloaca)', 'zm.congelado': 'Congelado (nieve)',
+  'zm.esquiador': 'Esquiador', 'zm.gaucho': 'Paisano', 'zm.colectivero': 'Colectivero', 'zm.abuela': 'Abuela de ruleros', 'zm.parrillero': 'Vecino del asado', 'zm.hincha': 'Hincha',
+  'zm.guanaco': 'Guanaco', 'zm.ciervo': 'Ciervo', 'zm.vaca': 'Vaca', 'zm.perro': 'Perro', 'zm.gato': 'Gato', 'zm.nandu': 'Ñandú',
+});
+Object.assign(TEXTOS.pt, {
+  'lenta.0': 'NORMAL', 'lenta.1': 'LENTA', 'lenta.2': 'MUITO LENTA', 'lenta.3': 'EXTREMA',
+  'lenta.aviso0': 'VELOCIDADE NORMAL', 'lenta.aviso1': 'CÂMERA LENTA (×½)', 'lenta.aviso2': 'CÂMERA MUITO LENTA (×¼)', 'lenta.aviso3': 'CÂMERA EXTREMAMENTE LENTA (×⅒)',
+  'zm.random': '+ ZUMBI ALEATÓRIO (Z)', 'zm.randomCorto': 'ZUMBI ALEATÓRIO', 'zm.menu': 'MENU DE ZUMBIS', 'zm.tactil': 'ZUMBIS ▤', 'zm.borrarTactil': '✕ APAGAR',
+  'zm.titulo': 'MENU DE ZUMBIS', 'zm.ayuda': 'Toque um para colocá-lo no campo (parado, como o de teste). Com X ou APAGAR TUDO eles somem.',
+  'zm.puesto': v => `ZUMBI: ${v.nombre}`,
+  'zm.grupo.comunes': 'COMUNS', 'zm.grupo.chicos': 'PEQUENOS', 'zm.grupo.mapas': 'DOS MAPAS', 'zm.grupo.historia': 'DA HISTÓRIA', 'zm.grupo.bastion': 'DO ÚLTIMO BASTIÃO', 'zm.grupo.jefes': 'CHEFES',
+  'zm.leñador': 'Lenhador', 'zm.camisa-roja': 'Camisa vermelha', 'zm.oficinista': 'Funcionário de escritório', 'zm.obrero': 'Operário', 'zm.enfermero': 'Enfermeiro', 'zm.policia': 'Policial',
+  'zm.turista': 'Turista', 'zm.chef': 'Cozinheiro', 'zm.granjero': 'Fazendeiro', 'zm.gordo': 'Gordo',
+  'zm.maratonista': 'Maratonista', 'zm.basquet': 'Jogador de basquete', 'zm.capucha': 'Garoto de capuz', 'zm.ciclista': 'Garoto ciclista', 'zm.adolescente': 'Adolescente',
+  'zm.toxico': 'Tóxico (esgoto)', 'zm.congelado': 'Congelado (neve)',
+  'zm.esquiador': 'Esquiador', 'zm.gaucho': 'Gaúcho', 'zm.colectivero': 'Motorista de ônibus', 'zm.abuela': 'Vovó de bobes', 'zm.parrillero': 'Vizinho do churrasco', 'zm.hincha': 'Torcedor',
+  'zm.guanaco': 'Guanaco', 'zm.ciervo': 'Cervo', 'zm.vaca': 'Vaca', 'zm.perro': 'Cachorro', 'zm.gato': 'Gato', 'zm.nandu': 'Ema',
+});
+Object.assign(TEXTOS.en, {
+  'lenta.0': 'NORMAL', 'lenta.1': 'SLOW', 'lenta.2': 'VERY SLOW', 'lenta.3': 'EXTREME',
+  'lenta.aviso0': 'NORMAL SPEED', 'lenta.aviso1': 'SLOW MOTION (×½)', 'lenta.aviso2': 'VERY SLOW MOTION (×¼)', 'lenta.aviso3': 'EXTREMELY SLOW MOTION (×⅒)',
+  'zm.random': '+ RANDOM ZOMBIE (Z)', 'zm.randomCorto': 'RANDOM ZOMBIE', 'zm.menu': 'ZOMBIE MENU', 'zm.tactil': 'ZOMBIES ▤', 'zm.borrarTactil': '✕ CLEAR',
+  'zm.titulo': 'ZOMBIE MENU', 'zm.ayuda': 'Tap one to place it on the field (standing still, like the test zombie). X or CLEAR ALL removes them.',
+  'zm.puesto': v => `ZOMBIE: ${v.nombre}`,
+  'zm.grupo.comunes': 'COMMON', 'zm.grupo.chicos': 'SMALL', 'zm.grupo.mapas': 'FROM THE MAPS', 'zm.grupo.historia': 'FROM THE STORY', 'zm.grupo.bastion': 'FROM LAST BASTION', 'zm.grupo.jefes': 'BOSSES',
+  'zm.leñador': 'Lumberjack', 'zm.camisa-roja': 'Red shirt', 'zm.oficinista': 'Office worker', 'zm.obrero': 'Construction worker', 'zm.enfermero': 'Nurse', 'zm.policia': 'Police officer',
+  'zm.turista': 'Tourist', 'zm.chef': 'Cook', 'zm.granjero': 'Farmer', 'zm.gordo': 'Big guy',
+  'zm.maratonista': 'Marathon runner', 'zm.basquet': 'Basketball player', 'zm.capucha': 'Hoodie kid', 'zm.ciclista': 'Bike kid', 'zm.adolescente': 'Teenager',
+  'zm.toxico': 'Toxic (sewer)', 'zm.congelado': 'Frozen (snow)',
+  'zm.esquiador': 'Skier', 'zm.gaucho': 'Gaucho', 'zm.colectivero': 'Bus driver', 'zm.abuela': 'Granny in curlers', 'zm.parrillero': 'Barbecue neighbor', 'zm.hincha': 'Soccer fan',
+  'zm.guanaco': 'Guanaco', 'zm.ciervo': 'Deer', 'zm.vaca': 'Cow', 'zm.perro': 'Dog', 'zm.gato': 'Cat', 'zm.nandu': 'Rhea',
+});
+
+</script>
+  <script>
 /* ===== Interfaz: pantallas, panel de misiones, teclado y bucle principal ===== */
 (() => {
   const lienzo = document.getElementById('lienzo');
@@ -27740,7 +28024,7 @@ const Asistente = (() => {
 
   /* ---- Partida ---- */
   function iniciar(mision, opciones = {}) {
-    Audio_.activar();
+    Audio_.activar(); Audio_.lento(1);   // cada partida arranca sin cámara lenta
     misionActual = mision || null;
     opcionesActuales = opciones;
     const difGuardada = opciones.estrategia && opciones.estrategia.dificultad && DIFICULTADES[opciones.estrategia.dificultad];   // la partida guardada sigue con la suya
@@ -27756,6 +28040,7 @@ const Asistente = (() => {
     document.body.classList.toggle('en-entrenamiento', !!opciones.entrenamiento);
     document.body.classList.toggle('en-bastion', !!opciones.estrategia);
     document.body.classList.toggle('en-pruebas', !!opciones.pruebas);
+    MenuZombies.cerrar(); pintarCamaraLenta();   // el menú de zombies cerrado y la cámara lenta en NORMAL
     document.body.classList.toggle('en-tutorial', !!opciones.tutorial);
     fichaVitrinaId = null;
     tituloPruebas();
@@ -27790,9 +28075,9 @@ const Asistente = (() => {
     if (!pausado && juego && !juego.terminado) medirRendimiento(t - ultimo);
     ultimo = t;
     if (!pausado && juego) {
-      // Campo de pruebas: cámara lenta a un cuarto. Último bastión: 2×, 5× o 10× en pasos normales (no uno gigante, que atravesaría todo)
+      // Campo de pruebas: cámara lenta (la mitad, un cuarto o un décimo). Último bastión: 2×, 5× o 10× en pasos normales (no uno gigante, que atravesaría todo)
       const pasos = juego.velocidad || 1;
-      for (let k = 0; k < pasos && !juego.terminado; k++) juego.actualizar(juego.camaraLenta ? dt * 0.25 : dt);
+      for (let k = 0; k < pasos && !juego.terminado; k++) juego.actualizar(juego.camaraLenta ? dt * juego.camaraLenta : dt);
       if (juego.pruebas) fichaVitrina();
       juego.dibujar();
       if (juego.terminado) { mostrarFin(); return; }
@@ -28036,18 +28321,29 @@ const Asistente = (() => {
     const carga = j.municionActual(), reserva = a.cuerpo ? '' : (j.reserva[id] === undefined || j.reserva[id] >= 999 ? '∞' : j.reserva[id]);
     document.getElementById('fv-carga').textContent = a.cuerpo ? '—' : `${carga} / ${a.cargador}`;
     document.getElementById('fv-reserva').textContent = a.cuerpo ? '' : t('vitrina.reserva', { n: reserva });
-    document.getElementById('fv-estado').textContent = j.recarga ? t('vitrina.recargando') : juego.camaraLenta ? t('vitrina.lenta') : '';
+    document.getElementById('fv-estado').textContent = j.recarga ? t('vitrina.recargando') : juego.camaraLenta ? t('lenta.' + juego.nivelLento) : '';
   }
-  function alternarCamaraLenta() {
+  // Cámara lenta del campo de pruebas, en tres medidas (pedido de Enzo): lenta (la mitad), muy lenta (un cuarto, la de
+  // antes) y extremadamente lenta (un décimo). El sonido también va más lento y más grave (Audio_.lento, js/audio.js).
+  // La L pasa a la siguiente; los botones de la ficha eligen una
+  const NIVELES_LENTA = [0, 0.5, 0.25, 0.1];
+  function elegirCamaraLenta(n) {
     if (!juego || !juego.pruebas) return;
-    juego.camaraLenta = !juego.camaraLenta;
-    document.getElementById('fv-lenta').classList.toggle('elegida', juego.camaraLenta);
-    juego.aviso(t(juego.camaraLenta ? 'vitrina.lentaSi' : 'vitrina.lentaNo'), 1000);
+    juego.nivelLento = n; juego.camaraLenta = NIVELES_LENTA[n] || 0;
+    Audio_.lento(juego.camaraLenta || 1);
+    pintarCamaraLenta();
+    juego.aviso(t('lenta.aviso' + n), 1100);
+  }
+  function alternarCamaraLenta() { if (juego && juego.pruebas) elegirCamaraLenta(((juego.nivelLento || 0) + 1) % NIVELES_LENTA.length); }
+  function pintarCamaraLenta() {
+    const n = (juego && juego.nivelLento) || 0, b = document.getElementById('fv-lenta');
+    b.classList.toggle('elegida', n > 0); b.textContent = n ? t('lenta.' + n) : t('vitrina.botonLenta');
+    document.querySelectorAll('[data-accion="lenta"]').forEach(x => x.classList.toggle('elegida', +x.dataset.nivel === n));
   }
 
   function salirAlMenu() {
     cancelAnimationFrame(cuadro);
-    Audio_.ambiente(0);
+    Audio_.ambiente(0); Audio_.lento(1);   // fuera del campo de pruebas no hay cámara lenta
     Musica.detener(0.8);
     juego = null; pausado = false; menuPruebasAbierto = false; document.body.classList.remove('menu-armas-abierto', 'en-tutorial');
     capaPruebas.classList.add('oculta');
@@ -28164,6 +28460,8 @@ const Asistente = (() => {
       case 'config-completa': alternarPantallaCompleta(); break;
       case 'descargar-juego': descargarJuego(boton); break;
       case 'camara-lenta': alternarCamaraLenta(); break;
+      case 'lenta': elegirCamaraLenta(+boton.dataset.nivel); break;   // normal, lenta, muy lenta o extremadamente lenta
+      case 'menu-zombies': if (juego && juego.pruebas) { if (menuPruebasAbierto) alternarMenuPruebas(); MenuZombies.abrir(juego); } break;   // js/menu-zombies.js
       case 'arma-ant': case 'arma-sig': if (juego) { juego.jugador.cambiarArma(boton.dataset.accion === 'arma-sig' ? 1 : -1); juego.jugador.ultimoDisparo = -1e9; mostrarSelectorArmas(); } break;
       case 'asist-abrir': Asistente.abrir(capaConfig); break;   // asistente de construcción (temporal)
       case 'asist-volver': Asistente.cerrar(); break;
@@ -28198,6 +28496,10 @@ const Asistente = (() => {
     if (TECLAS_BLOQUEADAS.has(e.code)) e.preventDefault();
     if (!juego) return;
     if (tecla && !juego.terminado && !juego.estrategia) e.preventDefault();   // Alt, Tab, F1… asignadas: que no hagan lo del navegador
+    if (MenuZombies.abierto) {   // menú de zombies abierto: Esc lo cierra, X borra lo puesto
+      if (e.code === 'Escape') MenuZombies.cerrar(); else if (tecla === 'KeyX' && !e.repeat) juego.borrarGenerado();
+      return;
+    }
     if (juego.enTienda) { if ((e.code === 'Escape' || tecla === 'KeyB') && !e.repeat) juego.alternarTienda(); return; }   // tienda abierta: sólo se cierra
     if (juego.bunker && juego.bunker.abierto && !pausado) { if (juego.teclaBunker(e, tecla)) e.preventDefault(); return; }   // búnker abierto: su menú (js/bunker.js)
     if ((juego.pruebas || juego.entrenamiento) && tecla === 'KeyC' && !e.repeat) { alternarMenuPruebas(); return; }
@@ -28228,6 +28530,7 @@ const Asistente = (() => {
     const en = juego.entrada, j = juego.jugador;
     if (juego.pruebas && tecla === 'KeyL' && !e.repeat) { alternarCamaraLenta(); return; }
     if (juego.pruebas && tecla === 'KeyZ' && !e.repeat) { juego.ponerZombiePrueba(); return; }   // zombie de prueba
+    if (juego.pruebas && tecla === 'KeyX' && !e.repeat) { juego.borrarGenerado(); return; }   // X: borra los zombies puestos, las M2 y las cajas (antes solo con el menú de armas abierto)
     switch (tecla) {
       case 'ArrowRight': en.derecha = true; break;
       case 'ArrowLeft':  en.izquierda = true; break;
@@ -28288,7 +28591,7 @@ const Asistente = (() => {
       if (pausado || juego.terminado || sobreControl(e) || e.target.closest('#panel-bastion')) return;
       const p = aJuego(e); juego.punteroBastion(p.x, p.y, 'down', e.button); e.preventDefault(); return;
     }
-    if (!Config.get('raton') || e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || sobreControl(e)) return;
+    if (!Config.get('raton') || e.pointerType !== 'mouse' || !juego || pausado || juego.terminado || menuPruebasAbierto || configAbierta || juego.enTienda || (juego.bunker && juego.bunker.abierto) || MenuZombies.abierto || sobreControl(e)) return;
     if (e.button === 0) { juego.entrada.disparar = true; juego.entrada.dispararPulsado = true; mouseDispara = true; e.preventDefault(); }
     else if (e.button === 2) { juego.jugador.recargar(juego); e.preventDefault(); }
   });

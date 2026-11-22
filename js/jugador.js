@@ -404,7 +404,7 @@ class Jugador {
             ['cerrojo', 0, llegada + (1 - llegada) * 0.6, llegada + (1 - llegada) * 0.5], ['cerrojo', 1, llegada + (1 - llegada) * 0.95, llegada + (1 - llegada) * 0.65]]
           : sonidoVaiven(sonido, llegada) })
       .fase('volver', dur * 0.25, { a: 'arma', incl: 0 })
-      .terminar(arma.id, juego.camaraLenta ? 0.25 : 1);
+      .terminar(arma.id, juego.camaraLenta ? Math.sqrt(juego.camaraLenta) : 1)   /* en cámara lenta el sonido va a √f (Audio_.lento): las grabaciones se adelantan f / √f */;
     this.ciclo.accion = accion;
   }
 
@@ -662,7 +662,7 @@ class Jugador {
         l.fase('cadera', T * 0.55, { a: 'cadera', mano: [['granada', 0.5, 1]], alInicio: () => { this.sinCargador = true; Audio_.recarga('granada', arma.id); } });
         l.fase('volver', T * 0.45, { a: 'arma', mano: [['granada', 0, 0.85]], alTerminar: llenar(null) });
     }
-    this.recarga = l.terminar(arma.id, juego.camaraLenta ? 0.25 : 1);
+    this.recarga = l.terminar(arma.id, juego.camaraLenta ? Math.sqrt(juego.camaraLenta) : 1)   /* en cámara lenta el sonido va a √f (Audio_.lento): las grabaciones se adelantan f / √f */;
   }
 
   cancelarRecarga() { this.recarga = null; this.ciclo = null; this.sinCargador = false; this.golpeActual = null; this.granadaFuera = this.pasadorFuera = false; }
