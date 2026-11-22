@@ -10,6 +10,8 @@
  * El dinero sale de matar zombies. Cada mejora sube el daño del arma un 20 % (cinco niveles: hasta el doble); el daño se
  * aplica en Zombie.recibirDano (js/zombie.js) con `juego.mejoras`. No hay búnkeres en las misiones ni en los otros modos.
  */
+// Con el búnker abierto, el juego se ve en la mitad de arriba: la cámara baja tantas unidades (el suelo, que está en 440, queda en 225 de 540)
+const DESPLAZAMIENTO_BUNKER = 215;
 const BUNKER = {
   cada: 300,               // metros entre búnkeres al empezar
   hordasPorSalto: 3,       // cada tantas hordas (rondas) superadas, los búnkeres que faltan van más lejos...
@@ -297,12 +299,16 @@ Object.assign(Juego.prototype, {
     B.abierto = true;
     Object.assign(this.entrada, { derecha: false, izquierda: false, abajo: false, disparar: false, dispararPulsado: false, saltarPulsado: false, abajoPulsado: false });
     this.jugador.mira = false;
+    this.jugador.invulnerableHasta = Infinity;   // abajo nadie lo toca; al salir (salirBunker) se le da un respiro
+    document.body.classList.add('en-bunker');
+    B.arriba = -1; B.bombardeando = null;
     B.dice = t('bunker.saludo' + (1 + Math.floor(Math.random() * 3)));
     if (!B.elegido || (B.pestana === 'propias' && !this.jugador.inventario.includes(B.elegido))) { B.pestana = 'propias'; B.elegido = this.jugador.montada ? null : this.jugador.arma().id; }
     document.getElementById('bunker').classList.remove('oculta');
     Musica.intensidad(0.08);
     Audio_.recoger();
     this.pintarBunker();
+    this.actualizarBombardeoBunker(true);
     document.querySelector('#bunker .bunker-carta.elegida, #bunker button:not([disabled])')?.focus();
     return true;
   },
@@ -311,6 +317,7 @@ Object.assign(Juego.prototype, {
     if (!B || !B.abierto) return;
     B.abierto = false; B.equipables = false;
     document.getElementById('bunker').classList.add('oculta');
+    document.body.classList.remove('en-bunker');
     Object.assign(this.entrada, { derecha: false, izquierda: false, abajo: false, disparar: false, dispararPulsado: false, saltarPulsado: false, abajoPulsado: false });
     this.jugador.invulnerableHasta = this.ahora + 1500;   // un respiro al subir: los zombies quedaron donde estaban
     Audio_.recoger();
@@ -423,6 +430,7 @@ Object.assign(Juego.prototype, {
     if (!cartas.includes(B.elegido)) B.elegido = cartas[0] || null;
     document.getElementById('bunker-bajas').textContent = `☠ ${this.bajas}`;
     document.getElementById('bunker-dinero').textContent = `$ ${B.dinero}`;
+    B.dineroPintado = B.dinero;
     document.querySelectorAll('#bunker [data-bunker^="pestana:"]').forEach(b => { const si = b.dataset.bunker === 'pestana:' + B.pestana; b.classList.toggle('elegida', si); b.setAttribute('aria-selected', si); });
     // Cartas de abajo: miniatura, nombre y nivel (las propias) o precio (las de la venta)
     const lista = document.getElementById('bunker-lista'), desplazado = lista.scrollLeft;
@@ -501,6 +509,7 @@ Object.assign(Juego.prototype, {
     const [que, id] = accion.split(':');
     const cobrar = precio => { if (B.dinero < precio) { B.dice = t('bunker.sinDinero'); this.pintarDetalleBunker(); return false; } B.dinero -= precio; return true; };
     if (que === 'salir') return this.salirBunker();
+    if (que === 'bombardear') { this.pedirAtaqueAereo(true); this.actualizarBombardeoBunker(true); return; }   // gratis y sin límite, mientras se esté adentro
     if (que === 'pestana') { B.pestana = id; B.elegido = null; B.equipables = false; }
     else if (que === 'elegir') { B.elegido = id; B.equipables = false; }
     else if (que === 'equipables') { B.equipables = true; }
@@ -558,9 +567,25 @@ Object.assign(Juego.prototype, {
     }
     return false;
   },
-  // Con el menú abierto el juego queda quieto; el comerciante se redibuja unas 20 veces por segundo
+  // Zombies vivos a la vista (los que se lleva un bombardeo) y el botón de bombardear (apagado mientras caen los misiles)
+  actualizarBombardeoBunker(forzar = false) {
+    const B = this.bunker, bombardeando = !!(this.aereo && this.aereo.activo);
+    if (B.dinero !== B.dineroPintado) {   // los muertos de arriba pagan aunque se esté abajo: se actualiza el dinero y lo que se puede comprar
+      const enLista = document.activeElement && document.activeElement.closest('#bunker-lista');
+      B.dineroPintado = B.dinero; this.pintarBunker();
+      if (enLista) document.querySelector('#bunker .bunker-carta.elegida')?.focus({ preventScroll: true });
+    }
+    const arriba = this.zombies.reduce((n, z) => n + (z.estado !== 'muerto' && !z.maniqui && z.x > this.camaraX - 20 && z.x < this.camaraX + ANCHO + 20 ? 1 : 0), 0);
+    if (!forzar && arriba === B.arriba && bombardeando === B.bombardeando) return;
+    B.arriba = arriba; B.bombardeando = bombardeando;
+    const boton = document.getElementById('bunker-bombardear'), cuenta = document.getElementById('bunker-arriba');
+    if (cuenta) { cuenta.textContent = t('bunker.arriba', { n: arriba }); cuenta.classList.toggle('limpio', arriba === 0); }
+    if (boton) { boton.disabled = bombardeando; boton.querySelector('span').textContent = t(bombardeando ? 'bunker.bombardeando' : 'bunker.bombardear'); }
+  },
+  // La partida sigue arriba mientras se está adentro; el comerciante se redibuja unas 20 veces por segundo
   actualizarBunkerAbierto() {
     const B = this.bunker;
+    this.actualizarBombardeoBunker();
     if (performance.now() < B.proximoDibujo) return;
     B.proximoDibujo = performance.now() + 50;
     const id = B.elegido && B.elegido !== 'botiquin' && B.elegido !== 'aereo' ? B.elegido : null;
@@ -575,7 +600,7 @@ document.getElementById('bunker').addEventListener('click', e => {
 
 /* ---------- Textos ---------- */
 Object.assign(TEXTOS.es, {
-  'bunker.titulo': 'MEJORAS', 'bunker.tusArmas': 'TUS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SALIR DEL BÚNKER',
+  'bunker.bombardear': 'BOMBARDEAR LA SUPERFICIE · GRATIS', 'bunker.bombardeando': 'MISILES EN CAMINO…', 'bunker.arriba': v => `ARRIBA: ${v.n} ☠`, 'bunker.bombardeo': 'BOMBARDEO SOBRE LA SUPERFICIE', 'bunker.titulo': 'MEJORAS', 'bunker.tusArmas': 'TUS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SALIR DEL BÚNKER',
   'bunker.entrar': v => `${v.tecla}  ENTRAR AL BÚNKER`, 'bunker.entrarTactil': 'TOCA ▼ ABAJO PARA ENTRAR AL BÚNKER',
   'bunker.hudProximo': v => `BÚNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BÚNKER AQUÍ · ${v.tecla} PARA ENTRAR`,
   'bunker.nivel': v => `NIVEL ${v.n} DE ${v.max}`, 'bunker.mejorar': 'MEJORAR', 'bunker.comprar1': 'COMPRAR',
@@ -600,7 +625,7 @@ Object.assign(TEXTOS.es, {
   'bunker.aereoLleno': v => `YA LLEVAS ${v.max} CARGAS: NO ENTRAN MÁS`, 'bunker.dijoAereo': 'Cuando lo pidas por radio, el cielo se encarga.',
 });
 Object.assign(TEXTOS.pt, {
-  'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
+  'bunker.bombardear': 'BOMBARDEAR A SUPERFÍCIE · GRÁTIS', 'bunker.bombardeando': 'MÍSSEIS A CAMINHO…', 'bunker.arriba': v => `LÁ EM CIMA: ${v.n} ☠`, 'bunker.bombardeo': 'BOMBARDEIO NA SUPERFÍCIE', 'bunker.titulo': 'MELHORIAS', 'bunker.tusArmas': 'SUAS ARMAS', 'bunker.venta': 'COMPRAR', 'bunker.salir': 'SAIR DO BUNKER',
   'bunker.entrar': v => `${v.tecla}  ENTRAR NO BUNKER`, 'bunker.entrarTactil': 'TOQUE ▼ ABAIXO PARA ENTRAR NO BUNKER',
   'bunker.hudProximo': v => `BUNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BUNKER AQUI · ${v.tecla} PARA ENTRAR`,
   'bunker.nivel': v => `NÍVEL ${v.n} DE ${v.max}`, 'bunker.mejorar': 'MELHORAR', 'bunker.comprar1': 'COMPRAR',
@@ -625,7 +650,7 @@ Object.assign(TEXTOS.pt, {
   'bunker.aereoLleno': v => `VOCÊ JÁ LEVA ${v.max} CARGAS: NÃO CABEM MAIS`, 'bunker.dijoAereo': 'Quando pedir pelo rádio, o céu cuida do resto.',
 });
 Object.assign(TEXTOS.en, {
-  'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
+  'bunker.bombardear': 'BOMB THE SURFACE · FREE', 'bunker.bombardeando': 'MISSILES INCOMING…', 'bunker.arriba': v => `ABOVE: ${v.n} ☠`, 'bunker.bombardeo': 'AIRSTRIKE ON THE SURFACE', 'bunker.titulo': 'UPGRADES', 'bunker.tusArmas': 'YOUR WEAPONS', 'bunker.venta': 'BUY', 'bunker.salir': 'LEAVE THE BUNKER',
   'bunker.entrar': v => `${v.tecla}  ENTER THE BUNKER`, 'bunker.entrarTactil': 'TAP ▼ DOWN TO ENTER THE BUNKER',
   'bunker.hudProximo': v => `BUNKER ${v.flecha} ${v.m} m`, 'bunker.hudAqui': v => `BUNKER HERE · ${v.tecla} TO ENTER`,
   'bunker.nivel': v => `LEVEL ${v.n} OF ${v.max}`, 'bunker.mejorar': 'UPGRADE', 'bunker.comprar1': 'BUY',
